@@ -1,0 +1,633 @@
+{
+ "tag": "main",
+ "label": "riser-maithea0",
+ "world": "Maithea",
+ "rule": "fixed",
+ "candidates": [
+  0
+ ],
+ "root": "C:/LLM/IWSDK/universe-atlas-wt/_riser-probe-main",
+ "build": {
+  "commit": "74197338ca4fee3aec11c46a4b0850cb7fa1e6da",
+  "branch": "HEAD",
+  "subject": "Owner decision: strata notch rows -> riser smoothing by mesh spacing (option 1)",
+  "dirty": false,
+  "builtAt": "2026-10-08T08:05:36.097Z"
+ },
+ "tileSet": {
+  "path": "C:/LLM/IWSDK/universe-atlas-wt/_riser-probe-main/tests/helpers/mountain-tile-set.mjs",
+  "source": {
+   "branch": "mountains/t6-wiring",
+   "base": "9dcb1cf",
+   "terrainVersion": "terrain-1.9.0-mountains"
+  }
+ },
+ "viewport": [
+  1920,
+  1080
+ ],
+ "pitchDeg": 35,
+ "clearances": [
+  4200,
+  3000,
+  2100,
+  1500,
+  1050,
+  750,
+  520,
+  360
+ ],
+ "started": "2026-10-08T08:07:37.184Z",
+ "stills": [
+  {
+   "clearanceM": 4200,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c4200-main.png",
+   "settledMs": 3581,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 14,
+    "9": 16,
+    "10": 13,
+    "11": 14,
+    "12": 21
+   },
+   "activeSetSha": "712783d6f4d3a84e",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 4199.99999409023,
+   "pose": {
+    "position": [
+     2644659.7033351962,
+     4452635.6291849185,
+     -408497.85657198913
+    ],
+    "heading": [
+     -0.38138883385105266,
+     -0.15685373300565647,
+     -0.3068253993148136,
+     0.8577864758733549
+    ],
+    "clearanceM": 4200,
+    "eyeDir": [
+     0.5090870089577667,
+     0.8571155493396315,
+     -0.07863429525758339
+    ],
+    "horizontalM": 5998.221628316882
+   }
+  },
+  {
+   "clearanceM": 3000,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c3000-main.png",
+   "settledMs": 5,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 13,
+    "9": 16,
+    "10": 12,
+    "11": 13,
+    "12": 18
+   },
+   "activeSetSha": "cda11046ef5f4b53",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 2999.999993332638,
+   "pose": {
+    "position": [
+     2645343.8025246817,
+     4452093.664849222,
+     -409972.75203307567
+    ],
+    "heading": [
+     -0.3815303186906531,
+     -0.15680312076623065,
+     -0.30685126783811384,
+     0.8577235549196033
+    ],
+    "clearanceM": 3000,
+    "eyeDir": [
+     0.5092186954691792,
+     0.8570112232509957,
+     -0.07891820706592041
+    ],
+    "horizontalM": 4284.444020226344
+   }
+  },
+  {
+   "clearanceM": 2100,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c2100-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 15,
+    "10": 12,
+    "11": 13,
+    "12": 13
+   },
+   "activeSetSha": "d187ad2b5cee8f8f",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 2100.000001123152,
+   "pose": {
+    "position": [
+     2645856.687989181,
+     4451686.873623621,
+     -411078.89435722405
+    ],
+    "heading": [
+     -0.38163642567151457,
+     -0.15676515883435363,
+     -0.30687066379778044,
+     0.8576763487916756
+    ],
+    "clearanceM": 2100,
+    "eyeDir": [
+     0.509317423984886,
+     0.8569329174757574,
+     -0.07913113528748787
+    ],
+    "horizontalM": 2999.110814158441
+   }
+  },
+  {
+   "clearanceM": 1500,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c1500-main.png",
+   "settledMs": 5,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 14,
+    "10": 12,
+    "11": 10,
+    "12": 12
+   },
+   "activeSetSha": "fa4c8cb5635a0153",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 1500.0000018025535,
+   "pose": {
+    "position": [
+     2646198.5216492065,
+     4451415.528070946,
+     -411816.3085968143
+    ],
+    "heading": [
+     -0.3817071602463127,
+     -0.15673984951134423,
+     -0.3068835917831473,
+     0.8576448708446472
+    ],
+    "clearanceM": 1500,
+    "eyeDir": [
+     0.5093832256739744,
+     0.8568806844812322,
+     -0.07927308474477435
+    ],
+    "horizontalM": 2142.222010113172
+   }
+  },
+  {
+   "clearanceM": 1050,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c1050-main.png",
+   "settledMs": 13,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 14,
+    "10": 11,
+    "11": 10,
+    "12": 10
+   },
+   "activeSetSha": "7b2434e8949cf103",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 1049.9999959962659,
+   "pose": {
+    "position": [
+     2646454.84964655,
+     4451211.939425493,
+     -412369.36192457605
+    ],
+    "heading": [
+     -0.38176020941189265,
+     -0.156720866508072,
+     -0.3068932863400804,
+     0.8576212586626641
+    ],
+    "clearanceM": 1050,
+    "eyeDir": [
+     0.5094325678457916,
+     0.856841494435556,
+     -0.07937954542252026
+    ],
+    "horizontalM": 1499.5554070792205
+   }
+  },
+  {
+   "clearanceM": 750,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c750-main.png",
+   "settledMs": 3,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 14,
+    "10": 11,
+    "11": 10,
+    "12": 8
+   },
+   "activeSetSha": "0ab1df1a7a4a02fd",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 749.9999979559416,
+   "pose": {
+    "position": [
+     2646625.7124770423,
+     4451076.175815519,
+     -412738.0606374621
+    ],
+    "heading": [
+     -0.38179557486726806,
+     -0.15670821111708796,
+     -0.30689974880529747,
+     0.8576055152361719
+    ],
+    "clearanceM": 750,
+    "eyeDir": [
+     0.509465458295632,
+     0.8568153604531614,
+     -0.07945051853286525
+    ],
+    "horizontalM": 1071.111005056586
+   }
+  },
+  {
+   "clearanceM": 520,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c520-main.png",
+   "settledMs": 4,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 14,
+    "10": 11,
+    "11": 10,
+    "12": 8
+   },
+   "activeSetSha": "0ab1df1a7a4a02fd",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 519.9999900317896,
+   "pose": {
+    "position": [
+     2646756.6951223146,
+     4450972.069877581,
+     -413020.72774955735
+    ],
+    "heading": [
+     -0.38182268790821877,
+     -0.15669850857116058,
+     -0.30690470301560574,
+     0.8575934442829072
+    ],
+    "clearanceM": 520,
+    "eyeDir": [
+     0.5094906719603703,
+     0.8567953204531218,
+     -0.07950493088483848
+    ],
+    "horizontalM": 742.6369635058996
+   }
+  },
+  {
+   "clearanceM": 360,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-c360-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 14,
+    "10": 11,
+    "11": 10,
+    "12": 8
+   },
+   "activeSetSha": "0ab1df1a7a4a02fd",
+   "referenceTargetLevel": null,
+   "lodMatch": null,
+   "lodAttempts": [],
+   "appClearanceM": 360.000004849265,
+   "pose": {
+    "position": [
+     2646847.807243198,
+     4450899.637860079,
+     -413217.3647667412
+    ],
+    "heading": [
+     -0.3818415487940889,
+     -0.15669175858555548,
+     -0.3069081491645969,
+     0.8575850467342927
+    ],
+    "clearanceM": 360,
+    "eyeDir": [
+     0.5095082106996803,
+     0.8567813775631931,
+     -0.07954278276831606
+    ],
+    "horizontalM": 514.1332824271612
+   }
+  }
+ ],
+ "descent": [
+  {
+   "k": 0,
+   "tMs": 0,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-00-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 15,
+    "9": 16,
+    "10": 15,
+    "11": 18,
+    "12": 29
+   },
+   "activeSetSha": "236181126fe972aa",
+   "appClearanceM": 5468.824825532289,
+   "terrainPending": 0
+  },
+  {
+   "k": 1,
+   "tMs": 510,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-01-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 15,
+    "9": 16,
+    "10": 15,
+    "11": 18,
+    "12": 30
+   },
+   "activeSetSha": "772ca335bf183e76",
+   "appClearanceM": 4494.289240504421,
+   "terrainPending": 0
+  },
+  {
+   "k": 2,
+   "tMs": 1004,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-02-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 15,
+    "9": 16,
+    "10": 15,
+    "11": 17,
+    "12": 29
+   },
+   "activeSetSha": "5d28be5a8f8871bc",
+   "appClearanceM": 3581.4928415651157,
+   "terrainPending": 0
+  },
+  {
+   "k": 3,
+   "tMs": 1517,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-03-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 13,
+    "9": 14,
+    "10": 15,
+    "11": 16,
+    "12": 30
+   },
+   "activeSetSha": "b2d912e3e98f97a0",
+   "appClearanceM": 2424.5032522701676,
+   "terrainPending": 0
+  },
+  {
+   "k": 4,
+   "tMs": 2011,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-04-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 14,
+    "10": 14,
+    "11": 14,
+    "12": 30
+   },
+   "activeSetSha": "eaa12113872b87f2",
+   "appClearanceM": 1488.272663953576,
+   "terrainPending": 0
+  },
+  {
+   "k": 5,
+   "tMs": 2508,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-05-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 12,
+    "10": 13,
+    "11": 11,
+    "12": 25
+   },
+   "activeSetSha": "6121b63d3f19af6c",
+   "appClearanceM": 549.128070131695,
+   "terrainPending": 0
+  },
+  {
+   "k": 6,
+   "tMs": 3003,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-maithea0-descent-06-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 12,
+   "activeLevelHistogram": {
+    "2": 4,
+    "3": 21,
+    "4": 21,
+    "5": 19,
+    "6": 14,
+    "7": 13,
+    "8": 12,
+    "9": 12,
+    "10": 12,
+    "11": 10,
+    "12": 23
+   },
+   "activeSetSha": "192207dc051f0734",
+   "appClearanceM": 359.99999999499823,
+   "terrainPending": 0
+  }
+ ],
+ "match": null,
+ "url": "http://127.0.0.1:59078/?seed=LETHRA-001&g=G001&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1&date=435084631200000032044300000&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-8-ocean-volume%2Cterrain-1.9.1-carving-c1%2Cbiosphere-lab-3%2Catlas-galaxy-history-2",
+ "versions": {
+  "time": "atlas-time-2",
+  "space": "atlas-address-1",
+  "cosmology": "atlas-cosmology-2-radiation",
+  "catalog": "atlas-2.0.0",
+  "history": "atlas-history-3-remnant-cooling",
+  "surface": "atlas-surface-8-ocean-volume",
+  "terrain": "terrain-1.9.1-carving-c1",
+  "biosphere": "biosphere-lab-3",
+  "galaxyHistory": "atlas-galaxy-history-2"
+ },
+ "sunDir": [
+  0.8503990769857541,
+  -0.2234706759300356,
+  0.4763216002462523
+ ],
+ "candidateSunElevs": [
+  {
+   "idx": 0,
+   "kind": "axis",
+   "e": 11.767
+  }
+ ],
+ "station": {
+  "tileSetIndex": 0,
+  "kind": "axis",
+  "dir": [
+   0.5095476692588011,
+   0.85675,
+   -0.07962794894334123
+  ],
+  "sunElevDeg": 11.76697794390798,
+  "viewAzimuthFromSunDeg": 90
+ },
+ "descentPlan": {
+  "fromClearanceM": 6000,
+  "toClearanceM": 360,
+  "minDescentMps": 1880,
+  "seconds": 3
+ },
+ "errors": [],
+ "finished": "2026-10-08T08:09:16.550Z"
+}

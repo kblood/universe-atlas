@@ -1,0 +1,150 @@
+{
+ "world": "Lethuris",
+ "station": "0",
+ "arm": "v1",
+ "root": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-7419733",
+ "rock": 11,
+ "sharp": 15,
+ "levels": [
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16
+ ],
+ "crossLevel": {
+  "points": 95481,
+  "spacingM": 13.036153605108863,
+  "armTruthVsV1TruthMismatch": 0,
+  "rockPoints": 80339,
+  "perLevel": {
+   "10": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "11": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "12": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "13": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "14": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "15": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "16": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   }
+  },
+  "switches": {
+   "L10->L11": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 64.83199993102198,
+    "p99AbsM": 56.201887088799594,
+    "pointwiseBoundViolations": 0
+   },
+   "L11->L12": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 0,
+    "p99AbsM": 0,
+    "pointwiseBoundViolations": 0
+   },
+   "L12->L13": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 0,
+    "p99AbsM": 0,
+    "pointwiseBoundViolations": 0
+   },
+   "L13->L14": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 0,
+    "p99AbsM": 0,
+    "pointwiseBoundViolations": 0
+   },
+   "L14->L15": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 0,
+    "p99AbsM": 0,
+    "pointwiseBoundViolations": 0
+   },
+   "L15->L16": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 0,
+    "p99AbsM": 0,
+    "pointwiseBoundViolations": 0
+   }
+  },
+  "mainRockSwitch": {
+   "maxAbsM": 64.83199993102198,
+   "p99AbsM": 56.201887088799594
+  }
+ },
+ "LR": {
+  "11": {
+   "spacingM": 208.57281272383923,
+   "rockVertices": 654,
+   "LR": 1.96411544385145,
+   "truthPointLR": 1.96411544385145,
+   "hpRmsM": 21.29183503593292,
+   "idealHpRmsM": 10.840419336137181
+  },
+  "12": {
+   "spacingM": 104.28578152574163,
+   "rockVertices": 2493,
+   "LR": 1.278353365486622,
+   "truthPointLR": 1.278353365486622,
+   "hpRmsM": 20.66097204755031,
+   "idealHpRmsM": 16.16217597212289
+  },
+  "13": {
+   "spacingM": 52.14271839373291,
+   "rockVertices": 9469,
+   "LR": 1.0900207490798495,
+   "truthPointLR": 1.0900207490798495,
+   "hpRmsM": 20.773665525562436,
+   "idealHpRmsM": 19.058045952885486
+  },
+  "14": {
+   "spacingM": 26.071962482072788,
+   "rockVertices": 37702,
+   "LR": 1.0266530287006372,
+   "truthPointLR": 1.0266530287006372,
+   "hpRmsM": 20.729010829602867,
+   "idealHpRmsM": 20.190863173937277
+  },
+  "15": {
+   "spacingM": 13.036153605108863,
+   "rockVertices": 150272,
+   "LR": 1.007216732830143,
+   "truthPointLR": 1.007216732830143,
+   "hpRmsM": 20.68762951880049,
+   "idealHpRmsM": 20.539402141057614
+  }
+ }
+}

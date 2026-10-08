@@ -1,0 +1,11 @@
+start 2026-10-08T08:55:30Z slot=e1e8922e-723d-452d-9d4e-cc0e064700bd
+tile Maithea exit 0 08:55:50
+tile Selawyn exit 0 08:56:07
+tile Raiva exit 0 08:56:30
+tile Lethuris exit 0 08:56:46
+inmassif exit 0 08:57:22
+m5 branch exit 0 08:57:24
+m5 main exit 0 08:57:26
+test:perf exit 0 09:00:19
+end 2026-10-08T09:00:19Z
+slot exit 0

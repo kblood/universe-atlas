@@ -1,0 +1,4 @@
+[probe riser-lethuris0 branch 08:14:03] serving 2802fcaf0e8b8d1a1b76a09d10961bf0f5261909 Riser LOD step 3: re-pins with ledger, riser fixture test, tuning-station height rows
+[probe riser-lethuris0 branch 08:14:11] station 0 axis sun elev -4.28
+[probe riser-lethuris0 branch 08:14:26] still 3000 m settled 5600 ms levels {"maxLevel":14,"frontierMaxLevel":14,"targetLevel":13,"activeLevelHistogram":{"2":7,"3":15,"4":9,"5":14,"6":14,"7":11,"8":14,"9":8,"10":12,"11":18,"12":13,"13":15,"14":4},"activeSetSha":"13f7138f49cb90d1"}
+[probe riser-lethuris0 branch 08:14:26] done

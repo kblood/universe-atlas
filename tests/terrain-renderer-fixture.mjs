@@ -40,8 +40,9 @@ export async function rendererModule({prefix='atlas-terrain-fixture-',rendererSo
 export function maithea(){return system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];}
 
 /** Constructs a renderer whose Worker is replaced by an in-process builder.
- * `hold(data)` may return true to defer a job; `release()` answers them. */
-export function createRenderer(module,body,{hold=()=>false}={}){
+ * `hold(data)` may return true to defer a job; `release()` answers them.
+ * `rendererOptions` is passed as PlanetRendererOptions (absent: the defaults). */
+export function createRenderer(module,body,{hold=()=>false,rendererOptions}={}){
   const {THREE,buildTile,PlanetRenderer}=module;
   const held=[],jobs=[];
   const respond=({data,worker})=>{
@@ -63,7 +64,7 @@ export function createRenderer(module,body,{hold=()=>false}={}){
   };
   const host=new THREE.Mesh(new THREE.SphereGeometry(1,8,8),new THREE.MeshBasicMaterial());
   let renderer;
-  try{renderer=new PlanetRenderer(body,host,body.radiusM,1,1);}
+  try{renderer=rendererOptions===undefined?new PlanetRenderer(body,host,body.radiusM,1,1):new PlanetRenderer(body,host,body.radiusM,1,1,undefined,rendererOptions);}
   finally{THREE.TextureLoader.prototype.load=nativeTextureLoad;}
   return {renderer,host,jobs,held,
     releaseHeld(){for(const job of held.splice(0))respond(job);},

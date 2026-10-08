@@ -1,0 +1,116 @@
+<title>Riser LOD Blind Pairs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: survey-log column; one band per pose, main | branch | rock-off side by side, notch regions boxed in place */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --fg:#17212b; --muted:#5a6876; --line:#d5dde5;
+  --accent:#1f6f8b; --bad:#c2412d; --good:#2f7d4f; --chip:#e7edf2; --onstrong:#ffffff;
+  --display:"Archivo",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10161c;--panel:#18212a;--fg:#e3e9ef;--muted:#93a2b0;--line:#2a3743;--accent:#5fb3cf;--bad:#ef7a63;--good:#6cc58f;--chip:#22303b;--onstrong:#10161c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10161c;--panel:#18212a;--fg:#e3e9ef;--muted:#93a2b0;--line:#2a3743;--accent:#5fb3cf;--bad:#ef7a63;--good:#6cc58f;--chip:#22303b;--onstrong:#10161c;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--body)}
+.wrap{max-width:1500px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:grid;gap:28px}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(1.6rem,3vw,2.3rem);letter-spacing:-.01em}
+h2{font-size:1.15rem}
+p{margin:0;max-width:72ch}
+.lede{display:grid;gap:14px;min-width:0}
+.verdict{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{font-family:var(--mono);font-size:.78rem;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--fg)}
+.pill.pass{background:var(--good);color:var(--onstrong);font-weight:500}
+.pill.bad{background:var(--bad);color:var(--onstrong)}
+.rules{display:grid;gap:6px;margin:0;padding-left:1.3em;max-width:90ch}
+.tablebox{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9rem;min-width:720px}
+th,td{text-align:left;padding:6px 14px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-weight:500;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--mono)}
+.band{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:14px;min-width:0}
+.bandhead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+.bandhead .meta{color:var(--muted);font-family:var(--mono);font-size:.78rem}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.trio.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:820px){.trio,.trio.two{grid-template-columns:minmax(0,1fr)}}
+figure{margin:0;display:grid;gap:6px;min-width:0}
+figcaption{font-family:var(--mono);font-size:.76rem;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px}
+figcaption b{color:var(--fg);font-weight:500}
+.shot{position:relative;display:block;width:100%;aspect-ratio:16/9;max-width:100%;border:0;padding:0;background:#000;cursor:zoom-in;border-radius:3px;overflow:hidden}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.box{position:absolute;border:2px solid #ff5a3c;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.box.maybe{border-style:dashed}
+.notes{color:var(--muted);font-size:.9rem;max-width:110ch}
+.notes b{color:var(--fg);font-weight:600}
+.toggle{display:flex;gap:8px;align-items:center;font-size:.88rem;color:var(--muted)}
+.lb{position:fixed;inset:0;background:rgba(5,8,11,.95);display:grid;place-items:center;z-index:10;padding:12px;overflow:auto}
+.lb-inner{width:min(1920px,100%)}
+.lb-cap{color:#e3e9ef;font-family:var(--mono);font-size:.85rem;margin-bottom:8px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.lb button{font:inherit;background:#22303b;color:#e3e9ef;border:1px solid #3a4a58;border-radius:4px;padding:4px 10px;cursor:pointer}
+.lb button:focus-visible{outline:2px solid #5fb3cf}
+#lbimgwrap{position:relative}
+#lbimgwrap img{width:100%;display:block}
+</style>
+<div class="wrap">
+  <header class="lede">
+    <h1>Riser LOD blind pairs: step 5</h1>
+    <div class="verdict"><span class="pill pass">STEP 5 PASS</span><span class="pill">main 7419733 vs branch mountains/riser-lod (src 2802fca)</span><span class="pill">blind judge: fresh-context Opus</span><span class="pill">key sealed in ec63fe8 before judging</span></div>
+    <p>This sheet shows 10 matched pairs: in each pair the station tile is at the same targetLevel in both arms, and every pair also has an identical active tile set. The judge saw each pair as A/B in random order, plus the rock-off reference. Here the pairs are unblinded. Red boxes mark the notch rows the judge reported; dashed boxes are the ones it was less sure of. The boxes sit at the same pixel coordinates on every image in a band, so you can compare main and branch directly. Click an image to see it at full resolution, and use the arrow keys to switch arms.</p>
+    <ol class="rules">
+      <li>Main has notch rows in 4 stills (c4200, c3000, c2100, c1500). The branch has none in all four; the judge called it clean, not weaker. <b>Pass.</b></li>
+      <li>The branch never has notch rows where main has none. <b>Pass.</b></li>
+      <li>The branch has no new regular structure. Every "only in one image" finding was on main. <b>Pass.</b></li>
+      <li>Ledges at distance: the judge saw no clear difference in any of the 10 pairs, so no pose class is worse. <b>Pass.</b></li>
+    </ol>
+    <p class="notes"><b>LOD note.</b> The Maithea[0] station tile was L12 at every clearance from 4200 to 360 m and in every descent frame (maxLevel 12). <b>L13 never appeared there</b>, so the only matched L13 still is Lethuris[0] c3000. Six descent frames are not paired: the branch replay ran ahead of main's timing, so the two arms were at different clearances. The Maithea rock-off reference rendered at L11, and was still at L11 after a re-settle.</p>
+    <div class="tablebox"><table id="summary"><thead><tr><th>Pose</th><th>Level</th><th>Notch rows</th><th>Ledges at distance</th><th>New structure</th><th>P99 main</th><th>P99 branch</th><th>P99 rock-off</th></tr></thead><tbody></tbody></table></div>
+    <p class="notes">P99 is the notch-row periodicity score on luminance and is for information only; it uses the rock-off arm as the "off" reference. For Maithea that arm is at L11, so the rock-window mask is not level-matched.</p>
+    <label class="toggle"><input type="checkbox" id="boxes" checked> Show the judge's notch boxes</label>
+  </header>
+  <main id="bands" style="display:grid;gap:22px;min-width:0"></main>
+</div>
+<div class="lb" id="lb" hidden><div class="lb-inner"><div class="lb-cap"><span id="lbcap"></span><span><button id="lbprev">Previous arm</button> <button id="lbnext">Next arm</button> <button id="lbclose">Close</button></span></div><div id="lbimgwrap"><img id="lbimg" alt=""></div></div></div>
+<script>
+const ROWS = __ROWS__;
+// Judge regions in 1920x1080 px [x0,x1,y0,y1], reported on the main image (unblinded); 'maybe' = judge less certain.
+const REGIONS = {
+  'Maithea[0] c4200':[[280,470,425,475],[740,1010,495,565],[690,870,580,640],[300,520,670,735],[1330,1430,370,420],[520,650,640,680]],
+  'Maithea[0] c3000':[[640,870,655,715],[30,270,490,545],[250,420,430,470,'maybe']],
+  'Maithea[0] c2100':[[540,900,845,905],[110,300,630,700,'maybe']],
+  'Maithea[0] c1500':[[260,770,880,990]],
+  'Lethuris[0] c3000':[[1400,1465,365,415,'maybe']]
+};
+const mapAB = (s, r) => s.replace(/\b(A|B)\b/g, m => r[m]);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const boxes = key => (REGIONS[key] || []).map(([x0, x1, y0, y1, m]) => `<span class="box${m ? ' maybe' : ''}" style="left:${x0 / 19.2}%;top:${y0 / 10.8}%;width:${(x1 - x0) / 19.2}%;height:${(y1 - y0) / 10.8}%"></span>`).join('');
+const tb = document.querySelector('#summary tbody'), bands = document.getElementById('bands');
+for (const r of ROWS) {
+  const key = `${r.station} ${r.pose}`, v = r.verdict;
+  const notch = v.notchRows === 'neither' ? 'neither' : mapAB(v.notchRows, r) + ' only';
+  const ns = v.newRegularStructure === 'none' ? 'none' : (/^only A/.test(v.newRegularStructure) ? r.A : r.B) + ' only';
+  const fmt = x => r.p99 ? x.toFixed(3) : '-';
+  tb.insertAdjacentHTML('beforeend', `<tr><td>${esc(key)}</td><td class="num">L${r.level}</td><td>${notch === 'main only' ? '<span class="pill bad">main only</span>' : esc(notch)}</td><td>${esc(v.ledgesAtDistance)}</td><td>${esc(ns)}</td><td class="num">${r.p99 ? fmt(r.p99.main) : '-'}</td><td class="num">${r.p99 ? fmt(r.p99.branch) : '-'}</td><td class="num">${r.p99 ? fmt(r.p99.ref) : '-'}</td></tr>`);
+  const arms = [['main', 'main 7419733'], ['branch', 'branch'], ...(r.imgs.ref ? [['ref', `rock-off L${r.refLevel}`]] : [])];
+  const figs = arms.map(([a, lab]) => `<figure><figcaption><b>${lab}</b><span>${a === 'ref' ? 'reference, not judged' : `shown to judge as ${r.A === a ? 'A' : 'B'}`}</span></figcaption><button class="shot" data-key="${esc(key)}" data-arm="${a}" aria-label="${esc(key)} ${lab}, full size"><img loading="lazy" src="${r.imgs[a]}" alt="${esc(key)} ${lab}">${boxes(key)}</button></figure>`).join('');
+  bands.insertAdjacentHTML('beforeend', `<section class="band"><div class="bandhead"><h2>${esc(key)}</h2><span class="meta">station tile L${r.level} · pair ${r.pid} · A=${r.A}, B=${r.B} · judge confidence ${esc(v.confidence)}</span><span class="pill${notch === 'main only' ? ' bad' : ''}">notch rows: ${esc(notch)}</span></div><div class="trio${arms.length === 2 ? ' two' : ''}">${figs}</div><p class="notes"><b>Judge (A/B replaced by arm):</b> ${esc(mapAB(v.notes, r))}${v.notchRegions && v.notchRegions !== 'none' ? ` <b>Regions:</b> ${esc(mapAB(v.notchRegions, r))}` : ''}</p></section>`);
+}
+document.getElementById('boxes').addEventListener('change', e => document.querySelectorAll('.box').forEach(b => { b.hidden = !e.target.checked; }));
+const lb = document.getElementById('lb'), lbimg = document.getElementById('lbimg'), lbwrap = document.getElementById('lbimgwrap');
+let cur = null;
+function show(key, arm) {
+  const r = ROWS.find(x => `${x.station} ${x.pose}` === key), arms = ['main', 'branch', ...(r.imgs.ref ? ['ref'] : [])];
+  cur = {key, arm, arms}; lbimg.src = r.imgs[arm]; lbimg.alt = `${key} ${arm}`;
+  lbwrap.querySelectorAll('.box').forEach(b => b.remove());
+  if (document.getElementById('boxes').checked) lbwrap.insertAdjacentHTML('beforeend', boxes(key));
+  document.getElementById('lbcap').textContent = `${key} · ${arm === 'ref' ? 'rock-off reference' : arm} · station tile L${r.level}`;
+  lb.hidden = false; document.getElementById('lbclose').focus();
+}
+const step = d => { const i = cur.arms.indexOf(cur.arm); show(cur.key, cur.arms[(i + d + cur.arms.length) % cur.arms.length]); };
+bands.addEventListener('click', e => { const b = e.target.closest('.shot'); if (b) show(b.dataset.key, b.dataset.arm); });
+document.getElementById('lbclose').onclick = () => { lb.hidden = true; };
+document.getElementById('lbnext').onclick = () => step(1);
+document.getElementById('lbprev').onclick = () => step(-1);
+lb.addEventListener('click', e => { if (e.target === lb) lb.hidden = true; });
+addEventListener('keydown', e => { if (lb.hidden) return; if (e.key === 'Escape') lb.hidden = true; if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); });
+</script>

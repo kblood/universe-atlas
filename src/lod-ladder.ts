@@ -20,8 +20,10 @@
  */
 // lod-ladder-2 (mountains cost plan T3, docs/mountains-opus-decisions-2026-10-05.md Q2): adds the declared
 // M3 carving reduction (`carvingFromLevel`); every section-5 tolerance is unchanged. Was lod-ladder-1 (P3).
-export const LOD_LADDER_VERSION = 'lod-ladder-3';
-import {ROCK_DETAIL_REDUCTION, ROCK_DETAIL_MAX_EDGE_M, ROCK_DETAIL_BANDS} from './mountain-rock-detail.ts';
+// lod-ladder-4 (docs/mountain-riser-lod-2026-10-07.md): adds the declared M5 riser reduction (`rockRiserWidthM`); the
+// truth and every level outside rockDetailFromLevel .. riserSharpFromLevel - 1 are unchanged. Was lod-ladder-3 (M5 wired).
+export const LOD_LADDER_VERSION = 'lod-ladder-4';
+import {ROCK_DETAIL_REDUCTION, ROCK_DETAIL_MAX_EDGE_M, ROCK_DETAIL_BANDS, MOUNTAIN_ROCK_DETAIL} from './mountain-rock-detail.ts';
 export {ROCK_DETAIL_REDUCTION};
 // A module-load pin prevents a declaration/reduction mismatch, without duplicating constants.
 if (ROCK_DETAIL_REDUCTION.longestWavelengthM !== Math.max(...ROCK_DETAIL_BANDS.map(b => b.wavelengthM)))
@@ -31,6 +33,22 @@ export function rockDetailFromLevel(radiusM: number): number {
 }
 export function rockDetailAtLevel(radiusM: number, lodLevel?: number): boolean {
   return lodLevel === undefined || lodLevel >= rockDetailFromLevel(radiusM);
+}
+/** M5 riser reduction (lod-ladder-4, docs/mountain-riser-lod-2026-10-07.md). A level whose lattice spacing exceeds
+ * RISER_SHARP_MAX_SPACING_M cannot draw the v1 riser (BENCH_FALL x period / slope, 38.8 m at the full-rock slope) with
+ * two cells, so its rock term widens the riser to RISER_WIDTH_CELLS lattice cells (earlier start, same end, never
+ * deeper). The width is the nominal spacing of the level (tile edge / 32): one value per level on every face. */
+export const RISER_REDUCTION = Object.freeze({widthCells: 2,
+  sharpMaxSpacingM: MOUNTAIN_ROCK_DETAIL.BENCH_FALL * MOUNTAIN_ROCK_DETAIL.STRATA_PERIOD_M / (2 * MOUNTAIN_ROCK_DETAIL.SLOPE_FULL_TAN)});
+/** First level that draws the v1 riser sharp (tile edge <= 32 x 19.399 m = 620.767 m; Maithea L14). */
+export function riserSharpFromLevel(radiusM: number): number {
+  return firstLevelAtOrBelowEdge(radiusM, RISER_REDUCTION.sharpMaxSpacingM * ROCK_DETAIL_REDUCTION.latticeSegments);
+}
+/** The riser width (m) the rock term of `lodLevel` uses: 2 x tileEdge / 32 from rockDetailFromLevel up to
+ * riserSharpFromLevel - 1; 0 (the v1 bench, bit-identical) for the truth, for levels without rock and from the sharp level. */
+export function rockRiserWidthM(radiusM: number, lodLevel?: number): number {
+  if (lodLevel === undefined || !rockDetailAtLevel(radiusM, lodLevel) || lodLevel >= riserSharpFromLevel(radiusM)) return 0;
+  return RISER_REDUCTION.widthCells * tileEdgeM(radiusM, lodLevel) / ROCK_DETAIL_REDUCTION.latticeSegments;
 }
 
 export type LadderId = 'S0' | 'S1' | 'S2' | 'S3' | 'S4';

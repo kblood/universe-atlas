@@ -1,0 +1,6 @@
+TILE_BUILD_AB {"world":"Lethuris","level":11,"role":"rock (split on both arms)","tiles":8,"builds":56,"mainMeanMs":52.81,"branchMeanMs":57.85,"mainMedianMs":29.97,"branchMedianMs":34.57,"ratio":0.095,"medianRatio":0.153,"pass":true}
+TILE_BUILD_AB {"world":"Lethuris","level":12,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":28.47,"branchMeanMs":32.75,"mainMedianMs":28.01,"branchMedianMs":32.82,"ratio":0.15,"medianRatio":0.172,"pass":true}
+TILE_BUILD_AB {"world":"Lethuris","level":13,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":27.06,"branchMeanMs":32.5,"mainMedianMs":27.12,"branchMedianMs":32.17,"ratio":0.201,"medianRatio":0.186,"pass":true}
+TILE_BUILD_AB {"world":"Lethuris","level":14,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":10.43,"branchMeanMs":12.24,"mainMedianMs":10.19,"branchMedianMs":12.24,"ratio":0.174,"medianRatio":0.201,"pass":true}
+TILE_BUILD_AB {"world":"Lethuris","level":15,"role":"first sharp (newly split)","tiles":8,"builds":56,"mainMeanMs":10.05,"branchMeanMs":12.4,"mainMedianMs":9.94,"branchMedianMs":12.06,"ratio":0.234,"medianRatio":0.213,"pass":true}
+TILE_BUILD_AB_WORLD {"world":"Lethuris","rockL":11,"sharpL":15,"pass":true,"maxRatio":0.234,"sinkFinite":true}

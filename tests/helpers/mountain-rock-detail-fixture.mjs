@@ -112,7 +112,7 @@ export async function measurePool(seeds){
   // Extra smooth 4 km gradient-noise octave (the frozen round-2 noise helper).
   const noiseCode=oldSource.slice(oldSource.indexOf('function gradient('),oldSource.indexOf('function ribs('));
   const long=await loadVariant(s=>s.replace('const shape = Math.max(0, Math.min(1, C.STRATA_WEIGHT * strata + C.RIB_WEIGHT * gully));','const shape = (strata + 4 * (1 - Math.abs(noise(alongM / 4000, acrossM / 4000, 99, seed)))) / 5;')+'\n'+noiseCode);
-  const reversed=await loadVariant(s=>s.replace('const strata = bench(t);','const strata = (3 * C.STRATA_PERIOD_M * C.BENCH_RISE / (C.MAX_DEPTH_M * C.STRATA_WEIGHT)) * bench(t);'));
+  const reversed=await loadVariant(s=>s.replace('const strata = bench(t, riserWidthM * slopeTan / C.STRATA_PERIOD_M);','const strata = (3 * C.STRATA_PERIOD_M * C.BENCH_RISE / (C.MAX_DEPTH_M * C.STRATA_WEIGHT)) * bench(t, riserWidthM * slopeTan / C.STRATA_PERIOD_M);'));
   actual.R6=finePits(seeds);actual.R7=downhill(seeds);
   const kernel=await loadVariant(s=>s+'\nexport {gullies};');let sum=0,count=0;
   for(const seed of seeds)for(let j=0;j<128;j++)for(let i=0;i<128;i++){sum+=kernel.gullies(offset(seed)+(i-64)*37.5,(j-64)*37.5,-1,0,rock.rockDetailSeed(seed));count++;}

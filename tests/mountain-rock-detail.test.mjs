@@ -110,8 +110,8 @@ test('HARD 7: continuity, shared edges, speckle and level-dependent negatives',a
   const speckle=await loadVariant(speckleEdit);
   const badMax=straddle(speckle.rockDetailM),heldMax=straddle(M.rockDetailM,GATE),heldBadMax=straddle(speckle.rockDetailM,GATE),tuningEdge=edges(M,730501);
   // Source variant incorrectly uses tile spacing instead of fixed 125 m.
-  const level=await loadVariant(s=>s.replace('carvedYM: number, seed: number): number','carvedYM: number, seed: number, step: number = 125): number').replaceAll('/ C.SLOPE_STEP_M','/ step'));
-  let levelMismatch=0;for(let i=0;i<201;i++){const x=i*200-20000,y=7000,h=base(x,y,730901),v=step=>level.rockDetailM(x,y,h,base(x+step,y,730901),base(x,y+step,730901),1,step);levelMismatch+=!Object.is(v(100),v(200));}
+  const level=await loadVariant(s=>s.replace('seed: number, riserWidthM: number = 0): number','seed: number, riserWidthM: number = 0, step: number = 125): number').replaceAll('/ C.SLOPE_STEP_M','/ step'));
+  let levelMismatch=0;for(let i=0;i<201;i++){const x=i*200-20000,y=7000,h=base(x,y,730901),v=step=>level.rockDetailM(x,y,h,base(x+step,y,730901),base(x,y+step,730901),1,0,step);levelMismatch+=!Object.is(v(100),v(200));}
   report.hard.continuity={pairs:6000,wraps,thresholds,L_MAX,max,edge,speckleEdge:edges(speckle),speckleMax:badMax,levelMismatch,tuningEdge,gate:{pairs:6000,max:heldMax,speckleMax:heldBadMax,edge}};
   assert.ok(max<=L_MAX*.01);assert.ok(heldMax<=L_MAX*.01);assert.ok(heldBadMax>L_MAX*.01);assert.equal(tuningEdge.mismatch,0);assert.equal(edge.mismatch,0);assert.ok(badMax>L_MAX*.01);assert.ok(levelMismatch>0);
 });
