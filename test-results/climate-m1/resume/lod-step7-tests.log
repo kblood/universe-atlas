@@ -1,0 +1,342 @@
+✖ Maithea: cost optimisation preserves every coarse/switch tile buffer (136.4777ms)
+✖ Selawyn: cost optimisation preserves every coarse/switch tile buffer (176.4246ms)
+✖ Raiva: cost optimisation preserves every coarse/switch tile buffer (64.1749ms)
+✖ Lethuris: cost optimisation preserves every coarse/switch tile buffer (111.5548ms)
+✖ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1087.7758ms)
+✖ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (928.1453ms)
+✖ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1043.5461ms)
+✖ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (595.7323ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (0.4467ms)
+✔ wired (T6): on by default, the level changes nothing without mountains, carving state per level (2.4336ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (295.0661ms)
+✔ Maithea: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2705.229ms)
+ℹ filtered-level points above the truth: 41
+✔ Selawyn: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2641.5511ms)
+ℹ filtered-level points above the truth: 30
+✔ Raiva: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2725.4791ms)
+ℹ filtered-level points above the truth: 5
+✔ Lethuris: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2678.6419ms)
+ℹ filtered-level points above the truth: 60
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1738.4456ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0072 m, seam 0.0054 m; mutant 901.7 / 138.7 m; mean step at the cut -177.7 m (min -1028.2 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1618.2961ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0041 m, seam 0.0038 m; mutant 140.5 / 3.9 m; mean step at the cut -13.7 m (min -208.9 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1686.8128ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0047 m, seam 0.0034 m; mutant 1597.1 / 1350.1 m; mean step at the cut -507.0 m (min -1612.3 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1227.0726ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0050 m; mutant 1325.5 / 113.4 m; mean step at the cut -104.4 m (min -1286.8 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1807.241ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0058 m, seam 0.0052 m; mutant 469.5 / 250.8 m; mean step at the cut -100.5 m (min -554.9 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1504.9903ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0053 m, seam 0.0045 m; mutant 1034.2 / 15.8 m; mean step at the cut -249.0 m (min -1101.3 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1819.281ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0062 m, seam 0.0050 m; mutant 1908.9 / 506.0 m; mean step at the cut -477.8 m (min -1970.9 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1229.1052ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0048 m, seam 0.0031 m; mutant 1936.3 / 26.1 m; mean step at the cut -388.5 m (min -1936.3 m)
+✔ ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance policy (1.2563ms)
+✖ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (2012.4525ms)
+✖ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (1368.6635ms)
+✖ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (8205.9839ms)
+✔ coarse heights are a declared reduction: point sample plus a bounded non-negative correction (146.0721ms)
+✔ morph: a child starts exactly on its corrected parent at every co-located node (119.8973ms)
+✔ determinism: bit-identical rebuilds, independent of visit order and of process (889.3392ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":300,"area":31998.375,"density":9.375476098395621}
+✖ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (232.3896ms)
+✖ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (55.7872ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (76.1692ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (level 0) (115.8397ms)
+﹣ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (carved truth) (0.0889ms) # test:full only (T6 decision 3): ~400 in-massif truth samples with M3 block solves
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.3168ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (312.9486ms)
+✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2, M3 and M5 (0.8496ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (5281.9932ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 25
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 28016.3862
+
+✖ failing tests:
+
+test at tests\lod-carving-reduction.test.mjs:80:52
+✖ Maithea: cost optimisation preserves every coarse/switch tile buffer (136.4777ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'f9a05355ea77048c17d088ff9f75a4528097ee8456023811da64722e7313b4ae'
+  - '6c4bf8046e49e179c0d4c7e9ab8223963d1645eadd15babdaaf18faaf8714b1d'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:83:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'f9a05355ea77048c17d088ff9f75a4528097ee8456023811da64722e7313b4ae',
+    expected: '6c4bf8046e49e179c0d4c7e9ab8223963d1645eadd15babdaaf18faaf8714b1d',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:80:52
+✖ Selawyn: cost optimisation preserves every coarse/switch tile buffer (176.4246ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '4ea1a7fee7c8c4e8f2f2e8570c970c480f783edb5d5da3b1165538e40259764d'
+  - 'c455f00ad1539773f2a855253c467cec2de9a8c2c681f22747dcc9595b45728f'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:83:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '4ea1a7fee7c8c4e8f2f2e8570c970c480f783edb5d5da3b1165538e40259764d',
+    expected: 'c455f00ad1539773f2a855253c467cec2de9a8c2c681f22747dcc9595b45728f',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:80:52
+✖ Raiva: cost optimisation preserves every coarse/switch tile buffer (64.1749ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '88490857dbbdefc8a3874474dea55bede2af67f7a640609580a1ea6af1436053'
+  - 'b6c55c60a34a26ab1dfe241ecc9b5078b2a1cd712e0344e57bea96186b8e2ac6'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:83:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '88490857dbbdefc8a3874474dea55bede2af67f7a640609580a1ea6af1436053',
+    expected: 'b6c55c60a34a26ab1dfe241ecc9b5078b2a1cd712e0344e57bea96186b8e2ac6',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:80:52
+✖ Lethuris: cost optimisation preserves every coarse/switch tile buffer (111.5548ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '3c9a96a5489ab03316c3e20e263bcaee16f9a437ac336d40ebce7d84c8e358dd'
+  - 'acf6482bbfe06f80880de8482b1b2f6308dfa7fc89918a29da3bb1d5ce5e1a48'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:83:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '3c9a96a5489ab03316c3e20e263bcaee16f9a437ac336d40ebce7d84c8e358dd',
+    expected: 'acf6482bbfe06f80880de8482b1b2f6308dfa7fc89918a29da3bb1d5ce5e1a48',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:90:52
+✖ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1087.7758ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + 'b62e5cbe7bf73587e648b628e88f428acedb12d6497ae575695e3c8ca5b870e7'
+  - '0bd5ce54678c1c673630692171cfd0af7f0d61cebb061e9e47f2208fdb1ef6e6'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:99:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'b62e5cbe7bf73587e648b628e88f428acedb12d6497ae575695e3c8ca5b870e7',
+    expected: '0bd5ce54678c1c673630692171cfd0af7f0d61cebb061e9e47f2208fdb1ef6e6',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:90:52
+✖ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (928.1453ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + '62e9174778cc8ce93558c1f2a264ceec0de7cafef1d821e4dee6cfd3a284b8e1'
+  - '6339283780c086b140bb55641077547f02cbdb5c89794136bedaba73caafe278'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:99:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '62e9174778cc8ce93558c1f2a264ceec0de7cafef1d821e4dee6cfd3a284b8e1',
+    expected: '6339283780c086b140bb55641077547f02cbdb5c89794136bedaba73caafe278',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:90:52
+✖ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1043.5461ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + '76fa5ffd77cae11b827e7ca3a7e11d27c9d62b6ed9dfcfc7eddb748542ed0a32'
+  - '86503962720206916eb486c9766d4b0c21a0a03ca9a1ca1a9f8778a658b1c26c'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:99:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '76fa5ffd77cae11b827e7ca3a7e11d27c9d62b6ed9dfcfc7eddb748542ed0a32',
+    expected: '86503962720206916eb486c9766d4b0c21a0a03ca9a1ca1a9f8778a658b1c26c',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:90:52
+✖ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (595.7323ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + 'f52807fc78b1f19ca4a490250aa1541f93d1162c4fb2e670beab456e6053810f'
+  - '16773c77632727157c8092524dba195badb10e6b39d1f5ef9c4142de75808579'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-carving-reduction.test.mjs:99:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'f52807fc78b1f19ca4a490250aa1541f93d1162c4fb2e670beab456e6053810f',
+    expected: '16773c77632727157c8092524dba195badb10e6b39d1f5ef9c4142de75808579',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-consistency.test.mjs:95:42
+✖ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (2012.4525ms)
+  AssertionError [ERR_ASSERTION]: Maithea L6->7: RGB p99 43.01
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-consistency.test.mjs:109:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lod-consistency.test.mjs:95:42
+✖ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (1368.6635ms)
+  AssertionError [ERR_ASSERTION]: Lethuris L6->7: RGB p99 58.06
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-consistency.test.mjs:109:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lod-consistency.test.mjs:115:1
+✖ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (8205.9839ms)
+  AssertionError [ERR_ASSERTION]: L6 snow kept 95.3%
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-consistency.test.mjs:125:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\terrain-mountains-assembly.test.mjs:38:3
+✖ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (232.3896ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'd6ed25648c5a529ed0992dc619ab0868a517425a4e1eba0fe4471d9122d99c13'
+  - 'e04aa67d90a7950f4924c468d03b78c00c23bb762614f28184de239c913940ea'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/terrain-mountains-assembly.test.mjs:42:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'd6ed25648c5a529ed0992dc619ab0868a517425a4e1eba0fe4471d9122d99c13',
+    expected: 'e04aa67d90a7950f4924c468d03b78c00c23bb762614f28184de239c913940ea',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\terrain-mountains-assembly.test.mjs:38:3
+✖ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (55.7872ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'a87f266410a86b33af75524525b9bf8218db4233ac4dbe542ed42aa33bafea7b'
+  - '35a334d2c174dd99fecd3848c48b3779c2e4dd5154d6b596cd728acd70c8f4b0'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/terrain-mountains-assembly.test.mjs:42:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'a87f266410a86b33af75524525b9bf8218db4233ac4dbe542ed42aa33bafea7b',
+    expected: '35a334d2c174dd99fecd3848c48b3779c2e4dd5154d6b596cd728acd70c8f4b0',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

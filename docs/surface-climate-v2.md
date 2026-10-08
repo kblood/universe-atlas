@@ -13,7 +13,9 @@ Package R5-ATLAS-CLIMATE-M1, branch `climate/m1`. Plan: `docs/biome-climate-incr
 
 Steps 1-7 were implemented and passed their own acceptance; nothing was retuned to keep the site or the ceilings.
 The package was then resumed under the six decisions in section 2a (climate-m1-decision, 2026-10-08), which settle
-both STOPs without changing the physics.
+both STOPs without changing the physics. Resume state: steps 1-6 done (SITE_A moved, section 6; Earth forest 46.8 %,
+section 4); **step 7 STOPPED**: lod-consistency fails 20 rows at L6, L8 and L10 (snow, forest, name and colour),
+not only the L6 colour rows decision 2 allowed re-pinning (section 6b). Steps 8-11 were not run.
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -191,7 +193,7 @@ closest candidate, not the most robust one. Decision 3 keeps this choice: the 0.
 | Earth reference forest > 0.5 (h = 0, 60k directions; decision 5, pre-registered in c05ec06) | 25-55 % | - | 46.8 % | pass |
 | SITE_A, original SITE_RULE (moisture, height, forest, rings) | pass | pass (effM 0.750) | old site fails (effM 0.380, no forest); **new site passes** (effM 0.644, ring forest 1.0) | pass after move (section 6) |
 | SITE_A, decision-1 clauses: {4,5,6} live and at +-1 K, 5/10 km rings, ground look 0 | pass | fail (class 6, margin 0.549 K) | old fails (class 5, 0.497 K); **new passes** (class 4, margin 6.64 K) | pass after move (section 6) |
-| lod-consistency L6 ceilings (Maithea / Lethuris rgbP99 26.3 / 39.2; snow kept >= 98 %) | within | pass (within both ceilings) | 43.01 / 58.06; snow kept 95.3 % | **STOP** |
+| lod-consistency rows (all levels; decision-2 conditions) | within | pass (every row) | 20 rows fail (L6, L8, L10); snow kept 95.26 % | **STOP** (section 6b, resume step 7) |
 
 Negative tests, each kept in the suite:
 
@@ -290,7 +292,7 @@ Users of SITE_A that move with it (they import the constant): `tests/life-scenar
 `tests/forest-frame-fixture.mjs`, `tests/desktop-perf.browser.mjs`, `tests/rock-acceptance.browser.mjs`,
 `scripts/render-probe.browser.mjs`, `scripts/climate-calibration-report.mjs`.
 
-## 6b. lod-consistency: STOP (LOD ceiling exceeded)
+## 6b. lod-consistency: STOP (LOD ceiling exceeded), and STOP again at resume step 7
 
 `tests/lod-consistency.test.mjs` is owned by the mountains/riser-lod agent and was not edited. It passes on main
 7419733 and fails on this branch (`test-results/climate-m1/after/lod-consistency.log`):
@@ -321,26 +323,80 @@ The fix belongs to the LOD owner, not to the climate physics. Options:
 - carry the snow line across levels, as the coarse retention already does for peaks;
 - widen only the visual snow blend.
 
+### Resume step 7: decision-2 gate not met (STOP)
+
+Decision 2 allowed re-pinning only the L6 RGB p99 rows of Maithea and Lethuris, and only if the L8-and-finer rows pass
+unchanged and the snow, forest and name disagreement rows pass their existing limits. Measured with
+`test-results/climate-m1/resume/lod-measure.mjs`, which evaluates every row the test asserts (the test itself stops
+at the first failing assertion per body, which is why d134a87 reported only three numbers):
+
+| Body, pair | Row | climate/m1 (resume tip) | Limit in the test | main 290472d (climate 1.1) |
+|---|---|---|---|---|
+| Maithea L6 | rgbP99 | 43.013 | 26.3 | 15.183 |
+| Maithea L6 | snow % | 1.478 | 1.3 | 1.249 |
+| Maithea L6 | forest % | 1.848 | 0.5 (plan) | 0.420 |
+| Maithea L6 | name % | 3.988 | 3.2 | 3.160 |
+| Maithea L6 | carriedName % | 4.383 | 3.5 | 3.491 |
+| Maithea L8 | rgbP99 | 5.750 | 4 (plan) | 2.258 |
+| Maithea L8 | forest % | 0.694 | 0.5 (plan) | 0.014 |
+| Maithea L8 | name % | 1.264 | 0.8 | 0.764 |
+| Maithea L8 | carriedName % | 1.333 | 1.2 | 1.167 |
+| Lethuris L6 | rgbP99 | 58.058 | 39.2 | 20.540 |
+| Lethuris L6 | forest % | 3.327 | 1.8 | 1.764 |
+| Lethuris L8 | rgbP99 | 15.212 | 11.1 | 5.244 |
+| Lethuris L8 | snow % | 1.042 | 1.0 | 0.958 |
+| Lethuris L8 | forest % | 2.472 | 2.2 | 2.167 |
+| Lethuris L8 | name % | 2.458 | 1.9 | 1.847 |
+| Lethuris L8 | carriedName % | 2.958 | 1.7 | 1.653 |
+| Lethuris L10 | rgbP99 | 1.276 | 1 (plan) | 0.433 |
+| Lethuris L10 | forest % | 0.861 | 0.7 | 0.639 |
+| Lethuris L10 | name % | 0.944 | 0.5 (plan) | 0.431 |
+| Lethuris L10 | carriedName % | 0.917 | 0.5 (plan) | 0.250 |
+| Maithea L6 retention | snow kept % | 95.261 | >= 98 | 99.037 |
+
+Every other row passes (heights, ocean, L12 and L14, Maithea L10, forest retention 98.37 %, peak and summit rows).
+
+- Main 290472d passes every row; the pre-merge tip d134a87 gives exactly the same failing rows and values as the
+  resume tip, so the riser-lod merge changes none of them: all 20 rows are climate-caused.
+- Against the decision-2 conditions: the RGB p99 values are within the 5 % allowance (43.01 / 58.06; would round
+  up to 43.1 / 58.1), but 13 rows at L8 and L10 fail, and 5 snow, forest or name rows at L6 fail their existing
+  limits. That is the decision's "Otherwise STOP". Nothing in `tests/lod-consistency.test.mjs` was re-pinned.
+- The forest and name rows also move, so the change is not only the snowline: decision 2's premise ("only the L6
+  RGB rows fail") does not hold. The likely cause is that surface-climate-2 also moves forest edges (heat cap, PET
+  moisture, the calibrated dry band); this was not bisected per step in the resume.
+- Because the gate failed, the granted moved-pin re-pins were not applied either:
+  `lod-carving-reduction:83,99` (the 8 tile-buffer and sampler-output digests; the brief cited :69,79) and
+  `terrain-mountains-assembly` HARD outsideBelt (granted) and HARD outsideMassif (not granted; fails too).
+  Log: `test-results/climate-m1/resume/lod-step7-tests.log` (25 pass, 13 fail).
+
+Evidence: `test-results/climate-m1/resume/lod-measure.json` (resume tip), `lod-measure-main-290472d.json`,
+`lod-measure-d134a87.json`.
+
 ## 7. Ledger: moved pins in files this package does not own
 
-Source: the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot with 4 tokens.
-Result: 691 pass, 17 fail, 11 skipped. Log: `after/test-affected.log`.
+First pass (d134a87): the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot
+with 4 tokens, gave 691 pass, 17 fail, 11 skipped (`after/test-affected.log`). The resume stopped at step 7, so the
+real `npm run test:affected` and `test:full` (resume step 8) were **not** run; the rows below are updated from the
+resume's targeted runs.
 
-| File (owner) | Failure | Kind |
-|---|---|---|
-| `tests/acceptance/version-compat.test.mjs:335` | climate version 'surface-climate-1.1-geo-g' pinned | moved pin (version string) |
-| `tests/eco-identity-site.test.mjs:32` | SITE_A ground look [0, 0.217, 0, 0], expected all zeros | consequence of the SITE_A STOP (site now class 5, arid) |
-| `tests/eco-identity-site.test.mjs:54` | 60 km ring classes | pre-existing OPEN item (BIOME2-REPLAN); classes moved {6,7,11} -> {5,8,11} |
-| `tests/harness-sites.test.mjs:18,35` (owned) | no forest at SITE_A; search finds no site | **STOP** (section 6), left failing on purpose |
-| `tests/lod-carving-reduction.test.mjs:69,79` (mountains) | tile-buffer and sampler-output digests, 4 worlds | moved pins (the digests include climate colour) |
-| `tests/lod-consistency.test.mjs:95,115` (mountains) | L6 ceilings | **STOP** (section 6b) |
-| `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated to climate |
-| `tests/terrain-mountains-assembly.test.mjs:38` | outsideBelt bit-identity to main (heights, ocean, colour) | moved pin (colour comes from the climate) |
+| File (owner) | Failure | Kind | Resume state |
+|---|---|---|---|
+| `tests/acceptance/version-compat.test.mjs:335` | climate version 'surface-climate-1.1-geo-g' pinned | moved pin (version string) | coordinator |
+| `tests/eco-identity-site.test.mjs:32,45-46` | SITE_A class, ground look and rings | consequence of the SITE_A STOP | **passes** after the SITE_A move (section 6) |
+| `tests/eco-identity-site.test.mjs:54` | 60 km ring classes | pre-existing OPEN item (BIOME2-REPLAN), `todo` | stays `todo` (decision 6); ring now {2:5, 4:26, 6:4, 8:29} |
+| `tests/harness-sites.test.mjs` (owned) | no forest at SITE_A; search finds no site | first-pass STOP | **passes** (6/6) after the move |
+| `tests/terrain-climate-colour.test.mjs` fell colour (owned) | no snow-free fell column | decision 4 | `todo` with the finding; PDD invariant added and passing |
+| `tests/lod-carving-reduction.test.mjs:83,99` (mountains; first pass cited :69,79) | 8 tile-buffer and sampler-output digests, 4 worlds | moved pins (digests include climate colour) | **not re-pinned** (step-7 STOP) |
+| `tests/lod-consistency.test.mjs` (mountains) | 20 rows at L6, L8, L10 plus L6 snow retention | **STOP** (section 6b) | **not re-pinned** (step-7 STOP) |
+| `tests/terrain-mountains-assembly.test.mjs` HARD outsideBelt (:38) and HARD outsideMassif | bit-identity to main (heights, ocean, colour) | moved pins (colour comes from the climate) | **not re-pinned**; outsideMassif is not in decision 2's grant |
+| `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated | not blocking (decision 6) |
 
 Not run in this package (test:full or coordinator-owned): the `tests/golden/golden.json` sections climate, biomes,
-census, placeQuery and terrain.
+census, placeQuery and terrain. TERRAIN_VERSION bump: coordinator.
 
-`scripts/climate-calibration-report.mjs` reads the removed `T_SNOW_K` / `SNOW_RAMP_K` and needs an owner edit.
+`scripts/climate-calibration-report.mjs` (granted by decision 6) is fixed in resume step 6: its snowlines are now found
+on the live PDD snow field by bisection (onset snowFraction > 0, heavy > 0.6), not on the removed `T_SNOW_K` /
+`SNOW_RAMP_K` isotherms.
 
 ## 8. Deferred (no timing measured in this package)
 
@@ -348,4 +404,5 @@ census, placeQuery and terrain.
 - Interleaved A/B cost ratios against surface-climate-1.1
 - Cold build of `climateForcingFor` (now adds two 513-row `detExp` tables per forcing)
 
-`surface-climate.bench.mjs` was not run.
+`surface-climate.bench.mjs` was not run. Decision 6 makes this a blocking merge gate (hot path of every land sample);
+the coordinator schedules it in a quiet window.
