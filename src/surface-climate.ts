@@ -62,6 +62,7 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   LAPSE_MOIST_FACTOR:0.6652, CP_J_PER_KG_K:1004, LAPSE_MIN_K_PER_M:0.001, LAPSE_MAX_K_PER_M:0.0098,
   DATUM_M:0,
   PDD_CRIT:250, PDD_RAMP:100, YEAR_D:365.25,
+  WARM_COL_REF_K:288, WARM_COL_PER_K:0.005, WARM_COL_MIN:0.8, WARM_COL_MAX:1.1,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
   BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03, BELT_MOISTURE:0.0425,
@@ -170,6 +171,20 @@ export function degreeDaysAbove(annualK:number,halfK:number,thresholdC:number):n
  */
 export function temperateHabitat(body:Body):boolean {
   return body.water>0&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Ice world'&&body.type!=='Volcanic world';
+}
+
+/**
+ * surface-climate-2 step 2, warm-column lapse correction (a calibration choice,
+ * docs/surface-climate-v2.md): the lapse rate applied above the datum is
+ * lapse*f(T0), f = clamp(1 - WARM_COL_PER_K*(T0 - WARM_COL_REF_K), 0.8, 1.1),
+ * T0 the datum annual mean of the sample's latitude. Warm (moist, tropical)
+ * columns cool more slowly with height than the planet's mean lapse rate, cold
+ * columns faster. Without it the Earth equatorial snow line is 4302 m, below
+ * the 4450 m floor.
+ */
+export function warmColumnLapseFactor(datumAnnualK:number):number {
+  const f=1-C.WARM_COL_PER_K*(datumAnnualK-C.WARM_COL_REF_K);
+  return f<C.WARM_COL_MIN?C.WARM_COL_MIN:f>C.WARM_COL_MAX?C.WARM_COL_MAX:f;
 }
 
 /** Surface gravity from the catalogue body, g = G*M/R^2 (m/s^2). */
@@ -335,7 +350,11 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     const q=qMean[i]!+(qMean[i+1]!-qMean[i]!)*t;
     const qa=qAmp[i]!+(qAmp[i+1]!-qAmp[i]!)*t;
     const above=heightM-C.DATUM_M;
-    const annual=anchor+C.K_LAT_K*(q-1)-lapse*(above>0?above:0);
+    const datumAnnual=anchor+C.K_LAT_K*(q-1);
+    // Step 2: warm-column lapse (warmColumnLapseFactor, inlined).
+    let fac=1-C.WARM_COL_PER_K*(datumAnnual-C.WARM_COL_REF_K);
+    if(fac<C.WARM_COL_MIN)fac=C.WARM_COL_MIN;else if(fac>C.WARM_COL_MAX)fac=C.WARM_COL_MAX;
+    const annual=datumAnnual-lapse*fac*(above>0?above:0);
     const half=C.SEASON_K*qa*maritime;
     // Exactly the legacy classifier's moisture expression (surface-biomes.ts).
     const moisture=noise(d[0]*5+13,d[1]*5+37,d[2]*5+19,seed);
@@ -377,5 +396,6 @@ export function decodeClimateCode(code:number):{deltaTempK:number;moisture:numbe
 export function isothermHeightM(forcing:ClimateForcing,x:number,thresholdK:number):number {
   const out=createClimateSample();
   surfaceClimate(forcing)([0,x,0],C.DATUM_M,out);
-  return C.DATUM_M+(out.annualMeanTempK-thresholdK)/forcing.lapseKPerM;
+  // surface-climate-2: the column's effective lapse includes the warm-column factor.
+  return C.DATUM_M+(out.annualMeanTempK-thresholdK)/(forcing.lapseKPerM*warmColumnLapseFactor(out.annualMeanTempK));
 }

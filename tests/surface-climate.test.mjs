@@ -13,7 +13,7 @@ import {
   CLIMATE_VERSION,CLIMATE_CALIBRATION,TABLE_ROWS,temperateHabitat,surfaceGravityMS2,lapseRateForGravity,
   effectiveObliquityRad,insolationTables,climateForcingFromParams,climateForcingFor,clearClimateForcingCache,
   climateForcingCacheSize,surfaceClimate,createClimateSample,decodeClimateCode,isothermHeightM,
-  KERNEL_STEPS,pddKernelH,pddKernelG,degreeDaysAbove,
+  KERNEL_STEPS,pddKernelH,pddKernelG,degreeDaysAbove,warmColumnLapseFactor,
 } from '../src/surface-climate.ts';
 import {planetGeophysics} from '../src/planet-geophysics.ts';
 
@@ -39,7 +39,7 @@ test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump
   assert.equal(CLIMATE_VERSION,'surface-climate-2');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
-  assert.equal(sha,'edee4b926858485a05a7f3e6f8ef56621612f8916765ae8b2bcebfbcbef0946d',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+  assert.equal(sha,'ee49652a50d425d09ba19f4444de7e0e256abfda58f5e04cea0690f9f4ea2959',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
 });
 
 test('PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year',()=>{
@@ -147,8 +147,10 @@ test('Earth reference forcing (288 K, 23.44 deg, water 0.7, 6.5 K/km) has the ri
   // equilibrium-line bands of tests/climate-earth-reference.test.mjs.
   const e=climateForcingFromParams({anchorTempK:288,obliquityRad:23.44*D,water:.7,lapseKPerM:.0065});
   const s=surfaceClimate(e),o=createClimateSample();
-  // isothermHeightM still reports the annual-mean isotherm of the datum column.
-  s([1,0,0],0,o);assert.ok(Math.abs(isothermHeightM(e,0,273.15)-(o.annualMeanTempK-273.15)/.0065)<1e-6);
+  // isothermHeightM reports the annual-mean isotherm of the datum column, warm-column lapse included.
+  s([1,0,0],0,o);const T0=o.annualMeanTempK,iso=isothermHeightM(e,0,273.15);
+  assert.ok(Math.abs(iso-(T0-273.15)/(.0065*warmColumnLapseFactor(T0)))<1e-6);
+  s([1,0,0],iso,o);assert.ok(Math.abs(o.annualMeanTempK-273.15)<1e-9,'the column is at the threshold there');
   // Area-weighted mean of the datum temperature equals the anchor (sin-lat uniform = area uniform).
   let sum=0;const n=20000;for(let i=0;i<n;i++){const x=(i+.5)/n;s([Math.sqrt(1-x*x),x,0],0,o);sum+=o.annualMeanTempK;}
   assert.ok(Math.abs(sum/n-288)<=.5,`area mean ${sum/n}`);

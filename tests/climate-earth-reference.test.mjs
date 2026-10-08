@@ -9,7 +9,7 @@
 // 1200-1700 m, 70 deg 550-1000 m, 78 deg 250-650 m.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {climateForcingFromParams,surfaceClimate,createClimateSample} from '../src/surface-climate.ts';
+import {climateForcingFromParams,surfaceClimate,createClimateSample,degreeDaysAbove,warmColumnLapseFactor,CLIMATE_CALIBRATION as C} from '../src/surface-climate.ts';
 
 const D=Math.PI/180;
 export const EARTH={anchorTempK:288,obliquityRad:23.44*D,water:.7,surfaceGravityMS2:9.81,moistureSeed:1};
@@ -33,7 +33,8 @@ const liveLabel=(lat,h)=>climate(at(lat),h,o).snowFraction>.6;
 test('Earth reference: the PDD snow line (label) lies in every Earth ELA band',t=>{
   const rows=Object.keys(ELA_BANDS).map(Number).map(lat=>({lat,elaM:elaM(liveLabel,lat)}));
   t.diagnostic(JSON.stringify(rows));
-  for(const {lat,elaM:h} of rows)if(lat!==0)assert.ok(inBand(lat,h),`lat ${lat}: ELA ${h} m outside ${ELA_BANDS[lat]}`);
+  // Plan v2 prototype M1 (label): 4608 / 3003 / 1505 / 719 / 426 m.
+  for(const {lat,elaM:h} of rows)assert.ok(inBand(lat,h),`lat ${lat}: ELA ${h} m outside ${ELA_BANDS[lat]}`);
   // The label is monotone in height at every tested latitude (no snow below the ELA).
   for(const {lat,elaM:h} of rows)for(let z=0;z<h;z+=97)assert.equal(liveLabel(lat,z),false,`lat ${lat} h ${z}`);
 });
@@ -46,4 +47,19 @@ test('negative: the shipped annual-mean rule (surface-climate-1, T_SNOW 268 K, r
   // Plan v2 measuredBaseline: 810 m label / 256 m onset.
   assert.ok(Math.abs(label-810)<=2&&Math.abs(onset-256)<=2,`shipped rule ${label} / ${onset} m`);
   assert.ok(!inBand(60,label)&&!inBand(60,onset),'the annual-mean rule must fail the 60 deg band');
+});
+
+test('warm-column lapse: the factor, its clamps, and why it is mandatory (equator without it < 4450 m)',()=>{
+  assert.equal(warmColumnLapseFactor(288),1);
+  assert.ok(Math.abs(warmColumnLapseFactor(308)-.9)<1e-12&&Math.abs(warmColumnLapseFactor(268)-1.1)<1e-12);
+  assert.equal(warmColumnLapseFactor(400),C.WARM_COL_MIN);assert.equal(warmColumnLapseFactor(150),C.WARM_COL_MAX);
+  // The live column: annual(h) = annual(0) - lapse*f(annual(0))*h, half unchanged with height.
+  climate(at(0),0,o);const T0=o.annualMeanTempK,half=o.seasonalHalfRangeK;
+  climate(at(0),3000,o);assert.ok(Math.abs(o.annualMeanTempK-(T0-forcing.lapseKPerM*warmColumnLapseFactor(T0)*3000))<1e-9);
+  // Negative: the same PDD rule with the plain lapse (factor 1) puts the equatorial label at 4302 m (plan v2 R8).
+  const plain=(lat,h)=>{climate(at(lat),0,o);return degreeDaysAbove(o.annualMeanTempK-forcing.lapseKPerM*h,o.seasonalHalfRangeK,0)<C.PDD_CRIT-.6*C.PDD_RAMP;};
+  const eq=elaM(plain,0);
+  assert.ok(Math.abs(eq-4302)<=2,`no warm column: ${eq} m`);
+  assert.ok(!inBand(0,eq),'without the warm-column factor the equator fails the >= 4450 m band');
+  assert.ok(half>0);
 });
