@@ -39,7 +39,7 @@ test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump
   assert.equal(CLIMATE_VERSION,'surface-climate-2');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
-  assert.equal(sha,'07c0a7c57bf041d78eb3c542e775a35b660c0b0a105fa59034dd75bdbaaea00a',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+  assert.equal(sha,'b59197c5d99e1fcde2112ab655a16dd4062b2e64de3a3ad1c9579426c19a7008',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
 });
 
 test('PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year',()=>{
@@ -181,6 +181,24 @@ test('warmest-month ceiling: saturating, symmetric, annual mean unchanged (surfa
     capped+=o.annualMeanTempK+halfRaw>Cc.TW_CEILING_K;
   }
   assert.ok(capped>5000,`the ceiling binds on this world (${capped}/20000)`);
+});
+
+test('heat cap: no forest where the warmest month reaches 316 K or the annual mean 320 K (step 4)',()=>{
+  const Cc=CLIMATE_CALIBRATION,smooth=(x,lo,hi)=>{const t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t);};
+  let hot=0,mid=0,cool=0;
+  for(const anchor of [290,300,310,320]){
+    const f=climateForcingFromParams({anchorTempK:anchor,obliquityRad:(anchor-280)*1.5*D,water:.6,moistureSeed:anchor}),s=surfaceClimate(f),o=createClimateSample();
+    for(let i=0;i<20000;i++){
+      s(fib(i,20000),(i*7919)%2500,o);
+      const heat=o.annualMeanTempK>=Cc.HEAT_ANNUAL_MAX_K?0:1-smooth(o.warmestMonthK,Cc.HEAT_LO_K,Cc.HEAT_HI_K);
+      const noHeat=o.treeline01*Math.max(0,Math.min(1,(o.effectiveMoisture-Cc.FOREST_MOIST_LO)/Cc.FOREST_MOIST_RAMP))*Math.max(0,Math.min(1,1-o.snowFraction/.2));
+      assert.equal(o.forestSuitability01,noHeat*heat);
+      if(o.warmestMonthK>=316){assert.equal(o.forestSuitability01,0,`Tw ${o.warmestMonthK}`);hot++;}
+      else if(o.warmestMonthK>305){mid+=o.forestSuitability01>0;}
+      else cool+=o.forestSuitability01>0;
+    }
+  }
+  assert.ok(hot>1000&&mid>100&&cool>1000,`non-vacuous: hot ${hot}, ramp with forest ${mid}, cool with forest ${cool}`);
 });
 
 test('per-planet lapse rate from surface gravity (owner amendment 1)',()=>{

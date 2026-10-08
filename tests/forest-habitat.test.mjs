@@ -107,7 +107,9 @@ test('legacy slope behavior stays explicit, including the unsampled tangent axis
   const r=6000000,classify=(fs=1)=>()=>({forestPotential:fs>0,forestSuitability01:fs,climateCode:181});
   const cell={id:'synthetic',direction:[0,0,1],roll:.1,heightM:15,yaw:0,distanceM:0};
   const plane=(axis,slope)=>(d)=>({groundHeightM:200+d[axis]*r*slope,wet:false});
-  assert.equal(TREE_HABITAT_VERSION,'tree-habitat-2-climate');
+  // tree-habitat-3-heat (surface-climate-2 M1, old tree-habitat-2-climate): the presence expression is
+  // unchanged; the surface-climate-2 heat cap moves the forestSuitability01 it reads.
+  assert.equal(TREE_HABITAT_VERSION,'tree-habitat-3-heat');
   assert.equal(TREE_FULL_COVER,.76);
   assert.equal(forestHabitat(plane(0,0),classify(),r)(cell).present,true);
   assert.equal(forestHabitat(plane(0,0),classify(),r)(cell).climateCode,181);

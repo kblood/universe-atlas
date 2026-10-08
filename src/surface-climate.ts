@@ -64,6 +64,7 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   PDD_CRIT:250, PDD_RAMP:100, YEAR_D:365.25,
   WARM_COL_REF_K:288, WARM_COL_PER_K:0.005, WARM_COL_MIN:0.8, WARM_COL_MAX:1.1,
   TW_CEILING_K:320, TW_CEILING_SCALE_K:40,
+  HEAT_LO_K:305, HEAT_HI_K:316, HEAT_ANNUAL_MAX_K:320,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
   BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03, BELT_MOISTURE:0.0425,
@@ -396,7 +397,10 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;
     out.aridity01=clamp01((0.5-eff)*4);
     out.pdd=pdd0;out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
-    out.forestSuitability01=habitat?treeline*clamp01((eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP)*clamp01(1-snow/0.2):0;
+    // Step 4: heat cap. Forest fades out between a 305 K and a 316 K warmest month
+    // and is 0 wherever the annual mean reaches 320 K.
+    const heat=annual>=C.HEAT_ANNUAL_MAX_K?0:1-smooth(warmest,C.HEAT_LO_K,C.HEAT_HI_K);
+    out.forestSuitability01=habitat?treeline*clamp01((eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP)*clamp01(1-snow/0.2)*heat:0;
     out.climateCode=(tBin<<3)|mBin;
     return out;
   };
