@@ -107,7 +107,7 @@ test('FloraFieldRenderer exposes exactly one InstancedMesh per (kind, LOD) with 
   }
 });
 
-test('drawFloraCandidates culls, LOD-bands, and respects per-bucket budgets with zero net allocation growth', () => {
+test('drawFloraCandidates culls, LOD-bands, and respects per-bucket budgets with bounded instance counts', () => {
   const renderer = new FloraFieldRenderer(
     (kind, lod) => floraGeometryToBufferGeometry(buildFloraGeometryData(kind, lod, 1)),
     () => new THREE.MeshBasicMaterial(),
@@ -157,4 +157,22 @@ test('total documented flora instance budget matches the sum of per-kind, per-LO
   for (const kind of FLORA_KIND_NAMES) for (const capacity of FLORA_LOD_INSTANCE_BUDGET[kind]) expected += capacity;
   assert.equal(totalFloraInstanceBudget(), expected);
   assert.equal(totalFloraInstanceBudget(), 4480);
+});
+
+import {checkAllocation} from './helpers/alloc-audit/check.mjs';
+test('flora-culling allocation: GC bytes plus heap growth, validated no-op control', () => {
+  checkAllocation('h-flora.mjs');
+});
+
+test('draw counts are borrowed per buffer and overwritten on the next frame', () => {
+  const renderer = new FloraFieldRenderer(() => new THREE.BoxGeometry(), () => new THREE.MeshBasicMaterial());
+  const buffer = new FloraCandidateBuffer(2), other = new FloraCandidateBuffer(2);
+  const matrix = new THREE.Matrix4(), camera = {x: 0, y: 0, z: 0}, planes = boxFrustumPlanes(100);
+  buffer.push('grass', 0, 0, 0, .2, matrix.elements);
+  const result = drawFloraCandidates(buffer, renderer, camera, planes);
+  assert.deepEqual(result, {survivorCount: 1, drawnCount: 1});
+  assert.notEqual(drawFloraCandidates(other, renderer, camera, planes), result);
+  buffer.clear();
+  assert.equal(drawFloraCandidates(buffer, renderer, camera, planes), result);
+  assert.deepEqual(result, {survivorCount: 0, drawnCount: 0});
 });
