@@ -376,6 +376,13 @@ test('negative cases: airless and dry bodies, absent places, invalid rung levels
 // differs), must give Object.is-equal values on every place-query-1 field. The intended exceptions are the version keys.
 const V1_COMMIT = '7419733';
 const V1_VERSION_KEYS = new Set(['version', 'versions.placeQuery', 'versions.lodLadder']);
+// The reference needs commit 7419733 in this clone (absent in a shallow clone or an exported tree): skip, saying why.
+const V1_SKIP = (() => {
+  try {
+    execFileSync('git', ['cat-file', '-e', `${V1_COMMIT}^{commit}`], {cwd: fileURLToPath(new URL('..', import.meta.url)), stdio: 'ignore'});
+    return false;
+  } catch { return `reference commit ${V1_COMMIT} (place-query-1 source) is not reachable in this checkout (shallow clone or exported tree); v1-field identity not checked`; }
+})();
 async function placeQueryV1() {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const source = execFileSync('git', ['show', `${V1_COMMIT}:src/place-query.ts`], {cwd: root, encoding: 'utf8'});
@@ -403,7 +410,7 @@ function assertV1Fields(v1, v2, where, path = '') {
   }
 }
 
-test('v1-field identity vs main 7419733: Object.is on every place-query-1 field (fixed corpus)', async () => {
+test('v1-field identity vs main 7419733: Object.is on every place-query-1 field (fixed corpus)', {skip: V1_SKIP}, async () => {
   const v1 = await placeQueryV1();
   assert.equal(v1.PLACE_QUERY_VERSION, 'place-query-1');
   const sets = JSON.parse(readFileSync(new URL('./tier-sets.json', import.meta.url), 'utf8'));
