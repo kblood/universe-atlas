@@ -1,0 +1,246 @@
+== round 1 3ab2eab (fixed bench)
+{
+  "node": "v24.7.0",
+  "gcExposed": true,
+  "tableBuildMsPerBody": 0.8396450000000002,
+  "surfaceClimateAlloc": {
+    "calls": 3000000,
+    "gcEvents": 59,
+    "heapGrowthBytes": 1703080,
+    "freedByGcBytes": 247412032,
+    "bytesPerCall": 83.03837066666667
+  },
+  "surfaceClimateUsPerSample": 0.06155300000000011,
+  "surfaceClimateUsPerSampleMedian": 0.06529799999999995,
+  "controlAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 987024,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.329008
+  },
+  "speciesEvaluated": 24,
+  "nicheEvaluatorUsPerSample": 0.19681600000000002,
+  "sink": true,
+  "budgets": {
+    "surfaceClimateUs": 0.15,
+    "surfaceClimateBytesPerCall": 20,
+    "controlBytesPerCall": 1,
+    "tableBuildMs": 5,
+    "nicheEvaluatorUs": 1
+  },
+  "pass": {
+    "surfaceClimate": true,
+    "allocation": false,
+    "allocationControlValid": true,
+    "tableBuild": true,
+    "nicheEvaluator": true
+  },
+  "ok": false
+}
+exit=1
+== round 1 branch (fixed bench)
+{
+  "node": "v24.7.0",
+  "gcExposed": true,
+  "tableBuildMsPerBody": 0.7801099999999999,
+  "surfaceClimateAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 661520,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.22050666666666666
+  },
+  "surfaceClimateUsPerSample": 0.04587250000000012,
+  "surfaceClimateUsPerSampleMedian": 0.048049499999999905,
+  "controlAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 1015136,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.33837866666666666
+  },
+  "speciesEvaluated": 24,
+  "nicheEvaluatorUsPerSample": 0.19529550000000087,
+  "sink": true,
+  "budgets": {
+    "surfaceClimateUs": 0.15,
+    "surfaceClimateBytesPerCall": 20,
+    "controlBytesPerCall": 1,
+    "tableBuildMs": 5,
+    "nicheEvaluatorUs": 1
+  },
+  "pass": {
+    "surfaceClimate": true,
+    "allocation": true,
+    "allocationControlValid": true,
+    "tableBuild": true,
+    "nicheEvaluator": true
+  },
+  "ok": true
+}
+exit=0
+== round 1 main c6526d0 (fixed bench, reference)
+{
+  "node": "v24.7.0",
+  "gcExposed": true,
+  "tableBuildMsPerBody": 0.9344549999999998,
+  "surfaceClimateAlloc": {
+    "calls": 3000000,
+    "gcEvents": 14,
+    "heapGrowthBytes": 798704,
+    "freedByGcBytes": 58648912,
+    "bytesPerCall": 19.815872
+  },
+  "surfaceClimateUsPerSample": 0.09940949999999986,
+  "surfaceClimateUsPerSampleMedian": 0.10320250000000017,
+  "controlAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 1059424,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.3531413333333333
+  },
+  "speciesEvaluated": 24,
+  "nicheEvaluatorUsPerSample": 0.1952494999999999,
+  "sink": true,
+  "budgets": {
+    "surfaceClimateUs": 0.15,
+    "surfaceClimateBytesPerCall": 20,
+    "controlBytesPerCall": 1,
+    "tableBuildMs": 5,
+    "nicheEvaluatorUs": 1
+  },
+  "pass": {
+    "surfaceClimate": true,
+    "allocation": true,
+    "allocationControlValid": true,
+    "tableBuild": true,
+    "nicheEvaluator": true
+  },
+  "ok": true
+}
+exit=0
+== round 2 3ab2eab (fixed bench)
+{
+  "node": "v24.7.0",
+  "gcExposed": true,
+  "tableBuildMsPerBody": 0.8552500000000002,
+  "surfaceClimateAlloc": {
+    "calls": 3000000,
+    "gcEvents": 59,
+    "heapGrowthBytes": 1584208,
+    "freedByGcBytes": 247412000,
+    "bytesPerCall": 82.998736
+  },
+  "surfaceClimateUsPerSample": 0.060741000000000156,
+  "surfaceClimateUsPerSampleMedian": 0.06334400000000016,
+  "controlAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 919936,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.3066453333333333
+  },
+  "speciesEvaluated": 24,
+  "nicheEvaluatorUsPerSample": 0.19827300000000037,
+  "sink": true,
+  "budgets": {
+    "surfaceClimateUs": 0.15,
+    "surfaceClimateBytesPerCall": 20,
+    "controlBytesPerCall": 1,
+    "tableBuildMs": 5,
+    "nicheEvaluatorUs": 1
+  },
+  "pass": {
+    "surfaceClimate": true,
+    "allocation": false,
+    "allocationControlValid": true,
+    "tableBuild": true,
+    "nicheEvaluator": true
+  },
+  "ok": false
+}
+exit=1
+== round 2 branch (fixed bench)
+{
+  "node": "v24.7.0",
+  "gcExposed": true,
+  "tableBuildMsPerBody": 0.7496625000000001,
+  "surfaceClimateAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 416912,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.13897066666666666
+  },
+  "surfaceClimateUsPerSample": 0.04629750000000002,
+  "surfaceClimateUsPerSampleMedian": 0.04816550000000006,
+  "controlAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 1032272,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.34409066666666666
+  },
+  "speciesEvaluated": 24,
+  "nicheEvaluatorUsPerSample": 0.20666550000000028,
+  "sink": true,
+  "budgets": {
+    "surfaceClimateUs": 0.15,
+    "surfaceClimateBytesPerCall": 20,
+    "controlBytesPerCall": 1,
+    "tableBuildMs": 5,
+    "nicheEvaluatorUs": 1
+  },
+  "pass": {
+    "surfaceClimate": true,
+    "allocation": true,
+    "allocationControlValid": true,
+    "tableBuild": true,
+    "nicheEvaluator": true
+  },
+  "ok": true
+}
+exit=0
+== round 2 main c6526d0 (fixed bench, reference)
+{
+  "node": "v24.7.0",
+  "gcExposed": true,
+  "tableBuildMsPerBody": 0.9221700000000006,
+  "surfaceClimateAlloc": {
+    "calls": 3000000,
+    "gcEvents": 14,
+    "heapGrowthBytes": 762224,
+    "freedByGcBytes": 58648392,
+    "bytesPerCall": 19.803538666666668
+  },
+  "surfaceClimateUsPerSample": 0.0987850000000003,
+  "surfaceClimateUsPerSampleMedian": 0.10582499999999982,
+  "controlAlloc": {
+    "calls": 3000000,
+    "gcEvents": 0,
+    "heapGrowthBytes": 900424,
+    "freedByGcBytes": 0,
+    "bytesPerCall": 0.3001413333333333
+  },
+  "speciesEvaluated": 24,
+  "nicheEvaluatorUsPerSample": 0.20132400000000075,
+  "sink": true,
+  "budgets": {
+    "surfaceClimateUs": 0.15,
+    "surfaceClimateBytesPerCall": 20,
+    "controlBytesPerCall": 1,
+    "tableBuildMs": 5,
+    "nicheEvaluatorUs": 1
+  },
+  "pass": {
+    "surfaceClimate": true,
+    "allocation": true,
+    "allocationControlValid": true,
+    "tableBuild": true,
+    "nicheEvaluator": true
+  },
+  "ok": true
+}
+exit=0
