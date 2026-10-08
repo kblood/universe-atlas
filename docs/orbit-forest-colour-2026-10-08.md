@@ -37,6 +37,14 @@ test, and the new pins assert the palette's terrain version. The height,
 ocean and selection-count pins remain unchanged and passed that run. This
 is an intentional colour re-pin under the authorized forest-colour task;
 it does not change numeric terrain or LOD tolerances.
+The complete combined run then identified five historical LOD whole-buffer
+hashes containing the old palette. All `COST_IDENTITY`,
+`COST_SAMPLER_IDENTITY` and `RISER_SAMPLER_IDENTITY` literals stay frozen.
+The cost gate now verifies them using the legacy review palette and separately
+compares production/default outputs after removing only `color`. It checks
+every other field as binary digests, including materials, geometry and metadata,
+at all 24 sampler levels and the coarse/switch tile fixtures. Shared `ON` and
+`buildOn` helpers retain production defaults for every other test.
 
 Review artifacts: `Assets/_assetctl/orbit-forest-2026-10-08/` at the IWSDK
 root contains `comparison.png`, individual before/after PNGs and

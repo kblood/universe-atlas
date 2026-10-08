@@ -1,7 +1,7 @@
 // ECO-CLASS-1 cost (moved from tests/eco-class.test.mjs, 2026-10-07, docs/test-fixes-2026-10-07.md): wall-clock
 // budgets live in the perf tier (npm run test:perf: test slot, CPU-quiet gate, --test-concurrency=1), like every other
 // timing cap in docs/test-policy.md "Timing audit". Thresholds unchanged: the relaxed 100 ns regression guard and the
-// OPEN 25 ns acceptance criterion (ECO_PERF_STRICT=1, quiet host). The deterministic no-allocation check stays in
+// OPEN 25 ns acceptance criterion (ECO_PERF_STRICT=1, quiet host). The GC-counted allocation check stays in
 // tests/eco-class.test.mjs.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,7 +28,10 @@ function measureEcoCost(){
 // Regression guard only: a 100 ns ceiling that holds on a contended host. It is
 // NOT the plan's 25 ns acceptance criterion, which stays OPEN (quiet-host
 // measurement) and is the separate test below.
-test('eco-class cost regression guard: <= 100 ns per sample (relaxed, not the 25 ns criterion), no allocation',()=>{
+// Net heap growth cannot prove absence of transient allocations; this is a
+// growth bound alongside the timing guard. The functional gate counts GC bytes
+// against a no-op control and rejects the pre-optimization implementation.
+test('eco-class cost regression guard: <= 100 ns per sample (relaxed, not the 25 ns criterion), bounded net heap growth',()=>{
   const {ns,heapGrowth,N}=measureEcoCost();
   assert.ok(ns<=100,`${ns.toFixed(1)} ns per call`);
   assert.ok(heapGrowth<4<<20,`heap grew ${heapGrowth} bytes over ${N} calls`);
