@@ -158,3 +158,8 @@ test('fauna species weights are bounded integers and zero only where absent',()=
   const w=faunaSpeciesWeights(new Float32Array([0,.001,.28,.5,1,1.5]));
   assert.deepEqual([...w],[0,1,2,4,8,8]);
 });
+
+import {checkAllocation} from './helpers/alloc-audit/check.mjs';
+test('habitat-suitability allocation: GC bytes plus heap growth, validated no-op control', () => {
+  checkAllocation('h-niche.mjs');
+});

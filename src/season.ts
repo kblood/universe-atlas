@@ -373,7 +373,10 @@ const sunScratch: number[] = [0, 0, 0];
  * Season state at absolute date t (ns). Closed form, so a direct seek equals
  * any playback path. `windowNs` low-passes the temperature anomaly (see
  * header); 0n is exact. Pass `out` (from createSeasonSample) to avoid
- * allocating the result.
+ * allocating the result object and its arrays. This does not make the call
+ * allocation-free: exact-date BigInt arithmetic and bodyPosition temporaries
+ * still allocate transient garbage (~1.1 KB/call in the phase-1 GC audit).
+ * The retained-heap test checks bounded retention, not transient allocation.
  *
  * phase01 and tempAnomalyK are exactly year-periodic. subsolarSinLat and
  * distanceFactor are evaluated exactly at t from the main.ts pair, so they

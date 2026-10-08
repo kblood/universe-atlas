@@ -374,7 +374,7 @@ test('relief model versions are pinned and part of the model manifest; build ver
   assert.equal(OCEAN_VOLUME_VERSION, 'ocean-volume-1', 'new (P2)');
   assert.equal(LOD_LADDER_VERSION, 'lod-ladder-4', 'lod-ladder-4 adds the M5 riser reduction (docs/mountain-riser-lod-2026-10-07.md); was lod-ladder-1, new in P3 (mountains cost plan T3: declared M3 carving reduction; tolerances unchanged)');
   assert.equal(PLACE_QUERY_VERSION, 'place-query-2', 'was place-query-1 (new in P2); backlog task 16: coastAt, altitude pressure, rung answer, versions.lodLadder (docs/place-query-v2.md)');
-  assert.equal(TERRAIN_VERSION, 'terrain-1.10.0-climate-2', 'was terrain-1.9.1-carving-c1 (BIOME2-CLIMATE M1: land colour reads surface-climate-2); was terrain-1.9.0-mountains (carving C1: mountain-carving-3 + mountain-assembly-4); was terrain-1.8.1-grain (mountains cost plan T6: M1-M5 wired); was terrain-1.8.0-relief (step G: reduced 800 m land colour grain)');
+  assert.equal(TERRAIN_VERSION, 'terrain-1.10.1-forest-colour', 'was terrain-1.9.1-carving-c1 (BIOME2-CLIMATE M1: land colour reads surface-climate-2); was terrain-1.9.0-mountains (carving C1: mountain-carving-3 + mountain-assembly-4); was terrain-1.8.1-grain (mountains cost plan T6: M1-M5 wired); was terrain-1.8.0-relief (step G: reduced 800 m land colour grain)');
   assert.equal(BUILD_VERSION, 'atlas-client-2026-10-round2-1', 'was atlas-client-2026-10-relief-1 (round 2: landing-site-1, ocean-present)');
   const parts = MODEL_MANIFEST_ID.split('|');
   for (const v of [GEOPHYSICS_VERSION, LANDFORM_SHAPE_VERSION, OCEAN_VOLUME_VERSION, LOD_LADDER_VERSION, PLACE_QUERY_VERSION])

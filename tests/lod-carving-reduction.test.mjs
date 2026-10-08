@@ -82,10 +82,17 @@ function costIdentityDigest(value) {
   }
   add(value); return h.digest('hex');
 }
+// These historical whole-buffer pins include the old forest palette. Keep every
+// literal frozen by using the review palette, then prove the production default
+// changes only RGB. This keeps the geometry/material/metadata contract intact.
+const physicalFields = ({color, ...rest}) => color instanceof Uint8Array
+  ? {...rest,colorAlpha:color.filter((_,i)=>i%4===3)} : rest;
 for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisation preserves every coarse/switch tile buffer`, () => {
   const d = axisSites(body, {count: 3})[0].d, cut = CUT[name];
   for (const [i, L] of [cut - 1, cut].entries()) {
-    assert.equal(costIdentityDigest(buildOn(body, tiles.directionTile(d, L))), COST_IDENTITY[name][i]);
+    const tile=tiles.directionTile(d,L),legacy=tiles.buildTile(body,tile,1,0,{...ON,orbitForestTint:false});
+    assert.equal(costIdentityDigest(legacy), COST_IDENTITY[name][i]);
+    assert.equal(costIdentityDigest(physicalFields(buildOn(body,tile))),costIdentityDigest(physicalFields(legacy)),`L${L}: default changes only colour`);
   }
 });
 // Tier (docs/test-tiers-2026-10-07.md): each level's digest is pinned on its own, so a subset of levels is still exact.
@@ -97,11 +104,14 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisat
   const levels = SAMPLER_LEVELS(CUT[name], ROCK[name], riserSharpFromLevel(body.radiusM));
   if (levels.length !== 24) t.diagnostic(tierNote(`levels ${levels.map(L => L === undefined ? 'truth' : `L${L}`).join(', ')}`));
   for (const lodLevel of levels) {
-    const sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, true, {mountains: true, lodLevel});
+    const sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, true, {mountains: true, lodLevel, orbitForestTint:false});
+    const current = terrainSampler(body, undefined, undefined, undefined, 0, undefined, true, {mountains: true, lodLevel});
     const cls = lodLevel === undefined || lodLevel >= ROCK[name] ? 2 : lodLevel >= CUT[name] ? 1 : 0;
     const pin = cls === 2 && lodLevel !== undefined && RISER_SAMPLER_IDENTITY[name][lodLevel] || COST_SAMPLER_IDENTITY[name][cls];
     if (pin !== COST_SAMPLER_IDENTITY[name][cls]) assert.ok(rockRiserWidthM(body.radiusM, lodLevel) > 0, `L${lodLevel} pinned as filtered`);
-    assert.equal(costIdentityDigest(dirs.map(d => sample(d))), pin, `L${lodLevel}`);
+    const legacy=dirs.map(d=>sample(d));
+    assert.equal(costIdentityDigest(legacy), pin, `L${lodLevel}`);
+    assert.equal(costIdentityDigest(dirs.map(d=>physicalFields(current(d)))),costIdentityDigest(legacy.map(physicalFields)),`L${lodLevel}: default changes only colour`);
   }
 });
 
@@ -124,7 +134,7 @@ test('lod-ladder-2: carving starts at the first level with edge <= 128 km; const
 
 test('wired (T6): on by default, the level changes nothing without mountains, carving state per level', () => {
   assert.equal(TERRAIN_MOUNTAINS_WIRED, true, 'wired at cost plan T6 together with TERRAIN_VERSION and the goldens');
-  assert.equal(TERRAIN_VERSION, 'terrain-1.10.0-climate-2'); // was terrain-1.9.1-carving-c1 (BIOME2-CLIMATE M1); was terrain-1.9.0-mountains (carving C1)
+  assert.equal(TERRAIN_VERSION, 'terrain-1.10.1-forest-colour'); // was terrain-1.9.1-carving-c1 (BIOME2-CLIMATE M1); was terrain-1.9.0-mountains (carving C1)
   const body = bodies.Maithea, cut = CUT.Maithea, rock = ROCK.Maithea;
   assert.equal(rockDetailFromLevel(body.radiusM), rock);
   assert.equal(mountainCarvingState(body), 'rock');assert.equal(mountainCarvingState(body, {lodLevel: 0}), false);

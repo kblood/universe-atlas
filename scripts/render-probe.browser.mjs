@@ -68,7 +68,7 @@ const urlFor=pose=>`${base}?${new URLSearchParams({seed,g:galaxyId,system:system
   wv:encodeVersions(CURRENT_VERSIONS),...(args.nowalk?{}:{walk:pose.position.join(','),heading:pose.heading.join(',')}),profile:'1',...Object.fromEntries(extraQuery)})}`;
 
 const report={build:served,dist,query:args.query||'',windowMs,poses:{},started:new Date().toISOString()};
-const lock=await acquireGpuLock({owner:`opus55 render-submit probe port ${port}`,log});
+const lock=await acquireGpuLock({owner:`opus55 render-submit probe port ${port}`,log,capture:!!args.shots});
 let browser=null;
 try{
   browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu','--disable-gpu-vsync','--disable-frame-rate-limit','--force-device-scale-factor=1',

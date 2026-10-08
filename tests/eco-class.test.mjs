@@ -136,19 +136,9 @@ test('source is arithmetic only: no Math transcendental, hash or string compare'
     assert.doesNotMatch(src,banned);
 });
 
-// The wall-clock cost budgets (the relaxed 100 ns regression guard and the OPEN 25 ns criterion, ECO_PERF_STRICT=1)
-// moved unchanged to tests/perf/eco-class.perf.test.mjs (perf tier, CPU-quiet gate; docs/test-fixes-2026-10-07.md): the
-// 100 ns guard failed once under test:full load. The no-allocation half needs no clock and stays here.
-test('eco-class per-sample path allocates nothing (heap growth < 4 MiB over 5 x 400000 calls; no clock)',()=>{
-  const out=new Float32Array(4),N=400000;let sink=0;
-  const ta=new Float64Array(4096),mm=new Float64Array(4096),sl=new Float64Array(4096);
-  for(let i=0;i<4096;i++){ta[i]=240+(i*37%900)*.1;mm[i]=(i*53%997)/997;sl[i]=i%60;}
-  const run=()=>{let s=0;for(let i=0;i<N;i++){const j=i&4095,Ta=ta[j],M=mm[j];const c=ecoClassOf(Ta,Ta+6,Ta-6,M,0,300,0,Ta+8,true);s+=life01Of(c,Ta+6,Ta);groundLookOf(Ta+6,Ta,Ta-6,M,.5,sl[j],out);s+=out[0];}return s;};
-  sink+=run();sink+=run();
-  if(global.gc)global.gc();
-  const heap0=process.memoryUsage().heapUsed;
-  for(let r=0;r<5;r++)sink+=run();// the same 5-run window as the former timed loop
-  const heapGrowth=process.memoryUsage().heapUsed-heap0;
-  assert.ok(Number.isFinite(sink));
-  assert.ok(heapGrowth<4<<20,`heap grew ${heapGrowth} bytes over 5 x ${N} calls`);
+// Timing guards remain in the perf tier. Allocation counts include garbage
+// collected during the loop, which the previous heap-growth assertion missed.
+import {checkAllocation} from './helpers/alloc-audit/check.mjs';
+test('eco-class allocation: GC bytes plus heap growth, validated no-op control', () => {
+  checkAllocation('h2-eco-class.mjs');
 });

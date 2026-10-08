@@ -68,17 +68,6 @@ export function nicheSuitability(niche:Niche,local:NicheLocal):{suitability:numb
   const inRange=!!temp&&!!moist&&!!slope;
   return {suitability,occupiedPlant:inRange&&suitability>0&&suitability>=.28&&local.reachable!==false};
 }
-/** Allocation-free core of nicheSuitability for the evaluator: the suitability
- * when a reachable producer would be occupied, else 0. Same operations, same order. */
-function occupiedSuitability(n:Niche,T:number,M:number,S:number):number {
-  const temp=T<n.minTempK||T>n.maxTempK?0:1-Math.abs(T-(n.minTempK+n.maxTempK)/2)/((n.maxTempK-n.minTempK)/2||1);
-  const moist=M<n.minMoisture||M>n.maxMoisture?0:1-Math.abs(M-(n.minMoisture+n.maxMoisture)/2)/((n.maxMoisture-n.minMoisture)/2||1);
-  const slope=S>n.maxSlope?0:1-S/n.maxSlope*.35;
-  if(!temp||!moist||!slope)return 0;
-  const suitability=round3(clampBio(.45*temp+.4*moist+.15*slope));
-  return suitability>0&&suitability>=.28?suitability:0;
-}
-
 export type NicheEvaluator=Readonly<{
   plantIds:readonly string[]; animalIds:readonly string[];
   /** out[i] = suitability of plantIds[i] if habitatMembership would mark it occupied, else 0. */
@@ -91,8 +80,18 @@ export type NicheEvaluator=Readonly<{
 /**
  * Compile the dated species list (biosphereAt(world,date).species) for one
  * planet. `local.temperatureK` is the LOCAL climate temperature (e.g.
- * ClimateSample.annualMeanTempK); it is rebased internally. O(S) per call, no
- * allocation per call.
+ * ClimateSample.annualMeanTempK); it is rebased internally. O(S) per call.
+ *
+ * Allocation (PERF-ALLOC-AUDIT, docs/alloc-audit-2-2026-10-08.md): the per-niche
+ * test is written out by hand in each loop below. It used to be a helper
+ * returning a double, which TurboFan did not inline, so every niche test boxed
+ * its result (126-174 B per plants()+animals() pair on Maithea's 24 species,
+ * counted from GC events). Each inlined copy is nicheSuitability's arithmetic
+ * (biosphere-model.ts baseMembership) with the same operations in the same order:
+ * temperature, moisture and slope tents; 0 unless all three are non-zero; then
+ * round3(clampBio(.45*temp+.4*moist+.15*slope)), kept when > 0 and >= .28.
+ * Keep the three copies identical (tests/habitat-suitability.test.mjs pins them
+ * against habitatMembership).
  */
 export function compileNicheEvaluator(datedSpecies:readonly Species[],profile:NicheProfile,anchorTempK:number):NicheEvaluator {
   const offset=PROFILE_NOMINAL_TEMP_K[profile]-anchorTempK;
@@ -106,7 +105,20 @@ export function compileNicheEvaluator(datedSpecies:readonly Species[],profile:Ni
     plantIds:Object.freeze(plants.map(s=>s.id)),animalIds:Object.freeze(animals.map(s=>s.id)),
     plants(local:NicheLocal,out:Float32Array){
       const T=local.temperatureK+offset,M=local.moisture,S=local.slope01,reachable=local.reachable!==false;
-      for(let i=0;i<plantNiches.length;i++)out[i]=reachable?occupiedSuitability(plantNiches[i]!,T,M,S):0;
+      for(let i=0;i<plantNiches.length;i++){
+        let v=0;
+        if(reachable){
+          const n=plantNiches[i]!;
+          const temp=T<n.minTempK||T>n.maxTempK?0:1-Math.abs(T-(n.minTempK+n.maxTempK)/2)/((n.maxTempK-n.minTempK)/2||1);
+          const moist=M<n.minMoisture||M>n.maxMoisture?0:1-Math.abs(M-(n.minMoisture+n.maxMoisture)/2)/((n.maxMoisture-n.minMoisture)/2||1);
+          const slope=S>n.maxSlope?0:1-S/n.maxSlope*.35;
+          if(temp&&moist&&slope){
+            const suitability=Math.round(Math.max(0,Math.min(1,.45*temp+.4*moist+.15*slope))*1000)/1000;
+            if(suitability>0&&suitability>=.28)v=suitability;
+          }
+        }
+        out[i]=v;
+      }
       return out;
     },
     animals(local:NicheLocal,out:Float32Array){
@@ -116,10 +128,30 @@ export function compileNicheEvaluator(datedSpecies:readonly Species[],profile:Ni
       let anyTree=false,anyGrass=false;
       for(let i=0;i<plantNiches.length&&!(anyTree&&anyGrass);i++){
         if(!treeOrShrub[i]&&!grass[i])continue;
-        if((treeOrShrub[i]?anyTree:anyGrass)||!occupiedSuitability(plantNiches[i]!,T,M,S))continue;
+        if(treeOrShrub[i]?anyTree:anyGrass)continue;
+        const n=plantNiches[i]!;
+        const temp=T<n.minTempK||T>n.maxTempK?0:1-Math.abs(T-(n.minTempK+n.maxTempK)/2)/((n.maxTempK-n.minTempK)/2||1);
+        const moist=M<n.minMoisture||M>n.maxMoisture?0:1-Math.abs(M-(n.minMoisture+n.maxMoisture)/2)/((n.maxMoisture-n.minMoisture)/2||1);
+        const slope=S>n.maxSlope?0:1-S/n.maxSlope*.35;
+        if(!temp||!moist||!slope)continue;
+        const suitability=Math.round(Math.max(0,Math.min(1,.45*temp+.4*moist+.15*slope))*1000)/1000;
+        if(!(suitability>0&&suitability>=.28))continue;
         if(treeOrShrub[i])anyTree=true;else anyGrass=true;
       }
-      for(let i=0;i<animalNiches.length;i++)out[i]=(needsTree[i]?anyTree:anyGrass)?occupiedSuitability(animalNiches[i]!,T,M,S):0;
+      for(let i=0;i<animalNiches.length;i++){
+        let v=0;
+        if(needsTree[i]?anyTree:anyGrass){
+          const n=animalNiches[i]!;
+          const temp=T<n.minTempK||T>n.maxTempK?0:1-Math.abs(T-(n.minTempK+n.maxTempK)/2)/((n.maxTempK-n.minTempK)/2||1);
+          const moist=M<n.minMoisture||M>n.maxMoisture?0:1-Math.abs(M-(n.minMoisture+n.maxMoisture)/2)/((n.maxMoisture-n.minMoisture)/2||1);
+          const slope=S>n.maxSlope?0:1-S/n.maxSlope*.35;
+          if(temp&&moist&&slope){
+            const suitability=Math.round(Math.max(0,Math.min(1,.45*temp+.4*moist+.15*slope))*1000)/1000;
+            if(suitability>0&&suitability>=.28)v=suitability;
+          }
+        }
+        out[i]=v;
+      }
       return out;
     },
   });

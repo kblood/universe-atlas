@@ -116,7 +116,7 @@ test('inland water keeps a carved rock field and a separate visible water surfac
   // Re-pinned for terrain-1.8.0-relief (P4-RELIEF): version string only.
   // Re-pinned for terrain-1.9.0-mountains (T6): version string only.
   // Re-pinned for terrain-1.9.1-carving-c1 (carving C1): version string only.
-  assert.equal(q.geologyVersion,'terrain-1.10.0-climate-2'); // BIOME2-CLIMATE M1: version string onlyassert.equal(q.regionalGeologyVersion,'river-region-1');
+  assert.equal(q.geologyVersion,'terrain-1.10.1-forest-colour'); // BIOME2-CLIMATE M1: version string onlyassert.equal(q.regionalGeologyVersion,'river-region-1');
 });
 
 test('river shore bed and dry bank meet continuously without a submerged walking trench',()=>{

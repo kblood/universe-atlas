@@ -19,22 +19,36 @@
  * Every drawn rock is also probed against the drawn terrain (floating or
  * buried) and against the canonical ocean/shore gate. Timings are the page's
  * performance.now() and are only as fine as the browser's timer resolution.
- * Rocks are visual only (no collision); the report records that note. */
+ * Rocks are visual only (no collision); the report records that note.
+ *
+ * Running (harness-rerun 2026-10-08, docs/harness-rerun-2026-10-08.md):
+ *   node tests/rock-acceptance.browser.mjs            # serves ./dist on a free port, takes the GPU lock
+ *   ATLAS_URL=http://127.0.0.1:5193/ node tests/...   # an already running server instead of ./dist
+ * The run is HARDWARE by default (ANGLE D3D11): every receipt (docs/rock-acceptance-2026-09-28.md) was measured that
+ * way, and under SwiftShader a 1440x1000 frame of the rock scenes takes longer than Playwright's 30 s screenshot
+ * timeout and the find-life cruise longer than the 180 s wait (the 2026-10-08 merge-prep failures). A software run
+ * must be asked for (ROCK_SOFTWARE=1) and is labelled; a hardware run that gets SwiftShader fails at once.
+ * The GPU lock (C:/LLM/IWSDK/.gpu-browser-lock) is taken here unless a parent already holds it
+ * (ATLAS_GPU_LOCK_HELD); never run this inside the test slot. */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import * as THREE from 'three';
-import { browserArgs } from './browser-options.mjs';
+import { acquireGpuLock, assertCaptureOutsideSlot } from './helpers/gpu-lock.mjs';
+import { startDistPreview, stopServer } from './helpers/free-port.mjs';
 import { encodeVersions, CURRENT_VERSIONS } from '../src/time-nav.ts';
 import { galaxies, refByAddress, system, bodyPosition } from '../src/catalog.ts';
 import { parseAddress } from '../src/address.ts';
 import { starLifecycle, planetLifecycle } from '../src/stellar-evolution.ts';
 import { planetSnapshotAt } from '../src/world-surface.ts';
-import { findShoreSite } from './rock-shore-site.mjs';
+import { prepareShoreSearch } from './rock-shore-site.mjs';
+import { defaultSharedSlotOn, withTestSlot } from './helpers/test-slot.mjs';
 import { HARNESS_SEED, HARNESS_SYSTEM_ID, HARNESS_DATE, SITE_A_M } from './harness-sites.mjs';
 import { datedLoweredSea } from './helpers/harness-water.mjs';
 
-const base = process.env.ATLAS_URL || 'http://127.0.0.1:5193/';
+const SOFTWARE = process.env.ROCK_SOFTWARE === '1';
+const launchArgs = SOFTWARE ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+  : process.platform === 'win32' ? ['--use-angle=d3d11', '--enable-gpu'] : ['--enable-gpu'];
 const out = process.env.ATLAS_RESULTS || 'test-results/opus55-rocks';
 const scenarios = (process.env.ROCK_SCENARIOS || 'barren,living,shore').split(',');
 const seed = HARNESS_SEED, systemId = HARNESS_SYSTEM_ID;
@@ -68,25 +82,60 @@ assert.equal(snappedLevel(DATE), 0, 'catalogue-date sea level is the full ocean'
 assert.equal(LEVEL_LOW, SEA.lowM, 'low water date is at the 60%-volume-lost harness sea');
 assert.equal(LEVEL_HIGH, LEVEL_LOW + 25, 'high water date is one bucket higher');
 
+// The 400k global samples do not depend on the eventual observer pose. Keep
+// that CPU work outside the GPU lock; resolve the original nearest-first
+// search from the actual living close pose once it is available.
+assertCaptureOutsideSlot('rock-acceptance');
+defaultSharedSlotOn();
+const shoreProgress = progress => console.error(`[rock] shoreline ${JSON.stringify({ ...progress, at: new Date().toISOString() })}`);
+const shoreSearch = scenarios.includes('shore')
+  ? process.env.ATLAS_GPU_LOCK_HELD
+    ? prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH, onProgress: shoreProgress })
+    : await withTestSlot({ owner: 'rock shore candidates', tokens: 1, mode: 'shared' },
+      () => prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH, onProgress: shoreProgress })) : null;
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ headless: true, args: browserArgs });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+assertCaptureOutsideSlot('rock-acceptance');
+const server = process.env.ATLAS_URL ? null
+  : await startDistPreview({ dist: process.env.ATLAS_DIST || 'dist', log: line => console.error('[rock] preview:', line) });
+if (server) process.on('exit', () => stopServer(server.child));
+const base = process.env.ATLAS_URL || server.base;
+const inheritedGpuLock = process.env.ATLAS_GPU_LOCK_HELD;
+let lock = inheritedGpuLock ? null
+  : await acquireGpuLock({ owner: `rock-acceptance ${scenarios.join(',')} ${base}`, capture: true, retryMs: 30000 });
+let browser, page;
 const errors = [];
-page.on('pageerror', error => errors.push(`page: ${error.message}`));
-page.on('console', message => {
-  if (message.type() === 'error' && !message.text().startsWith('[vite] failed to connect to websocket.')) errors.push(`console: ${message.text()}`);
+/** The step the harness is in; a wait that times out names it and records the page state (harness-rerun 2026-10-08:
+ * the bare "waitForFunction: Timeout 180000ms exceeded" of the merge-prep logs did not say what was missing). */
+let step = 'start';
+const stateDump = () => page.evaluate(() => {
+  const a = window.__atlas, t = a?.travel, tiles = a?.terrain?.tiles, r = tiles?.rocks;
+  return { status: document.getElementById('status')?.textContent ?? null, ready: a?.ready, level: a?.state?.level, body: a?.state?.body?.id,
+    date: a?.date?.offsetNs, terrainCruise: t?.terrainCruise, clearanceM: t?.surface?.terrainClearance ?? null,
+    walking: t?.walking ? { grounded: !!t.walking.grounded } : null,
+    tiles: tiles ? { ready: tiles.ready, surfaceReady: tiles.surfaceReady, pending: tiles.pending, visible: tiles.visible, waterLevelM: tiles.waterLevelM } : null,
+    rocks: r ? { enabled: r.enabled, pendingCells: r.work?.process?.pendingCells, drawPending: r.work?.draw?.pending, drawStale: r.work?.draw?.stale,
+      tierPending: r.tiers?.map(x => x.pending), drawn: r.drawn?.total } : null };
 });
-if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
-const waitFor = (fn, arg, timeout = 180000) => page.waitForFunction(fn, arg, { timeout });
+const waitFor = async (fn, arg, timeout = 180000) => {
+  try { return await page.waitForFunction(fn, arg, { timeout }); } catch (error) {
+    if (error?.name === 'TimeoutError') {
+      report.timeout = { step, timeoutMs: timeout, state: await stateDump().catch(e => `state unavailable: ${e.message}`) };
+      error.message = `[${step}] ${error.message}\npage state: ${JSON.stringify(report.timeout.state)}`;
+    }
+    throw error;
+  }
+};
 const report = { ok: false, base, date: DATE.toString(), dateLow: DATE_LOW.toString(), dateHigh: DATE_HIGH.toString(), levels: { low: LEVEL_LOW, high: LEVEL_HIGH, lossFraction: SEA.lossFraction },
   livingYearNs: YEAR_LIVING_NS.toString(), comparisonSunAngleRad: sunAngle,
-  hardware: !!process.env.ATLAS_HARDWARE, contention: process.env.ROCK_CONTENTION || 'shared GPU: other headless browsers were running; timings are contended',
+  hardware: !SOFTWARE, launchArgs, gpuLock: lock ? lock.owner : `inherited: ${process.env.ATLAS_GPU_LOCK_HELD}`,
+  contention: process.env.ROCK_CONTENTION || 'shared GPU: other headless browsers were running; timings are contended',
   errors, scenarios: {} };
 const save = () => writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
 
 const urlFor = (body, extra = {}) => `${base}?${new URLSearchParams({ seed, g: 'G001', system: systemId, body: body.id,
   date: (extra.date ?? DATE).toString(), wv: encodeVersions(CURRENT_VERSIONS), ...(extra.walk ? { walk: extra.walk, heading: extra.heading } : {}) })}`;
 async function openBody(body, extra) {
+  step = `open ${body.id}${extra?.walk ? ' at a walk pose' : ''}${extra?.date ? ' date ' + extra.date : ''}`;
   await page.goto(urlFor(body, extra), { waitUntil: 'networkidle' });
   await waitFor(id => window.__atlas?.ready && window.__atlas.state.level === 'body' && window.__atlas.state.body?.id === id &&
     window.__atlas.terrain?.tiles?.ready, body.id);
@@ -99,6 +148,7 @@ const settleRocks = (timeout = 120000) => waitFor(() => {
     r.tiers.every(t => t.pending === 0);
 }, null, timeout);
 async function capture(name) {
+  step = `capture ${name}`;
   await page.evaluate(() => document.querySelectorAll('[data-rock-hide]').forEach(e => e.remove()));
   await page.evaluate(() => { const s = document.createElement('style'); s.dataset.rockHide = '1';
     s.textContent = 'body *:not(canvas){visibility:hidden !important} canvas{visibility:visible !important}'; document.head.append(s); });
@@ -171,6 +221,7 @@ const brief = p => { const { raw, ...rest } = p; return rest; };
 const census = () => page.evaluate(() => window.__atlas.rockCensus());
 const published = () => page.evaluate(() => window.__atlas.rockPublished());
 async function seekAndSettle(dateNs, level) {
+  step = `seek ${dateNs} (sea ${level ?? 'any'} m) and settle`;
   await page.evaluate(value => window.__atlas.seek(value), dateNs.toString());
   const seekStart = Date.now();
   // The first frames after a seek on a wet body show residents cleared.
@@ -191,12 +242,15 @@ async function surveyBody(name, body, button) {
   report.scenarios[name] = result;
   await openBody(body);
   await page.waitForTimeout(800);
+  step = `${name}: ${button} starts the terrain cruise over a ready surface`;
   await page.locator(button).click();
   await waitFor(() => window.__atlas.travel.terrainCruise !== null && window.__atlas.terrain?.tiles?.surfaceReady);
+  step = `${name}: descend (Q) below 120 m clearance`;
   await page.keyboard.down('q');
   await waitFor(() => window.__atlas.travel.surface?.terrainClearance < 120);
   await page.keyboard.up('q');
   await page.evaluate(() => window.__atlas.setExplorationPaused(true));
+  step = `${name}: wide view rocks settle`;
   await page.waitForTimeout(1500);
   await settleRocks();
   await pitch(130);
@@ -221,8 +275,10 @@ async function surveyBody(name, body, button) {
   const eye = rockAt.clone().addScaledVector(tangent, standoffM).addScaledVector(up, 1.6);
   const heading = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye, rockAt, up));
   await openBody(body, { walk: eye.toArray().join(','), heading: heading.toArray().join(',') });
+  step = `${name}: walker grounds at the close-view pose (target ${target.id})`;
   await waitFor(() => window.__atlas.travel.walking?.grounded);
   await page.evaluate(() => window.__atlas.setExplorationPaused(true));
+  step = `${name}: close target ${target.id} published`;
   await waitFor(id => (window.__atlas.rockPublished() || []).some(s => s.startsWith(id + '@')), target.id);
   await settleRocks();
   // Walker faces the rock horizontally; look down at its middle.
@@ -285,13 +341,30 @@ async function replay(name, dates, levels) {
   return { result, a, b, a2 };
 }
 
+async function launchBrowser() {
+  assertCaptureOutsideSlot('rock-acceptance');
+  browser = await chromium.launch({ headless: true, args: launchArgs });
+  page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+  page.on('pageerror', error => errors.push(`page: ${error.message}`));
+  page.on('console', message => {
+    if (message.type() === 'error' && !message.text().startsWith('[vite] failed to connect to websocket.')) errors.push(`console: ${message.text()}`);
+  });
+  if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
+}
+const readRenderer = () => page.evaluate(() => {
+  const gl = document.createElement('canvas').getContext('webgl2'), ext = gl?.getExtension('WEBGL_debug_renderer_info');
+  return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';
+});
+function requireRenderer(renderer) {
+  if (!SOFTWARE) assert.ok(!/swiftshader|llvmpipe|software/i.test(renderer),
+    `hardware run asked for, but the browser renders with ${renderer}; the rock scenes do not fit the harness waits in software (set ROCK_SOFTWARE=1 to run there anyway)`);
+}
 try {
+  await launchBrowser();
   report.timer = await (async () => { await page.goto(base); return page.evaluate(() => ({ crossOriginIsolated: self.crossOriginIsolated,
     resolutionMs: (() => { let min = Infinity, last = performance.now(); for (let i = 0; i < 200000; i++) { const t = performance.now(); if (t > last) { min = Math.min(min, t - last); last = t; } } return min; })() })); })();
-  report.renderer = await page.evaluate(() => {
-    const gl = document.createElement('canvas').getContext('webgl2'), ext = gl?.getExtension('WEBGL_debug_renderer_info');
-    return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';
-  });
+  report.renderer = await readRenderer();
+  requireRenderer(report.renderer);
   report.buildInfo = await fetch(new URL('build-info.json', base)).then(r => r.ok ? r.json() : null).catch(() => null);
 
   if (scenarios.includes('barren')) {
@@ -311,10 +384,28 @@ try {
   if (scenarios.includes('shore')) {
     // Search from the living close-view site (body-relative), or its recorded value.
     const start = report.scenarios.living?.close?.pose?.position ?? [...SITE_A_M];
-    const site = findShoreSite(living, start, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH });
+    step = 'shore: close browser before CPU shoreline refinement';
+    await browser.close();
+    browser = page = undefined;
+    // Only this harness's holder is released. An inherited parent holder stays
+    // held and forbids taking the CPU slot, as it does during global preparation.
+    await lock?.release();
+    lock = null;
+    step = 'shore: CPU shoreline refinement from the saved living pose';
+    const refinementStarted = Date.now();
+    const site = inheritedGpuLock ? shoreSearch(start)
+      : await withTestSlot({ owner: 'rock shore refinement', tokens: 1, mode: 'shared' }, () => shoreSearch(start));
     assert.ok(site, 'a deterministic coastal site exists');
-    const r = { body: living.id, site };
+    const r = { body: living.id, site, refinementElapsedMs: Date.now() - refinementStarted };
     report.scenarios.shore = r;
+    await save();
+    step = 'shore: reacquire GPU after CPU slot release';
+    if (!inheritedGpuLock) lock = await acquireGpuLock({ owner: `rock-acceptance shore ${base}`, capture: true, retryMs: 30000 });
+    r.gpuLock = lock?.owner ?? `inherited: ${inheritedGpuLock}`;
+    await launchBrowser();
+    await page.goto(base);
+    r.renderer = await readRenderer();
+    requireRenderer(r.renderer);
     const up = new THREE.Vector3(...site.observer), eye = up.clone().multiplyScalar(living.radiusM + site.observerGroundHeightM + 1.6);
     const toward = new THREE.Vector3(...site.facing).multiplyScalar(living.radiusM + LEVEL_LOW);
     const heading = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye, toward, up));
@@ -416,11 +507,15 @@ try {
   assert.deepEqual(errors, [], 'no page or console errors');
   report.ok = true;
 } catch (error) {
+  report.failedStep = step;
+  if (page && !report.timeout) report.failureState = await stateDump().catch(e => `state unavailable: ${e.message}`);
   report.failure = String(error?.stack || error);
-  await page.screenshot({ path: `${out}/failure.png` }).catch(() => {});
+  await page?.screenshot({ path: `${out}/failure.png` }).catch(() => {});
   throw error;
 } finally {
   report.collision = 'none: rocks are visual only; walker, landing and fauna do not collide with them';
   await save().catch(() => {});
-  await browser.close();
+  await browser?.close().catch(() => {});
+  await lock?.release();
+  if (server) stopServer(server.child);
 }
