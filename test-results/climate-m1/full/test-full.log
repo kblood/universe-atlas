@@ -1,0 +1,216 @@
+tier all --full (ATLAS_TEST_FULL=1, test:full): 230 files in 263 steps; bail on; log test-results\tiers\2c9658a91c36-full-2026-10-08T09-55-14-247Z
+estimates: 257/263 steps (tests/tier-estimates.json); unknown steps run first
+critical path (normal priority, others below normal): tests/terrain-relief-hypsometry.test.mjs#0 ~587.7 s, tests/terrain-climate-colour.test.mjs#0 ~583.4 s, tests/mountain-coarse-field.test.mjs#rest ~498.1 s, tests/acceptance/climate-agreement.test.mjs ~496.3 s, tests/terrain-budget-starvation.test.mjs ~491.5 s, tests/life-cpu-digest.test.mjs ~477.5 s, tests/terrain-leaf-loop-digest.test.mjs ~469.3 s, tests/terrain-mountains-assembly.test.mjs ~468.3 s, tests/ocean-seam-continuity.test.mjs ~455.2 s, tests/fauna-composer-head-geometry.test.mjs ~432.3 s, tests/terrain-elevation-identity.test.mjs#2 ~398.2 s, tests/fauna-composer-eyes.test.mjs#0 ~396.3 s, ... (20)
+pass      0.2 s    62 MiB  scripts/cost-fair/precheck.test.mjs
+pass      0.4 s    87 MiB  tests/readme-versions.test.mjs
+pass      1.6 s   136 MiB  tests/shadow-window-edge-fade.test.mjs
+pass      1.7 s   102 MiB  tests/platform-getting-started.test.mjs
+pass      3.2 s    82 MiB  tests/mountain-riser-lod.test.mjs
+pass     90.8 s   553 MiB  tests/terrain-morph-continuity.test.mjs
+pass     96.7 s   644 MiB  tests/life-cpu-digest.test.mjs
+pass    182.2 s   586 MiB  tests/terrain-budget-starvation.test.mjs
+pass    115.4 s   575 MiB  tests/terrain-leaf-loop-digest.test.mjs
+pass     70.3 s   506 MiB  tests/ocean-seam-continuity.test.mjs
+pass     55.0 s   317 MiB  tests/fauna-composer-head-geometry.test.mjs
+pass    180.5 s   235 MiB  tests/terrain-mountains-assembly.test.mjs
+pass    286.8 s   203 MiB  tests/mountain-coarse-field.test.mjs#rest
+pass     42.1 s   316 MiB  tests/fauna-composer-eyes.test.mjs#0
+pass     45.8 s   471 MiB  tests/inland-rivers-disabled.test.mjs
+pass     44.4 s   297 MiB  tests/fauna-composer-head-occlusion.test.mjs#rest
+pass     20.7 s   278 MiB  tests/fauna-composer-face.test.mjs
+pass     83.0 s   597 MiB  tests/planet-forest-frame-digest.test.mjs
+pass     25.2 s   315 MiB  tests/fauna-composer-structure-independent.test.mjs
+pass     17.7 s   684 MiB  tests/terrain-relief-hypsometry.test.mjs#3
+pass      5.7 s   245 MiB  tests/fauna-composer-eye-catalogue.test.mjs#0
+pass     23.9 s   465 MiB  tests/render-bounds.test.mjs
+pass     13.2 s   328 MiB  tests/fauna-composer-lod.test.mjs
+pass    218.3 s   432 MiB  tests/terrain-floor-window.test.mjs#1
+pass      9.3 s   280 MiB  tests/planet-craters.test.mjs
+pass    300.8 s   333 MiB  tests/terrain-elevation-identity.test.mjs#2
+pass    212.4 s  1317 MiB  tests/terrain-relief-hypsometry.test.mjs#1
+pass    579.5 s  1030 MiB  tests/terrain-relief-hypsometry.test.mjs#0
+pass     31.5 s   345 MiB  tests/fauna-composer-eyes.test.mjs#rest
+pass    591.5 s   413 MiB  tests/terrain-climate-colour.test.mjs#0
+pass      9.7 s   366 MiB  tests/fauna-corpus.test.mjs
+pass     69.0 s   498 MiB  tests/terrain-structural-spectrum.test.mjs#0
+pass     13.0 s   326 MiB  tests/terrain-relief-hypsometry.test.mjs#rest
+pass     37.9 s   339 MiB  tests/fauna-appearance-v2.test.mjs
+pass     23.4 s   321 MiB  tests/fauna-composer-individual.test.mjs
+pass     31.4 s   418 MiB  tests/terrain-water-refresh.test.mjs
+pass     16.6 s   310 MiB  tests/fauna-composer-eye-catalogue.test.mjs#rest
+pass     10.5 s   350 MiB  tests/lod-consistency.test.mjs#0
+pass     20.4 s   339 MiB  tests/lod-consistency.test.mjs#2
+pass     24.6 s   246 MiB  tests/galaxy-hierarchy.test.mjs
+pass     19.8 s   298 MiB  tests/fauna-composer-head-occlusion.test.mjs#0
+pass      7.2 s   379 MiB  tests/forest-selection-transfer.test.mjs
+pass      5.6 s   194 MiB  tests/landing-site.test.mjs
+pass      9.6 s   389 MiB  tests/river-terrain.test.mjs#0
+pass      8.2 s   400 MiB  tests/world-surface.test.mjs
+pass    159.1 s   915 MiB  tests/terrain-relief-hypsometry.test.mjs#2
+pass      6.8 s   386 MiB  tests/acceptance/existence-gating.test.mjs
+pass      8.1 s   344 MiB  tests/lod-consistency.test.mjs#1
+pass      5.8 s   243 MiB  tests/mountain-layout.test.mjs#1
+pass     14.1 s   205 MiB  tests/mountain-coarse-field.test.mjs#1
+pass     16.9 s   204 MiB  tests/mountain-coarse-field.test.mjs#3
+pass    670.8 s  1232 MiB  tests/acceptance/climate-agreement.test.mjs
+pass     13.6 s   301 MiB  tests/fauna-composer-gait.test.mjs
+pass      2.1 s   122 MiB  tests/fauna-proxy-transitions.test.mjs
+pass      7.1 s   454 MiB  tests/planet-rocks-draw.test.mjs
+pass     20.5 s  1074 MiB  tests/lod-coarse-frame.test.mjs
+pass     24.2 s   155 MiB  tests/mountain-carving-memo.test.mjs
+pass      3.4 s   345 MiB  tests/river-determinism.test.mjs
+pass     15.7 s   343 MiB  tests/fauna-composer-eye-catalogue-geometry.test.mjs
+pass      6.4 s    86 MiB  tests/sparse-consumer-levels.test.mjs
+pass     11.4 s   235 MiB  tests/lod-carving-reduction.test.mjs#3
+pass      4.5 s   419 MiB  tests/river-terrain.test.mjs#rest
+pass     18.8 s   503 MiB  tests/forest-patch-selection.test.mjs
+pass      5.3 s   330 MiB  tests/tile-metadata.test.mjs
+pass      2.1 s   207 MiB  tests/fauna-composer-gloss.test.mjs
+pass     29.0 s   695 MiB  tests/golden/perturbation.test.mjs
+pass    138.7 s   983 MiB  tests/terrain-floor-window.test.mjs#0
+pass      3.7 s   283 MiB  tests/terrain-elevation-identity.test.mjs#0
+pass      3.0 s   214 MiB  tests/fauna-composer-coat.test.mjs
+pass     13.3 s   419 MiB  tests/mountain-layout-grid.test.mjs#0
+pass      2.1 s   314 MiB  tests/creature-lab-eyes.test.mjs
+pass      7.0 s   186 MiB  tests/fauna-composer-eye-catalogue.test.mjs#1
+pass     36.1 s  1349 MiB  tests/terrain-floor-window.test.mjs#2
+pass      2.5 s   189 MiB  tests/mountain-coarse-field.test.mjs#2
+pass      1.5 s   165 MiB  tests/fauna-near-rig.test.mjs
+pass     20.7 s   365 MiB  tests/terrain-floor-window.test.mjs#rest
+pass     12.0 s   301 MiB  tests/catalog.test.mjs
+pass      2.1 s   412 MiB  tests/rock-flora-lod-sweep.test.mjs
+pass      2.6 s   271 MiB  tests/lod-consistency.test.mjs#rest
+pass      3.5 s   268 MiB  tests/mountain-layout.test.mjs#0
+pass     40.1 s   197 MiB  tests/terrain-climate-colour.test.mjs#rest
+pass      8.2 s   306 MiB  tests/surface.test.mjs
+pass      2.8 s   201 MiB  tests/mountain-rock-detail.test.mjs
+pass      2.7 s   191 MiB  tests/tree-handoff-debug.test.mjs
+pass      6.7 s   311 MiB  tests/fauna-composer-eyes.test.mjs#1
+pass      7.0 s   182 MiB  tests/mountain-coarse-field.test.mjs#0
+pass      7.6 s   313 MiB  tests/fauna-composer-rig-independent.test.mjs
+pass      5.7 s   325 MiB  tests/river-terrain.test.mjs#1
+pass      2.6 s   324 MiB  tests/life-packing.test.mjs
+pass      2.2 s   277 MiB  tests/forest-selection-cache.test.mjs
+pass      1.2 s   165 MiB  tests/fauna-structural-appendages.test.mjs
+pass      4.9 s   329 MiB  tests/fauna-composer-skin-anatomy.test.mjs
+pass      9.8 s   211 MiB  tests/lod-carving-reduction.test.mjs#0
+pass      4.4 s   110 MiB  tests/mountain-tile-set.test.mjs
+pass      1.3 s   284 MiB  tests/planet-forest-worklist.test.mjs
+pass      1.1 s   133 MiB  tests/fauna-body-plan.test.mjs
+pass      3.0 s   360 MiB  tests/mountain-layout-grid.test.mjs#rest
+pass      3.7 s   143 MiB  tests/acceptance/t-seek-independence.test.mjs
+pass      9.9 s   253 MiB  tests/lod-carving-reduction.test.mjs#2
+pass      1.1 s   186 MiB  tests/planet-canopy-invalidation.test.mjs
+pass      1.7 s   168 MiB  tests/acceptance/climate-seek-independence.test.mjs
+pass      8.9 s   249 MiB  tests/lod-carving-reduction.test.mjs#1
+pass      1.1 s   158 MiB  tests/fauna-anatomy.test.mjs
+pass      1.8 s   275 MiB  tests/forest-far-atlas.test.mjs
+pass      2.0 s   216 MiB  tests/fauna-composer-mesh-stability.test.mjs
+pass      1.7 s   309 MiB  tests/ground.test.mjs
+pass      1.9 s   136 MiB  tests/tree-allometry.test.mjs
+pass      2.7 s   274 MiB  tests/terrain-elevation-identity.test.mjs#1
+pass      1.3 s   211 MiB  tests/planet-forest-tree-assets.test.mjs
+pass      6.2 s   143 MiB  tests/forest-habitat.test.mjs
+pass      0.8 s   134 MiB  tests/mountain-layout.test.mjs#rest
+pass      2.3 s   191 MiB  tests/terrain-elevation-identity.test.mjs#rest
+pass      8.8 s    82 MiB  tests/test-slot.test.mjs
+pass      1.1 s   160 MiB  tests/biome-ecology.test.mjs
+pass      1.2 s   243 MiB  tests/planet-rocks.test.mjs
+pass      5.2 s   165 MiB  tests/mountain-carving-pin.test.mjs
+pass      2.4 s   293 MiB  tests/fauna-composer-skin4-links.test.mjs
+pass      2.0 s   216 MiB  tests/fauna-composer.test.mjs
+pass      2.5 s    64 MiB  tests/tier-all.test.mjs
+pass      2.5 s   217 MiB  tests/acceptance/visit-order-independence.test.mjs
+pass      2.3 s   196 MiB  tests/river-environment.test.mjs
+pass      1.2 s   190 MiB  tests/tree-foliage-cutoff.test.mjs
+pass     33.7 s   227 MiB  tests/place-query.test.mjs
+pass      2.8 s   250 MiB  tests/planet.test.mjs
+pass      1.1 s   122 MiB  tests/ocean-volume.test.mjs
+pass      1.7 s   166 MiB  tests/fauna-handoff-coverage.test.mjs
+pass      2.3 s   172 MiB  tests/fauna-face.test.mjs
+pass      2.1 s   282 MiB  tests/river.test.mjs
+pass      0.9 s   178 MiB  tests/fauna-coat-fields.test.mjs
+pass      0.7 s   156 MiB  tests/creature-core-boundary.test.mjs
+pass      1.8 s   139 MiB  tests/season.test.mjs
+pass     71.0 s   876 MiB  tests/life-continuity-scenario.test.mjs
+pass      1.4 s   122 MiB  tests/planet-geophysics.test.mjs
+pass      0.9 s   207 MiB  tests/forest-foliage-lobe.test.mjs
+pass      3.5 s    63 MiB  tests/tier.test.mjs
+pass      0.7 s   189 MiB  tests/drainage.test.mjs
+pass      1.7 s   231 MiB  tests/forest-retention.test.mjs
+pass      2.3 s   190 MiB  tests/surface-climate.test.mjs
+pass      0.5 s   135 MiB  tests/tree-structural-variant.test.mjs
+pass      0.8 s   122 MiB  tests/lod-carving-reduction.test.mjs#rest
+pass      0.9 s    62 MiB  tests/test-runner.test.mjs
+pass      0.5 s   111 MiB  tests/local-aerial-perspective.test.mjs
+pass      1.2 s   350 MiB  tests/tree-captured-transfer.test.mjs
+pass      0.8 s   147 MiB  tests/biosphere-geometry.test.mjs
+pass      1.8 s   132 MiB  tests/mountain-summits.test.mjs
+pass      6.1 s   133 MiB  tests/mountain-carving.test.mjs
+pass      0.5 s   101 MiB  tests/instance-update-ranges.test.mjs
+pass      0.4 s    98 MiB  tests/fauna-locomotion.test.mjs
+pass      2.3 s    86 MiB  tests/mountain-metrics.test.mjs
+pass     15.3 s   538 MiB  tests/fauna-composer-export.test.mjs
+pass      1.0 s   135 MiB  tests/render-quality.test.mjs
+pass      0.5 s   104 MiB  tests/shadow-program-warmup.test.mjs
+pass      0.8 s   272 MiB  tests/river-surface.test.mjs
+pass      0.7 s   109 MiB  tests/forest-census.test.mjs
+pass      0.7 s   122 MiB  tests/shadow-map-cache.test.mjs
+pass      1.2 s    90 MiB  tests/gpu-lock.test.mjs
+pass      1.0 s   185 MiB  tests/forest-water-validity.test.mjs
+pass      0.9 s   164 MiB  tests/rock-field.test.mjs
+pass      0.5 s    90 MiB  tests/stellar-evolution.test.mjs
+pass      0.3 s    88 MiB  tests/sun-frame.test.mjs
+pass      1.3 s   132 MiB  tests/volumetric-clouds.test.mjs
+pass      1.4 s   101 MiB  tests/render-profile.test.mjs
+pass      0.5 s    92 MiB  tests/habitat-suitability.test.mjs
+pass      0.4 s   131 MiB  tests/tree-impostor-rendering.test.mjs
+pass      1.2 s   204 MiB  tests/tree-lod-coverage.test.mjs
+pass      0.3 s   103 MiB  tests/creature-lab-state.test.mjs
+pass      0.3 s   100 MiB  tests/ground-wet-roughness.test.mjs
+pass      0.4 s    85 MiB  tests/mountain-envelope.test.mjs
+pass      0.5 s    93 MiB  tests/tree-diffuse-transfer.test.mjs
+pass      0.9 s    98 MiB  tests/fauna-planet-headgear.test.mjs
+pass      0.3 s   100 MiB  tests/climate-grid.test.mjs
+pass      1.3 s   144 MiB  tests/ocean-gerstner.test.mjs
+pass      0.3 s    82 MiB  tests/tree-impostor-views.test.mjs
+pass      0.4 s   119 MiB  tests/flora-field.test.mjs
+pass      0.5 s    84 MiB  tests/atmosphere-shell-continuity.test.mjs
+BAIL at 764.9 s: NEW HARD failure tests/acceptance/version-compat.test.mjs :: biome-climate model versions are pinned and part of the model manifest
+fail      0.4 s    95 MiB  tests/acceptance/version-compat.test.mjs
+✔ GALAXY_HISTORY_VERSION is pinned to its exact contractual value — a change here must be a deliberate, reviewed bump, not silently absorbed (0.0347ms)
+✖ biome-climate model versions are pinned and part of the model manifest (5.5671ms)
+✖ failing tests:
+✖ biome-climate model versions are pinned and part of the model manifest (5.5671ms)
+  AssertionError [ERR_ASSERTION]: was surface-climate-1 (per-planet annual climate field); lapse gravity now from planet-geophysics
+  + actual - expected
+    actual: 'surface-climate-2',
+    expected: 'surface-climate-1.1-geo-g',
+killed    0.3 s    88 MiB  tests/fauna-template.test.mjs
+killed    0.1 s     ? MiB  tests/fauna-template-motion.test.mjs
+killed    0.4 s     ? MiB  tests/galaxy-history.test.mjs
+killed    2.3 s     ? MiB  tests/harness-sites.test.mjs
+killed    0.4 s     ? MiB  tests/surface-biomes-climate.test.mjs
+killed   33.4 s   394 MiB  tests/terrain-structural-spectrum.test.mjs#rest
+
+full: RED; 1218 tests (pass 1212, fail 1, skip 2, todo 3; 0 subset-coverage results); 182/263 steps; wall 764.9 s (slot wait 0.0 s before it); peak step RSS 1349.3 MiB
+  NEW HARD: tests/acceptance/version-compat.test.mjs :: biome-climate model versions are pinned and part of the model manifest
+      was surface-climate-1 (per-planet annual climate field); lapse gravity now from planet-geophysics
+  step fail (exit 1): tests/acceptance/version-compat.test.mjs
+  step killed (exit 143): tests/fauna-template.test.mjs
+  step killed (exit 143): tests/fauna-template-motion.test.mjs
+  step killed (exit 143): tests/galaxy-history.test.mjs
+  step killed (exit 143): tests/harness-sites.test.mjs
+  step killed (exit 143): tests/surface-biomes-climate.test.mjs
+  step killed (exit 143): tests/terrain-structural-spectrum.test.mjs#rest
+  not run: 81 steps (resume: npm run test:full -- --resume test-results\tiers\2c9658a91c36-full-2026-10-08T09-55-14-247Z)
+KNOWN failures matched: 0
+
+NEW failures: 1
+  tests/acceptance/version-compat.test.mjs: biome-climate model versions are pinned and part of the model manifest
+Known entries that did NOT fail (stale): 0
+
+stale entries are incomplete: not every step ran
+Rejected: NEW failure, a failed/missing step or a runner error.
+log: test-results\tiers\2c9658a91c36-full-2026-10-08T09-55-14-247Z
+rc=1
