@@ -51,7 +51,7 @@ test('the wiring hook targets the real constant (a rename cannot leave the child
 
 test('the sparse-global callers pass level 0 (S0) and the dense/truth callers pass no level', () => {
   const src = p => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf8');
-  const level0 = /terrainSampler\([^;\n]*\{lodLevel: ?0\}\)/;
+  const level0 = /terrainSampler\([^;\n]*\{lodLevel: ?0(?:, orbitForestTint)?\}\)/;
   assert.match(src('terrain.ts').slice(src('terrain.ts').indexOf('export function planetSurface')), level0, 'orbit bake');
   assert.match(src('ocean-volume.ts'), level0, 'ocean hypsometry');
   assert.match(src('surface-survey.ts'), level0, 'surface survey');
