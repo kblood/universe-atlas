@@ -486,3 +486,75 @@ arm.
 
 **If step 5 fails on notch rows:** STOP. The pre-decided fallback is the 3-cell design, which the coordinator hands
 over as a new registration.
+
+## Step 5: results (key committed in ec63fe8 before the judge started)
+
+**Captures.**
+- All captures were taken in one GPU-lock hold (08:07-08:14 UTC, 2026-10-08). The lock was free; nobody waited.
+- 6 probe runs, all exit 0, 0 page errors.
+
+**Equal LOD.**
+
+| Arm | Maithea[0] stills (all 8 clearances) | Maithea[0] descent frames | Lethuris[0] c3000 |
+|---|---|---|---|
+| main | station tile L12, maxLevel 12 | L12 in all 7 | L13, maxLevel 14 |
+| branch | the same level and the **identical active tile set** (activeSetSha equal) at every still | L12 in all 7 | identical active set |
+| rock-off | **L11** at every still, still L11 after the one re-settle (it is a reference arm, not judged, so no exclusion; disclosed to the judge as "possibly slightly coarser") | not captured | L13, identical set |
+
+- **L13 never appeared at the Maithea[0] station tile.** It stayed L12 at every clearance 4200..360 m and in every
+  descent frame, with maxLevel 12 everywhere. This is consistent with step 8, which saw L11 (L12 max). Matched
+  Maithea stills are therefore L12 only. The only matched still at L13 is Lethuris[0] c3000; L13 is filtered on
+  Lethuris (L11-14).
+- **Descent, a disclosed post-capture rule.** The branch replay ran ahead of main's timing. Branch k=3..6 all sat at
+  the 360 m floor, while main's k=0..5 were at 5469..549 m. A frame is paired only when both arms are within 5 % app
+  clearance. This rule was added after seeing the levels, before sealing and judging. 6 frames were excluded for pose
+  mismatch; only descent-06 (360 m in both arms, L12) is paired.
+- Result: 10 matched pairs, 0 level-mismatch exclusions.
+
+**Blind verdict and unblinding.** The judge was a fresh-context Opus that saw only the pair images; its verdict is in
+`gpu/judge-verdict.json`.
+
+| Pair | Pose | Notch rows (judge -> unblinded) | Ledges at distance | New regular structure |
+|---|---|---|---|---|
+| P06 | Maithea c4200 L12 | B -> **main only** | no clear difference | only in main |
+| P08 | Maithea c3000 L12 | A -> **main only** | no clear difference | only in main |
+| P07 | Maithea c2100 L12 | B -> **main only** | no clear difference | only in main |
+| P02 | Maithea c1500 L12 | B -> **main only** | no clear difference | only in main |
+| P05 | Maithea c1050 L12 | neither | no clear difference | none |
+| P03 | Maithea c750 L12 | neither | no clear difference | none |
+| P04 | Maithea c520 L12 | neither | no clear difference | none |
+| P01 | Maithea c360 L12 | neither | no clear difference | none |
+| P10 | Maithea descent-06 L12 | neither | no clear difference | none (a small object and a ridge kink in main, judged scene/LOD) |
+| P09 | Lethuris c3000 L13 | neither (low-medium confidence) | no clear difference | 3-4-tooth zig-zag only in main (too short for a notch row) |
+
+The judge noted that the notch side "changes between pairs". Unblinded, it is always main.
+
+**PASS rule:**
+1. Main has notch rows in 4 stills (c4200, c3000, c2100, c1500). The branch has none in all 4; it was judged clean,
+   not weaker. **PASS.**
+2. The branch has notch rows nowhere. **PASS.**
+3. There is no new regular structure in the branch; every "only in one image" finding is on main. **PASS.**
+4. Ledges show no clear difference in every pair, including the c4200 class (1 still) and the c3000 class (2 stills).
+   **PASS.**
+
+**Step 5: PASS.**
+
+**INFO: notch P99 per GPU still** (`gpu/metric-gpu-info.json`). The metric is run on luminance and the off arm is the
+rock-off still. For Maithea that still is at L11, so the rock-window mask is not level-matched; this is INFO only.
+
+| Still | main | branch | rock-off |
+|---|---|---|---|
+| Maithea c4200 | .546 | .214 | .191 |
+| c3000 | .676 | .370 | .271 |
+| c2100 | .536 | .353 | .210 |
+| c1500 | .188 | .170 | .176 |
+| c1050 | .140 | .140 | .178 |
+| c750 | .175 | .175 | .165 |
+| c520 | .119 | .115 | .124 |
+| c360 | .171 | .171 | .170 |
+| Lethuris c3000 | .204 | .191 | .195 |
+
+Branch <= main in 9/9 stills (3 are equal). The branch stays above rock-off at c3000 and c2100 (by .10 and .14),
+where the judge saw no notch rows; the residual is periodic-texture energy that is not read as notches.
+
+Pair sheet for Kasper (private artifact): https://claude.ai/artifact/VMbHHV3J33TjnFCWsMco8e, built from `gpu/pair-sheet.template.html` and `gpu/pair-sheet.rows.json`. The images are the pair JPEGs listed in `gpu/pairs.sha256`.
