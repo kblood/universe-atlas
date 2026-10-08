@@ -39,7 +39,7 @@ test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump
   assert.equal(CLIMATE_VERSION,'surface-climate-2');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
-  assert.equal(sha,'b59197c5d99e1fcde2112ab655a16dd4062b2e64de3a3ad1c9579426c19a7008',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+  assert.equal(sha,'a8df8585372ff4b149f242d902e0fdc53fcbea6163ec307707fbbfd751a1d3d1',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
 });
 
 test('PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year',()=>{
@@ -199,6 +199,37 @@ test('heat cap: no forest where the warmest month reaches 316 K or the annual me
     }
   }
   assert.ok(hot>1000&&mid>100&&cool>1000,`non-vacuous: hot ${hot}, ramp with forest ${mid}, cool with forest ${cool}`);
+});
+
+test('PET effective moisture: P/PET aridity index, Holdridge PET, thresholds keep their AI meaning (step 5)',()=>{
+  const Cc=CLIMATE_CALIBRATION,cl=(v,a,b)=>v<a?a:v>b?b:v;
+  // The 0.43 / 0.44 / 0.52 effective-moisture thresholds are aridity indices 0.45 / 0.47 / 0.65.
+  for(const [e,ai] of [[.43,.4526],[.44,.4714],[.52,.65]])assert.ok(Math.abs(e*Cc.AI_HALF/(1-e)-ai)<1e-3);
+  const bodies=[climateForcingFor(maithea),climateForcingFromParams({anchorTempK:300,obliquityRad:70*D,water:.3,moistureSeed:99}),climateForcingFromParams({anchorTempK:255,obliquityRad:10*D,water:1.4,moistureSeed:5})];
+  let n=0;
+  for(const f of bodies){
+    const s=surfaceClimate(f),o=createClimateSample();
+    for(let i=0;i<20000;i++){
+      s(fib(i,20000),((i*7919)%7000)-300,o);
+      const biotemp=(degreeDaysAbove(o.annualMeanTempK,o.seasonalHalfRangeK,0)-degreeDaysAbove(o.annualMeanTempK,o.seasonalHalfRangeK,30))/Cc.YEAR_D;
+      const pet=Math.max(Cc.PET_MIN_MM,Cc.PET_MM_PER_BIOTEMP_C*biotemp);
+      assert.equal(o.petMm,pet);assert.ok(o.petMm>=Cc.PET_MIN_MM&&o.precipMm>0);
+      const ai=o.precipMm/o.petMm;
+      assert.equal(o.effectiveMoisture,ai/(ai+Cc.AI_HALF));
+      assert.ok(o.effectiveMoisture>0&&o.effectiveMoisture<1);
+      assert.equal(o.aridity01,cl((.5-o.effectiveMoisture)*4,0,1));
+      // The precipitation index scales with the legacy noise: base + gain x legacyMoisture.
+      const base=o.precipMm/(Cc.P_NOISE_BASE+Cc.P_NOISE_GAIN*o.legacyMoisture);
+      assert.ok(Number.isFinite(base)&&base>0);
+      n++;
+    }
+  }
+  assert.equal(n,60000);
+  // Wetter noise means more precipitation and higher effective moisture at the same climate.
+  const f=climateForcingFromParams({anchorTempK:288,obliquityRad:23.44*D,water:.7,moistureSeed:1}),s=surfaceClimate(f),a=createClimateSample();
+  let lo={m:2},hi={m:-1};
+  for(let i=0;i<4000;i++){const d=[Math.cos(i),0.3,Math.sin(i)];s(d,0,a);if(a.legacyMoisture<lo.m)lo={m:a.legacyMoisture,e:a.effectiveMoisture};if(a.legacyMoisture>hi.m)hi={m:a.legacyMoisture,e:a.effectiveMoisture};}
+  assert.ok(hi.e>lo.e);
 });
 
 test('per-planet lapse rate from surface gravity (owner amendment 1)',()=>{

@@ -67,7 +67,10 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   HEAT_LO_K:305, HEAT_HI_K:316, HEAT_ANNUAL_MAX_K:320,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
-  BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03, BELT_MOISTURE:0.0425,
+  BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03,
+  PET_MIN_MM:120, PET_MM_PER_BIOTEMP_C:58.93,
+  P_REF_MM:1000, P_WATER_REF:0.7, P_WATER_MIN:0.2, P_WATER_MAX:1.2, P_TEMP_REF_K:288, P_TEMP_PER_K:0.025, P_TEMP_MIN:0.2,
+  P_NOISE_BASE:0.4, P_NOISE_GAIN:1.2, AI_HALF:0.6,
   FOREST_MOIST_LO:0.44, FOREST_MOIST_RAMP:0.08,
   GROW_K:278,
   OBLIQUITY_QUANTUM_RAD:1/1073741824,
@@ -111,6 +114,10 @@ export type ClimateSample={
   aridity01:number;
   /** Positive degree-days above 0 C (C*d per year) of the sinusoidal year (surface-climate-2). */
   pdd:number;
+  /** Annual precipitation index (mm/yr, surface-climate-2 heuristic; the climate grid multiplies it in M2). */
+  precipMm:number;
+  /** Potential evapotranspiration (mm/yr, Holdridge biotemperature x 58.93, floored at PET_MIN_MM). */
+  petMm:number;
   snowFraction:number;
   treeline01:number;
   growingSeason01:number;
@@ -119,7 +126,7 @@ export type ClimateSample={
 };
 export function createClimateSample():ClimateSample {
   return {insolation01:0,insolationHalfRange:0,annualMeanTempK:0,seasonalHalfRangeK:0,warmestMonthK:0,coldestMonthK:0,
-    legacyMoisture:0,dryBelt01:0,effectiveMoisture:0,aridity01:0,pdd:0,snowFraction:0,treeline01:0,growingSeason01:0,
+    legacyMoisture:0,dryBelt01:0,effectiveMoisture:0,aridity01:0,pdd:0,precipMm:0,petMm:0,snowFraction:0,treeline01:0,growingSeason01:0,
     forestSuitability01:0,climateCode:0};
 }
 
@@ -358,6 +365,8 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
   const {qMean,qAmp,anchorTempK:anchor,lapseKPerM:lapse,water,frozen,habitat,moistureSeed}=forcing;
   const seed=moistureSeed+30;
   const maritime=1-C.MARITIME*water;
+  // Step 5: the water term of the precipitation index (per forcing).
+  const wr=water/C.P_WATER_REF,pWater=C.P_REF_MM*(wr<C.P_WATER_MIN?C.P_WATER_MIN:wr>C.P_WATER_MAX?C.P_WATER_MAX:wr);
   const beltLoA=C.BELT_LO-C.BELT_EDGE,beltLoB=C.BELT_LO+C.BELT_EDGE,beltHiA=C.BELT_HI-C.BELT_EDGE,beltHiB=C.BELT_HI+C.BELT_EDGE;
   return (d,heightM,out)=>{
     let x=d[1]<0?-d[1]:d[1];
@@ -381,10 +390,17 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     // Exactly the legacy classifier's moisture expression (surface-biomes.ts).
     const moisture=noise(d[0]*5+13,d[1]*5+37,d[2]*5+19,seed);
     const belt=smooth(x,beltLoA,beltLoB)*(1-smooth(x,beltHiA,beltHiB));
-    const eff=moisture-C.BELT_MOISTURE*belt;
     // surface-climate-2 step 1: snow from positive degree-days (melt), not the
     // annual mean. snowFraction > 0.6 (the 'Alpine / polar snow' label) is PDD < 190.
     const pdd0=degreeDaysAbove(annual,half,0);
+    // Step 5: effective moisture from a precipitation / PET aridity index.
+    // PET from Holdridge biotemperature (mean of the temperature clipped to 0..30 C):
+    // biotemp = (PDD above 0 C - PDD above 30 C)/year.
+    const biotemp=(pdd0-degreeDaysAbove(annual,half,30))/C.YEAR_D;
+    let pet=C.PET_MM_PER_BIOTEMP_C*biotemp;if(pet<C.PET_MIN_MM)pet=C.PET_MIN_MM;
+    let pTemp=1+C.P_TEMP_PER_K*(annual-C.P_TEMP_REF_K);if(pTemp<C.P_TEMP_MIN)pTemp=C.P_TEMP_MIN;
+    const precip=pWater*pTemp*(C.P_NOISE_BASE+C.P_NOISE_GAIN*moisture);
+    const ai=precip/pet,eff=ai/(ai+C.AI_HALF);
     const snow=frozen?1:water>0?clamp01((C.PDD_CRIT-pdd0)/C.PDD_RAMP):0;
     const warmest=annual+half;
     const treeline=clamp01((warmest-C.T_TREE_WARMEST_K)/C.TREE_RAMP_K);
@@ -394,7 +410,7 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     let mBin=Math.floor(eff*8);if(mBin<0)mBin=0;else if(mBin>7)mBin=7;
     out.insolation01=q;out.insolationHalfRange=qa;
     out.annualMeanTempK=annual;out.seasonalHalfRangeK=half;out.warmestMonthK=warmest;out.coldestMonthK=annual-half;
-    out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;
+    out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;out.precipMm=precip;out.petMm=pet;
     out.aridity01=clamp01((0.5-eff)*4);
     out.pdd=pdd0;out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
     // Step 4: heat cap. Forest fades out between a 305 K and a 316 K warmest month
