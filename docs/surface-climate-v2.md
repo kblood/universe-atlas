@@ -22,6 +22,12 @@ and 6b); the package continued from step 8 and **STOPPED at step 8** (section 6c
 (ruling 1) and registered the Earth test (ruling 2, done); ruling 1 then **STOPPED** on its own gate (section 6d). climate-m1-decision-4 shipped the 360-frame change with
 the deviation recorded, and logged the old-site in-exit drop as FAUNA-NEAR-DROP with a `todo` reproducer (section 6d).
 
+The pre-merge timing then **STOPPED** on allocation: 83 B per sample, against 16-17 B on main. The stock bench's
+heap-growth check could not see this. climate-m1-decision-5 restated the gate as ≤ 20 B per sample and no worse than
+main, and had the sampler helpers inlined by hand. Outputs are `Object.is`-identical; the branch now allocates
+0.1-0.2 B per sample and the A/B ratio is 0.76. The bench's allocation check was also replaced with a GC-counted one,
+which fails on 3ab2eab and passes now (section 8).
+
 ## 1. Model (all per sample, no per-sample transcendental)
 
 | Step | Change | Formula |
@@ -97,7 +103,7 @@ d134a87.
 6. **Other merge gates.** Blocking: `scripts/climate-calibration-report.mjs` is fixed in this package (granted); the
    `version-compat:335` pin and the `TERRAIN_VERSION` bump are the coordinator's; the real `npm run test:affected` and
    then `test:full`, including the golden sections climate, biomes, census, placeQuery and terrain (golden re-pins are
-   the coordinator's); `surface-climate.bench` in a quiet window (<= 150 ns per sample, zero allocation, A/B ratio,
+   the coordinator's); `surface-climate.bench` in a quiet window (<= 150 ns per sample, zero allocation [restated by decision-5 as <= 20 B per sample counted from GC events, section 8], A/B ratio,
    cold build) blocks the merge because this is on the hot path of every land sample. Not blocking:
    `planet-geophysics:162` (pre-existing, unrelated), the weaker obliquity assertion (accepted), `eco-identity-site:54`
    (stays `todo`).
@@ -582,11 +588,68 @@ census, placeQuery and terrain. TERRAIN_VERSION bump: coordinator.
 on the live PDD snow field by bisection (onset snowFraction > 0, heavy > 0.6), not on the removed `T_SNOW_K` /
 `SNOW_RAMP_K` isotherms.
 
-## 8. Deferred (no timing measured in this package)
+## 8. Timing and allocation (climate-m1-decision-5)
 
-- Per-sample cost <= 150 ns and zero allocation per sample
-- Interleaved A/B cost ratios against surface-climate-1.1
-- Cold build of `climateForcingFor` (now adds two 513-row `detExp` tables per forcing)
+**The STOP.** The coordinator ran the pre-merge timing on 3ab2eab against main c6526d0
+(`test-results/climate-m1/timing/stop-run.log`; the harnesses `alloc-diag.mjs` and `ab-harness.mjs` are next to it):
 
-`surface-climate.bench.mjs` was not run. Decision 6 makes this a blocking merge gate (hot path of every land sample);
-the coordinator schedules it in a quiet window.
+- Speed passed. The stock bench best/median was 56.6/57.5 ns per sample on the branch and 92.2/94.6 ns on main.
+- Allocation failed. Counted from GC events (`v8.GCProfiler`, 3M warm calls), the branch allocated **83.1-83.2 B per
+  sample** (118 scavenges) and main allocated **16.0-17.3 B** (22-24 scavenges).
+- The stock bench still reported `zeroHeapGrowth: true` for both. Its heap-growth check is blind: a young-generation
+  scavenge frees short-lived garbage while the loop runs, so the heap grows by less than 1 MB either way.
+- With a larger TurboFan inlining budget (diagnostic only), the branch dropped to 0.78 B per sample. That points at
+  doubles being boxed in helpers V8 did not inline.
+- Cold build was 0.723 ms against main's 0.683 ms per body.
+
+**Decision-5 (Opus-decided on Kasper's instruction, overrulable).**
+
+- **The gate is restated.** It is now "at most 20 B per sample, counted from GC events, and no worse than main"; main
+  allocates 16-17 B on c6526d0. Strict zero stays a written goal, not a gate.
+- **The code fix is limited to the sampler closure.** `degreeDaysAbove` (both calls), `pddKernelG`, `smooth` and
+  `clamp01` are inlined by hand. No change to `CLIMATE_CALIBRATION`, no version bump, `noise()` left as it is.
+- **The bench's allocation check is replaced** with the GC-counted method plus a no-op control.
+
+**What changed (688129c).** In `surfaceClimate`'s closure, the bodies of `degreeDaysAbove` (with its `pddKernelH` /
+`kernelAt` body), `pddKernelG` (with `kernelAt`), `smooth` and `clamp01` are written out in place:
+
+- the same operations in the same order, with the same constants (`annual-273.15-0`, `(v+1)*(KERNEL_STEPS/2)`, ...);
+- the exported `degreeDaysAbove`, `pddKernelH` and `pddKernelG` stay for their other users;
+- the module-private `clamp01` and `smooth` consts had no other user and are removed.
+
+**Gates.** All ran on the shared test slot. Evidence is in `test-results/climate-m1/timing/`.
+
+| Gate | Result |
+|---|---|
+| 1. Identity (`identity.mjs` → `identity.json`) | **0 differences.** Pinned sets: 200k Fibonacci directions × the alloc-diag heights on Maithea, Selawyn, Raiva, Lethuris and the Earth reference, plus the first 50 climate-agreement corpus bodies × 8k directions at two height patterns. That is 1.8M samples × 18 fields = 32.4M `Object.is` comparisons against 3ab2eab. Adding extra branch-coverage sets (Earth at obliquity 0 and 70 deg, water 0, 230 K, 330 K, and 50 non-temperate planets) gives 2.4M samples / 43.2M comparisons, still 0 differences. Every inlined branch was reached: half = 0 on 70,825 samples, snow interior on 22,150, heat-ramp interior on 194,609. |
+| 2. Pins (`pins.json`, `golden-compare.json`) | The `CLIMATE_CALIBRATION` sha (f56bf8ab...) and the 10-body × 5000 determinism digest are identical on both trees. The golden `node-run.mjs` output is byte-identical to step 8 in every section, including climate, biomes, census, placeQuery and terrain. |
+| 3. Allocation (`alloc-rounds.log`, 3 alternating rounds, 3M calls) | Branch **0.144 / 0.113 / 0.132 B per call, 0 GCs**. 3ab2eab measured 83.17 / 83.17 / 83.17 and main c6526d0 15.99 / 16.00 / 16.00. The no-op control measured 0.219-0.237 B per call. |
+| 4. Speed (`ab-rounds.log`, 3 processes × 25 interleaved passes, fixed 3ab2eab against fixed 688129c) | Median 59.3 / 59.2 / 58.0 → 45.0 / 44.5 / 44.7 ns per sample. Ratios 0.759 / 0.752 / 0.770, median **0.759** (gate ≤ 1.05). The harness's own allocation check reads 83.22 → 0.16-0.17 B per call, and its negative control (+1 object per call) reads 48.3 B. Cold build per body: 0.709-0.714 → 0.634-0.649 ms. The first cold-JIT call takes 2.63-2.72 ms (gate ≤ 5 ms). |
+| 5. Tests (`gate5-targeted.log`, `gate5-affected.log`) | surface-climate + climate-earth-reference + terrain-climate-colour: 34 tests, 31 pass, 0 fail, 2 skip, 1 todo. `test:affected` (95 files): 771 tests, 755 pass, 1 fail (`version-compat:335`, the expected pin), 11 skip, 4 todo. These are the step-8 counts. |
+
+**The fixed bench check.** `tests/surface-climate.bench.mjs` now counts bytes from GC events over its 15 timed passes,
+plus a no-op control sampler in the same loop shape. Each loop is its own function literal, so each call site stays
+monomorphic.
+
+- It passes when `surfaceClimate` allocates ≤ 20 B per call and the control < 1 B per call. A failing control makes
+  the measurement invalid and fails the bench.
+- The bench exits 1 when any pass entry is false.
+- The old ">= 48 MB" comment is replaced by the scavenge blind-spot explanation.
+- Gate (`bench-gate.log`, 2 alternating rounds): on 3ab2eab it reads **83.04 / 83.00 B per call, `allocation: false`,
+  exit 1**; on the branch it reads **0.221 / 0.139 B per call, exit 0**. Controls read 0.30-0.35 B per call.
+- Reference: main c6526d0 reads 19.82 / 19.80 B per call (14 GCs) in the bench loop. That passes, but only just. The
+  bench's loop runs after the table build, and there main measures about 3.8 B more than in `alloc-diag` (16.0).
+
+**Net.** The outputs are bit-identical to 3ab2eab. The branch now allocates about 0.1-0.2 B per sample, against
+83 before and 16-20 on main. It is about 24 % faster than 3ab2eab (gate 4). In the fixed bench, its best pass is 0.046 µs per sample against 0.099 µs on main.
+
+**For the coordinator (decision-5 section 4).**
+
+- New backlog item **PERF-ALLOC-AUDIT** (next round, medium):
+  - audit every bench that claims "zero allocation" through a heap-growth check: the terrain sampler, the niche
+    evaluator, and any other bench with that pattern;
+  - re-measure each with the GC-counted method and a no-op control, and record the real baseline;
+  - until then, treat the earlier zero-allocation claims as unverified.
+  - Main's own climate sampler sits at 16-20 B per call, probably from `noise()` (shared legacy code, untouched here).
+- Cookbook lesson for the IWSDK `docs/webxr` cookbook: a heap-growth check misses allocations that GC frees mid-loop.
+  Count bytes from GC events against a no-op control.
