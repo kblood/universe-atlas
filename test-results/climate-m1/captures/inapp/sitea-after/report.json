@@ -1,0 +1,732 @@
+{
+ "build": {
+  "commit": "a92836042077721ac4ecdc3835170d1e22c3ecd9",
+  "branch": "climate/m1",
+  "subject": "climate-m1 step 8: test:full via the slot - 1726 tests, 1 fail (version-compat:335), 4 todo; golden node diff",
+  "dirty": false,
+  "builtAt": "2026-10-08T10:10:30.675Z"
+ },
+ "dist": "C:/LLM/IWSDK/universe-atlas-wt/climate-m1/dist",
+ "query": "",
+ "windowMs": 1500,
+ "poses": {
+  "groundEye": {
+   "settledMs": 12,
+   "rows": [
+    {
+     "variant": "base",
+     "code": "",
+     "stats": {
+      "frameIntervalMs": {
+       "samples": 204,
+       "p50": 3.224999999627471,
+       "p95": 10.544999999925494,
+       "p99": 48.230000000447035,
+       "max": 298.55000000074506
+      },
+      "cpu/planetUpdateMs": {
+       "samples": 204,
+       "p50": 0.6950000002980232,
+       "p95": 1.4399999994784594,
+       "p99": 2.269999999552965,
+       "max": 3.7200000006705523
+      },
+      "cpu/forestAtlasMs": {
+       "samples": 204,
+       "p50": 0,
+       "p95": 0.005000000819563866,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/lakeReflectionMs": {
+       "samples": 204,
+       "p50": 0,
+       "p95": 0,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/sceneCaptureMs": {
+       "samples": 204,
+       "p50": 1.3100000005215406,
+       "p95": 8.589999999850988,
+       "p99": 46.040000000968575,
+       "max": 303.7050000000745
+      },
+      "cpu/cloudIntegrationMs": {
+       "samples": 204,
+       "p50": 0.009999999776482582,
+       "p95": 0.02500000037252903,
+       "p99": 0.044999999925494194,
+       "max": 0.055000001564621925
+      },
+      "cpu/cloudResolveMs": {
+       "samples": 204,
+       "p50": 0.009999999776482582,
+       "p95": 0.015000000596046448,
+       "p99": 0.02500000037252903,
+       "max": 0.044999999925494194
+      },
+      "cpu/frameWorkMs": {
+       "samples": 204,
+       "p50": 3.094999998807907,
+       "p95": 11.495000001043081,
+       "p99": 50.35999999940395,
+       "max": 305.3300000000745
+      },
+      "cpu/system/terrainTilesMs": {
+       "samples": 204,
+       "p50": 0.09000000171363354,
+       "p95": 0.14999999850988388,
+       "p99": 0.2649999987334013,
+       "max": 0.4450000002980232
+      },
+      "cpu/system/skyMs": {
+       "samples": 204,
+       "p50": 0,
+       "p95": 0.005000000819563866,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/system/forestMs": {
+       "samples": 204,
+       "p50": 0.30000000074505806,
+       "p95": 0.48000000044703484,
+       "p99": 1.0449999999254942,
+       "max": 1.530000001192093
+      },
+      "cpu/system/canopyMs": {
+       "samples": 204,
+       "p50": 0.004999998956918716,
+       "p95": 0.010000001639127731,
+       "p99": 0.015000000596046448,
+       "max": 0.02500000223517418
+      },
+      "cpu/system/floraMs": {
+       "samples": 204,
+       "p50": 0.17500000074505806,
+       "p95": 0.22500000149011612,
+       "p99": 0.4249999988824129,
+       "max": 1.050000000745058
+      },
+      "cpu/system/lifeScatterMs": {
+       "samples": 204,
+       "p50": 0,
+       "p95": 0.005000000819563866,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/system/faunaMs": {
+       "samples": 204,
+       "p50": 0.004999998956918716,
+       "p95": 0.5099999997764826,
+       "p99": 0.8900000005960464,
+       "max": 1.3349999990314245
+      },
+      "cpu/system/rocksMs": {
+       "samples": 204,
+       "p50": 0.009999999776482582,
+       "p95": 0.015000000596046448,
+       "p99": 0.02500000037252903,
+       "max": 0.07000000029802322
+      },
+      "cpu/system/cloudsMs": {
+       "samples": 204,
+       "p50": 0.019999999552965164,
+       "p95": 0.044999999925494194,
+       "p99": 0.07000000029802322,
+       "max": 0.08000000193715096
+      },
+      "cpu/system/submissionMs": {
+       "samples": 204,
+       "p50": 0.8800000008195639,
+       "p95": 8.049999998882413,
+       "p99": 45.63499999977648,
+       "max": 303.3099999986589
+      },
+      "cpu/system/shadowMs": {
+       "samples": 204,
+       "p50": 0.41499999910593033,
+       "p95": 0.6749999988824129,
+       "p99": 0.8250000011175871,
+       "max": 1.1850000005215406
+      },
+      "cpu/system/otherMs": {
+       "samples": 204,
+       "p50": 0.9799999967217445,
+       "p95": 1.6300000008195639,
+       "p99": 2.2599999979138374,
+       "max": 6.160000002011657
+      },
+      "drawCalls": {
+       "samples": 204,
+       "p50": 297,
+       "p95": 297,
+       "p99": 297,
+       "max": 297
+      },
+      "triangles": {
+       "samples": 204,
+       "p50": 6368059,
+       "p95": 6368059,
+       "p99": 6368059,
+       "max": 6368059
+      },
+      "gpu/forestAtlasMs": {
+       "samples": 48,
+       "p50": 0,
+       "p95": 0.000032,
+       "p99": 0.000032,
+       "max": 0.000032
+      },
+      "gpu/lakeReflectionMs": {
+       "samples": 47,
+       "p50": 0,
+       "p95": 0.000032,
+       "p99": 0.000032,
+       "max": 0.000032
+      },
+      "gpu/sceneCaptureMs": {
+       "samples": 43,
+       "p50": 3.7904,
+       "p95": 4.395136,
+       "p99": 4.50256,
+       "max": 4.50256
+      },
+      "gpu/cloudIntegrationMs": {
+       "samples": 38,
+       "p50": 3.104576,
+       "p95": 3.848128,
+       "p99": 5.2944,
+       "max": 5.2944
+      },
+      "gpu/cloudResolveMs": {
+       "samples": 37,
+       "p50": 0.19952,
+       "p95": 0.554688,
+       "p99": 0.588416,
+       "max": 0.588416
+      },
+      "gpu/framePassSumMs": {
+       "samples": 37,
+       "p50": 7.099328000000001,
+       "p95": 7.876576000000001,
+       "p99": 9.25824,
+       "max": 9.25824
+      }
+     },
+     "shadowCache": {
+      "enabled": true,
+      "hits": 63,
+      "misses": 2235,
+      "lastReason": "casters",
+      "lastCasters": 94,
+      "lastLength": 11098,
+      "uncacheable": null,
+      "lastChange": {
+       "object": "Flora field",
+       "id": 777,
+       "offset": 35,
+       "before": 3797,
+       "after": 3798
+      }
+     },
+     "quality": {
+      "mode": "high",
+      "name": "high",
+      "label": "High",
+      "sceneScale": 1,
+      "clouds": {
+       "resolution": 1,
+       "steps": 64,
+       "lightSteps": 5
+      },
+      "adaptive": null
+     },
+     "result": null,
+     "shot": "test-results/climate-m1/captures/inapp/sitea-after/groundEye-base.png"
+    }
+   ]
+  },
+  "groundEyeEast": {
+   "settledMs": 153,
+   "rows": [
+    {
+     "variant": "base",
+     "code": "",
+     "stats": {
+      "frameIntervalMs": {
+       "samples": 232,
+       "p50": 3.3849999997764826,
+       "p95": 8.640000000596046,
+       "p99": 21.12000000104308,
+       "max": 320.4550000000745
+      },
+      "cpu/planetUpdateMs": {
+       "samples": 232,
+       "p50": 0.6949999984353781,
+       "p95": 1.199999999254942,
+       "p99": 1.6650000009685755,
+       "max": 2.9450000002980232
+      },
+      "cpu/forestAtlasMs": {
+       "samples": 232,
+       "p50": 0,
+       "p95": 0.005000000819563866,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/lakeReflectionMs": {
+       "samples": 232,
+       "p50": 0,
+       "p95": 0.004999998956918716,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/sceneCaptureMs": {
+       "samples": 232,
+       "p50": 1.474999999627471,
+       "p95": 6.380000000819564,
+       "p99": 18.78500000014901,
+       "max": 318.3849999997765
+      },
+      "cpu/cloudIntegrationMs": {
+       "samples": 232,
+       "p50": 0.009999999776482582,
+       "p95": 0.02500000037252903,
+       "p99": 0.06000000052154064,
+       "max": 0.3500000014901161
+      },
+      "cpu/cloudResolveMs": {
+       "samples": 232,
+       "p50": 0.009999999776482582,
+       "p95": 0.019999999552965164,
+       "p99": 0.2949999999254942,
+       "max": 0.49499999918043613
+      },
+      "cpu/frameWorkMs": {
+       "samples": 232,
+       "p50": 3.2149999998509884,
+       "p95": 8.355000000447035,
+       "p99": 20.859999999403954,
+       "max": 320.01999999955297
+      },
+      "cpu/system/terrainTilesMs": {
+       "samples": 232,
+       "p50": 0.08999999985098839,
+       "p95": 0.12000000104308128,
+       "p99": 0.17999999970197678,
+       "max": 1.0899999979883432
+      },
+      "cpu/system/skyMs": {
+       "samples": 232,
+       "p50": 0,
+       "p95": 0.005000000819563866,
+       "p99": 0.005000000819563866,
+       "max": 0.009999999776482582
+      },
+      "cpu/system/forestMs": {
+       "samples": 232,
+       "p50": 0.2999999988824129,
+       "p95": 0.35500000044703484,
+       "p99": 0.5850000008940697,
+       "max": 0.9450000002980232
+      },
+      "cpu/system/canopyMs": {
+       "samples": 232,
+       "p50": 0.004999998956918716,
+       "p95": 0.010000001639127731,
+       "p99": 0.014999998733401299,
+       "max": 0.02500000037252903
+      },
+      "cpu/system/floraMs": {
+       "samples": 232,
+       "p50": 0.17500000074505806,
+       "p95": 0.2149999998509884,
+       "p99": 0.35500000044703484,
+       "max": 0.4100000001490116
+      },
+      "cpu/system/lifeScatterMs": {
+       "samples": 232,
+       "p50": 0,
+       "p95": 0.005000000819563866,
+       "p99": 0.005000000819563866,
+       "max": 0.005000000819563866
+      },
+      "cpu/system/faunaMs": {
+       "samples": 232,
+       "p50": 0.004999998956918716,
+       "p95": 0.3899999987334013,
+       "p99": 0.7450000010430813,
+       "max": 0.8600000012665987
+      },
+      "cpu/system/rocksMs": {
+       "samples": 232,
+       "p50": 0.009999999776482582,
+       "p95": 0.015000000596046448,
+       "p99": 0.015000000596046448,
+       "max": 0.03500000014901161
+      },
+      "cpu/system/cloudsMs": {
+       "samples": 232,
+       "p50": 0.02499999850988388,
+       "p95": 0.04999999888241291,
+       "p99": 0.3650000002235174,
+       "max": 0.5099999997764826
+      },
+      "cpu/system/submissionMs": {
+       "samples": 232,
+       "p50": 0.9899999983608723,
+       "p95": 5.96000000089407,
+       "p99": 18.330000000074506,
+       "max": 317.9599999990314
+      },
+      "cpu/system/shadowMs": {
+       "samples": 232,
+       "p50": 0.42500000074505806,
+       "p95": 0.6649999991059303,
+       "p99": 4.939999999478459,
+       "max": 5.195000000298023
+      },
+      "cpu/system/otherMs": {
+       "samples": 232,
+       "p50": 0.9500000011175871,
+       "p95": 1.375,
+       "p99": 1.8299999982118607,
+       "max": 2.030000001192093
+      },
+      "drawCalls": {
+       "samples": 232,
+       "p50": 323,
+       "p95": 323,
+       "p99": 323,
+       "max": 323
+      },
+      "triangles": {
+       "samples": 232,
+       "p50": 6457742,
+       "p95": 6457742,
+       "p99": 6457742,
+       "max": 6457742
+      },
+      "gpu/forestAtlasMs": {
+       "samples": 105,
+       "p50": 0,
+       "p95": 0.000032,
+       "p99": 0.000032,
+       "max": 0.000032
+      },
+      "gpu/lakeReflectionMs": {
+       "samples": 102,
+       "p50": 0,
+       "p95": 0.000032,
+       "p99": 0.000032,
+       "max": 0.000032
+      },
+      "gpu/sceneCaptureMs": {
+       "samples": 74,
+       "p50": 3.96336,
+       "p95": 4.519072,
+       "p99": 4.736672,
+       "max": 4.736672
+      },
+      "gpu/cloudIntegrationMs": {
+       "samples": 67,
+       "p50": 3.488,
+       "p95": 3.522208,
+       "p99": 4.504896,
+       "max": 4.504896
+      },
+      "gpu/cloudResolveMs": {
+       "samples": 66,
+       "p50": 0.181728,
+       "p95": 0.515136,
+       "p99": 0.758624,
+       "max": 0.758624
+      },
+      "gpu/framePassSumMs": {
+       "samples": 66,
+       "p50": 7.6456,
+       "p95": 8.199968,
+       "p99": 8.528288,
+       "max": 8.528288
+      }
+     },
+     "shadowCache": {
+      "enabled": true,
+      "hits": 63,
+      "misses": 2942,
+      "lastReason": "casters",
+      "lastCasters": 95,
+      "lastLength": 11739,
+      "uncacheable": null,
+      "lastChange": {
+       "object": "Flora field",
+       "id": 777,
+       "offset": 35,
+       "before": 4504,
+       "after": 4505
+      }
+     },
+     "quality": {
+      "mode": "high",
+      "name": "high",
+      "label": "High",
+      "sceneScale": 1,
+      "clouds": {
+       "resolution": 1,
+       "steps": 64,
+       "lightSteps": 5
+      },
+      "adaptive": null
+     },
+     "result": null,
+     "shot": "test-results/climate-m1/captures/inapp/sitea-after/groundEyeEast-base.png"
+    }
+   ]
+  }
+ },
+ "started": "2026-10-08T10:21:47.717Z",
+ "qualitySettings": {
+  "url": {
+   "trees": true,
+   "detail": true,
+   "lighting": true,
+   "horizon": true,
+   "observed": false,
+   "reliefScale": 1
+  },
+  "renderer": {
+   "pixelRatio": 1,
+   "devicePixelRatio": 1,
+   "pixelRatioCap": 1.7,
+   "cssViewport": [
+    2560,
+    1440
+   ],
+   "drawingBuffer": [
+    2560,
+    1440
+   ],
+   "antialias": true,
+   "logarithmicDepthBuffer": true,
+   "toneMapping": 4,
+   "toneMappingExposure": 1.2,
+   "shadowMapEnabled": true,
+   "shadowMapType": 2,
+   "shadowCasterLight": true,
+   "anisotropy": 8,
+   "maxAnisotropy": 16,
+   "xr": false
+  },
+  "renderQuality": {
+   "mode": "high",
+   "name": "high",
+   "label": "High",
+   "sceneScale": 1,
+   "clouds": {
+    "resolution": 1,
+    "steps": 64,
+    "lightSteps": 5
+   },
+   "adaptive": null
+  },
+  "clouds": {
+   "version": "cloud-volume-2",
+   "enabled": true,
+   "representation": "raymarched-volume",
+   "temporalHistory": false,
+   "steps": 64,
+   "lightSteps": 5,
+   "sampleLimit": "disabled",
+   "requestedSceneSamples": 0,
+   "effectiveSceneSamples": 0,
+   "supportedSceneSamples": [],
+   "estimatedTargetBytes": 73728000,
+   "estimatedBytes": 74741468,
+   "targetBudgetBytes": 167772160,
+   "sceneResolutionScale": 1,
+   "sceneScale": 1,
+   "captureScale": 1,
+   "desktopQuality": {
+    "resolution": 1,
+    "steps": 64,
+    "lightSteps": 5
+   },
+   "eyes": 1,
+   "targets": [
+    {
+     "width": 2560,
+     "height": 1440,
+     "samples": 0
+    }
+   ],
+   "cloudTargets": [
+    {
+     "width": 2560,
+     "height": 1440
+    }
+   ],
+   "layers": {
+    "baseM": 800,
+    "lowTopM": 4200,
+    "highBaseM": 6500,
+    "topM": 8500
+   }
+  },
+  "forestAssets": {
+   "enabled": true,
+   "loading": false,
+   "ready": true,
+   "error": ""
+  },
+  "surfaceLighting": {
+   "enabled": true,
+   "active": true,
+   "altitudeM": 1.6325235789845465,
+   "unitsPerM": 1,
+   "widthM": 320,
+   "depthM": 1000,
+   "mapSize": 2048,
+   "shadowIntensity": 1,
+   "skyIntensity": 0.7,
+   "ambientIntensity": 0.08800000000000001,
+   "allocated": true,
+   "estimatedTargetBytes": 33554432
+  },
+  "shadowCache": {
+   "enabled": true,
+   "hits": 63,
+   "misses": 1637,
+   "lastReason": "casters",
+   "lastCasters": 94,
+   "lastLength": 11098,
+   "uncacheable": null,
+   "lastChange": {
+    "object": "Flora field",
+    "id": 777,
+    "offset": 35,
+    "before": 3199,
+    "after": 3200
+   }
+  },
+  "shadowWarmup": {
+   "compiles": 0,
+   "objects": 0,
+   "families": 0,
+   "failures": 0
+  },
+  "hiddenSystems": [],
+  "planetDetail": {
+   "forestRadiusM": 4000,
+   "forestFootprintM": 650,
+   "canopyFootprintM": 4500,
+   "canopyCellM": 140,
+   "canopyCapacity": 8192,
+   "forestPrepareAltitudeM": 3500,
+   "forestStreamAltitudeM": 5500,
+   "forestCellM": 18,
+   "forestNearM": 110,
+   "forestCapacity": 4096,
+   "forestNearCapacity": 192,
+   "forestOriginRebaseM": 256,
+   "placementSamplesPerFrame": 48,
+   "placementBudgetMs": 2,
+   "populationCacheLimit": 24000,
+   "groundLifeAltitudeM": 350,
+   "groundLifeAltitudeExitM": 380,
+   "flightDetailAltitudeM": 6000,
+   "touchdownPrepareM": 350,
+   "touchdownM": 125
+  },
+  "terrain": {
+   "tileCacheLimit": 256,
+   "tileDrawLimit": 150,
+   "note": "contact/low-flight raise cache to 768 and draw to 450 (contact) or 390 (low flight) in PlanetRenderer.update"
+  },
+  "memory": {
+   "coreBudgetBytes": 268435456,
+   "cloudTargetBudgetBytes": 167772160,
+   "lifeReserveBytes": 16777216,
+   "waterEnvironmentReserveBytes": 29360128
+  },
+  "shadow": {
+   "widthM": 320,
+   "depthM": 1000,
+   "mapSize": 2048,
+   "normalBiasM": 0.3
+  },
+  "cloudsProfile": {
+   "desktop": {
+    "resolution": 1,
+    "steps": 64,
+    "lightSteps": 5
+   },
+   "immersive": {
+    "resolution": 0.5,
+    "steps": 32,
+    "lightSteps": 3
+   }
+  },
+  "flora": {
+   "slotCapacity": 6000
+  },
+  "fauna": {
+   "fieldCapacity": 512,
+   "fieldVisibleM": 600,
+   "fieldEyeDetailM": 60,
+   "nearRigExitM": 95,
+   "lod0DistanceM": 18,
+   "lod1DistanceM": 100,
+   "visibleDistanceM": 280,
+   "lod0MaxConcurrentRigs": 16,
+   "lod1InstanceBudget": 128,
+   "lod2InstanceBudget": 512
+  },
+  "rocks": {
+   "tiers": [
+    {
+     "id": "scatter",
+     "cellSizeM": 6,
+     "slots": 3,
+     "presence": 0.7,
+     "rangeM": 64,
+     "marginM": 12,
+     "sizeMin": 0.12,
+     "sizeMax": 0.48,
+     "rescatterM": 10,
+     "residentCap": 3000
+    },
+    {
+     "id": "boulder",
+     "cellSizeM": 16,
+     "slots": 1,
+     "presence": 0.75,
+     "rangeM": 280,
+     "marginM": 32,
+     "sizeMin": 0.55,
+     "sizeMax": 1.5,
+     "rescatterM": 24,
+     "residentCap": 2600
+    },
+    {
+     "id": "outcrop",
+     "cellSizeM": 64,
+     "slots": 1,
+     "presence": 0.6,
+     "rangeM": 960,
+     "marginM": 128,
+     "sizeMin": 1.6,
+     "sizeMax": 3.4,
+     "rescatterM": 96,
+     "residentCap": 2000
+    }
+   ],
+   "budgetBytes": 29360128,
+   "workBudgetMs": 1.5,
+   "drawUnitsPerFrame": 4096,
+   "cellsPerFrame": 96,
+   "samplesPerFrame": 320
+  }
+ },
+ "errors": []
+}

@@ -1,0 +1,6 @@
+[gate before 10:16:10] serving c6526d0263bdf6e3b1f437162758e7ad9c74d9ec place-query-2 merger needs-lines: README, version pin, sparse-consumer narrowing, test registration, golden re-pin
+[gate before 10:19:24] Maithea views orbit,lowland,forest,mountainV3,mountain,beach,polar,seabed
+[gate before 10:19:52] Maithea orbit settled -1 ms 
+[gate before 10:21:06] Raiva views orbit,lowland,forest,mountainV3,mountain,beach,polar,seabed
+[gate before 10:21:34] Raiva orbit settled -1 ms 
+[gate before 10:21:34] done

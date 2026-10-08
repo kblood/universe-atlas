@@ -1,0 +1,4 @@
+[probe 10:21:47] preview serves C:/LLM/IWSDK/universe-atlas-wt/climate-m1/dist on port 63373 (attempt 1)
+[probe 10:22:13] groundEye base frameWork p50/p95 3.09/11.50 gpu sum 7.10/7.88 shadow 0.41/0.67 submission 0.88/8.05 draws 297 
+[probe 10:22:19] groundEyeEast base frameWork p50/p95 3.21/8.36 gpu sum 7.65/8.20 shadow 0.43/0.66 submission 0.99/5.96 draws 323 
+[probe 10:22:19] wrote test-results/climate-m1/captures/inapp/sitea-after/report.json errors 0
