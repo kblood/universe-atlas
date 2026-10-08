@@ -17,8 +17,7 @@
     "placeQueryRecords": 471,
     "censusRecords": 29,
     "rocksRecords": 578,
-    "faunaRecords": 625,
-    "faunaKnownUnstableRecords": 31
+    "faunaRecords": 655
   },
   "digests": {
     "galaxies": "cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a",
@@ -35,8 +34,7 @@
     "placeQuery": "fc07ab6b05d169e396781cda6b87b08bdec7d17961693f52789b80b41e7c1d0e",
     "census": "060898a2699af91770d2b668b45a14275ac92984920e4102da4bde38db45ef35",
     "rocks": "fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c",
-    "fauna": "6bf5d08562a0d45bcf03d5867f506b3edc7a943a37a94a5873f7ca0bd6973546",
-    "faunaKnownUnstable": "61e258fc611ed6b70e4cf81b4154f824381331d8151524a1b20b0b846183d84d"
+    "fauna": "75a59833a03444b1506de5770a66c4eceeaa5b6c1107c180e5db50a9a495ff6a"
   },
   "platformSeed": "LETHRA-001"
 }

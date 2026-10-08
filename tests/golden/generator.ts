@@ -342,7 +342,7 @@ export const PLATFORM_WORLDS: readonly (readonly [string, number])[] = [
   ["G001/C2143,4,3/0", 1],
   ["G001/C2142,6,1/1", 1],
 ];
-export const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna", "faunaKnownUnstable"] as const;
+export const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna"] as const;
 export type PlatformSection = typeof PLATFORM_SECTIONS[number];
 export type PlatformDigests = Record<PlatformSection, string>;
 export type PlatformCounts = Record<`${PlatformSection}Records`, number>;
@@ -355,7 +355,6 @@ export const PLATFORM_QUANTUM_M: Readonly<Partial<Record<PlatformSection, number
   census: 1e-6,
   rocks: 1e-6,
   fauna: 1e-6,
-  faunaKnownUnstable: 1e-6,
 });
 /** How one section serialises doubles: exact, absolute grid q, or 12 digits (q = 0). */
 export type Fmt = { readonly exact: boolean; readonly q: number };
@@ -613,25 +612,18 @@ function rockLines(worlds: PlatformWorld[], f: Fmt): string[] {
 }
 
 const FAUNA_RANDOM_SEEDS = ["GOLDEN-FAUNA-1", "GOLDEN-FAUNA-2", "GOLDEN-FAUNA-3", "GOLDEN-FAUNA-4"];
-/** Specimens that had a MEASURED cross-engine mismatch, pinned in their own key
- * (faunaKnownUnstable) so the `fauna` key keeps protecting every other
- * specimen on every engine. Four engines are equal on this key since the
- * seamNormal fix (2026-10-07, fauna/ocellus-seam, D2); KNOWN_ENGINE_MISMATCHES
- * in the cross-engine runner is empty. The key is kept for one more round
- * (D2): fold GOLDEN-FAUNA-2 back into `fauna` at the next routine golden round
- * if --strict passes again (that changes the `fauna` digest). */
-export const FAUNA_KNOWN_UNSTABLE: Readonly<Record<string, string>> = Object.freeze({
-  "GOLDEN-FAUNA-2": "Was: WebKit 26.5 vs Node/Chromium/Firefox, skin positions of the 8 midline insect ocellus vertices " +
-    "(z = 0, up to 0.42 mm): nearestExit() on a ray in the head's mirror plane hit the two seam triangles at the SAME t " +
-    "and the engines broke the tie differently (1 ULP upstream). Four engines equal since the seamNormal fix " +
-    "(fauna-composer-mesh.ts, 2026-10-07); fold back into the fauna key next round.",
-});
-function faunaLines(f: Fmt, which: "stable" | "unstable"): string[] {
+/** Every preset and random specimen is pinned in the one `fauna` key. The
+ * separate faunaKnownUnstable key (2026-10-04 to 2026-10-08) held GOLDEN-FAUNA-2,
+ * the midline insect ocellus on which WebKit 26.5 broke a same-t seam tie (fixed
+ * by seamNormal, 2026-10-07, D2). It was folded back into `fauna` and the key
+ * dropped in R7 (infra/creature-kit-sync-2) after a second strict four-engine
+ * PASS. A specimen with a MEASURED engine mismatch would get its own key again. */
+function faunaLines(f: Fmt): string[] {
   const lines = [`version|${COMPOSER_RECIPE_VERSION}|${COMPOSER_GRAPH_VERSION}|${COMPOSER_SKIN_VERSION}|q=${f.q}`];
   const recipes: [string, ComposerRecipe][] = [
     ...COMPOSER_PRESET_IDS.map((id) => [id, composerPreset(id)] as [string, ComposerRecipe]),
     ...FAUNA_RANDOM_SEEDS.map((s) => [s, randomComposerRecipe(s)] as [string, ComposerRecipe]),
-  ].filter(([name]) => (name in FAUNA_KNOWN_UNSTABLE) === (which === "unstable"));
+  ];
   for (const [name, input] of recipes) {
     const { recipe, issues } = normalizeComposerRecipe(input);
     lines.push([name, "recipe", encodeComposerRecipe(recipe), canon(issues, f), canon(composerConstraints(recipe), f)].join("|"));
@@ -676,7 +668,6 @@ export async function platformSectionLines(mode: SerialMode = "golden"): Promise
     placeQuery: placeLines(worlds, f("placeQuery")),
     census: await censusLines(worlds[0]!.body, f("census")),
     rocks: rockLines(worlds, f("rocks")),
-    fauna: faunaLines(f("fauna"), "stable"),
-    faunaKnownUnstable: faunaLines(f("faunaKnownUnstable"), "unstable"),
+    fauna: faunaLines(f("fauna")),
   };
 }

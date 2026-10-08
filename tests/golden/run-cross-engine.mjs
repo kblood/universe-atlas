@@ -174,9 +174,8 @@ if (checkArgsOnly) {
  * flipped the lens normal. src/fauna-composer-mesh.ts seamNormal now sums the
  * tied seam normals in triangle-index order; four engines are equal since that
  * fix (strict run, docs/fauna-composer-stability-2026-10-07.md "Decision").
- * GOLDEN-FAUNA-2 stays in faunaKnownUnstable for one more round and is folded
- * back into the fauna key at the next routine golden round if --strict passes
- * again. */
+ * GOLDEN-FAUNA-2 was folded back into the fauna key and the faunaKnownUnstable
+ * key dropped on 2026-10-08 (R7) after a second strict four-engine PASS. */
 const KNOWN_ENGINE_MISMATCHES = {};
 
 function run(cmd, cmdArgs, opts = {}) {
