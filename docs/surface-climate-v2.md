@@ -3,7 +3,8 @@
 Package R5-ATLAS-CLIMATE-M1, branch `climate/m1`. Plan: `docs/biome-climate-increment-2-plan-v2-2026-10-04.json`
 (P1, M1 steps 1-7; v1 formulas). Versions: `CLIMATE_VERSION` `surface-climate-1.1-geo-g` -> `surface-climate-2`;
 `TREE_HABITAT_VERSION` `tree-habitat-2-climate` -> `tree-habitat-3-heat` (expression unchanged; the heat cap moves the
-`forestSuitability01` it reads). `TERRAIN_VERSION` is not touched here (coordinator).
+`forestSuitability01` it reads). `TERRAIN_VERSION` `terrain-1.9.1-carving-c1` -> `terrain-1.10.0-climate-2` at merge
+prep (coordinator dispatch 2026-10-08, section 9).
 
 **Status.** The first pass (tip d134a87) hit two STOP conditions:
 
@@ -653,3 +654,37 @@ monomorphic.
   - Main's own climate sampler sits at 16-20 B per call, probably from `noise()` (shared legacy code, untouched here).
 - Cookbook lesson for the IWSDK `docs/webxr` cookbook: a heap-growth check misses allocations that GC frees mid-loop.
   Count bytes from GC events against a no-op control.
+
+## 9. Merge prep on main c97c04b (coordinator dispatch 2026-10-08)
+
+Main c97c04b (creature-kit sync aa89701, golden fauna re-pin) was merged into `climate/m1` (no rebase). Evidence:
+`test-results/climate-m1/merge-prep/`.
+
+- **Conflict:** `package.json` `scripts.test` only. Resolved as main's line (it adds
+  `tests/fauna-composer-coat-crisp.test.mjs`) plus this branch's `tests/climate-earth-reference.test.mjs` after
+  `tests/surface-climate.test.mjs`. `tests/golden/golden.json` merged cleanly: main's fauna keys as they are.
+- **version-compat:335:** `CLIMATE_VERSION` pinned to `surface-climate-2` (was `surface-climate-1.1-geo-g`).
+- **TERRAIN_VERSION:** `terrain-1.9.1-carving-c1` -> `terrain-1.10.0-climate-2`. Required by climate-m1-decision item 6
+  (blocking merge gate) and the plan v2 versioning entry (TERRAIN_VERSION moves at the P1 merge; its proposed
+  `terrain-1.9.0-climate-2` was taken by the mountains/carving rounds, so the minor bump is 1.10.0). The water-world
+  land colour reads surface-climate-2; heights and ocean are unchanged. Version-string pins moved: version-compat,
+  inland-rivers-disabled, lod-carving-reduction, terrain-climate-colour, terrain-relief-hypsometry, river-terrain
+  (`geologyVersion`), README "Architecture and limits". `tests/tier-sets.json` regenerated: input moved, **same tiles**
+  (sha 90bb43c0 unchanged), history entry added. `BUILD_VERSION` not moved (coordinator-owned; carving C1 precedent).
+- **Registration:** the only new test file is `tests/climate-earth-reference.test.mjs` (package.json, tier-estimates).
+- **Gates (shared slot):** tsc 0 errors. `test:affected` (146 changed, 95 files): 771 tests, 756 pass, **0 fail**,
+  11 skip, 4 todo (eco-identity-site:54, FAUNA-NEAR-DROP, planet-geophysics:162, fell rock colour).
+
+**Golden, strict cross-engine** (`run-cross-engine.mjs --strict --fixture golden-proposed.json`, the fixture being
+`node-run.mjs` on this tree; one engine per GPU-lock hold): Node, chromium 149.0.7827.55, firefox 151.0 and webkit 26.5
+all MATCH; `GOLDEN CROSS-ENGINE GATE: PASS (all four engines equal)` (`golden-cross-engine.log`, `-report.json`).
+Only climate-attributable keys move; every count and every other key (terrain, combined, fauna, rocks, ...) is unchanged.
+`golden.json` was then set to that fixture (identical to what `--update` writes):
+
+| key | old (main c97c04b) | new | cause |
+|---|---|---|---|
+| `climate` | bb53744d319da0192f8dccc544c03ffb16c615d99f89c597a8ce94e19b069939 | 63916081c7d768de808198e5d05ae50596310c50066c812193830c3658af1179 | surface-climate-2 fields |
+| `biomes` | f60bb445d88b84550ac9fba5c3737dd6556079c2831f7f4f444b7e280063fb6d | 0730ba317b0e87e07ade65338ac3cd69b4ce9013c70cab6d0b885f6f90db99dc | classifier reads the climate (snow, treeline, moisture) |
+| `placeQuery` | fc07ab6b05d169e396781cda6b87b08bdec7d17961693f52789b80b41e7c1d0e | ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9 | place query reports climate/biome fields |
+| `census` | 060898a2699af91770d2b668b45a14275ac92984920e4102da4bde38db45ef35 | bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5 | forest census reads forestSuitability01 (heat cap, PET moisture) |
+| `terrain` and all others | | unchanged | |
