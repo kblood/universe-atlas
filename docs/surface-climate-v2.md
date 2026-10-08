@@ -18,7 +18,8 @@ section 4); step 7 first STOPPED: lod-consistency fails 20 rows at L6, L8 and L1
 not only the L6 colour rows decision 2 allowed re-pinning (section 6b). That STOP was decided in climate-m1-decision-2
 (section 2b): SITE_A accepted as found; bisect per climate step, then re-pin with a ledger. Both are done (sections 6
 and 6b); the package continued from step 8 and **STOPPED at step 8** (section 6c): moving SITE_A breaks
-`life-continuity-scenario:117`, which is not on any grant.
+`life-continuity-scenario:117`, which is not on any grant. climate-m1-decision-3 allowed a longer recede
+(ruling 1) and registered the Earth test (ruling 2, done); ruling 1 then **STOPPED** on its own gate (section 6d).
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -501,6 +502,37 @@ a longer recede), which is a test change no decision grants. Steps 8 (test:full)
 were not run after this STOP. The LOD-edge panels of step 10 (CPU, no GPU) were made before the STOP was known:
 `test-results/climate-m1/captures/lod-edge/`.
 
+## 6d. climate-m1-decision-3 (2026-10-08): ruling 1 STOP, ruling 2 done
+
+All three rulings are **Opus-decided on Kasper's instruction, overrulable**.
+
+**Ruling 2 (done, bb44841).** `tests/climate-earth-reference.test.mjs` (8 tests, 0.2 s) is registered in the npm
+test registry (`package.json` scripts.test, which is the default tier and the base of tier all/full) and has 0.2 s
+under `all` and `full` in `tests/tier-estimates.json`. `tests/tiers.json` lists only the smoke/work terrain files and
+the all-tier shards, and `tests/tier-sets.json` holds checksummed sample sets, so neither lists this file and neither
+was changed. Gate: `test:affected --dry-run` lists it as "newly registered in package.json scripts.test"; it passes
+through the shared slot (8/8), and tier / tier-all / test-selection / test-runner pass (32/32).
+
+**Ruling 1 (STOP).** The allowed change (`RECEDE_FRAMES=360` with the decision's comment, lines 118-122 only; kept as
+`test-results/climate-m1/step8/recede-360.patch`, **not committed**) passes at the new SITE_A but **fails on main
+c6526d0 code at the old SITE_A**: `no hard drop while receding`, actual 3, expected 0
+(`step8/receding-360-main-oldsite-test.log`). That is the decision's first STOP condition. Four cells
+(`step8/receding-2x2.json`, the test's own probe and poses, `step8/receding-2x2.mjs`):
+
+| Site / arm | frames with a rig fading out past 95 m | hard drops at the end | on-screen drops (frame, distance) |
+|---|---|---|---|
+| new SITE_A / current | 56 (first at frame 217) | 0 | none |
+| new SITE_A / former cut (negative) | 0 | 9 | all at 95.0-95.4 m |
+| old SITE_A / current | 17 (first at frame 90) | **3** | **frames 150, 155, 156 at 89.6, 91.1, 86.6 m** |
+| old SITE_A / former cut (negative) | 0 | 6 | 95.3 m at frame 90; the same three at 86.6-91.1 m; 95.0-95.1 m at frames 312-314 |
+
+Gate 2 (new site, at least 3 frames fading past 95 m) would pass with 56. Gate 1 fails. The three old-site drops
+happen **inside** the 95 m exit, on camera-visible rigs, at the same frames with and without the widened cut. So they
+are a second drop path in the near-rig presentation that the 100-frame path never reached, not the 95 m cut this test
+is about. This is a finding for the fauna/presentation owner. Passing at 360 frames on both sites would need a change
+outside lines 118-122 (or a renderer fix), which ruling 1 does not allow. Order steps 2-7 (the real test:affected,
+test:full, captures, Astra) were not run after this STOP. The timing bench stays with the coordinator.
+
 ## 7. Ledger: moved pins in files this package does not own
 
 First pass (d134a87): the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot
@@ -518,7 +550,7 @@ resume's targeted runs.
 | `tests/lod-carving-reduction.test.mjs:83,99` (mountains; first pass cited :69,79) | 31 tile-buffer and sampler-output digests, 4 worlds | moved pins (only `color`, `materials`, `meta` moved) | **re-pinned** with ledger (section 6b) |
 | `tests/lod-consistency.test.mjs` (mountains) | 20 rows at L6, L8, L10 plus L6 snow retention | decision-2 (b) | **re-pinned** at measured values rounded up to 0.1; retention 95.2 % (section 6b) |
 | `tests/terrain-mountains-assembly.test.mjs` HARD outsideBelt (:38) and HARD outsideMassif | bit-identity to main (heights, ocean, colour) | decision-2 (b): split | HARD heights+ocean unchanged and equal to main 290472d; colour split into a climate PIN, re-pinned |
-| `tests/life-continuity-scenario.test.mjs:117` | a rig fades out past 95 m on the receding path from SITE_A | SITE_A move (section 6c) | **STOP**, not re-pinned |
+| `tests/life-continuity-scenario.test.mjs:117` | a rig fades out past 95 m on the receding path from SITE_A | SITE_A move (section 6c); decision-3 ruling 1 (360 frames) | **STOP**: 360 frames fail at the old site (3 on-screen drops at 86.6-91.1 m), section 6d |
 | `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated | not blocking (decision 6) |
 
 Not run in this package (test:full or coordinator-owned): the `tests/golden/golden.json` sections climate, biomes,

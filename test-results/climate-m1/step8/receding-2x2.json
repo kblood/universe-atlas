@@ -1,0 +1,133 @@
+{
+ "decision": "climate-m1-decision-3 ruling 1, RECEDE_FRAMES=360",
+ "cells": {
+  "new SITE_A (branch 2afa95a + change) / current": {
+   "framesFadingOutBeyondExit": 56,
+   "firstFadePast95Frame": 217,
+   "unlistedDropsLast": 0,
+   "onScreenDrops": 0,
+   "onScreenDropDetail": []
+  },
+  "new SITE_A / former cut (negative)": {
+   "framesFadingOutBeyondExit": 0,
+   "firstFadePast95Frame": null,
+   "unlistedDropsLast": 9,
+   "onScreenDrops": 9,
+   "onScreenDropDetail": [
+    {
+     "frame": 217,
+     "distanceM": 95.4
+    },
+    {
+     "frame": 218,
+     "distanceM": 95.2
+    },
+    {
+     "frame": 224,
+     "distanceM": 95.4
+    },
+    {
+     "frame": 224,
+     "distanceM": 95.2
+    },
+    {
+     "frame": 242,
+     "distanceM": 95
+    },
+    {
+     "frame": 247,
+     "distanceM": 95.2
+    },
+    {
+     "frame": 247,
+     "distanceM": 95.1
+    },
+    {
+     "frame": 351,
+     "distanceM": 95.3
+    },
+    {
+     "frame": 355,
+     "distanceM": 95.1
+    }
+   ]
+  },
+  "old SITE_A (main c6526d0 + change) / current": {
+   "framesFadingOutBeyondExit": 17,
+   "firstFadePast95Frame": 90,
+   "unlistedDropsLast": 3,
+   "onScreenDrops": 3,
+   "onScreenDropDetail": [
+    {
+     "frame": 150,
+     "distanceM": 89.6
+    },
+    {
+     "frame": 155,
+     "distanceM": 91.1
+    },
+    {
+     "frame": 156,
+     "distanceM": 86.6
+    }
+   ]
+  },
+  "old SITE_A / former cut (negative)": {
+   "framesFadingOutBeyondExit": 0,
+   "firstFadePast95Frame": null,
+   "unlistedDropsLast": 6,
+   "onScreenDrops": 6,
+   "onScreenDropDetail": [
+    {
+     "frame": 90,
+     "distanceM": 95.3
+    },
+    {
+     "frame": 150,
+     "distanceM": 89.6
+    },
+    {
+     "frame": 155,
+     "distanceM": 91.1
+    },
+    {
+     "frame": 156,
+     "distanceM": 86.6
+    },
+    {
+     "frame": 312,
+     "distanceM": 95.1
+    },
+    {
+     "frame": 314,
+     "distanceM": 95
+    }
+   ]
+  }
+ },
+ "checks": {
+  "newSite": {
+   "currentFadesPast95": true,
+   "currentNoHardDrop": true,
+   "formerNothingPast95": true,
+   "formerHardDrops": true
+  },
+  "oldSite": {
+   "currentFadesPast95": true,
+   "currentNoHardDrop": false,
+   "formerNothingPast95": true,
+   "formerHardDrops": true
+  }
+ },
+ "gate1": false,
+ "gate2": {
+  "newSiteFramesFadingPast95": 56,
+  "required": 3,
+  "pass": true
+ },
+ "testRuns": {
+  "newSite": "receding-360-branch-newsite-test.log: pass",
+  "oldSite": "receding-360-main-oldsite-test.log: FAIL no hard drop while receding, actual 3"
+ },
+ "verdict": "STOP (ruling 1: the test fails at 360 frames on the old site)"
+}
