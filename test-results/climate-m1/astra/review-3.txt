@@ -1,0 +1,19 @@
+VERDICT: APPROVE
+
+MUST-FIX: None.
+
+SHOULD:
+
+1. `docs/surface-climate-v2.md:624`: Replace “Every inlined branch was reached” with “The recorded output categories were exercised.” `identity.mjs:29–36` tallies outputs, not executed branches; it does not establish coverage of index clamps, exact thresholds, or NaN paths.
+2. `test-results/climate-m1/timing/identity.mjs:15–23,74`: Harden future runs by rejecting identical resolved module paths, recording source hashes, asserting both field sets and expected sample counts, and exiting nonzero on differences. The recorded run is non-vacuous, but the harness does not enforce that.
+3. `tests/surface-climate.bench.mjs:43–52`: Describe the measurement as a conservative allocation estimate, and replace “proves … allocates nothing” with “checks loop overhead stays below 1 B/call.” Clamping negative growth and including profiler/report overhead makes this an upper estimate; the control does not prove identical optimization.
+
+Notes:
+
+- **Bit identity:** `src/surface-climate.ts:447–457,469–495` matches the baseline helpers, retained at current lines 161–178. It preserves left-associated `C.YEAR_D*half*h`, interpolation arithmetic, `<1e-9` versus `<=1e-9`, endpoint comparisons, index clamps, smoothstep grouping, NaN propagation and signed-zero behavior. Snow, heat and habitat branches retain relevant lazy evaluation. Independent pure calculations are interleaved differently, without changing rounding or observable results.
+- **Scope:** The only source change outside the sampler is removal of private `clamp01`/`smooth` definitions (baseline lines 141–143). All their callers were replaced. Exported helpers, `noise()`, calibration and version remain unchanged.
+- **Identity evidence:** `identity.mjs:38–67` compares all 18 fields with `Object.is`, using separate samplers and outputs and the specified pinned sets. `identity.json:2–3` identifies different trees; I independently verified the exported A sampler’s Git blob equals `3ab2eab`. Lines 687–694 record 43.2M total / 32.4M pinned comparisons, zero differences. `pins.json:2–35` agrees across both trees. The two saved golden outputs also have identical SHA-256 hashes; `golden-compare.json:1` correctly distinguishes unchanged step-8 output from outstanding committed-golden differences.
+- **Bench:** `tests/surface-climate.bench.mjs:45–64` counts GC-freed bytes plus nonnegative net growth over 3M calls. The separate warmed control loop retains observable accumulation; its simpler sampler can optimize differently, but this does not invalidate the overhead check. Profiler startup/stop lie outside individual timers; GC profiling during passes can add overhead. Independent unprofiled A/B timing exists at `ab-harness.mjs:68–79`. Thresholds and failing-control exit behavior are correct at bench lines 82–94. The scavenge explanation is sound.
+- **Recorded gates:** `bench-gate.log:11,41,52,82,134,164,175,205` confirms baseline allocation failure/exit 1 and branch success/exit 0 twice. Gates 3–5 numbers match section 8: `alloc-rounds.log:2–30`, `ab-rounds.log:2–18`, `gate5-targeted.log:41–47`, and `gate5-affected.log:340,1542–1554`. The 2.63–2.72 ms cold-JIT range refers to the branch. Commit `0225e93`’s 48.26 B negative-control figure represents one round; the three values span 48.261–48.271, immaterial to the gate.
+
+No tests or benchmarks were run; no files were changed.

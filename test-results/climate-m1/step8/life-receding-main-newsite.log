@@ -1,0 +1,25 @@
+✖ presentation continuity: receding exits fade past 95 m; the former 95 m candidate cut hard-drops them (negative) (5973.4514ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6181.5187
+
+✖ failing tests:
+
+test at tests\life-continuity-scenario.test.mjs:117:1
+✖ presentation continuity: receding exits fade past 95 m; the former 95 m candidate cut hard-drops them (negative) (5973.4514ms)
+  AssertionError [ERR_ASSERTION]: a rig keeps fading out past the 95 m exit
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/cm1-panels/tests/life-continuity-scenario.test.mjs:132:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

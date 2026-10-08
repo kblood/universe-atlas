@@ -52,18 +52,44 @@ const bodies=Object.fromEntries(waterWorlds().map(b=>[b.name,b]));
  * NEW measured (relief): Maithea L6 rgb 26.26 snow 1.25 forest .42 name 3.16 carried 3.49; L8 rgb 3.55 snow .31
  *   forest .01 name .76 carried 1.17; L10 rgb .47 snow .24 forest .15 name 0 carried .19. Lethuris L6 rgb 39.17
  *   snow 2.12 forest 1.76 name 6.99 carried 8.15; L8 rgb 11.05 snow .96 forest 2.17 name 1.85 carried 1.65;
- *   L10 rgb .92 snow .15 forest .64 name .43 carried .25. */
+ *   L10 rgb .92 snow .15 forest .64 name .43 carried .25.
+ *
+ * RE-PINNED by R5-ATLAS-CLIMATE-M1 (surface-climate-2, climate-m1-decision-2 (b), 2026-10-08; Opus-decided on Kasper's
+ * instruction, overrulable). The heights, height max, ocean and shared-ocean rows are identical to main 290472d at
+ * every level (gate G1), so every row below moved through the climate fields (snow, forest, class), not the terrain.
+ * Each failing row is re-pinned at its measured value rounded UP to 0.1; LOD_TOLERANCES is unchanged (the plan
+ * tolerances stay goals, owner sheet A3). Per-step bisect: test-results/climate-m1/resume/lod-bisect.json; the cause
+ * named is the climate step from which the row fails at every later step (first failing step in brackets if earlier).
+ *   Maithea  L6  rgbP99 26.3 -> 43.1 (43.013, step 1 PDD snow)      snow 1.3 -> 1.5 (1.478, step 1 PDD snow)
+ *                forest plan 0.5 -> 1.9 (1.848, step 5 PET moisture)  name 3.2 -> 4.0 (3.988, step 5 PET [step 1])
+ *                carriedName 3.5 -> 4.4 (4.383, step 5 PET [step 1])
+ *   Maithea  L8  rgbP99 plan 4 -> 5.8 (5.750, step 1 PDD snow)        forest plan 0.5 -> 0.7 (0.694, step 5 PET)
+ *                name 0.8 -> 1.3 (1.264, step 2 warm-column lapse)    carriedName 1.2 -> 1.4 (1.333, step 5 PET)
+ *   Lethuris L6  rgbP99 39.2 -> 58.1 (58.058, step 1 PDD snow)        forest 1.8 -> 3.4 (3.327, step 1 PDD snow)
+ *   Lethuris L8  rgbP99 11.1 -> 15.3 (15.212, step 2 warm lapse)      snow 1.0 -> 1.1 (1.042, step 2 warm lapse)
+ *                forest 2.2 -> 2.5 (2.472, step 2 warm lapse)         name 1.9 -> 2.5 (2.458, step 1 PDD snow)
+ *                carriedName 1.7 -> 3.0 (2.958, step 1 PDD snow)
+ *   Lethuris L10 rgbP99 plan 1 -> 1.3 (1.276, step 1 PDD snow)        forest 0.7 -> 0.9 (0.861, step 2 warm lapse)
+ *                name plan 0.5 -> 1.0 (0.944, step 1 PDD snow)        carriedName plan 0.5 -> 1.0 (0.917, step 1 PDD snow)
+ * Unchanged cells: Maithea L10-L14 and Lethuris L12-L14 meet the plan tolerance; Lethuris L6 snow 2.125, name 6.494
+ * and carriedName 7.763 stay under their old ceilings. Follow-up (LOD owner / A4): carry snow and forest edges
+ * across levels, or blend colour across levels (docs/surface-climate-v2.md section 6b). */
 const SHIPPED_CEILINGS={
   Maithea:{
-    6:{rgbP99:26.3,snow:1.3,name:3.2,carriedName:3.5},
-    8:{name:.8,carriedName:1.2},
+    6:{rgbP99:43.1,snow:1.5,forest:1.9,name:4.0,carriedName:4.4},
+    8:{rgbP99:5.8,forest:.7,name:1.3,carriedName:1.4},
   },
   Lethuris:{
-    6:{rgbP99:39.2,snow:2.2,forest:1.8,name:7.0,carriedName:8.2},
-    8:{rgbP99:11.1,snow:1.0,forest:2.2,name:1.9,carriedName:1.7},
-    10:{forest:.7},
+    6:{rgbP99:58.1,snow:2.2,forest:3.4,name:7.0,carriedName:8.2},
+    8:{rgbP99:15.3,snow:1.1,forest:2.5,name:2.5,carriedName:3.0},
+    10:{rgbP99:1.3,forest:.9,name:1.0,carriedName:1.0},
   },
 };
+/** Pinned retention limits (percent) for coarse-keep rows the terrain does not meet yet; the plan's coarseKeeps
+ * (LOD_TOLERANCES, 98 % snow at L6) stay the tracked target. Maithea L6 snow kept: 99.04 % on main 290472d ->
+ * 95.26 % under surface-climate-2 (step 1 PDD snow: the snow edge in height is ~100 m wide instead of ~900 m), pinned
+ * at the measured value rounded DOWN to 0.1 (R5-ATLAS-CLIMATE-M1, climate-m1-decision-2 (b)). */
+const SHIPPED_RETENTION={Maithea:{snowL6:95.2}};
 
 test('ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance policy',()=>{
   assert.equal(LOD_LADDER_VERSION,'lod-ladder-4','lod-ladder-4: M5 riser reduction (docs/mountain-riser-lod-2026-10-07.md), tolerances unchanged; was lod-ladder-1 (P3); lod-ladder-2 adds the declared M3 carving reduction (mountains cost plan T3), every tolerance unchanged');
@@ -122,7 +148,7 @@ test('Maithea coarse retention: peak area kept, summit loss, snow and forest (pl
   assert.ok(l8.peakKept>=100*keeps.peakAreaL8,`L8 peak area kept ${l8.peakKept.toFixed(2)}% >= 95% (shipped 91.2%)`);
   assert.ok(l6.summitP50<=120&&l6.summitMax<=400,`L6 summit loss ${l6.summitP50.toFixed(0)}/${l6.summitMax.toFixed(0)} m <= 120/400 m (shipped 205/661)`);
   assert.ok(l6.metaSummitP50<=l6.summitP50&&l6.metaSummitMax<=l6.summitMax,'metadata maxH (C2) bounds the summit at least as well as the stored lattice');
-  assert.ok(l6.snowKept>=100*keeps.snowL6,`L6 snow kept ${l6.snowKept.toFixed(1)}%`);
+  assert.ok(l6.snowKept>=Math.min(100*keeps.snowL6,SHIPPED_RETENTION.Maithea.snowL6),`L6 snow kept ${l6.snowKept.toFixed(2)}% >= ${SHIPPED_RETENTION.Maithea.snowL6}% (target ${100*keeps.snowL6}%)`);
   assert.ok(l6.forestKept>=100*keeps.forestL6,`L6 forest kept ${l6.forestKept.toFixed(1)}%`);
 });
 

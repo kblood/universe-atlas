@@ -1,0 +1,8 @@
+step0-main-290472d 290472d surface-climate-1.1-geo-g 19406 ms, failing 0
+step1-pdd c506b41 surface-climate-2 19346 ms, failing 14
+step2-warm-lapse 2f49abb surface-climate-2 16017 ms, failing 16
+step3-ceiling 0814edd surface-climate-2 16040 ms, failing 16
+step4-heat-cap f87eba5 surface-climate-2 15991 ms, failing 16
+step5-pet 730094c surface-climate-2 17078 ms, failing 23
+step6-itcz 7200557 surface-climate-2 16901 ms, failing 21
+tip HEAD surface-climate-2 17467 ms, failing 21

@@ -17,7 +17,7 @@ import type {biomeClassifier} from './surface-biomes.ts';
  * continuously toward the treeline, the dry belt and the snow edge. The result
  * also carries the cell's annual climateCode (presence/kind read only annual
  * statistics, never a season phase). */
-export const TREE_HABITAT_VERSION='tree-habitat-2-climate';
+export const TREE_HABITAT_VERSION='tree-habitat-3-heat'; // surface-climate-2 heat cap moves forestSuitability01 (docs/surface-climate-v2.md); expression unchanged
 /** Maximum tree cover (fraction of population cells) at full suitability. */
 export const TREE_FULL_COVER=.76;
 export function forestHabitat(sample:ReturnType<typeof terrainSampler>,classify:ReturnType<typeof biomeClassifier>,radiusM:number,strict=false){

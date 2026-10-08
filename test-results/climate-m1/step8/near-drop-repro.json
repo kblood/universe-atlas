@@ -1,0 +1,67 @@
+{
+ "decision": "climate-m1-decision-4 ruling 2, FAUNA-NEAR-DROP",
+ "checkout": "climate/m1 (branch code; life code identical to main c6526d0)",
+ "site": "SITE_A_PRE_M1_M [4075043.7,-1510938.2,2845723.8]",
+ "expected": [
+  {
+   "frame": 150,
+   "distanceM": 89.6
+  },
+  {
+   "frame": 155,
+   "distanceM": 91.1
+  },
+  {
+   "frame": 156,
+   "distanceM": 86.6
+  }
+ ],
+ "run1": {
+  "drops": [
+   {
+    "frame": 150,
+    "distanceM": 89.6
+   },
+   {
+    "frame": 155,
+    "distanceM": 91.1
+   },
+   {
+    "frame": 156,
+    "distanceM": 86.6
+   }
+  ],
+  "fileDurationS": 33.8,
+  "summary": "tests 4, suites 0, pass 3, fail 0, cancelled 0, skipped 0, todo 1"
+ },
+ "run2": {
+  "drops": [
+   {
+    "frame": 150,
+    "distanceM": 89.6
+   },
+   {
+    "frame": 155,
+    "distanceM": 91.1
+   },
+   {
+    "frame": 156,
+    "distanceM": 86.6
+   }
+  ],
+  "fileDurationS": 31.5,
+  "summary": "tests 4, suites 0, pass 3, fail 0, cancelled 0, skipped 0, todo 1"
+ },
+ "deterministic": true,
+ "matchesMainRepro": true,
+ "runtimeVsEstimates": {
+  "fileS": [
+   33.8,
+   31.5
+  ],
+  "tierEstimates": {
+   "all": 20.5,
+   "full": 47.6
+  }
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "A_3ab2eab": {
+  "calibrationSha": "f56bf8ab95a9d0fc965e3ba9a0fc693ca8e1c301e75497e456bb5a103dddce6e",
+  "version": "surface-climate-2",
+  "digest50k": {
+   "G001/C2128,0,1/0/planet/1": "6267ac4b41bfcc13ab5cbb9c632e284efc902e96a23d53859f7aa4f3d5bd0b56",
+   "G001/C2128,0,3/1/planet/0": "d2220d2f0845e09b81789d78b43161d71961f9bf1d5172a4e1b137850862ebbe",
+   "G001/C2128,0,4/1/planet/0": "e532a39a83830478c60202b8fef58fedb26a2cb868f5d968fe15685dfec7b5cb",
+   "G001/C2128,0,5/0/planet/0": "f9df465db9d6d30f14a8e71216f60b20229d08c7dee4c33929770f6200b6953e",
+   "G001/C2128,0,5/1/planet/0": "5b757aeb2b5d7fe7831b134c9e9c2b0470d1ca27fbefaff11fe5cfa7a58354ee",
+   "G001/C2128,0,6/0/planet/0": "eb45c23191b90d43cefabec8ced5e89c4c551fde33085f495c0fdca810279d21",
+   "G001/C2128,0,7/0/planet/1": "6a75fe928dbcf6f28bcda21f3459a7fa8db246be807f7a25d848953833b2f819",
+   "G001/C2128,1,1/0/planet/0": "24443b7668fd2067f85ab74b520aab52ca86833e347fa95bff3c59ee7a17bb18",
+   "G001/C2128,1,1/1/planet/1": "5f2df6aa163215edc60837a198d3dbeffff4eecfefb1e223ecedfe9461e29577",
+   "G001/C2128,1,2/0/planet/1": "beda717684899b8fa50a9cdfd7e3ec0c4b5ecd9cc1575c4f3d6da21d532d0968"
+  }
+ },
+ "B_inlined": {
+  "calibrationSha": "f56bf8ab95a9d0fc965e3ba9a0fc693ca8e1c301e75497e456bb5a103dddce6e",
+  "version": "surface-climate-2",
+  "digest50k": {
+   "G001/C2128,0,1/0/planet/1": "6267ac4b41bfcc13ab5cbb9c632e284efc902e96a23d53859f7aa4f3d5bd0b56",
+   "G001/C2128,0,3/1/planet/0": "d2220d2f0845e09b81789d78b43161d71961f9bf1d5172a4e1b137850862ebbe",
+   "G001/C2128,0,4/1/planet/0": "e532a39a83830478c60202b8fef58fedb26a2cb868f5d968fe15685dfec7b5cb",
+   "G001/C2128,0,5/0/planet/0": "f9df465db9d6d30f14a8e71216f60b20229d08c7dee4c33929770f6200b6953e",
+   "G001/C2128,0,5/1/planet/0": "5b757aeb2b5d7fe7831b134c9e9c2b0470d1ca27fbefaff11fe5cfa7a58354ee",
+   "G001/C2128,0,6/0/planet/0": "eb45c23191b90d43cefabec8ced5e89c4c551fde33085f495c0fdca810279d21",
+   "G001/C2128,0,7/0/planet/1": "6a75fe928dbcf6f28bcda21f3459a7fa8db246be807f7a25d848953833b2f819",
+   "G001/C2128,1,1/0/planet/0": "24443b7668fd2067f85ab74b520aab52ca86833e347fa95bff3c59ee7a17bb18",
+   "G001/C2128,1,1/1/planet/1": "5f2df6aa163215edc60837a198d3dbeffff4eecfefb1e223ecedfe9461e29577",
+   "G001/C2128,1,2/0/planet/1": "beda717684899b8fa50a9cdfd7e3ec0c4b5ecd9cc1575c4f3d6da21d532d0968"
+  }
+ },
+ "calibrationShaPinned": "f56bf8ab95a9d0fc965e3ba9a0fc693ca8e1c301e75497e456bb5a103dddce6e",
+ "pass": true
+}

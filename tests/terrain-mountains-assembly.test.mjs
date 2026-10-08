@@ -25,22 +25,36 @@ import {rasterFromArray} from './helpers/mountain-metrics.mjs';
 import {waterWorlds, fib} from './terrain-climate-fixtures.mjs';
 import {statisticSampler, fullOnly} from './helpers/statistic-level.mjs';
 
+// Heights + ocean are the HARD terrain identity and never move with the climate. The colour digest folds in the
+// climate fields (snow, forest, aridity), so it is a separate climate pin (R5-ATLAS-CLIMATE-M1, climate-m1-decision-2
+// (b) item 4, 2026-10-08; Opus-decided on Kasper's instruction, overrulable): a climate version bump re-pins `colour`
+// with a ledger line, while `heights` must stay equal to main. Verified: main 290472d computes these `heights` literals
+// (test-results/climate-m1/resume/assembly-main-290472d.log) and surface-climate-2 leaves them unchanged.
 const MAIN_DIGESTS = {
   outsideBelt: {heights: 'a7000ad60afb60709e7b7621ea8f573a003a712170f016467ea930a4e7e63d7b',
-    colour: 'e04aa67d90a7950f4924c468d03b78c00c23bb762614f28184de239c913940ea',
     counts: {Maithea: 3869, Selawyn: 3935, Raiva: 3970, Lethuris: 3939}},
   outsideMassif: {heights: 'e26e77d3abd8ca436dd5e90553d55e2ad3bdf272900545e1add56b9bd54fd024',
-    colour: '35a334d2c174dd99fecd3848c48b3779c2e4dd5154d6b596cd728acd70c8f4b0',
     counts: {Maithea: 3997, Selawyn: 4039, Raiva: 4025, Lethuris: 4039}},
 };
+/** Colour digests of the same directions, pinned per climate version. surface-climate-1.1-geo-g (main 290472d):
+ * outsideBelt e04aa67d90a7950f4924c468d03b78c00c23bb762614f28184de239c913940ea, outsideMassif
+ * 35a334d2c174dd99fecd3848c48b3779c2e4dd5154d6b596cd728acd70c8f4b0 -> surface-climate-2 (steps 1-6, colour reads the
+ * PDD snow, heat-capped forest and PET aridity) below. */
+const CLIMATE_COLOUR_DIGESTS = {
+  outsideBelt: 'd6ed25648c5a529ed0992dc619ab0868a517425a4e1eba0fe4471d9122d99c13',
+  outsideMassif: 'a87f266410a86b33af75524525b9bf8218db4233ac4dbe542ed42aa33bafea7b',
+};
 
-for (const [label, select] of [['outsideBelt', outsideBelt], ['outsideMassif', outsideMassif]])
-  test(`HARD: ${label} directions (4096 per water world) are bit-identical to main: heights, ocean and colour`, () => {
-    const pin = MAIN_DIGESTS[label], h = identityDigest(terrainSampler, {select}), c = identityDigest(terrainSampler, {select, colour: true});
+for (const [label, select] of [['outsideBelt', outsideBelt], ['outsideMassif', outsideMassif]]) {
+  test(`HARD: ${label} directions (4096 per water world) are bit-identical to main: heights and ocean`, () => {
+    const pin = MAIN_DIGESTS[label], h = identityDigest(terrainSampler, {select});
     assert.deepEqual(h.counts, pin.counts);
     assert.equal(h.sha, pin.heights);
-    assert.equal(c.sha, pin.colour);
   });
+  test(`PIN: ${label} colour digest (moves only with the climate version; heights are the HARD row above)`, () => {
+    assert.equal(identityDigest(terrainSampler, {select, colour: true}).sha, CLIMATE_COLOUR_DIGESTS[label]);
+  });
+}
 
 test('HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag', () => {
   const pin = MAIN_DIGESTS.outsideBelt;let k = 0;
@@ -49,7 +63,7 @@ test('HARD: negative controls: the identity digest rejects one changed height, c
   for (const [name, how, colour] of [['height', m => {m.groundHeightM += 1e-6;}, false], ['colour', m => {m.color[1] += 1e-9;}, true],
     ['ocean', m => {m.ocean = !m.ocean;}, false]]) {
     k = 0;const r = identityDigest(mutate(how), {select: outsideBelt, colour});
-    assert.notEqual(r.sha, colour ? pin.colour : pin.heights, name);
+    assert.notEqual(r.sha, colour ? CLIMATE_COLOUR_DIGESTS.outsideBelt : pin.heights, name);
   }
 });
 

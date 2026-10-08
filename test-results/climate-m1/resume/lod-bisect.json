@@ -1,0 +1,4722 @@
+{
+ "variants": [
+  [
+   "step0-main-290472d",
+   "290472d"
+  ],
+  [
+   "step1-pdd",
+   "c506b41"
+  ],
+  [
+   "step2-warm-lapse",
+   "2f49abb"
+  ],
+  [
+   "step3-ceiling",
+   "0814edd"
+  ],
+  [
+   "step4-heat-cap",
+   "f87eba5"
+  ],
+  [
+   "step5-pet",
+   "730094c"
+  ],
+  [
+   "step6-itcz",
+   "7200557"
+  ],
+  [
+   "tip",
+   "HEAD"
+  ]
+ ],
+ "gates": {
+  "G1": {
+   "pass": true,
+   "diffs": []
+  },
+  "G2": {
+   "pass": true,
+   "step0Failing": [],
+   "step0EqualsMain": true,
+   "unattributed": []
+  },
+  "G3": {
+   "pass": true,
+   "rows": []
+  },
+  "G4": {
+   "pass": true,
+   "rows": []
+  }
+ },
+ "attribution": {
+  "Maithea L6 rgbP99": {
+   "tip": 43.013,
+   "limit": 26.3,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 15.183,
+    "step1-pdd": 43.001,
+    "step2-warm-lapse": 41.623,
+    "step3-ceiling": 41.623,
+    "step4-heat-cap": 41.623,
+    "step5-pet": 43.013,
+    "step6-itcz": 43.013,
+    "tip": 43.013
+   }
+  },
+  "Maithea L6 snow": {
+   "tip": 1.478,
+   "limit": 1.3,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 1.249,
+    "step1-pdd": 1.656,
+    "step2-warm-lapse": 1.478,
+    "step3-ceiling": 1.478,
+    "step4-heat-cap": 1.478,
+    "step5-pet": 1.478,
+    "step6-itcz": 1.478,
+    "tip": 1.478
+   }
+  },
+  "Maithea L6 forest": {
+   "tip": 1.848,
+   "limit": 0.5,
+   "failsFrom": "step5-pet",
+   "firstFail": "step5-pet",
+   "history": {
+    "step0-main-290472d": 0.42,
+    "step1-pdd": 0.42,
+    "step2-warm-lapse": 0.42,
+    "step3-ceiling": 0.42,
+    "step4-heat-cap": 0.42,
+    "step5-pet": 1.848,
+    "step6-itcz": 1.848,
+    "tip": 1.848
+   }
+  },
+  "Maithea L6 name": {
+   "tip": 3.988,
+   "limit": 3.2,
+   "failsFrom": "step5-pet",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 3.16,
+    "step1-pdd": 3.3,
+    "step2-warm-lapse": 2.943,
+    "step3-ceiling": 2.943,
+    "step4-heat-cap": 2.943,
+    "step5-pet": 4.027,
+    "step6-itcz": 3.988,
+    "tip": 3.988
+   }
+  },
+  "Maithea L6 carriedName": {
+   "tip": 4.383,
+   "limit": 3.5,
+   "failsFrom": "step5-pet",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 3.491,
+    "step1-pdd": 3.568,
+    "step2-warm-lapse": 3.198,
+    "step3-ceiling": 3.198,
+    "step4-heat-cap": 3.198,
+    "step5-pet": 4.396,
+    "step6-itcz": 4.383,
+    "tip": 4.383
+   }
+  },
+  "Maithea L8 rgbP99": {
+   "tip": 5.75,
+   "limit": 4,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 2.258,
+    "step1-pdd": 5.026,
+    "step2-warm-lapse": 5.298,
+    "step3-ceiling": 5.298,
+    "step4-heat-cap": 5.298,
+    "step5-pet": 5.75,
+    "step6-itcz": 5.75,
+    "tip": 5.75
+   }
+  },
+  "Maithea L8 forest": {
+   "tip": 0.694,
+   "limit": 0.5,
+   "failsFrom": "step5-pet",
+   "firstFail": "step5-pet",
+   "history": {
+    "step0-main-290472d": 0.014,
+    "step1-pdd": 0.014,
+    "step2-warm-lapse": 0.167,
+    "step3-ceiling": 0.167,
+    "step4-heat-cap": 0.167,
+    "step5-pet": 0.667,
+    "step6-itcz": 0.694,
+    "tip": 0.694
+   }
+  },
+  "Maithea L8 name": {
+   "tip": 1.264,
+   "limit": 0.8,
+   "failsFrom": "step2-warm-lapse",
+   "firstFail": "step2-warm-lapse",
+   "history": {
+    "step0-main-290472d": 0.764,
+    "step1-pdd": 0.722,
+    "step2-warm-lapse": 0.861,
+    "step3-ceiling": 0.861,
+    "step4-heat-cap": 0.861,
+    "step5-pet": 1.292,
+    "step6-itcz": 1.264,
+    "tip": 1.264
+   }
+  },
+  "Maithea L8 carriedName": {
+   "tip": 1.333,
+   "limit": 1.2,
+   "failsFrom": "step5-pet",
+   "firstFail": "step5-pet",
+   "history": {
+    "step0-main-290472d": 1.167,
+    "step1-pdd": 1.042,
+    "step2-warm-lapse": 0.833,
+    "step3-ceiling": 0.833,
+    "step4-heat-cap": 0.833,
+    "step5-pet": 1.306,
+    "step6-itcz": 1.333,
+    "tip": 1.333
+   }
+  },
+  "Lethuris L6 rgbP99": {
+   "tip": 58.058,
+   "limit": 39.2,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 20.54,
+    "step1-pdd": 56.517,
+    "step2-warm-lapse": 58.209,
+    "step3-ceiling": 58.209,
+    "step4-heat-cap": 58.209,
+    "step5-pet": 59.985,
+    "step6-itcz": 58.058,
+    "tip": 58.058
+   }
+  },
+  "Lethuris L6 forest": {
+   "tip": 3.327,
+   "limit": 1.8,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 1.764,
+    "step1-pdd": 2.913,
+    "step2-warm-lapse": 3.327,
+    "step3-ceiling": 3.327,
+    "step4-heat-cap": 3.327,
+    "step5-pet": 4.53,
+    "step6-itcz": 3.327,
+    "tip": 3.327
+   }
+  },
+  "Lethuris L8 rgbP99": {
+   "tip": 15.212,
+   "limit": 11.1,
+   "failsFrom": "step2-warm-lapse",
+   "firstFail": "step2-warm-lapse",
+   "history": {
+    "step0-main-290472d": 5.244,
+    "step1-pdd": 10.683,
+    "step2-warm-lapse": 15.212,
+    "step3-ceiling": 15.212,
+    "step4-heat-cap": 15.212,
+    "step5-pet": 15.295,
+    "step6-itcz": 15.212,
+    "tip": 15.212
+   }
+  },
+  "Lethuris L8 snow": {
+   "tip": 1.042,
+   "limit": 1,
+   "failsFrom": "step2-warm-lapse",
+   "firstFail": "step2-warm-lapse",
+   "history": {
+    "step0-main-290472d": 0.958,
+    "step1-pdd": 0.403,
+    "step2-warm-lapse": 1.042,
+    "step3-ceiling": 1.042,
+    "step4-heat-cap": 1.042,
+    "step5-pet": 1.042,
+    "step6-itcz": 1.042,
+    "tip": 1.042
+   }
+  },
+  "Lethuris L8 forest": {
+   "tip": 2.472,
+   "limit": 2.2,
+   "failsFrom": "step2-warm-lapse",
+   "firstFail": "step2-warm-lapse",
+   "history": {
+    "step0-main-290472d": 2.167,
+    "step1-pdd": 1.472,
+    "step2-warm-lapse": 2.472,
+    "step3-ceiling": 2.472,
+    "step4-heat-cap": 2.472,
+    "step5-pet": 2.806,
+    "step6-itcz": 2.472,
+    "tip": 2.472
+   }
+  },
+  "Lethuris L8 name": {
+   "tip": 2.458,
+   "limit": 1.9,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 1.847,
+    "step1-pdd": 2.361,
+    "step2-warm-lapse": 2.458,
+    "step3-ceiling": 2.458,
+    "step4-heat-cap": 2.458,
+    "step5-pet": 2.764,
+    "step6-itcz": 2.458,
+    "tip": 2.458
+   }
+  },
+  "Lethuris L8 carriedName": {
+   "tip": 2.958,
+   "limit": 1.7,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 1.653,
+    "step1-pdd": 2.25,
+    "step2-warm-lapse": 2.958,
+    "step3-ceiling": 2.958,
+    "step4-heat-cap": 2.958,
+    "step5-pet": 3.222,
+    "step6-itcz": 2.958,
+    "tip": 2.958
+   }
+  },
+  "Lethuris L10 rgbP99": {
+   "tip": 1.276,
+   "limit": 1,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 0.433,
+    "step1-pdd": 2.019,
+    "step2-warm-lapse": 1.214,
+    "step3-ceiling": 1.214,
+    "step4-heat-cap": 1.214,
+    "step5-pet": 1.291,
+    "step6-itcz": 1.276,
+    "tip": 1.276
+   }
+  },
+  "Lethuris L10 forest": {
+   "tip": 0.861,
+   "limit": 0.7,
+   "failsFrom": "step2-warm-lapse",
+   "firstFail": "step2-warm-lapse",
+   "history": {
+    "step0-main-290472d": 0.639,
+    "step1-pdd": 0.056,
+    "step2-warm-lapse": 0.861,
+    "step3-ceiling": 0.861,
+    "step4-heat-cap": 0.861,
+    "step5-pet": 1.444,
+    "step6-itcz": 0.861,
+    "tip": 0.861
+   }
+  },
+  "Lethuris L10 name": {
+   "tip": 0.944,
+   "limit": 0.5,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 0.431,
+    "step1-pdd": 0.722,
+    "step2-warm-lapse": 0.944,
+    "step3-ceiling": 0.944,
+    "step4-heat-cap": 0.944,
+    "step5-pet": 1.5,
+    "step6-itcz": 0.944,
+    "tip": 0.944
+   }
+  },
+  "Lethuris L10 carriedName": {
+   "tip": 0.917,
+   "limit": 0.5,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 0.25,
+    "step1-pdd": 0.569,
+    "step2-warm-lapse": 0.917,
+    "step3-ceiling": 0.917,
+    "step4-heat-cap": 0.917,
+    "step5-pet": 1.361,
+    "step6-itcz": 0.917,
+    "tip": 0.917
+   }
+  },
+  "Maithea L6 retention snowKept": {
+   "tip": 95.261,
+   "limit": 98,
+   "failsFrom": "step1-pdd",
+   "firstFail": "step1-pdd",
+   "history": {
+    "step0-main-290472d": 99.037,
+    "step1-pdd": 95.412,
+    "step2-warm-lapse": 95.261,
+    "step3-ceiling": 95.261,
+    "step4-heat-cap": 95.261,
+    "step5-pet": 95.261,
+    "step6-itcz": 95.261,
+    "tip": 95.261
+   }
+  }
+ },
+ "tables": {
+  "step0-main-290472d": {
+   "climateVersion": "surface-climate-1.1-geo-g",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.183,
+       "limit": 26.3,
+       "pass": true
+      },
+      "snow": {
+       "value": 1.249,
+       "limit": 1.3,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.42,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 3.16,
+       "limit": 3.2,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 3.491,
+       "limit": 3.5,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 2.258,
+       "limit": 4,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.306,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.014,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.764,
+       "limit": 0.8,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 1.167,
+       "limit": 1.2,
+       "pass": true
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.449,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.236,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.153,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.02,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.002,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 20.54,
+       "limit": 39.2,
+       "pass": true
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 1.764,
+       "limit": 1.8,
+       "pass": true
+      },
+      "name": {
+       "value": 6.988,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 8.151,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.244,
+       "limit": 11.1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.958,
+       "limit": 1,
+       "pass": true
+      },
+      "forest": {
+       "value": 2.167,
+       "limit": 2.2,
+       "pass": true
+      },
+      "name": {
+       "value": 1.847,
+       "limit": 1.9,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 1.653,
+       "limit": 1.7,
+       "pass": true
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.433,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.153,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.639,
+       "limit": 0.7,
+       "pass": true
+      },
+      "name": {
+       "value": 0.431,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.028,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.167,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.008,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 99.037,
+     "snowFalse": 4.073,
+     "forestKept": 98.877,
+     "forestFalse": 0.633,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.979,
+     "snowFalse": 4.583,
+     "forestKept": 99.664,
+     "forestFalse": 0.203,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": true,
+     "forestL6": true
+    }
+   },
+   "failingRows": []
+  },
+  "step1-pdd": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 43.001,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.656,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 0.42,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 3.3,
+       "limit": 3.2,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 3.568,
+       "limit": 3.5,
+       "pass": false
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.026,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.014,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.722,
+       "limit": 0.8,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 1.042,
+       "limit": 1.2,
+       "pass": true
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.798,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.056,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.153,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.542,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.027,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.014,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.278,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.008,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 56.517,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.884,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 2.913,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 6.654,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 8.084,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 10.683,
+       "limit": 11.1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.403,
+       "limit": 1,
+       "pass": true
+      },
+      "forest": {
+       "value": 1.472,
+       "limit": 2.2,
+       "pass": true
+      },
+      "name": {
+       "value": 2.361,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 2.25,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 2.019,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.278,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.056,
+       "limit": 0.7,
+       "pass": true
+      },
+      "name": {
+       "value": 0.722,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.569,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.165,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.014,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.306,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.008,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.412,
+     "snowFalse": 0.944,
+     "forestKept": 98.877,
+     "forestFalse": 0.633,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.71,
+     "snowFalse": 0.432,
+     "forestKept": 99.664,
+     "forestFalse": 0.203,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 43.001 > 26.3",
+    "Maithea L6 snow 1.656 > 1.3",
+    "Maithea L6 name 3.3 > 3.2",
+    "Maithea L6 carriedName 3.568 > 3.5",
+    "Maithea L8 rgbP99 5.026 > 4",
+    "Maithea L10 carriedName 0.542 > 0.5",
+    "Lethuris L6 rgbP99 56.517 > 39.2",
+    "Lethuris L6 forest 2.913 > 1.8",
+    "Lethuris L8 name 2.361 > 1.9",
+    "Lethuris L8 carriedName 2.25 > 1.7",
+    "Lethuris L10 rgbP99 2.019 > 1",
+    "Lethuris L10 name 0.722 > 0.5",
+    "Lethuris L10 carriedName 0.569 > 0.5",
+    "retention snowL6"
+   ]
+  },
+  "step2-warm-lapse": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 41.623,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.478,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 0.42,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 2.943,
+       "limit": 3.2,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 3.198,
+       "limit": 3.5,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.298,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.167,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.861,
+       "limit": 0.8,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.833,
+       "limit": 1.2,
+       "pass": true
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.702,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.083,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.016,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.319,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.001,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 58.209,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 3.327,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 6.494,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 7.977,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.212,
+       "limit": 11.1,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.042,
+       "limit": 1,
+       "pass": false
+      },
+      "forest": {
+       "value": 2.472,
+       "limit": 2.2,
+       "pass": false
+      },
+      "name": {
+       "value": 2.458,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 2.958,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 1.214,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.208,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.861,
+       "limit": 0.7,
+       "pass": false
+      },
+      "name": {
+       "value": 0.944,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.917,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.184,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.264,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.061,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.261,
+     "snowFalse": 1.182,
+     "forestKept": 98.836,
+     "forestFalse": 0.649,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.736,
+     "snowFalse": 0.57,
+     "forestKept": 99.619,
+     "forestFalse": 0.199,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 41.623 > 26.3",
+    "Maithea L6 snow 1.478 > 1.3",
+    "Maithea L8 rgbP99 5.298 > 4",
+    "Maithea L8 name 0.861 > 0.8",
+    "Lethuris L6 rgbP99 58.209 > 39.2",
+    "Lethuris L6 forest 3.327 > 1.8",
+    "Lethuris L8 rgbP99 15.212 > 11.1",
+    "Lethuris L8 snow 1.042 > 1",
+    "Lethuris L8 forest 2.472 > 2.2",
+    "Lethuris L8 name 2.458 > 1.9",
+    "Lethuris L8 carriedName 2.958 > 1.7",
+    "Lethuris L10 rgbP99 1.214 > 1",
+    "Lethuris L10 forest 0.861 > 0.7",
+    "Lethuris L10 name 0.944 > 0.5",
+    "Lethuris L10 carriedName 0.917 > 0.5",
+    "retention snowL6"
+   ]
+  },
+  "step3-ceiling": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 41.623,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.478,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 0.42,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 2.943,
+       "limit": 3.2,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 3.198,
+       "limit": 3.5,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.298,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.167,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.861,
+       "limit": 0.8,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.833,
+       "limit": 1.2,
+       "pass": true
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.702,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.083,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.016,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.319,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.001,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 58.209,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 3.327,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 6.494,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 7.977,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.212,
+       "limit": 11.1,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.042,
+       "limit": 1,
+       "pass": false
+      },
+      "forest": {
+       "value": 2.472,
+       "limit": 2.2,
+       "pass": false
+      },
+      "name": {
+       "value": 2.458,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 2.958,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 1.214,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.208,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.861,
+       "limit": 0.7,
+       "pass": false
+      },
+      "name": {
+       "value": 0.944,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.917,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.184,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.264,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.061,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.261,
+     "snowFalse": 1.182,
+     "forestKept": 98.836,
+     "forestFalse": 0.649,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.736,
+     "snowFalse": 0.57,
+     "forestKept": 99.619,
+     "forestFalse": 0.199,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 41.623 > 26.3",
+    "Maithea L6 snow 1.478 > 1.3",
+    "Maithea L8 rgbP99 5.298 > 4",
+    "Maithea L8 name 0.861 > 0.8",
+    "Lethuris L6 rgbP99 58.209 > 39.2",
+    "Lethuris L6 forest 3.327 > 1.8",
+    "Lethuris L8 rgbP99 15.212 > 11.1",
+    "Lethuris L8 snow 1.042 > 1",
+    "Lethuris L8 forest 2.472 > 2.2",
+    "Lethuris L8 name 2.458 > 1.9",
+    "Lethuris L8 carriedName 2.958 > 1.7",
+    "Lethuris L10 rgbP99 1.214 > 1",
+    "Lethuris L10 forest 0.861 > 0.7",
+    "Lethuris L10 name 0.944 > 0.5",
+    "Lethuris L10 carriedName 0.917 > 0.5",
+    "retention snowL6"
+   ]
+  },
+  "step4-heat-cap": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 41.623,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.478,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 0.42,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 2.943,
+       "limit": 3.2,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 3.198,
+       "limit": 3.5,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.298,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.167,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.861,
+       "limit": 0.8,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.833,
+       "limit": 1.2,
+       "pass": true
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.702,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.083,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.016,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.319,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.001,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 58.209,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 3.327,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 6.494,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 7.977,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.212,
+       "limit": 11.1,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.042,
+       "limit": 1,
+       "pass": false
+      },
+      "forest": {
+       "value": 2.472,
+       "limit": 2.2,
+       "pass": false
+      },
+      "name": {
+       "value": 2.458,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 2.958,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 1.214,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.208,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.861,
+       "limit": 0.7,
+       "pass": false
+      },
+      "name": {
+       "value": 0.944,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.917,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.184,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.264,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.061,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.261,
+     "snowFalse": 1.182,
+     "forestKept": 98.836,
+     "forestFalse": 0.649,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.736,
+     "snowFalse": 0.57,
+     "forestKept": 99.619,
+     "forestFalse": 0.199,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 41.623 > 26.3",
+    "Maithea L6 snow 1.478 > 1.3",
+    "Maithea L8 rgbP99 5.298 > 4",
+    "Maithea L8 name 0.861 > 0.8",
+    "Lethuris L6 rgbP99 58.209 > 39.2",
+    "Lethuris L6 forest 3.327 > 1.8",
+    "Lethuris L8 rgbP99 15.212 > 11.1",
+    "Lethuris L8 snow 1.042 > 1",
+    "Lethuris L8 forest 2.472 > 2.2",
+    "Lethuris L8 name 2.458 > 1.9",
+    "Lethuris L8 carriedName 2.958 > 1.7",
+    "Lethuris L10 rgbP99 1.214 > 1",
+    "Lethuris L10 forest 0.861 > 0.7",
+    "Lethuris L10 name 0.944 > 0.5",
+    "Lethuris L10 carriedName 0.917 > 0.5",
+    "retention snowL6"
+   ]
+  },
+  "step5-pet": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 43.013,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.478,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 1.848,
+       "limit": 0.5,
+       "pass": false
+      },
+      "name": {
+       "value": 4.027,
+       "limit": 3.2,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 4.396,
+       "limit": 3.5,
+       "pass": false
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.75,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.667,
+       "limit": 0.5,
+       "pass": false
+      },
+      "name": {
+       "value": 1.292,
+       "limit": 0.8,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 1.306,
+       "limit": 1.2,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.787,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.083,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.403,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.018,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.319,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.001,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 59.985,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 4.53,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 7.376,
+       "limit": 7,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 8.792,
+       "limit": 8.2,
+       "pass": false
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.295,
+       "limit": 11.1,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.042,
+       "limit": 1,
+       "pass": false
+      },
+      "forest": {
+       "value": 2.806,
+       "limit": 2.2,
+       "pass": false
+      },
+      "name": {
+       "value": 2.764,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 3.222,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 1.291,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.208,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 1.444,
+       "limit": 0.7,
+       "pass": false
+      },
+      "name": {
+       "value": 1.5,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 1.361,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.204,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.264,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.072,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.261,
+     "snowFalse": 1.182,
+     "forestKept": 98.78,
+     "forestFalse": 0.695,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.736,
+     "snowFalse": 0.57,
+     "forestKept": 99.611,
+     "forestFalse": 0.212,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 43.013 > 26.3",
+    "Maithea L6 snow 1.478 > 1.3",
+    "Maithea L6 forest 1.848 > 0.5",
+    "Maithea L6 name 4.027 > 3.2",
+    "Maithea L6 carriedName 4.396 > 3.5",
+    "Maithea L8 rgbP99 5.75 > 4",
+    "Maithea L8 forest 0.667 > 0.5",
+    "Maithea L8 name 1.292 > 0.8",
+    "Maithea L8 carriedName 1.306 > 1.2",
+    "Lethuris L6 rgbP99 59.985 > 39.2",
+    "Lethuris L6 forest 4.53 > 1.8",
+    "Lethuris L6 name 7.376 > 7",
+    "Lethuris L6 carriedName 8.792 > 8.2",
+    "Lethuris L8 rgbP99 15.295 > 11.1",
+    "Lethuris L8 snow 1.042 > 1",
+    "Lethuris L8 forest 2.806 > 2.2",
+    "Lethuris L8 name 2.764 > 1.9",
+    "Lethuris L8 carriedName 3.222 > 1.7",
+    "Lethuris L10 rgbP99 1.291 > 1",
+    "Lethuris L10 forest 1.444 > 0.7",
+    "Lethuris L10 name 1.5 > 0.5",
+    "Lethuris L10 carriedName 1.361 > 0.5",
+    "retention snowL6"
+   ]
+  },
+  "step6-itcz": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 43.013,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.478,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 1.848,
+       "limit": 0.5,
+       "pass": false
+      },
+      "name": {
+       "value": 3.988,
+       "limit": 3.2,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 4.383,
+       "limit": 3.5,
+       "pass": false
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.75,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.694,
+       "limit": 0.5,
+       "pass": false
+      },
+      "name": {
+       "value": 1.264,
+       "limit": 0.8,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 1.333,
+       "limit": 1.2,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.787,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.083,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.403,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.018,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.319,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.001,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 58.058,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 3.327,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 6.494,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 7.763,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.212,
+       "limit": 11.1,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.042,
+       "limit": 1,
+       "pass": false
+      },
+      "forest": {
+       "value": 2.472,
+       "limit": 2.2,
+       "pass": false
+      },
+      "name": {
+       "value": 2.458,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 2.958,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 1.276,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.208,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.861,
+       "limit": 0.7,
+       "pass": false
+      },
+      "name": {
+       "value": 0.944,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.917,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.238,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.264,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.09,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.261,
+     "snowFalse": 1.182,
+     "forestKept": 98.373,
+     "forestFalse": 0.588,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.736,
+     "snowFalse": 0.57,
+     "forestKept": 99.418,
+     "forestFalse": 0.196,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 43.013 > 26.3",
+    "Maithea L6 snow 1.478 > 1.3",
+    "Maithea L6 forest 1.848 > 0.5",
+    "Maithea L6 name 3.988 > 3.2",
+    "Maithea L6 carriedName 4.383 > 3.5",
+    "Maithea L8 rgbP99 5.75 > 4",
+    "Maithea L8 forest 0.694 > 0.5",
+    "Maithea L8 name 1.264 > 0.8",
+    "Maithea L8 carriedName 1.333 > 1.2",
+    "Lethuris L6 rgbP99 58.058 > 39.2",
+    "Lethuris L6 forest 3.327 > 1.8",
+    "Lethuris L8 rgbP99 15.212 > 11.1",
+    "Lethuris L8 snow 1.042 > 1",
+    "Lethuris L8 forest 2.472 > 2.2",
+    "Lethuris L8 name 2.458 > 1.9",
+    "Lethuris L8 carriedName 2.958 > 1.7",
+    "Lethuris L10 rgbP99 1.276 > 1",
+    "Lethuris L10 forest 0.861 > 0.7",
+    "Lethuris L10 name 0.944 > 0.5",
+    "Lethuris L10 carriedName 0.917 > 0.5",
+    "retention snowL6"
+   ]
+  },
+  "tip": {
+   "climateVersion": "surface-climate-2",
+   "cross": {
+    "Maithea": {
+     "6": {
+      "heightP99M": {
+       "value": 381.184,
+       "limit": 3825.066,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 684.827,
+       "limit": 10200.176,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.135,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 43.013,
+       "limit": 26.3,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.478,
+       "limit": 1.3,
+       "pass": false
+      },
+      "forest": {
+       "value": 1.848,
+       "limit": 0.5,
+       "pass": false
+      },
+      "name": {
+       "value": 3.988,
+       "limit": 3.2,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 4.383,
+       "limit": 3.5,
+       "pass": false
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 91.568,
+       "limit": 956.267,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 197.918,
+       "limit": 2550.044,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 5.75,
+       "limit": 4,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.222,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.694,
+       "limit": 0.5,
+       "pass": false
+      },
+      "name": {
+       "value": 1.264,
+       "limit": 0.8,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 1.333,
+       "limit": 1.2,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 19.438,
+       "limit": 239.067,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 63.398,
+       "limit": 637.511,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.787,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.083,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.403,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.069,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.25,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.338,
+       "limit": 59.767,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 14.878,
+       "limit": 159.378,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.018,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.319,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.208,
+       "limit": 14.942,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1.423,
+       "limit": 39.844,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.001,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    },
+    "Lethuris": {
+     "6": {
+      "heightP99M": {
+       "value": 486.189,
+       "limit": 6624.952,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 1016.968,
+       "limit": 17666.538,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0.031,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 58.058,
+       "limit": 39.2,
+       "pass": false
+      },
+      "snow": {
+       "value": 2.125,
+       "limit": 2.2,
+       "pass": true
+      },
+      "forest": {
+       "value": 3.327,
+       "limit": 1.8,
+       "pass": false
+      },
+      "name": {
+       "value": 6.494,
+       "limit": 7,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 7.763,
+       "limit": 8.2,
+       "pass": true
+      }
+     },
+     "8": {
+      "heightP99M": {
+       "value": 142.777,
+       "limit": 1656.238,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 272.606,
+       "limit": 4416.634,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 15.212,
+       "limit": 11.1,
+       "pass": false
+      },
+      "snow": {
+       "value": 1.042,
+       "limit": 1,
+       "pass": false
+      },
+      "forest": {
+       "value": 2.472,
+       "limit": 2.2,
+       "pass": false
+      },
+      "name": {
+       "value": 2.458,
+       "limit": 1.9,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 2.958,
+       "limit": 1.7,
+       "pass": false
+      }
+     },
+     "10": {
+      "heightP99M": {
+       "value": 71.379,
+       "limit": 414.059,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 108.384,
+       "limit": 1104.159,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 1.276,
+       "limit": 1,
+       "pass": false
+      },
+      "snow": {
+       "value": 0.208,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.861,
+       "limit": 0.7,
+       "pass": false
+      },
+      "name": {
+       "value": 0.944,
+       "limit": 0.5,
+       "pass": false
+      },
+      "carriedName": {
+       "value": 0.917,
+       "limit": 0.5,
+       "pass": false
+      }
+     },
+     "12": {
+      "heightP99M": {
+       "value": 4.759,
+       "limit": 103.515,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 13.634,
+       "limit": 276.04,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.238,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0.264,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0.028,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0.194,
+       "limit": 0.5,
+       "pass": true
+      }
+     },
+     "14": {
+      "heightP99M": {
+       "value": 0.246,
+       "limit": 25.879,
+       "pass": true
+      },
+      "heightMaxM": {
+       "value": 4.659,
+       "limit": 69.01,
+       "pass": true
+      },
+      "sharedOceanMismatch": {
+       "value": 0,
+       "limit": 0,
+       "pass": true
+      },
+      "ocean": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "rgbP99": {
+       "value": 0.09,
+       "limit": 1,
+       "pass": true
+      },
+      "snow": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "forest": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "name": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      },
+      "carriedName": {
+       "value": 0,
+       "limit": 0.5,
+       "pass": true
+      }
+     }
+    }
+   },
+   "retention": {
+    "l6": {
+     "snowKept": 95.261,
+     "snowFalse": 1.182,
+     "forestKept": 98.373,
+     "forestFalse": 0.588,
+     "peakKept": 89.645,
+     "peakFalseOfPeakArea": 28.334,
+     "summitP50": 8.374,
+     "summitMax": 284.872,
+     "metaSummitP50": 8.374,
+     "metaSummitMax": 284.872,
+     "meanBiasM": 49.709,
+     "tiles": 32
+    },
+    "l8": {
+     "snowKept": 99.736,
+     "snowFalse": 0.57,
+     "forestKept": 99.418,
+     "forestFalse": 0.196,
+     "peakKept": 97.509,
+     "peakFalseOfPeakArea": 24.987,
+     "summitP50": 4.564,
+     "summitMax": 168.574,
+     "metaSummitP50": 4.564,
+     "metaSummitMax": 168.574,
+     "meanBiasM": 19.457,
+     "tiles": 32
+    },
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    },
+    "checks": {
+     "peakL6": true,
+     "peakL8": true,
+     "summit": true,
+     "meta": true,
+     "snowL6": false,
+     "forestL6": true
+    }
+   },
+   "failingRows": [
+    "Maithea L6 rgbP99 43.013 > 26.3",
+    "Maithea L6 snow 1.478 > 1.3",
+    "Maithea L6 forest 1.848 > 0.5",
+    "Maithea L6 name 3.988 > 3.2",
+    "Maithea L6 carriedName 4.383 > 3.5",
+    "Maithea L8 rgbP99 5.75 > 4",
+    "Maithea L8 forest 0.694 > 0.5",
+    "Maithea L8 name 1.264 > 0.8",
+    "Maithea L8 carriedName 1.333 > 1.2",
+    "Lethuris L6 rgbP99 58.058 > 39.2",
+    "Lethuris L6 forest 3.327 > 1.8",
+    "Lethuris L8 rgbP99 15.212 > 11.1",
+    "Lethuris L8 snow 1.042 > 1",
+    "Lethuris L8 forest 2.472 > 2.2",
+    "Lethuris L8 name 2.458 > 1.9",
+    "Lethuris L8 carriedName 2.958 > 1.7",
+    "Lethuris L10 rgbP99 1.276 > 1",
+    "Lethuris L10 forest 0.861 > 0.7",
+    "Lethuris L10 name 0.944 > 0.5",
+    "Lethuris L10 carriedName 0.917 > 0.5",
+    "retention snowL6"
+   ]
+  }
+ }
+}

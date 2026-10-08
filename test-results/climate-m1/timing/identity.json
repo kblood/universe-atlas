@@ -1,0 +1,722 @@
+{
+ "dirA": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/br-3ab2eab",
+ "dirB": "C:/LLM/IWSDK/universe-atlas-wt/climate-m1",
+ "sourceSha256": {
+  "A": "f797aaf57507586d0c77f2896bc2d98b37acfe128bdc70a5d622bbe6d88704bb",
+  "B": "91c5b4aee60286060b1811450fa17fbc6e01ebdece70141a65a97467a8afbd38"
+ },
+ "node": "v24.7.0",
+ "fields": [
+  "insolation01",
+  "insolationHalfRange",
+  "annualMeanTempK",
+  "seasonalHalfRangeK",
+  "warmestMonthK",
+  "coldestMonthK",
+  "legacyMoisture",
+  "dryBelt01",
+  "effectiveMoisture",
+  "aridity01",
+  "pdd",
+  "precipMm",
+  "petMm",
+  "snowFraction",
+  "treeline01",
+  "growingSeason01",
+  "forestSuitability01",
+  "climateCode"
+ ],
+ "sets": {
+  "fixture:Maithea": {
+   "samples": 200000,
+   "comparisons": 3600000,
+   "differences": 0,
+   "sha256OfA": "ad0db86a388926f03e017bd5eebbad2edd211ceb93ae5ff00237a48b46ec9b15"
+  },
+  "fixture:Selawyn": {
+   "samples": 200000,
+   "comparisons": 3600000,
+   "differences": 0,
+   "sha256OfA": "8ce84f6db8fb9a69872798797547485b51549f6956d22fcaa02d229d1145b023"
+  },
+  "fixture:Raiva": {
+   "samples": 200000,
+   "comparisons": 3600000,
+   "differences": 0,
+   "sha256OfA": "c36b9c72f3a054764815af5b49628bf2c00fb8bf0b8b0dee1b224418dbfef79c"
+  },
+  "fixture:Lethuris": {
+   "samples": 200000,
+   "comparisons": 3600000,
+   "differences": 0,
+   "sha256OfA": "a0a2cbbd70c63976ab46e4d9f8ccf64dc197013ce16a98fbda8523570f6cda25"
+  },
+  "earth-reference": {
+   "samples": 200000,
+   "comparisons": 3600000,
+   "differences": 0,
+   "sha256OfA": "c696e7606e54212325f1d796af567b409221a74e8cb1ef8ea09d8807abbdafb7"
+  },
+  "corpus:G001/C2128,0,1/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "9ead8e697caf0cc6328ae9cfb8279f084aedb241e227f00873d1b939e15d4725"
+  },
+  "corpus:G001/C2128,0,3/1/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "6be417e3820bdefb81fecbe9a5b2f97dbc90a920375f8f27e0202bfc0faa5198"
+  },
+  "corpus:G001/C2128,0,4/1/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "5df5087f509b8845ce4d051488b703d1ea50b0e6542bc8bdacd6abfb725ca4f5"
+  },
+  "corpus:G001/C2128,0,5/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "f6bb2b5673ade6323491cfa17dda0168a436bf1f02ee028d1059c103e6f9aa37"
+  },
+  "corpus:G001/C2128,0,5/1/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "681edfdcba660354cce34c133872efca4ce6f13e8bd8e49030140a477964c1fc"
+  },
+  "corpus:G001/C2128,0,6/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "0f86fc74f1cb2213526f302ae43314358d504e9b25d3176a35af231cde0d5fe7"
+  },
+  "corpus:G001/C2128,0,7/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "f4e2a2f16aab1d46ea7d668abc35f3457f3973d1174211b0c2832fa1628af6ba"
+  },
+  "corpus:G001/C2128,1,1/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "2dfa3c2bb32d844c37e1756f3c8d13de49d12c3dba2c7f62dee3bf8736d90e0d"
+  },
+  "corpus:G001/C2128,1,1/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "dca95dd23d3fc884e45852f95686ca7edf992508ec53bab51bebb47c0d906cc7"
+  },
+  "corpus:G001/C2128,1,2/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "fe79d6351ab3491175d7dd009634651ad66ef4ef3a0dfe2d0241b17a7e6185ca"
+  },
+  "corpus:G001/C2128,1,2/1/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "a6c27392cda465162dd2d1023f75585f5e5a175b912dad462c1e7b08ecb36e9e"
+  },
+  "corpus:G001/C2128,1,3/2/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "83a2ba92870036e9c8576427b5198c426323623fb94678ab21c14a0a54fdf06f"
+  },
+  "corpus:G001/C2128,1,4/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "eab794fae4832003771b7c53d9cf158ca46b782d001eb4801cf9abf18fb1035e"
+  },
+  "corpus:G001/C2128,1,5/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "47c02b912ceb2692cb77dc13da9968384c47506411b5a778edb51ca59d8936ef"
+  },
+  "corpus:G001/C2128,1,5/2/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "79339ad961f972e4a56981b1282cecc63dbd83298f638b7f3730fc7f50618c7a"
+  },
+  "corpus:G001/C2128,2,5/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "482baf7a2a1bf1e784d1cd56632270c50b8142783ac31bf97f45d9f56a48f593"
+  },
+  "corpus:G001/C2128,3,4/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "50cdece7e2569c54e4aeda0b0dd4ef3ca0cf59db8d52b617fc053555aa5c183d"
+  },
+  "corpus:G001/C2128,4,2/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "66dd2177b58b935b146ff8e6401ddef4290b21993909a34f2a6727f61aef1c1b"
+  },
+  "corpus:G001/C2128,4,5/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "79dbb9c37af08f4c11ca7517b96c8cbf3514f2516324de59c806e7e6e03d0a8e"
+  },
+  "corpus:G001/C2128,4,6/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "8365bbcc9e54bc1b3470b9f34875023ac52b6f08d1ff9b872e39d8bd96029935"
+  },
+  "corpus:G001/C2128,5,0/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "ef103d37b8bfd666a87f8f5565fa06faf0b3d339a5a0d43901561c321ffe49eb"
+  },
+  "corpus:G001/C2128,5,2/1/planet/2": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "a3b0f78a964843b2c7a555313ee785de221809cc619b637c1066a6c0488bea06"
+  },
+  "corpus:G001/C2128,5,6/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "0b9fc1da035803cbb92d46c09dd61d60e963537a12daf4c83a7bdd15fb04b495"
+  },
+  "corpus:G001/C2128,6,0/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "951310173baa51cd0982b5b85437d10d634a5e49047e92011838055a9cda7b4e"
+  },
+  "corpus:G001/C2128,6,5/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "bcd7e01d4c845a2cbf753c9b896f0dd0131ed1b928fd4d1dc5432260aa22bb8e"
+  },
+  "corpus:G001/C2128,6,5/2/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "845cecf4399cbfa3dc2be648ee57d44fde141c2577ee46aedb134828bdd39d2a"
+  },
+  "corpus:G001/C2128,6,5/3/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "d9707343603a7b50dce641d63787a1c7d1d7d7c61aac01415558e500eb34fe1a"
+  },
+  "corpus:G001/C2128,7,0/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "e4905641f7780188e6692b06575fa42149ae8674c9dfe433f0fab19c68d5a29d"
+  },
+  "corpus:G001/C2128,7,0/1/planet/2": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "872166a6aa45033ae2699787755b9b3559ce0cf00507cb3e65121e79f6b939d3"
+  },
+  "corpus:G001/C2128,7,1/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "4042ba6b6a3bfeeb37b1e70725c15016775f1da0f00ca41e3f361096ef095931"
+  },
+  "corpus:G001/C2128,7,2/1/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "d8eefef0253d238b0e9ddc8bcd473b4d76a4283117e6d09e598897ee65067855"
+  },
+  "corpus:G001/C2128,7,2/3/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "956800e1783c7f6b46359dc4ec4612016b6aeab8f7e1de04a10545a75196eed0"
+  },
+  "corpus:G001/C2128,7,2/4/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "26a6ae8dc828b78d2ec63e4a392ace15acd1f9c1aff4c90cd3bb2264d55d93d0"
+  },
+  "corpus:G001/C2128,7,3/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "c8d361efe1e7d6418ca607e60cf7fc40221d0738ec5f4627799080d3492acc18"
+  },
+  "corpus:G001/C2128,7,3/1/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "664cef2d898de2501fa4e83a88f8783d7733eb9b203a116652ca6c0056f13e98"
+  },
+  "corpus:G001/C2128,7,4/2/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "2f2983d30986b3262509809716e875e2e573ced40f5f13ab207660338f68da24"
+  },
+  "corpus:G001/C2128,7,5/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "62cb47f4271f1f727c4e36ce4e4a01e751ce4f3737df6a09db8b6c012fa968bf"
+  },
+  "corpus:G001/C2128,7,7/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "9959dc53d1a472b72518b068d78d651babc5e5f9494c61a23a2ec3a3da32e54e"
+  },
+  "corpus:G001/C2129,0,2/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "6a9c277a8352acb96ddfd8409a2754a5de206853ca87e8b13dde3c735209fea1"
+  },
+  "corpus:G001/C2129,0,5/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "e3c30f797dea3461bc908905c4114a7fee5d2838847345464664c435862d6c3c"
+  },
+  "corpus:G001/C2129,0,6/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "1fdd9567e4556e96d5459456b375ddf60caafd96d38d30d21d926f9c8c3e7cdf"
+  },
+  "corpus:G001/C2129,0,6/2/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "94b3575780d74dc2ea97ed28840808bfa783de839210b810f29ced15c20e3edf"
+  },
+  "corpus:G001/C2129,0,6/3/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "98a2f50441ec77bf39d79643c21f460e9277342ed7730832951b59ca7f31137e"
+  },
+  "corpus:G001/C2129,0,7/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "df3aedf7a9a59b7270cb8f02805e6ea5e0546bdc88b95030d35a10a2d256be35"
+  },
+  "corpus:G001/C2129,1,1/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "455b6dfb94046b2ffcdb3925da259af276d11e2f33426ecc59daa028cca7cc3d"
+  },
+  "corpus:G001/C2129,1,2/0/planet/0": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "8336dd9752643aea0d1d4c10fb65d82921956ab14d50f3d85f1db234b47387b6"
+  },
+  "corpus:G001/C2129,1,5/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "4f5c1b912600783a8e16539e3d8610770ab28761032d1a709711466bec2b8afb"
+  },
+  "corpus:G001/C2129,3,0/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "01dc384fbacde9a23c4eb48258c0ce13dbe57a64706d0c39541467567558645a"
+  },
+  "corpus:G001/C2129,3,3/0/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "f93ee8f5c1d0a82c24de115dbe7e79a55d8986b8c82b2207c5408cebddd8a64e"
+  },
+  "corpus:G001/C2129,3,5/1/planet/1": {
+   "samples": 16000,
+   "comparisons": 288000,
+   "differences": 0,
+   "sha256OfA": "89e810cf09cb90ffc8458ee644f6415b9f3afcfe46386231f50d37f4d12a453c"
+  },
+  "extra:earth-obliquity-0": {
+   "samples": 40000,
+   "comparisons": 720000,
+   "differences": 0,
+   "sha256OfA": "16ec09ff123dd39c2738a32c969dad0fc93837e56db2899124e0829acd543bd1"
+  },
+  "extra:earth-obliquity-70": {
+   "samples": 40000,
+   "comparisons": 720000,
+   "differences": 0,
+   "sha256OfA": "db96fa6c41c8ab5969385eda9254bf18ac3978a3bfda7993f1c4a11f97676219"
+  },
+  "extra:earth-water-0": {
+   "samples": 40000,
+   "comparisons": 720000,
+   "differences": 0,
+   "sha256OfA": "bf46d0cf0f322d660546003329544e4bf37a28d822b794e0ef8a34c3f005e674"
+  },
+  "extra:earth-cold-230K": {
+   "samples": 40000,
+   "comparisons": 720000,
+   "differences": 0,
+   "sha256OfA": "0675d9b7c5b139189249a9a6a748f44bafbc4aee581b164c100106a1d3bea0c6"
+  },
+  "extra:earth-hot-330K": {
+   "samples": 40000,
+   "comparisons": 720000,
+   "differences": 0,
+   "sha256OfA": "83b2e9783a8c073a06c1a79584a860cbbd666df8ee1a0f176112f43c637b2db7"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/0": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "a97fa4f9f017a877caebee9eb7434e6ec5eba5f5e6ce024ad06e5afa3f10f050"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "28753a5e07526e426f5ac8d846eb15b31b3bfd2b0542f19836ea9994432c5ec7"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/3": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "c8bc0954bbbd423b130b8fa09283266e322a0754da5f965a85348ded636d45ee"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/4": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "6c0ef435a72054a4899a2bdb146418e8d59fa1a3e9c8831e21971a2a233cc144"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/5": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "6c8e2bbec41a3b114d0a38db29426246aa716bd43d5f7ec69dfdf3f88938c385"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/6": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "90fb342d7bb1704f3c057b2bfcfc43d4d0023ecaac8aee2b36e0431e6800027a"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/7": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "eda6aa0f34a9f92a15c7185ad98871e80f028db6ce38f280382f8490949b14b4"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/8": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "ce59186431fd5110c8bd125876b72c8f21109dbcc43886ce91c80614a3705a05"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/9": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "785ea08252d6a4f51a19c8ea944d70e064f3fe8b005d873a3f9d33c04f38f917"
+  },
+  "extra-nontemperate:G001/C2128,0,1/0/planet/10": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "ab6de8b6cfb7540b486da4ed8dff3edcd79c0c962a0f5a9372e268c17578d003"
+  },
+  "extra-nontemperate:G001/C2128,0,3/0/planet/0": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "e704a6f895fbfc5a9b11e590a63f50ed4f0ede953c01809e46038b775ad2caae"
+  },
+  "extra-nontemperate:G001/C2128,0,3/0/planet/1": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "9a48f2e10b9903302981aae31792a394476935782de52a6f43275a887974c43d"
+  },
+  "extra-nontemperate:G001/C2128,0,3/0/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "e27f6a425be164fc25c1b4ab71ef9a11ea525803f72cdc87fe23ce10ad1bafa0"
+  },
+  "extra-nontemperate:G001/C2128,0,3/1/planet/1": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "908def4054b6c7a3c8c58630eaecc8e4ee13c08d421763eec4e93dc4726382a5"
+  },
+  "extra-nontemperate:G001/C2128,0,3/1/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "d6b57310835ae47c4255186f83ee8a3db2e24a0829a22a43029849a693851145"
+  },
+  "extra-nontemperate:G001/C2128,0,3/1/planet/3": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "fe86ce017d49b1799ca940a646ae39523e04fd8af1f47848b91a46fae5855c39"
+  },
+  "extra-nontemperate:G001/C2128,0,3/1/planet/4": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "3124d7e60d889d49546c58141be4aa83b7a1b4c240e15ae74133c85a7772d01e"
+  },
+  "extra-nontemperate:G001/C2128,0,3/1/planet/5": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "b057748fbd497e5e17bbbda6a56d535412b9ca6fafd20e3003e8f860ca563424"
+  },
+  "extra-nontemperate:G001/C2128,0,4/0/planet/0": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "ca4db4eb612a25c517cbcd685cbee71e71a73d3bce5dad7bc69b3fb74d8925e3"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/1": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "5577574c16a3a8accdea725fc1f00540e549fe50ab90c0df5a516ac75f72e7a6"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "9b2972e4107a06ed16d357bcdc800a712a0092a3385fddd0f61ff23c7731623c"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/3": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "d26ce5aae0978123065be02d6e5f5e6e0d75274c93bcc5364c7970aa7f2df328"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/4": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "357343bdc4764cd36652a60ed0110b3d92ca628e5f9cf8bf53fa605356cdb9a8"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/5": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "b404ad4e44dcb11944b2c6db81af60adc7450cd4b7f68dd8346c2d5a97a94424"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/6": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "1d6417b1295180e72fcf82c51a55725882ef1999231342343dd88ba5b0c86c04"
+  },
+  "extra-nontemperate:G001/C2128,0,4/1/planet/7": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "43f9fef20079e368c204ed7fe3b3077ead2364020ac48a47160c8f4a0b5ccc29"
+  },
+  "extra-nontemperate:G001/C2128,0,5/0/planet/1": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "f19764a2728505816dbef2002be4744627bc512972846d35cb05bc6fb5eb3b92"
+  },
+  "extra-nontemperate:G001/C2128,0,5/0/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "d56f8677deba2e4acf5ebf35a95ec94499105f6697fe88fb24d25c54c8e40264"
+  },
+  "extra-nontemperate:G001/C2128,0,5/0/planet/3": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "4e39ad76d39bb1dfe58cd51c8d3d269d054c5e7eb88025feef248a77e4006590"
+  },
+  "extra-nontemperate:G001/C2128,0,5/0/planet/4": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "526b0f29abba07dc96d5df2451a7c2c42a086fe083fc519f7239c305f539518c"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/1": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "d4a35d85e2b90857ecc3d45775ef20289575e9679f518b98d2459b29c4ac195e"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "82baa95eaadf63f88dc2d2067874b2c61ad4598d95d25a7753863dbbc209eebe"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/3": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "056c1629df32c1eb4e10abc98d8bc9dbfea505b8bcd2325ec98cbd91fbb3dbd5"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/4": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "e817d7824f50d0cd52e43e7c1c57446c87b6c15c3afe46e775106685904e9247"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/5": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "fe125560f2e218b41b5d63a6aece98969fe8c22eb48d7a8b13e42bf19c7ac41b"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/6": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "1dc7d2ce7c8af6bd249bab9e4fd5364eafded0b9303791b3c84999ebaf4552bf"
+  },
+  "extra-nontemperate:G001/C2128,0,5/1/planet/7": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "ef6a128c72cf4f6ee095000c70002acc3bcda696c9934d1eaccd4f17e2e33b19"
+  },
+  "extra-nontemperate:G001/C2128,0,6/1/planet/0": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "4132e539e547435b731234d0c7cf276c8b77d0cf2f7beb46256db8ae3417313d"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/0": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "9427ab2a9990cfb5f08db54c8b433fbb836639e93ec369879df2c73f8f277e69"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/2": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "f75a66d683f110dc34a353522af55dcc7d6d9159df9b69324cc46a3b0fa75ec8"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/3": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "768cd8046ecb4feea701311e16e95dd1020c6691282d77ddf16936f504fabbfb"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/4": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "7cd748ef9c90568891717b6f904c335eb11de12e9fb314531cd91b21e1c9ad58"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/5": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "2a4956cb0c7f775907b54add28e43797bee97031c7e427f9ea3468a36a3d6b1b"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/6": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "5ee3f6c09eea8621f628fcdc6cda361310be03c5bf66ab1f7ce70956b652aa48"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/7": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "210d612b0cca0ad87f6d215456fca6d65301dc6e953bbc675c97a545ed33a836"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/8": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "bd39a50e65010c2cfc65b0cc7623defa5c2c2bc99f67ca5c9b726b1286fd66e2"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/9": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "0dd7578b8154e2430a52a5a4ef4a17a745c7739cb1e3f714ccaf045d8d6d9fb4"
+  },
+  "extra-nontemperate:G001/C2128,0,7/0/planet/10": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "a77f4da51aa07c86cad216ec06dbd423d965d680490d21ff27892817db72db38"
+  },
+  "extra-nontemperate:G001/C2128,0,7/1/planet/0": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "507c085eb1b3030935df3bd1ec4fccaddde8dc318d08288427b7d175b49be664"
+  },
+  "extra-nontemperate:G001/C2128,0,7/1/planet/1": {
+   "samples": 8000,
+   "comparisons": 144000,
+   "differences": 0,
+   "sha256OfA": "8a00d2dc59a9e51b86a4d6f215c6bef0c96313645aa4f1aa41e40797e86f807a"
+  }
+ },
+ "totalSamples": 2400000,
+ "totalComparisons": 43200000,
+ "differences": 0,
+ "firstDifferences": [],
+ "pinned": {
+  "samples": 1800000,
+  "comparisons": 32400000,
+  "differences": 0
+ },
+ "corpusSize": 721,
+ "nonTemperateCount": 11365,
+ "branchReach": {
+  "halfZero": 70825,
+  "pdd0Zero": 1151983,
+  "growZero": 1254102,
+  "growOne": 409999,
+  "growInterior": 735899,
+  "snowZero": 1437335,
+  "snowOne": 940515,
+  "snowInterior": 22150,
+  "treelineZero": 1360247,
+  "treelineOne": 916103,
+  "treelineInterior": 123650,
+  "aridityZero": 1127068,
+  "aridityOne": 361308,
+  "aridityInterior": 911624,
+  "heatRampInterior": 194609,
+  "forestPositive": 370468,
+  "forestZero": 2029532
+ },
+ "pass": true
+}

@@ -79,6 +79,8 @@ test('v1 -> v2 report: v2 presence is nested thinning plus cells newly suitable 
   // v2Present 85, kept 85, lost 354, thinnedSameWindow 89, ecotone 184, suitable 229.
   // NEW report (terrain-1.8.0-relief, v2 selection): cells 626, v1Present 472,
   // v2Present 52, kept 52, lost 420, thinnedSameWindow 420, ecotone 303, suitable 626.
+  // surface-climate-2 report (BIOME2-CLIMATE M1, same selection and assertions): cells 623, v1Present 367,
+  // v2Present 56, kept 41, lost 326, gainedNewlySuitable 15, thinnedSameWindow 409, ecotone 383, suitable 611.
   for(let i=0,found=0;i<8192&&found<24;i++){
     const d=fib(i,8192),h=sample(d).groundHeightM;
     if(!v2(d,h).forestPotential)continue;
@@ -107,7 +109,9 @@ test('legacy slope behavior stays explicit, including the unsampled tangent axis
   const r=6000000,classify=(fs=1)=>()=>({forestPotential:fs>0,forestSuitability01:fs,climateCode:181});
   const cell={id:'synthetic',direction:[0,0,1],roll:.1,heightM:15,yaw:0,distanceM:0};
   const plane=(axis,slope)=>(d)=>({groundHeightM:200+d[axis]*r*slope,wet:false});
-  assert.equal(TREE_HABITAT_VERSION,'tree-habitat-2-climate');
+  // tree-habitat-3-heat (surface-climate-2 M1, old tree-habitat-2-climate): the presence expression is
+  // unchanged; the surface-climate-2 heat cap moves the forestSuitability01 it reads.
+  assert.equal(TREE_HABITAT_VERSION,'tree-habitat-3-heat');
   assert.equal(TREE_FULL_COVER,.76);
   assert.equal(forestHabitat(plane(0,0),classify(),r)(cell).present,true);
   assert.equal(forestHabitat(plane(0,0),classify(),r)(cell).climateCode,181);

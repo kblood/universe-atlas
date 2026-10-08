@@ -1,0 +1,30 @@
+round 1
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":22,"heapGrowthBytesDuringLoop":1838112,"freedByGcBytes":46131936,"bytesPerCallUpperBound":15.990016,"sink":true}
+round 1
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/br-3ab2eab","which":"real","calls":3000000,"gcEvents":118,"heapGrowthBytesDuringLoop":2074096,"freedByGcBytes":247443680,"bytesPerCallUpperBound":83.172592,"sink":true}
+round 1
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":432936,"freedByGcBytes":0,"bytesPerCallUpperBound":0.144312,"sink":true}
+round 1
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"control","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":655656,"freedByGcBytes":0,"bytesPerCallUpperBound":0.218552,"sink":true}
+round 1
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"control","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":655656,"freedByGcBytes":0,"bytesPerCallUpperBound":0.218552,"sink":true}
+round 2
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":22,"heapGrowthBytesDuringLoop":1873928,"freedByGcBytes":46131920,"bytesPerCallUpperBound":16.001949333333332,"sink":true}
+round 2
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/br-3ab2eab","which":"real","calls":3000000,"gcEvents":118,"heapGrowthBytesDuringLoop":2075888,"freedByGcBytes":247443504,"bytesPerCallUpperBound":83.17313066666667,"sink":true}
+round 2
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":338968,"freedByGcBytes":0,"bytesPerCallUpperBound":0.11298933333333333,"sink":true}
+round 2
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"control","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":711096,"freedByGcBytes":0,"bytesPerCallUpperBound":0.237032,"sink":true}
+round 2
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"control","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":665104,"freedByGcBytes":0,"bytesPerCallUpperBound":0.22170133333333333,"sink":true}
+round 3
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":22,"heapGrowthBytesDuringLoop":1878336,"freedByGcBytes":46131984,"bytesPerCallUpperBound":16.00344,"sink":true}
+round 3
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/br-3ab2eab","which":"real","calls":3000000,"gcEvents":118,"heapGrowthBytesDuringLoop":2098320,"freedByGcBytes":247412104,"bytesPerCallUpperBound":83.17014133333333,"sink":true}
+round 3
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":394520,"freedByGcBytes":0,"bytesPerCallUpperBound":0.13150666666666666,"sink":true}
+round 3
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"control","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":695680,"freedByGcBytes":0,"bytesPerCallUpperBound":0.23189333333333334,"sink":true}
+round 3
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"control","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":692504,"freedByGcBytes":0,"bytesPerCallUpperBound":0.23083466666666666,"sink":true}

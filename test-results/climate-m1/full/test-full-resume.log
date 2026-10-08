@@ -1,0 +1,116 @@
+resume 2c9658a91c36-full-2026-10-08T09:55:14.247Z: 175 green steps kept, 88 to run (attempt 2)
+tier all --full (ATLAS_TEST_FULL=1, test:full): 88 files in 88 steps; bail off; log test-results/tiers/2c9658a91c36-full-2026-10-08T09-55-14-247Z
+estimates: 88/88 steps (latest local run + tests/tier-estimates.json); unknown steps run first
+critical path (normal priority, others below normal): tests/terrain-structural-spectrum.test.mjs#rest ~16.2 s
+exclusive test slot taken; draining 1 shared holder(s) (4 tokens): {"name":"node --test --test-concurrency=4 tests/atlas-parity.test.mjs tests/creature-core-boundary.test.mjs tests/fauna-coat-fields.test.mjs tests/fauna-composer-coat-cr","pid":34900,"host":"DESKTOP-N09QOSU","time":"2026-10-08T10:05:53.348Z","token":"d14818e9-f37d-4d15-84a6-2535657bccef","class":"shared","tokens":4}
+exclusive test slot taken; draining 1 shared holder(s) (4 tokens): {"name":"node --test --test-concurrency=4 tests/atlas-parity.test.mjs tests/creature-core-boundary.test.mjs tests/fauna-coat-fields.test.mjs tests/fauna-composer-coat-cr","pid":34900,"host":"DESKTOP-N09QOSU","time":"2026-10-08T10:05:53.348Z","token":"d14818e9-f37d-4d15-84a6-2535657bccef","class":"shared","tokens":4}
+pass      0.3 s    89 MiB  tests/fauna-template-motion.test.mjs
+pass      0.3 s    80 MiB  tests/fauna-composer-recipe-independent.test.mjs
+pass      0.4 s    88 MiB  tests/fauna-template.test.mjs
+pass      0.5 s    75 MiB  tests/galaxy-history.test.mjs
+pass      0.3 s    83 MiB  tests/tree-impostor-capture.test.mjs
+pass      0.7 s   194 MiB  tests/surface-biomes-climate.test.mjs
+pass      0.5 s    86 MiB  tests/tree-captured-filtering.test.mjs
+pass      0.4 s    85 MiB  tests/forest-impostor-family.test.mjs
+pass      0.3 s    82 MiB  tests/flora-recipe.test.mjs
+pass      0.7 s   123 MiB  tests/tier-sets.test.mjs
+pass      0.2 s    84 MiB  tests/flora-culling.test.mjs
+pass      0.3 s    83 MiB  tests/planet-clouds.test.mjs
+pass      0.2 s    84 MiB  tests/ground-climate-shader.test.mjs
+pass      0.2 s    83 MiB  tests/planet-rings.test.mjs
+pass      0.2 s    82 MiB  tests/biosphere-model.test.mjs
+pass      0.2 s    77 MiB  tests/forest-resource-accounting.test.mjs
+pass      0.3 s    85 MiB  tests/creature-rig.test.mjs
+pass      0.2 s    86 MiB  tests/fauna-activity-exact.test.mjs
+pass      0.2 s    81 MiB  tests/eco-assemblages.test.mjs
+pass      0.9 s   115 MiB  tests/planet-detail.test.mjs
+pass      0.3 s   123 MiB  tests/rock-altitude-hysteresis.test.mjs
+pass      0.2 s    77 MiB  tests/forest-asset-source.test.mjs
+pass      0.1 s    83 MiB  tests/tree-shape.test.mjs
+pass      0.2 s    76 MiB  tests/life-shadow-priority.test.mjs
+pass      0.2 s    88 MiB  tests/eco-lab-forms.test.mjs
+pass      0.3 s    87 MiB  tests/life-altitude-hysteresis.test.mjs
+pass      0.2 s    84 MiB  tests/forest-impostor.test.mjs
+pass      0.2 s    85 MiB  tests/sky-atmosphere.test.mjs
+pass      0.5 s   110 MiB  tests/world.test.mjs
+pass      0.3 s    61 MiB  tests/life-guard.test.mjs
+pass      0.4 s   103 MiB  tests/creature-contact.test.mjs
+pass      0.3 s   155 MiB  tests/tree-canopy-bounds.test.mjs
+pass      0.2 s    76 MiB  tests/tree-leaf-transmission.test.mjs
+pass      0.1 s    73 MiB  tests/river-surface-bank.test.mjs
+pass      0.1 s    72 MiB  tests/forest-ordered-work.test.mjs
+pass      0.4 s   156 MiB  tests/forest-asset-package.test.mjs
+pass      0.1 s    73 MiB  tests/population-continuity.test.mjs
+pass      0.1 s    73 MiB  tests/forest-slot-allocator.test.mjs
+pass      0.4 s   127 MiB  tests/river-water.test.mjs
+pass      0.2 s    79 MiB  tests/creature-model.test.mjs
+pass      0.3 s   148 MiB  tests/tree-canopy-profile.test.mjs
+pass      0.1 s    61 MiB  tests/luna-vote.test.mjs
+pass      0.3 s   101 MiB  tests/flora-understory-geometry.test.mjs
+pass      0.3 s    88 MiB  tests/fauna-runtime.test.mjs
+pass      0.1 s    69 MiB  tests/fauna-template-neck-preservation.test.mjs
+pass      0.3 s    87 MiB  tests/time-nav.test.mjs
+pass      0.1 s    76 MiB  tests/tree-impostor-filter.test.mjs
+pass      0.4 s    99 MiB  tests/eco-class.test.mjs
+pass      0.1 s    76 MiB  tests/river-surface-conform.test.mjs
+pass      0.1 s    75 MiB  tests/view-heading.test.mjs
+pass      0.1 s    61 MiB  tests/flora-cache-ownership.test.mjs
+pass      0.3 s    98 MiB  tests/forest-patch.test.mjs
+pass      0.4 s   100 MiB  tests/planet-canopy.test.mjs
+pass      0.3 s   103 MiB  tests/eco-identity-site.test.mjs
+pass      0.3 s    87 MiB  tests/fauna-variation.test.mjs
+pass      0.2 s    83 MiB  tests/fauna-template-phenotype.test.mjs
+pass      0.3 s    97 MiB  tests/time-integration.test.mjs
+pass      0.2 s    77 MiB  tests/fauna-review-lighting.test.mjs
+pass      0.2 s   123 MiB  tests/tree-foliage-sidecar.test.mjs
+pass      0.2 s    91 MiB  tests/fauna-continuity.test.mjs
+pass      0.2 s    91 MiB  tests/asset-provenance.test.mjs
+pass      0.3 s    92 MiB  tests/forest-patch-broadphase.test.mjs
+pass      0.2 s    87 MiB  tests/fauna-template-browse.test.mjs
+pass      0.1 s    74 MiB  tests/compact-instance-slots.test.mjs
+pass      0.2 s    84 MiB  tests/tree-asset.test.mjs
+pass      0.2 s    86 MiB  tests/ground-pbr-material.test.mjs
+pass      0.1 s    70 MiB  tests/forest-asset-attachment.test.mjs
+pass      0.1 s    73 MiB  tests/fauna-template-shoulder-preservation.test.mjs
+pass      0.2 s    87 MiB  tests/rock-geometry.test.mjs
+pass      0.1 s    78 MiB  tests/tree-foliage-mips.test.mjs
+pass      0.2 s    82 MiB  tests/surface-lighting.test.mjs
+pass      0.2 s    76 MiB  tests/tree-impostor-reference-shader.test.mjs
+pass      0.2 s    79 MiB  tests/tree-species-recipe.test.mjs
+pass      0.2 s    76 MiB  tests/address.test.mjs
+pass      0.2 s    84 MiB  tests/river-physical-field.test.mjs
+pass      0.2 s    75 MiB  tests/world-time.test.mjs
+pass      0.2 s    77 MiB  tests/tree-forest-coverage.test.mjs
+pass      0.2 s    77 MiB  tests/fauna-review-environment.test.mjs
+pass      0.1 s    70 MiB  tests/forest-coverage.test.mjs
+pass      0.2 s    71 MiB  tests/forest-presentation.test.mjs
+pass      0.1 s    70 MiB  tests/ocean-patch-culling.test.mjs
+pass      0.2 s    65 MiB  tests/creature-kit-vendor.test.mjs
+fail      0.5 s    98 MiB  tests/acceptance/version-compat.test.mjs
+✔ GALAXY_HISTORY_VERSION is pinned to its exact contractual value — a change here must be a deliberate, reviewed bump, not silently absorbed (0.0397ms)
+✖ biome-climate model versions are pinned and part of the model manifest (6.7977ms)
+✖ failing tests:
+✖ biome-climate model versions are pinned and part of the model manifest (6.7977ms)
+  AssertionError [ERR_ASSERTION]: was surface-climate-1 (per-planet annual climate field); lapse gravity now from planet-geophysics
+  + actual - expected
+    actual: 'surface-climate-2',
+    expected: 'surface-climate-1.1-geo-g',
+pass      0.3 s    72 MiB  tests/cosmology.test.mjs
+pass      0.2 s    81 MiB  tests/climate-earth-reference.test.mjs
+pass      0.1 s    62 MiB  tests/test-selection.test.mjs
+pass      4.7 s   168 MiB  tests/harness-sites.test.mjs
+pass     30.3 s   436 MiB  tests/terrain-structural-spectrum.test.mjs#rest
+
+full: RED; 1726 tests (pass 1715, fail 1, skip 6, todo 4; 0 subset-coverage results); 263/263 steps; wall 30.4 s (slot wait 53.5 s before it); peak step RSS 1349.3 MiB
+  NEW HARD: tests/acceptance/version-compat.test.mjs :: biome-climate model versions are pinned and part of the model manifest
+      was surface-climate-1 (per-planet annual climate field); lapse gravity now from planet-geophysics
+  step fail (exit 1): tests/acceptance/version-compat.test.mjs
+KNOWN failures matched: 0
+
+NEW failures: 1
+  tests/acceptance/version-compat.test.mjs: biome-climate model versions are pinned and part of the model manifest
+Known entries that did NOT fail (stale): 0
+
+Rejected: NEW failure, a failed/missing step or a runner error.
+log: test-results/tiers/2c9658a91c36-full-2026-10-08T09-55-14-247Z
+rc=1

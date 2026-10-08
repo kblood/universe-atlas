@@ -1,0 +1,77 @@
+Building golden harness (vite build)...
+(node:6316) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 65 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mgolden.html                [39m[1m[2m  0.28 kB[22m[1m[22m[2m │ gzip:   0.20 kB[22m
+[2mdist/[22m[36massets/golden-DbV2igeM.js  [39m[1m[2m456.32 kB[22m[1m[22m[2m │ gzip: 167.20 kB[22m
+[32m✓ built in 941ms[39m
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m64360[22m/[39m
+vite preview serves this build on 127.0.0.1:64360 (attempt 1, ephemeral port)
+Computing Node reference digests...
+{
+  "seed": "LETHRA-GOLDEN-001",
+  "counts": {
+    "galaxies": 32,
+    "sectorsChecked": 12,
+    "sectorRefsChecked": 39524,
+    "systemsChecked": 220,
+    "hierarchyGalaxies": 100,
+    "hierarchyGroupAnchors": 11775,
+    "bodiesChecked": 4450,
+    "terrainSamples": 60,
+    "historyRecords": 60,
+    "geophysicsRecords": 86,
+    "climateRecords": 17713,
+    "biomesRecords": 6913,
+    "oceanVolumeRecords": 34,
+    "placeQueryRecords": 471,
+    "censusRecords": 29,
+    "rocksRecords": 578,
+    "faunaRecords": 655
+  },
+  "digests": {
+    "galaxies": "cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a",
+    "sectors": "c22a8ef678356754ae51012a407afe4dd7cf4dc58cc2609b998c5479cfc92b4a",
+    "systems": "dc7d976eb602fad47717b38cdd8e4b37b3b7f0c7ffac36e0205cbdce5dab5c9e",
+    "terrain": "1363e73fc158559e71febd81c54c920b1df6aba354fa0f38c0f32c9c70ee6a2b",
+    "history": "ce80d05406d5cf5f4a50e129834b8289413494aac589a73b893ba6aff10632a8",
+    "combined": "c2b6e424e382091d10da6402452c366cea396cf0ca24b760505efccbb9b3dda5",
+    "hierarchy": "734abf8fb980397531f1fb3a714c68f0816b3cdd6be299a3be29782a9852661e",
+    "geophysics": "a530f7d104878f7fa67a728531adc29b7053ac39d93eb7615d3334c3c0da82b8",
+    "climate": "63916081c7d768de808198e5d05ae50596310c50066c812193830c3658af1179",
+    "biomes": "0730ba317b0e87e07ade65338ac3cd69b4ce9013c70cab6d0b885f6f90db99dc",
+    "oceanVolume": "3d3ef47fb181322e95156804aa870696fd20762f8eefc1fc2ecd05f68ffb2c11",
+    "placeQuery": "ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9",
+    "census": "bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5",
+    "rocks": "fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c",
+    "fauna": "75a59833a03444b1506de5770a66c4eceeaa5b6c1107c180e5db50a9a495ff6a"
+  },
+  "platformSeed": "LETHRA-001"
+}
+Node computed the golden set in 6789 ms
+Node matches fixture C:\LLM\IWSDK\universe-atlas-wt\climate-m1\test-results\climate-m1\merge-prep\golden-proposed.json.
+
+== chromium ==
+chromium (149.0.7827.55) computed the golden set in 6497 ms (launch included)
+chromium counts: {"galaxies":32,"sectorsChecked":12,"sectorRefsChecked":39524,"systemsChecked":220,"hierarchyGalaxies":100,"hierarchyGroupAnchors":11775,"bodiesChecked":4450,"terrainSamples":60,"historyRecords":60,"geophysicsRecords":86,"climateRecords":17713,"biomesRecords":6913,"oceanVolumeRecords":34,"placeQueryRecords":471,"censusRecords":29,"rocksRecords":578,"faunaRecords":655}
+chromium digests: {"galaxies":"cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a","sectors":"c22a8ef678356754ae51012a407afe4dd7cf4dc58cc2609b998c5479cfc92b4a","systems":"dc7d976eb602fad47717b38cdd8e4b37b3b7f0c7ffac36e0205cbdce5dab5c9e","terrain":"1363e73fc158559e71febd81c54c920b1df6aba354fa0f38c0f32c9c70ee6a2b","history":"ce80d05406d5cf5f4a50e129834b8289413494aac589a73b893ba6aff10632a8","combined":"c2b6e424e382091d10da6402452c366cea396cf0ca24b760505efccbb9b3dda5","hierarchy":"734abf8fb980397531f1fb3a714c68f0816b3cdd6be299a3be29782a9852661e","geophysics":"a530f7d104878f7fa67a728531adc29b7053ac39d93eb7615d3334c3c0da82b8","climate":"63916081c7d768de808198e5d05ae50596310c50066c812193830c3658af1179","biomes":"0730ba317b0e87e07ade65338ac3cd69b4ce9013c70cab6d0b885f6f90db99dc","oceanVolume":"3d3ef47fb181322e95156804aa870696fd20762f8eefc1fc2ecd05f68ffb2c11","placeQuery":"ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9","census":"bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5","rocks":"fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c","fauna":"75a59833a03444b1506de5770a66c4eceeaa5b6c1107c180e5db50a9a495ff6a"}
+chromium: MATCH (Node and golden-proposed.json)
+
+== firefox ==
+firefox (151.0) computed the golden set in 9959 ms (launch included)
+firefox counts: {"galaxies":32,"sectorsChecked":12,"sectorRefsChecked":39524,"systemsChecked":220,"hierarchyGalaxies":100,"hierarchyGroupAnchors":11775,"bodiesChecked":4450,"terrainSamples":60,"historyRecords":60,"geophysicsRecords":86,"climateRecords":17713,"biomesRecords":6913,"oceanVolumeRecords":34,"placeQueryRecords":471,"censusRecords":29,"rocksRecords":578,"faunaRecords":655}
+firefox digests: {"galaxies":"cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a","sectors":"c22a8ef678356754ae51012a407afe4dd7cf4dc58cc2609b998c5479cfc92b4a","systems":"dc7d976eb602fad47717b38cdd8e4b37b3b7f0c7ffac36e0205cbdce5dab5c9e","terrain":"1363e73fc158559e71febd81c54c920b1df6aba354fa0f38c0f32c9c70ee6a2b","history":"ce80d05406d5cf5f4a50e129834b8289413494aac589a73b893ba6aff10632a8","combined":"c2b6e424e382091d10da6402452c366cea396cf0ca24b760505efccbb9b3dda5","hierarchy":"734abf8fb980397531f1fb3a714c68f0816b3cdd6be299a3be29782a9852661e","geophysics":"a530f7d104878f7fa67a728531adc29b7053ac39d93eb7615d3334c3c0da82b8","climate":"63916081c7d768de808198e5d05ae50596310c50066c812193830c3658af1179","biomes":"0730ba317b0e87e07ade65338ac3cd69b4ce9013c70cab6d0b885f6f90db99dc","oceanVolume":"3d3ef47fb181322e95156804aa870696fd20762f8eefc1fc2ecd05f68ffb2c11","placeQuery":"ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9","census":"bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5","rocks":"fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c","fauna":"75a59833a03444b1506de5770a66c4eceeaa5b6c1107c180e5db50a9a495ff6a"}
+firefox: MATCH (Node and golden-proposed.json)
+
+== webkit ==
+webkit (26.5) computed the golden set in 8881 ms (launch included)
+webkit counts: {"galaxies":32,"sectorsChecked":12,"sectorRefsChecked":39524,"systemsChecked":220,"hierarchyGalaxies":100,"hierarchyGroupAnchors":11775,"bodiesChecked":4450,"terrainSamples":60,"historyRecords":60,"geophysicsRecords":86,"climateRecords":17713,"biomesRecords":6913,"oceanVolumeRecords":34,"placeQueryRecords":471,"censusRecords":29,"rocksRecords":578,"faunaRecords":655}
+webkit digests: {"galaxies":"cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a","sectors":"c22a8ef678356754ae51012a407afe4dd7cf4dc58cc2609b998c5479cfc92b4a","systems":"dc7d976eb602fad47717b38cdd8e4b37b3b7f0c7ffac36e0205cbdce5dab5c9e","terrain":"1363e73fc158559e71febd81c54c920b1df6aba354fa0f38c0f32c9c70ee6a2b","history":"ce80d05406d5cf5f4a50e129834b8289413494aac589a73b893ba6aff10632a8","combined":"c2b6e424e382091d10da6402452c366cea396cf0ca24b760505efccbb9b3dda5","hierarchy":"734abf8fb980397531f1fb3a714c68f0816b3cdd6be299a3be29782a9852661e","geophysics":"a530f7d104878f7fa67a728531adc29b7053ac39d93eb7615d3334c3c0da82b8","climate":"63916081c7d768de808198e5d05ae50596310c50066c812193830c3658af1179","biomes":"0730ba317b0e87e07ade65338ac3cd69b4ce9013c70cab6d0b885f6f90db99dc","oceanVolume":"3d3ef47fb181322e95156804aa870696fd20762f8eefc1fc2ecd05f68ffb2c11","placeQuery":"ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9","census":"bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5","rocks":"fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c","fauna":"75a59833a03444b1506de5770a66c4eceeaa5b6c1107c180e5db50a9a495ff6a"}
+webkit: MATCH (Node and golden-proposed.json)
+Wrote report to C:\LLM\IWSDK\universe-atlas-wt\climate-m1\test-results\climate-m1\merge-prep\golden-cross-engine-report.json
+
+GOLDEN CROSS-ENGINE GATE: PASS (all four engines equal)

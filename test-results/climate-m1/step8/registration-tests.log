@@ -1,0 +1,44 @@
+✔ Earth reference: the PDD snow line (label) lies in every Earth ELA band (1.4321ms)
+ℹ [{"lat":0,"elaM":4608},{"lat":45,"elaM":3003},{"lat":60,"elaM":1505},{"lat":70,"elaM":719},{"lat":78,"elaM":426}]
+✔ negative: the shipped annual-mean rule (surface-climate-1, T_SNOW 268 K, ramp 6 K) fails the 60 deg band (0.1792ms)
+✔ warm-column lapse: the factor, its clamps, and why it is mandatory (equator without it < 4450 m) (0.1438ms)
+✔ ITCZ: argmax row of the annual insolation table; equator below ~54 deg obliquity, pole above (11.1004ms)
+✔ Earth reference zonal targets (calibrated band): P ratios and effective moisture per band (9.4882ms)
+ℹ {"subOverItcz":0.1987292546137822,"midOverSub":1.2212660084910323,"polOverItcz":0.0718548449929969,"effItcz":0.6265525165796612,"effDry":0.2637125325405898,"effMid":0.6267215275876976}
+✔ negative: the uncalibrated starting band (P_REF 1000, a = .9/.6/.55/.4, w = 10/12/9/12) misses the Earth targets (4.9259ms)
+✔ high-tilt synthetic world (70 deg): the wettest band is polar and the driest band moves with the ITCZ (9.1322ms)
+ℹ {"wettestLat":87.5,"driestLat":62.5,"effItcz":0.6802003374756341,"effSub":0.32279361831472586}
+✔ Earth reference: share of directions with forestSuitability01 > 0.5 lies in 25-55 % (decision 5) (6.9932ms)
+ℹ {"forestShare":0.4684333333333333,"n":28106,"N":60000}
+✔ reporter records title + file, excludes TODO, and completes with the raw failed status (129.4849ms)
+✔ known-failures: valid HARD and CONTRACT entries pass validation (0.9251ms)
+✔ known-failures: every unsafe entry is rejected (negative controls) (0.3961ms)
+✔ known-failures: classify never matches a CONTRACT-titled failure through a bare title + file entry (0.1482ms)
+✔ known-failures: test:full rejects an invalid allowlist before running or taking the slot (39.7453ms)
+✔ runTests: test:pkg is a shared 4-token holder with ATLAS_SLOT_SHARED=1 and exclusive without it; children carry the token (247.9158ms)
+✔ literal forms, transitive chains, directory and repo path references, unregistered and configuration (11.3142ms)
+✔ known failure matching requires both title and file; fixes are stale entries (0.1925ms)
+✔ I5: appended or reordered test paths with an identical wrapper never force the full suite (0.5407ms)
+✔ I5: a changed wrapper prefix, a removed path, other text or any other key selects the full suite (0.3954ms)
+✔ review 4/8: only paths in the node --test argument list count; moving one out of it, or an unsupported script, forces full (0.1811ms)
+✔ scripts/**/*.test.mjs is a registered test path: registry, argument list, import graph and the allowlist rule (4.9522ms)
+✔ HARD: tier all steps: every registered file exactly once in registry order; {file, shards} entries expand in place; bad entries throw (2.2724ms)
+✔ HARD: tier all estimates: local run > committed step > committed file > fallback label; unknown first; longest first, ties in list order (1.6532ms)
+✔ HARD: tier all measured seconds: latest attempt per step, killed steps dropped; writeEstimates keeps unmeasured entries and refuses another label (8.7277ms)
+✔ HARD: tier all step env: all = plain npm test (no ATLAS_TEST_TIER, no ATLAS_TEST_FULL), --full sets ATLAS_TEST_FULL=1, subset tiers set the tier (0.1287ms)
+✔ HARD: tier all classification equals failure-reporter + classify on the same run (known, NEW of any class, stale, todo, skip) (91.3916ms)
+✔ HARD: tier all end to end in a sandbox repo: --full reaches every step, shards split a file, test:full verdict lines, a NEW INFO failure rejects, a known one is accepted (927.9006ms)
+✔ HARD: tier env parse: default when unset, ATLAS_TEST_FULL=1 implies gate, unknown tiers throw (0.8365ms)
+✔ HARD: pick falls back to the next DEEPER tier given (never shallower); gate falls back to default (0.1345ms)
+✔ HARD: gateOnly / onlyFrom skip below their tier and run from it (fresh processes) (137.9458ms)
+✔ HARD: reporter: one complete JSON line per top-level test, class from the title prefix, a killed run keeps finished lines (2511.8083ms)
+✔ HARD: summary: latest attempt per file wins; NEW HARD/CONTRACT failures and missing files make a run red (3.468ms)
+✔ HARD: runStep records the step process peak RSS (maxRSS, KiB); a killed step records null; summary keeps the peak (382.8866ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3173.9298

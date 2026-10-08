@@ -66,6 +66,7 @@ This is one list of every question that is waiting on the owner. It was assemble
 - **Recommended default:** option 1.
 - **Cost of waiting:** none.
 - **Added 2026-10-05 (mountains), still OPEN:** should the class/colour/retention limits measured on the new *massif tile set* (mountain tiles, MTN-6 T6) **block** the mountain merge? Until Kasper answers they are report-only. See `docs/mountains-opus-decisions-2026-10-05.md`, Q6 item 2 and the 2026-10-05 Astra addendum item 2.
+- **Added 2026-10-08 (surface-climate-2, R5-ATLAS-CLIMATE-M1):** the climate change re-pinned 20 `SHIPPED_CEILINGS` cells in `tests/lod-consistency.test.mjs` and added a Maithea L6 snow-kept retention limit of 95.2 % (target 98 %). Heights and ocean are unchanged; the cells moved through snow, forest and class (bisect: step 1 PDD snow, step 2 warm-column lapse, step 5 PET moisture). Rows now above a **plan** tolerance that had none before: Maithea L6 forest 1.85 % (plan 0.5), Maithea L8 RGB p99 5.75 (plan 4) and forest 0.69 % (0.5), Lethuris L10 RGB p99 1.28 (plan 1), name 0.94 % (0.5) and carried name 0.92 % (0.5). `LOD_TOLERANCES` is unchanged; option 1 (ceiling map as gate, strict tolerance as goal) is what this applies. Opus-decided on Kasper's instruction, overrulable (climate-m1-decision-2 (b)). Ledger: `docs/surface-climate-v2.md` section 6b.
 
 #### A4. Weak range snow (D1)
 - **State:** OPEN. The data says snow (98.7% of the SNOW constant on the sampled range); the render reads pale grey. The Maithea 15-40% snow band was accepted only "as long as ranges have snow", so that condition is not met visually.
@@ -76,6 +77,7 @@ This is one list of every question that is waiting on the owner. It was assemble
   3. A tone-mapping or exposure review of sunlit snow against the sky.
 - **Recommended default:** option 1 first, then option 3. Option 2 is a model change and comes last.
 - **Cost of waiting:** task 11 acceptance on "polar areas read as snow" cannot pass without a renderer change.
+- **Follow-up added 2026-10-08 (surface-climate-2; LOD owner + A4 renderer):** under PDD snow and height-dependent moisture the snow and forest edges follow height closely, so coarse and fine tiles disagree more where they meet: Maithea L6->7 RGB p99 15.2 -> 43.0, L6 snow kept 99.0 -> 95.3 %, L6 forest disagreement 0.42 -> 1.85 %; Lethuris L6->7 RGB p99 20.5 -> 58.1, L8->9 15.2 (was 5.2). Options: carry the snow and forest edges across levels (as the coarse retention already does for peaks), or blend colour across levels. No code in M1. Bisect: `test-results/climate-m1/resume/lod-bisect.json`.
 
 #### A5. Horizon presentation on the other worlds (D2)
 - **State:** OPEN. Raiva, Selawyn and Lethuris horizon poses use an arbitrary first-range rule and were never re-posed sun-aware. Luna called the horizons "low, hazy" and "washed out" on Maithea, Raiva and Lethuris. Selawyn read best.

@@ -1,0 +1,28 @@
+✖ presentation continuity: receding exits fade past 95 m; the former 95 m candidate cut hard-drops them (negative) (12514.9928ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12774.8101
+
+✖ failing tests:
+
+test at tests\life-continuity-scenario.test.mjs:117:1
+✖ presentation continuity: receding exits fade past 95 m; the former 95 m candidate cut hard-drops them (negative) (12514.9928ms)
+  AssertionError [ERR_ASSERTION]: no hard drop while receding
+  
+  3 !== 0
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/cm1-main/tests/life-continuity-scenario.test.mjs:134:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

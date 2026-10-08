@@ -345,7 +345,9 @@ test('biome-climate model versions are pinned and part of the model manifest', a
   // surface-survey-2 -> surface-survey-2.1-relief (survey sites move with the
   // relief terrain). habitat-suitability-1 is unchanged.
   assert.equal(BIOME_VERSION, 'surface-biomes-2.1-sea-datum', 'was surface-biomes-2-climate (was surface-biomes-1: climate snowline, treeline forest window and labels, dry belt)');
-  assert.equal(CLIMATE_VERSION, 'surface-climate-1.1-geo-g', 'was surface-climate-1 (per-planet annual climate field); lapse gravity now from planet-geophysics');
+  // BIOME2-CLIMATE M1 (2026-10-08, docs/surface-climate-v2.md): surface-climate-1.1-geo-g -> surface-climate-2
+  // (PDD snow, warm-column lapse, warmest-month ceiling, heat cap, PET effective moisture, ITCZ zonal band).
+  assert.equal(CLIMATE_VERSION, 'surface-climate-2', 'was surface-climate-1.1-geo-g (lapse gravity from planet-geophysics); was surface-climate-1 (per-planet annual climate field)');
   assert.equal(HABITAT_SUITABILITY_VERSION, 'habitat-suitability-1', 'new: niche evaluation against the climate field');
   assert.equal(SURVEY_VERSION, 'surface-survey-2.1-relief', 'was surface-survey-2 (was surface-survey-1: survey sites move through classifier v2)');
   assert.equal(SURVEY_REEXPORT, SURVEY_VERSION);
@@ -372,7 +374,7 @@ test('relief model versions are pinned and part of the model manifest; build ver
   assert.equal(OCEAN_VOLUME_VERSION, 'ocean-volume-1', 'new (P2)');
   assert.equal(LOD_LADDER_VERSION, 'lod-ladder-4', 'lod-ladder-4 adds the M5 riser reduction (docs/mountain-riser-lod-2026-10-07.md); was lod-ladder-1, new in P3 (mountains cost plan T3: declared M3 carving reduction; tolerances unchanged)');
   assert.equal(PLACE_QUERY_VERSION, 'place-query-2', 'was place-query-1 (new in P2); backlog task 16: coastAt, altitude pressure, rung answer, versions.lodLadder (docs/place-query-v2.md)');
-  assert.equal(TERRAIN_VERSION, 'terrain-1.9.1-carving-c1', 'was terrain-1.9.0-mountains (carving C1: mountain-carving-3 + mountain-assembly-4); was terrain-1.8.1-grain (mountains cost plan T6: M1-M5 wired); was terrain-1.8.0-relief (step G: reduced 800 m land colour grain)');
+  assert.equal(TERRAIN_VERSION, 'terrain-1.10.0-climate-2', 'was terrain-1.9.1-carving-c1 (BIOME2-CLIMATE M1: land colour reads surface-climate-2); was terrain-1.9.0-mountains (carving C1: mountain-carving-3 + mountain-assembly-4); was terrain-1.8.1-grain (mountains cost plan T6: M1-M5 wired); was terrain-1.8.0-relief (step G: reduced 800 m land colour grain)');
   assert.equal(BUILD_VERSION, 'atlas-client-2026-10-round2-1', 'was atlas-client-2026-10-relief-1 (round 2: landing-site-1, ocean-present)');
   const parts = MODEL_MANIFEST_ID.split('|');
   for (const v of [GEOPHYSICS_VERSION, LANDFORM_SHAPE_VERSION, OCEAN_VOLUME_VERSION, LOD_LADDER_VERSION, PLACE_QUERY_VERSION])

@@ -1,0 +1,583 @@
+{
+ "tag": "before",
+ "dist": "C:/LLM/IWSDK/universe-atlas-wt/cm1-before/dist",
+ "build": {
+  "commit": "c6526d0263bdf6e3b1f437162758e7ad9c74d9ec",
+  "branch": "HEAD",
+  "subject": "place-query-2 merger needs-lines: README, version pin, sparse-consumer narrowing, test registration, golden re-pin",
+  "dirty": true,
+  "builtAt": "2026-10-08T10:10:35.685Z"
+ },
+ "bodies": {
+  "Maithea": {
+   "bodyId": "G001/C2128,0,1/0/planet/1",
+   "radiusM": 5194907.072465867,
+   "url": "http://127.0.0.1:54029/?seed=LETHRA-001&g=G001&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1&date=435084631200000032044300000&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-8-ocean-volume%2Cterrain-1.9.1-carving-c1%2Cbiosphere-lab-3%2Catlas-galaxy-history-2",
+   "build": "c6526d0263bdf6e3b1f437162758e7ad9c74d9ec",
+   "shots": {
+    "orbit": {
+     "file": "test-results/climate-m1/captures/inapp/orbit-before/maithea-orbit-before.png",
+     "settledMs": -1,
+     "setPoseError": null,
+     "backlog": {
+      "surfaceReady": false,
+      "terrainPending": 0,
+      "terrainResident": 110,
+      "terrainVisible": 65,
+      "staleWaterPatches": 0,
+      "lifePending": 0,
+      "faunaTerrainPending": 0,
+      "floraSubmitted": 0,
+      "faunaVisible": 0,
+      "faunaNearRigs": 0,
+      "rocksDrawn": 0,
+      "forestPending": 0,
+      "forestSelectionPending": false,
+      "forestVisible": 0,
+      "forestNear": 0,
+      "forestFarTrees": 0,
+      "forestOriginVersion": 0,
+      "forestMatrixWrites": 0,
+      "forestColorWrites": 0,
+      "forestCoverageWrites": 0,
+      "forestSelectionApplyMs": 0,
+      "forestUpdateMs": 0,
+      "accountedBytes": 52769336,
+      "reservedCombinedBytes": 144103116,
+      "budgetBytes": 436207616
+     }
+    }
+   },
+   "sunDir": [
+    0.8503990769857541,
+    -0.2234706759300356,
+    0.4763216002462523
+   ],
+   "picks": {
+    "lowland": {
+     "dir": [
+      0.8134246274414492,
+      -0.20027499999999998,
+      0.5461046601584164
+     ],
+     "groundM": 181.25806840568788,
+     "lat": -11.553040740239197,
+     "sunElevDeg": 85.28269088089591,
+     "class": "Temperate ground"
+    },
+    "forest": {
+     "dir": [
+      0.6864895977391595,
+      -0.5340750000000001,
+      0.4934530642025915
+     ],
+     "groundM": 304.5921017971662,
+     "lat": -32.281201917137615,
+     "sunElevDeg": 69.74854973013007,
+     "class": "Temperate ground",
+     "suitability": 0.7254654805051219
+    },
+    "mountainV3": {
+     "dir": [
+      0.5575257825535767,
+      -0.6456589659819328,
+      0.5218136654354342
+     ],
+     "groundM": 5082.686750089617,
+     "sunElevDeg": 60.106854266238294,
+     "class": "Alpine / polar snow",
+     "eyeDir": [
+      0.559239705147412,
+      -0.6427162275406898,
+      0.5236093993068688
+     ],
+     "eyeGroundM": 328.5858090298191,
+     "dropM": 4754.100941059798,
+     "offDeg": 30,
+     "km": 20,
+     "pose": "v3"
+    },
+    "mountainSearch": {
+     "ocean": 0,
+     "high": 12,
+     "los": 19
+    },
+    "mountain": {
+     "dir": [
+      0.39047897050966884,
+      0.6204916680808599,
+      0.6800854824446272
+     ],
+     "groundM": 5375.653372475563,
+     "sunElevDeg": 31.15403728385968,
+     "class": "Alpine / polar snow",
+     "eyeDir": [
+      0.40279338727630576,
+      0.6178390515786615,
+      0.6753017055441664
+     ],
+     "eyeGroundM": 3613.999195884153,
+     "offDeg": 40,
+     "km": 70,
+     "pose": "v2"
+    },
+    "beach": {
+     "dir": [
+      0.8644761718528624,
+      -0.4188750000000001,
+      0.2778932936823418
+     ],
+     "groundM": 10.601353779804242,
+     "lat": -24.76358189437134,
+     "sunElevDeg": 73.97111124800814,
+     "seaKm": 1,
+     "losBlocked": true
+    },
+    "polar": {
+     "dir": [
+      0.38278657147995937,
+      -0.883975,
+      0.26844485480190905
+     ],
+     "groundM": 266.1419784408714,
+     "lat": -62.12564719173931,
+     "sunElevDeg": 40.61175064882521,
+     "lit": true,
+     "class": "Alpine / polar snow"
+    },
+    "seabed": {
+     "dir": [
+      0.8483070388877773,
+      -0.22082500000000005,
+      0.48126031121260254
+     ],
+     "groundM": -4321.199042088047,
+     "eyeM": -3721.1990420880466,
+     "sunElevDeg": 89.65733867753138
+    }
+   },
+   "poses": {
+    "orbit": {
+     "position": [
+      14136781.374245565,
+      -3714910.063608543,
+      7918228.639640049
+     ],
+     "heading": [
+      0.09701513426334148,
+      0.502421400420742,
+      -0.05685716526888428,
+      0.8572794543675434
+     ],
+     "clearanceM": null
+    },
+    "lowland": {
+     "position": [
+      4227403.796700259,
+      -1041352.1391006281,
+      2834678.7305334634
+     ],
+     "heading": [
+      0.7583053315175049,
+      0.5669934862159469,
+      0.12858436808911475,
+      0.29488552196392565
+     ],
+     "clearanceM": 120,
+     "eyeDir": [
+      0.8137034759241774,
+      -0.20044261111480932,
+      0.5456275404691274
+     ],
+     "offDeg": 0,
+     "km": 3
+    },
+    "forest": {
+     "position": [
+      3567408.792404691,
+      -2773473.0274602356,
+      2563691.148645103
+     ],
+     "heading": [
+      0.5232199230159684,
+      0.4400150785487873,
+      0.7173330515420433,
+      -0.1343909817444932
+     ],
+     "clearanceM": 80,
+     "eyeDir": [
+      0.6866616995998812,
+      -0.5338434179130183,
+      0.49346419875564335
+     ],
+     "offDeg": 0,
+     "km": 1.5,
+     "losBlocked": true
+    },
+    "mountainV3": {
+     "position": [
+      2905521.867631261,
+      -3339222.942528199,
+      2720405.12463677
+     ],
+     "heading": [
+      0.3347191008995066,
+      0.43247723331072513,
+      0.8142298429411303,
+      -0.1948238410076872
+     ],
+     "clearanceM": 250
+    },
+    "mountain": {
+     "position": [
+      2094050.7492980706,
+      3212034.6802426567,
+      3510772.736512131
+     ],
+     "heading": [
+      0.40026538778149606,
+      0.7169090661274923,
+      0.1710126217529818,
+      0.5445949811093627
+     ],
+     "clearanceM": 300
+    },
+    "beach": {
+     "position": [
+      4491283.008995557,
+      -2176806.2916291845,
+      1441828.9922467105
+     ],
+     "heading": [
+      0.834070077105047,
+      0.5061110796186558,
+      -0.020554514471758843,
+      0.2185319049934125
+     ],
+     "clearanceM": 150
+    },
+    "polar": {
+     "position": [
+      1991320.1047472358,
+      -4590389.988995291,
+      1398337.9952741931
+     ],
+     "heading": [
+      0.3145380081773672,
+      0.17174693765864152,
+      0.9237915348206696,
+      -0.1348259285536902
+     ],
+     "clearanceM": 200,
+     "eyeDir": [
+      0.38328378562925647,
+      -0.8835455677378825,
+      0.2691482294284118
+     ],
+     "offDeg": 25,
+     "km": 5
+    },
+    "seabed": {
+     "position": [
+      4403719.516600185,
+      -1146343.6204988062,
+      2498311.7290063933
+     ],
+     "heading": [
+      -0.03587828085313277,
+      -0.21886650659755147,
+      -0.8060559179230273,
+      0.548711270554992
+     ],
+     "clearanceM": null
+    }
+   },
+   "errors": []
+  },
+  "Raiva": {
+   "bodyId": "G001/C2143,4,3/0/planet/1",
+   "radiusM": 2002003.8031507283,
+   "url": "http://127.0.0.1:54029/?seed=LETHRA-001&g=G001&system=G001%2FC2143%2C4%2C3%2F0&body=G001%2FC2143%2C4%2C3%2F0%2Fplanet%2F1&date=435084631200000032044300000&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-8-ocean-volume%2Cterrain-1.9.1-carving-c1%2Cbiosphere-lab-3%2Catlas-galaxy-history-2",
+   "build": "c6526d0263bdf6e3b1f437162758e7ad9c74d9ec",
+   "shots": {
+    "orbit": {
+     "file": "test-results/climate-m1/captures/inapp/orbit-before/raiva-orbit-before.png",
+     "settledMs": -1,
+     "setPoseError": null,
+     "backlog": {
+      "surfaceReady": false,
+      "terrainPending": 0,
+      "terrainResident": 98,
+      "terrainVisible": 65,
+      "staleWaterPatches": 0,
+      "lifePending": 0,
+      "faunaTerrainPending": 0,
+      "floraSubmitted": 0,
+      "faunaVisible": 0,
+      "faunaNearRigs": 0,
+      "rocksDrawn": 0,
+      "forestPending": 0,
+      "forestSelectionPending": false,
+      "forestVisible": 0,
+      "forestNear": 0,
+      "forestFarTrees": 0,
+      "forestOriginVersion": 0,
+      "forestMatrixWrites": 0,
+      "forestColorWrites": 0,
+      "forestCoverageWrites": 0,
+      "forestSelectionApplyMs": 0,
+      "forestUpdateMs": 0,
+      "accountedBytes": 48101576,
+      "reservedCombinedBytes": 139416996,
+      "budgetBytes": 436207616
+     }
+    }
+   },
+   "sunDir": [
+    -0.7540959740509545,
+    -0.6111625831342299,
+    0.2404569793057331
+   ],
+   "picks": {
+    "lowland": {
+     "dir": [
+      -0.9679663224102616,
+      -0.2507250000000001,
+      0.013348147982155908
+     ],
+     "groundM": 298.0071305268358,
+     "lat": -14.520418087218365,
+     "sunElevDeg": 62.42218489190712,
+     "class": "Dry upland"
+    },
+    "forest": {
+     "dir": [
+      -0.755704948533932,
+      -0.6101749999999999,
+      0.23790018944155403
+     ],
+     "groundM": 188.08738852455488,
+     "lat": -37.6021576797551,
+     "sunElevDeg": 89.8178994257082,
+     "class": "Temperate ground",
+     "suitability": 1
+    },
+    "mountainV3": {
+     "dir": [
+      -0.942914817111956,
+      0.27633395828319535,
+      0.1858795071283226
+     ],
+     "groundM": 2905.4342922686974,
+     "sunElevDeg": 35.93445108636999,
+     "class": "Dry upland",
+     "eyeDir": [
+      -0.9447690374473564,
+      0.27541622716277436,
+      0.17764393515180563
+     ],
+     "eyeGroundM": 273.1476985478832,
+     "dropM": 2632.2865937208144,
+     "offDeg": -90,
+     "km": 17,
+     "pose": "v3"
+    },
+    "mountainSearch": {
+     "ocean": 0,
+     "high": 52,
+     "los": 76
+    },
+    "mountain": {
+     "dir": [
+      -0.7913061091281454,
+      0.02730070912688976,
+      0.6108103739604007
+     ],
+     "groundM": 3429.8335594911005,
+     "sunElevDeg": 46.62790306633012,
+     "pose": "v1-fallback"
+    },
+    "beach": {
+     "dir": [
+      -0.8268347677199457,
+      -0.2465250000000001,
+      0.5055390106257909
+     ],
+     "groundM": 11.813665994022063,
+     "lat": -14.27197441107463,
+     "sunElevDeg": 63.6036403438992,
+     "seaKm": 1
+    },
+    "polar": {
+     "dir": [
+      -0.3688452758731221,
+      -0.906925,
+      0.20356867843821286
+     ],
+     "groundM": 67.76389779925697,
+     "lat": -65.08380911674702,
+     "sunElevDeg": 61.808418269438434,
+     "lit": true,
+     "class": "Coastal sand"
+    },
+    "seabed": {
+     "dir": [
+      -0.7980777523251033,
+      -0.534775,
+      0.27764653900005876
+     ],
+     "groundM": -3026.16041169073,
+     "eyeM": -2426.16041169073,
+     "sunElevDeg": 84.51648788799861
+    }
+   },
+   "poses": {
+    "orbit": {
+     "position": [
+      -4831049.625570125,
+      -3915359.4104900844,
+      1540466.5186054837
+     ],
+     "heading": [
+      0.2606890272338512,
+      -0.5584019532800739,
+      0.1904959038992783,
+      0.7641595384803251
+     ],
+     "clearanceM": null
+    },
+    "lowland": {
+     "position": [
+      -1937567.8614557863,
+      -504568.7411982303,
+      28209.93926637843
+     ],
+     "heading": [
+      0.3939301439492456,
+      -0.3127428507977085,
+      0.677122057027993,
+      0.5371374785371325
+     ],
+     "clearanceM": 120,
+     "eyeDir": [
+      -0.967628952586554,
+      -0.2519835987508202,
+      0.014088153776635581
+     ],
+     "offDeg": 0,
+     "km": 3
+    },
+    "forest": {
+     "position": [
+      -1512385.7187963224,
+      -1222217.2899422888,
+      477553.53357057396
+     ],
+     "heading": [
+      0.2964627298760733,
+      -0.05046750425581962,
+      0.8401926143424676,
+      0.45126405973995404
+     ],
+     "clearanceM": 80,
+     "eyeDir": [
+      -0.7553263321104898,
+      -0.6104083708148652,
+      0.23850315062836364
+     ],
+     "offDeg": 0,
+     "km": 1.5,
+     "losBlocked": true
+    },
+    "mountainV3": {
+     "position": [
+      -1891925.4598162603,
+      551528.4175946822,
+      355736.7677964119
+     ],
+     "heading": [
+      -0.6051265073930129,
+      0.7898987857017358,
+      -0.004430809479812466,
+      -0.09930854104562588
+     ],
+     "clearanceM": 250
+    },
+    "mountain": {
+     "position": [
+      -1588849.6213226262,
+      47381.83122077,
+      1222449.1679050103
+     ],
+     "heading": [
+      0.6710149342355088,
+      -0.44010793368216017,
+      0.1724188310620091,
+      0.571240502273907
+     ],
+     "clearanceM": 400,
+     "eyeDir": [
+      -0.7923407118188501,
+      0.023628764719403395,
+      0.6096210936903619
+     ],
+     "offDeg": 0,
+     "km": 8,
+     "losBlocked": true
+    },
+    "beach": {
+     "position": [
+      -1655455.9304540555,
+      -491844.4832244728,
+      1013162.803167911
+     ],
+     "heading": [
+      -0.24611905384241953,
+      0.4223976233131756,
+      0.7761408043645927,
+      0.3982601046494313
+     ],
+     "clearanceM": 150
+    },
+    "polar": {
+     "position": [
+      -741243.3947671102,
+      -1814691.31099686,
+      407982.1024638477
+     ],
+     "heading": [
+      -0.6303623407194869,
+      0.17962004436915605,
+      0.7529059186538449,
+      0.05926750137707587
+     ],
+     "clearanceM": 200,
+     "eyeDir": [
+      -0.3702056478553192,
+      -0.9063270947002305,
+      0.2037620565960767
+     ],
+     "offDeg": 0,
+     "km": 3
+    },
+    "seabed": {
+     "position": [
+      -1595818.4307166995,
+      -1069324.1338957688,
+      555175.8119683898
+     ],
+     "heading": [
+      -0.45172990960590204,
+      0.29634145826302594,
+      0.7919688567371003,
+      0.28444183735962125
+     ],
+     "clearanceM": null
+    }
+   },
+   "errors": []
+  }
+ },
+ "started": "2026-10-08T10:16:10.692Z",
+ "finished": "2026-10-08T10:21:34.916Z"
+}

@@ -1,0 +1,4 @@
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (229.2596ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (47.7872ms)
+ℹ pass 2
+ℹ fail 0

@@ -1,0 +1,23 @@
+== stock bench, alternating main/branch, 3 rounds
+-- round 1 main c6526d0
+{"best":0.0922165000000001,"median":0.09463950000000011,"heapDuringLoop":563832,"heapAfterGc":1192,"tableBuildMsPerBody":0.6723599999999997,"niche":0.18969150000000012,"pass":{"surfaceClimate":true,"zeroHeapGrowth":true,"tableBuild":true,"nicheEvaluator":true}}
+-- round 1 branch 3ab2eab
+{"best":0.056554500000000014,"median":0.05752200000000016,"heapDuringLoop":884184,"heapAfterGc":888,"tableBuildMsPerBody":0.7645650000000004,"niche":0.18647899999999937,"pass":{"surfaceClimate":true,"zeroHeapGrowth":true,"tableBuild":true,"nicheEvaluator":true}}
+-- round 2 main c6526d0
+{"best":0.09240650000000016,"median":0.09430849999999993,"heapDuringLoop":474288,"heapAfterGc":4912,"tableBuildMsPerBody":0.6826400000000007,"niche":0.18675599999999973,"pass":{"surfaceClimate":true,"zeroHeapGrowth":true,"tableBuild":true,"nicheEvaluator":true}}
+-- round 2 branch 3ab2eab
+{"best":0.05657600000000002,"median":0.05731150000000014,"heapDuringLoop":907576,"heapAfterGc":1080,"tableBuildMsPerBody":0.6975699999999996,"niche":0.18786650000000066,"pass":{"surfaceClimate":true,"zeroHeapGrowth":true,"tableBuild":true,"nicheEvaluator":true}}
+-- round 3 main c6526d0
+{"best":0.09221450000000005,"median":0.09510050000000006,"heapDuringLoop":539648,"heapAfterGc":1024,"tableBuildMsPerBody":0.6868499999999997,"niche":0.18620949999999994,"pass":{"surfaceClimate":true,"zeroHeapGrowth":true,"tableBuild":true,"nicheEvaluator":true}}
+-- round 3 branch 3ab2eab
+{"best":0.05639949999999999,"median":0.058213499999999946,"heapDuringLoop":880264,"heapAfterGc":1064,"tableBuildMsPerBody":0.7232475,"niche":0.18628050000000032,"pass":{"surfaceClimate":true,"zeroHeapGrowth":true,"tableBuild":true,"nicheEvaluator":true}}
+== GC-counted allocation, 3 rounds alternating (alloc-diag.mjs, 3M warm calls)
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":24,"heapGrowthBytesDuringLoop":1630704,"freedByGcBytes":50294424,"bytesPerCallUpperBound":17.308376,"sink":true}
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":118,"heapGrowthBytesDuringLoop":2066616,"freedByGcBytes":247443568,"bytesPerCallUpperBound":83.17006133333334,"sink":true}
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":22,"heapGrowthBytesDuringLoop":1848048,"freedByGcBytes":46131936,"bytesPerCallUpperBound":15.993328,"sink":true}
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":118,"heapGrowthBytesDuringLoop":2059680,"freedByGcBytes":247444080,"bytesPerCallUpperBound":83.16792,"sink":true}
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":22,"heapGrowthBytesDuringLoop":1850032,"freedByGcBytes":46131952,"bytesPerCallUpperBound":15.993994666666667,"sink":true}
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":118,"heapGrowthBytesDuringLoop":1938832,"freedByGcBytes":247444048,"bytesPerCallUpperBound":83.12762666666667,"sink":true}
+== diagnostic only (no code change): same, with a larger TurboFan inlining budget
+{"dir":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/main-c6526d0","which":"real","calls":3000000,"gcEvents":0,"heapGrowthBytesDuringLoop":302256,"freedByGcBytes":0,"bytesPerCallUpperBound":0.100752,"sink":true}
+{"dir":"C:/LLM/IWSDK/universe-atlas-wt/climate-m1","which":"real","calls":3000000,"gcEvents":1,"heapGrowthBytesDuringLoop":230088,"freedByGcBytes":2095768,"bytesPerCallUpperBound":0.7752853333333334,"sink":true}

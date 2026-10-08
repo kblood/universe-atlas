@@ -1,0 +1,6 @@
+[gate after 10:10:46] serving a92836042077721ac4ecdc3835170d1e22c3ecd9 climate-m1 step 8: test:full via the slot - 1726 tests, 1 fail (version-compat:335), 4 todo; golden node diff
+[gate after 10:13:59] Maithea views orbit,lowland,forest,mountainV3,mountain,beach,polar,seabed
+[gate after 10:14:27] Maithea orbit settled -1 ms 
+[gate after 10:15:41] Raiva views orbit,lowland,mountainV3,mountain,beach,polar,seabed
+[gate after 10:16:10] Raiva orbit settled -1 ms 
+[gate after 10:16:10] done

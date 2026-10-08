@@ -126,7 +126,10 @@ import {carvingAtLevel,rockDetailAtLevel,rockRiserWidthM} from './lod-ladder.ts'
 // M3 carving height is a C1 4x4 Catmull-Rom of the stored cut fraction (mountain-carving-3, was the triangle-
 // interpolated retained of mountain-carving-2) and M5 rock reads the C2 cubic B-spline of the same taps
 // (mountain-assembly-4). Removes the 200 m carving-lattice grid; only massif interiors change.
-export const TERRAIN_VERSION = "terrain-1.9.1-carving-c1";
+// 1.10.0-climate-2 (BIOME2-CLIMATE M1, docs/surface-climate-v2.md; plan v2 versioning, climate-m1-decision item 6):
+// the land colour reads surface-climate-2 (PDD snow, warm-column lapse, warmest-month ceiling, heat cap, PET
+// moisture, ITCZ band; was surface-climate-1.1-geo-g). Heights, ocean and every other field are unchanged.
+export const TERRAIN_VERSION = "terrain-1.10.0-climate-2";
 /**
  * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
  * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x

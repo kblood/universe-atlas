@@ -27,10 +27,10 @@
  */
 import {G,hash64,noise,type Body,type V3} from './catalog.ts';
 import {spinStateFor} from './stellar-evolution.ts';
-import {detAcos,sine} from './det-math.ts';
+import {detAcos,detExp,sine} from './det-math.ts';
 import {planetGeophysics} from './planet-geophysics.ts';
 
-export const CLIMATE_VERSION='surface-climate-1.1-geo-g';
+export const CLIMATE_VERSION='surface-climate-2';
 
 /**
  * Heuristic-v1 constants. A test pins sha256(JSON.stringify(CLIMATE_CALIBRATION)),
@@ -61,10 +61,18 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   K_LAT_K:60,
   LAPSE_MOIST_FACTOR:0.6652, CP_J_PER_KG_K:1004, LAPSE_MIN_K_PER_M:0.001, LAPSE_MAX_K_PER_M:0.0098,
   DATUM_M:0,
-  T_SNOW_K:268, SNOW_RAMP_K:6,
+  PDD_CRIT:250, PDD_RAMP:100, YEAR_D:365.25,
+  WARM_COL_REF_K:288, WARM_COL_PER_K:0.005, WARM_COL_MIN:0.8, WARM_COL_MAX:1.1,
+  TW_CEILING_K:320, TW_CEILING_SCALE_K:40,
+  HEAT_LO_K:305, HEAT_HI_K:316, HEAT_ANNUAL_MAX_K:320,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
-  BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03, BELT_MOISTURE:0.0425,
+  ZONAL_A1:1.6, ZONAL_A2:0, ZONAL_A3:0.75, ZONAL_A4:0.4,
+  ZONAL_W1:10, ZONAL_W2:12, ZONAL_W3:12, ZONAL_W4:12,
+  ZONAL_C2:50, ZONAL_C3:28, ZONAL_C4:88, HADLEY_EDGE_DEG:30,
+  PET_MIN_MM:120, PET_MM_PER_BIOTEMP_C:58.93,
+  P_REF_MM:650, P_WATER_REF:0.7, P_WATER_MIN:0.2, P_WATER_MAX:1.2, P_TEMP_REF_K:288, P_TEMP_PER_K:0.025, P_TEMP_MIN:0.2,
+  P_NOISE_BASE:0.4, P_NOISE_GAIN:1.2, AI_HALF:0.6,
   FOREST_MOIST_LO:0.44, FOREST_MOIST_RAMP:0.08,
   GROW_K:278,
   OBLIQUITY_QUANTUM_RAD:1/1073741824,
@@ -90,6 +98,12 @@ export type ClimateForcing=Readonly<{
   qMean:Float64Array;
   /** Seasonal half-range (max-min)/2 of daily insolation per row, same normalisation. Do not mutate. */
   qAmp:Float64Array;
+  /** surface-climate-2: sin(latitude) of the ITCZ = the argmax row of qMean (equator below ~54 deg
+   * obliquity, the poles above), its latitude (deg) and the fixed Hadley edge (owner Q4: 30 deg). */
+  itczSinLat:number; itczLatDeg:number; hadleyEdgeDeg:number;
+  /** Zonal precipitation factor Z and the subsidence diagnostic (dryBelt01) per x = sin|lat|,
+   * ZONAL_ROWS+1 rows. Do not mutate. */
+  zonal:Float64Array; subsidence:Float64Array;
   provenance:ClimateProvenance;
 }>;
 
@@ -106,6 +120,12 @@ export type ClimateSample={
   dryBelt01:number;
   effectiveMoisture:number;
   aridity01:number;
+  /** Positive degree-days above 0 C (C*d per year) of the sinusoidal year (surface-climate-2). */
+  pdd:number;
+  /** Annual precipitation index (mm/yr, surface-climate-2 heuristic; the climate grid multiplies it in M2). */
+  precipMm:number;
+  /** Potential evapotranspiration (mm/yr, Holdridge biotemperature x 58.93, floored at PET_MIN_MM). */
+  petMm:number;
   snowFraction:number;
   treeline01:number;
   growingSeason01:number;
@@ -114,13 +134,48 @@ export type ClimateSample={
 };
 export function createClimateSample():ClimateSample {
   return {insolation01:0,insolationHalfRange:0,annualMeanTempK:0,seasonalHalfRangeK:0,warmestMonthK:0,coldestMonthK:0,
-    legacyMoisture:0,dryBelt01:0,effectiveMoisture:0,aridity01:0,snowFraction:0,treeline01:0,growingSeason01:0,
+    legacyMoisture:0,dryBelt01:0,effectiveMoisture:0,aridity01:0,pdd:0,precipMm:0,petMm:0,snowFraction:0,treeline01:0,growingSeason01:0,
     forestSuitability01:0,climateCode:0};
 }
 
-const clamp01=(v:number)=>v<0?0:v>1?1:v;
-/** Arithmetic smoothstep (no platform transcendental). */
-const smooth=(x:number,lo:number,hi:number)=>{const t=clamp01((x-lo)/(hi-lo));return t*t*(3-2*t);};
+/**
+ * surface-climate-2 positive-degree-day kernel. The year is the sinusoid
+ * T(t) = mu + A cos(2 pi t) (mu = annual mean, A = seasonal half-range). With
+ * v = (mu - thr)/A, the time-mean of max(0, T - thr) is A*H(v) and the
+ * fraction of the year with T > thr is G(v), where
+ *   H(v) = (sqrt(1-v^2) + v*acos(-v))/pi,   G(v) = acos(-v)/pi,
+ * H(v) = 0 and G(v) = 0 for v <= -1, H(v) = v and G(v) = 1 for v >= 1 (both
+ * continuous at +-1). Both are tabulated ONCE at module init on 513 nodes over
+ * v in [-1,1] (detAcos only here) and read with linear interpolation, so the
+ * per-sample path has no transcendental at all.
+ */
+export const KERNEL_STEPS=512;
+const H_TAB=new Float64Array(KERNEL_STEPS+1),G_TAB=new Float64Array(KERNEL_STEPS+1);
+for(let k=0;k<=KERNEL_STEPS;k++){
+  const v=-1+2*k/KERNEL_STEPS,a=detAcos(-v);
+  H_TAB[k]=(Math.sqrt(Math.max(0,1-v*v))+v*a)/Math.PI;G_TAB[k]=a/Math.PI;
+}
+// Exact end nodes (H(-1) = G(-1) = 0, H(1) = G(1) = 1), whatever detAcos rounds to.
+H_TAB[0]=0;G_TAB[0]=0;H_TAB[KERNEL_STEPS]=1;G_TAB[KERNEL_STEPS]=1;
+/** Linear interpolation in a kernel table for v strictly inside (-1, 1). */
+function kernelAt(tab:Float64Array,v:number):number {
+  const f=(v+1)*(KERNEL_STEPS/2);
+  let i=Math.floor(f);if(i<0)i=0;else if(i>KERNEL_STEPS-1)i=KERNEL_STEPS-1;
+  return tab[i]!+(tab[i+1]!-tab[i]!)*(f-i);
+}
+/** The tabulated H(v) (mean positive excess per unit half-range). */
+export function pddKernelH(v:number):number {return v<=-1?0:v>=1?v:kernelAt(H_TAB,v);}
+/** The tabulated G(v) (fraction of the year above the threshold). */
+export function pddKernelG(v:number):number {return v<=-1?0:v>=1?1:kernelAt(G_TAB,v);}
+/**
+ * Degree-days (C*d per year) above `thresholdC` of a sinusoidal year with annual
+ * mean `annualK` (K) and half-range `halfK` (K). A < 1e-9 is a seasonless year.
+ */
+export function degreeDaysAbove(annualK:number,halfK:number,thresholdC:number):number {
+  const excess=annualK-273.15-thresholdC;
+  if(halfK<1e-9)return excess>0?excess*C.YEAR_D:0;
+  return C.YEAR_D*halfK*pddKernelH(excess/halfK);
+}
 
 /**
  * Byte-identical to the renderer's habitat gate (planet-renderer.ts:830) and
@@ -129,6 +184,36 @@ const smooth=(x:number,lo:number,hi:number)=>{const t=clamp01((x-lo)/(hi-lo));re
  */
 export function temperateHabitat(body:Body):boolean {
   return body.water>0&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Ice world'&&body.type!=='Volcanic world';
+}
+
+/**
+ * surface-climate-2 step 2, warm-column lapse correction (a calibration choice,
+ * docs/surface-climate-v2.md): the lapse rate applied above the datum is
+ * lapse*f(T0), f = clamp(1 - WARM_COL_PER_K*(T0 - WARM_COL_REF_K), 0.8, 1.1),
+ * T0 the datum annual mean of the sample's latitude. Warm (moist, tropical)
+ * columns cool more slowly with height than the planet's mean lapse rate, cold
+ * columns faster. Without it the Earth equatorial snow line is 4302 m, below
+ * the 4450 m floor.
+ */
+export function warmColumnLapseFactor(datumAnnualK:number):number {
+  const f=1-C.WARM_COL_PER_K*(datumAnnualK-C.WARM_COL_REF_K);
+  return f<C.WARM_COL_MIN?C.WARM_COL_MIN:f>C.WARM_COL_MAX?C.WARM_COL_MAX:f;
+}
+
+/**
+ * surface-climate-2 step 3, warmest-month ceiling (symmetric): above
+ * TW_CEILING_K the raw warmest month TwRaw = annual + half saturates,
+ *   Tw' = 320 + e/(1 + e/40), e = TwRaw - 320   (Tw' < 360 K always),
+ * and the half-range becomes half' = Tw' - annual, so the coldest month
+ * annual - half' rises by the same amount and the annual mean is unchanged.
+ * half' is never negative (the warmest month is never below the annual mean);
+ * that floor binds only where the annual mean itself exceeds the saturated
+ * warmest month (a hot, nearly seasonless column; not a habitat world).
+ * PDD, treeline, growing season and the tile colour all read half'.
+ */
+export function warmestMonthCeilingK(rawWarmestK:number):number {
+  const e=rawWarmestK-C.TW_CEILING_K;
+  return e>0?C.TW_CEILING_K+e/(1+e/C.TW_CEILING_SCALE_K):rawWarmestK;
 }
 
 /** Surface gravity from the catalogue body, g = G*M/R^2 (m/s^2). */
@@ -231,10 +316,46 @@ export function climateForcingFromParams(p:ClimateForcingParams):ClimateForcing 
   const g=p.surfaceGravityMS2??9.81;
   const lapseKPerM=p.lapseKPerM??lapseRateForGravity(g);
   const {qMean,qAmp}=insolationTables(obliquityRad);
+  const itczSinLat=itczSinLatOf(qMean),itczLatDeg=LAT_DEG[Math.round(itczSinLat*ZONAL_ROWS)]!;
+  const {zonal,subsidence}=zonalTables(itczLatDeg);
   return Object.freeze({version:CLIMATE_VERSION,anchorTempK:p.anchorTempK,obliquityRad,water:p.water,
     frozen:!!p.frozen,habitat:p.habitat??true,moistureSeed:p.moistureSeed??0,surfaceGravityMS2:g,lapseKPerM,qMean,qAmp,
+    itczSinLat,itczLatDeg,hadleyEdgeDeg:C.HADLEY_EDGE_DEG,zonal,subsidence,
     provenance:Object.freeze({anchorTempK:'override',obliquityRad:'override',surfaceGravityMS2:'override',
       lapseKPerM:p.lapseKPerM===undefined?'derived-heuristic':'override',table:'derived-heuristic',...p.provenance}) as ClimateProvenance});
+}
+
+/**
+ * surface-climate-2 step 6, the ITCZ zonal band. Rows k = 0..ZONAL_ROWS over
+ * x = sin|latitude| = k/ZONAL_ROWS; LAT_DEG is their latitude (detAcos at module
+ * init only). Per forcing, with dI = |lat - itczLatDeg| (deg),
+ *   Z(dI) = 1 + A1 e^-(dI/W1)^2 + A2 e^-((dI-50)/W2)^2 - A3 e^-((dI-28)/W3)^2 - A4 e^-((dI-88)/W4)^2
+ * (ITCZ convergence, mid-latitude storm track, Hadley subsidence, polar desert;
+ * the squares are products and e^ is detExp) and the subsidence term
+ * e^-((dI-28)/W3)^2 alone is the dryBelt01 diagnostic. Both move with the ITCZ,
+ * so on a high-tilt world (ITCZ at the pole) the wet band is polar and the dry
+ * band follows it. Calibration: docs/surface-climate-v2.md.
+ */
+export const ZONAL_ROWS=512;
+const LAT_DEG=new Float64Array(ZONAL_ROWS+1);
+for(let k=0;k<=ZONAL_ROWS;k++)LAT_DEG[k]=90-detAcos(k/ZONAL_ROWS)*180/Math.PI;
+LAT_DEG[0]=0;LAT_DEG[ZONAL_ROWS]=90;
+const gauss=(x:number,w:number)=>{const u=x/w;return detExp(-(u*u));};
+/** The ITCZ row of a qMean table (first maximum) as sin(latitude). */
+export function itczSinLatOf(qMean:Float64Array):number {
+  let best=0;for(let k=1;k<=TABLE_ROWS;k++)if(qMean[k]!>qMean[best]!)best=k;
+  return best/TABLE_ROWS;
+}
+/** Zonal factor Z and subsidence diagnostic tables for an ITCZ latitude (deg). */
+export function zonalTables(itczLatDeg:number):{zonal:Float64Array;subsidence:Float64Array} {
+  const zonal=new Float64Array(ZONAL_ROWS+1),subsidence=new Float64Array(ZONAL_ROWS+1);
+  for(let k=0;k<=ZONAL_ROWS;k++){
+    const dI=LAT_DEG[k]!>itczLatDeg?LAT_DEG[k]!-itczLatDeg:itczLatDeg-LAT_DEG[k]!;
+    const sub=gauss(dI-C.ZONAL_C3,C.ZONAL_W3);
+    zonal[k]=1+C.ZONAL_A1*gauss(dI,C.ZONAL_W1)+C.ZONAL_A2*gauss(dI-C.ZONAL_C2,C.ZONAL_W2)-C.ZONAL_A3*sub-C.ZONAL_A4*gauss(dI-C.ZONAL_C4,C.ZONAL_W4);
+    subsidence[k]=sub;
+  }
+  return {zonal,subsidence};
 }
 
 const FORCING_CACHE_CAP=64;
@@ -281,10 +402,11 @@ export function climateForcingCacheSize():number {return forcingCache.size;}
  * no allocation, no hash64 per call.
  */
 export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,number,number],heightM:number,out:ClimateSample)=>ClimateSample {
-  const {qMean,qAmp,anchorTempK:anchor,lapseKPerM:lapse,water,frozen,habitat,moistureSeed}=forcing;
+  const {qMean,qAmp,zonal,subsidence,anchorTempK:anchor,lapseKPerM:lapse,water,frozen,habitat,moistureSeed}=forcing;
   const seed=moistureSeed+30;
   const maritime=1-C.MARITIME*water;
-  const beltLoA=C.BELT_LO-C.BELT_EDGE,beltLoB=C.BELT_LO+C.BELT_EDGE,beltHiA=C.BELT_HI-C.BELT_EDGE,beltHiB=C.BELT_HI+C.BELT_EDGE;
+  // Step 5: the water term of the precipitation index (per forcing).
+  const wr=water/C.P_WATER_REF,pWater=C.P_REF_MM*(wr<C.P_WATER_MIN?C.P_WATER_MIN:wr>C.P_WATER_MAX?C.P_WATER_MAX:wr);
   return (d,heightM,out)=>{
     let x=d[1]<0?-d[1]:d[1];
     if(x>1)x=1;
@@ -294,26 +416,84 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     const q=qMean[i]!+(qMean[i+1]!-qMean[i]!)*t;
     const qa=qAmp[i]!+(qAmp[i+1]!-qAmp[i]!)*t;
     const above=heightM-C.DATUM_M;
-    const annual=anchor+C.K_LAT_K*(q-1)-lapse*(above>0?above:0);
-    const half=C.SEASON_K*qa*maritime;
+    const datumAnnual=anchor+C.K_LAT_K*(q-1);
+    // Step 2: warm-column lapse (warmColumnLapseFactor, inlined).
+    let fac=1-C.WARM_COL_PER_K*(datumAnnual-C.WARM_COL_REF_K);
+    if(fac<C.WARM_COL_MIN)fac=C.WARM_COL_MIN;else if(fac>C.WARM_COL_MAX)fac=C.WARM_COL_MAX;
+    const annual=datumAnnual-lapse*fac*(above>0?above:0);
+    const halfRaw=C.SEASON_K*qa*maritime;
+    // Step 3: warmest-month ceiling (warmestMonthCeilingK, inlined), symmetric half-range.
+    let half=halfRaw;
+    const excess=annual+halfRaw-C.TW_CEILING_K;
+    if(excess>0){half=C.TW_CEILING_K+excess/(1+excess/C.TW_CEILING_SCALE_K)-annual;if(half<0)half=0;}
     // Exactly the legacy classifier's moisture expression (surface-biomes.ts).
     const moisture=noise(d[0]*5+13,d[1]*5+37,d[2]*5+19,seed);
-    const belt=smooth(x,beltLoA,beltLoB)*(1-smooth(x,beltHiA,beltHiB));
-    const eff=moisture-C.BELT_MOISTURE*belt;
-    const snow=frozen?1:water>0?clamp01((C.T_SNOW_K-annual)/C.SNOW_RAMP_K):0;
+    // Step 6: the ITCZ zonal band, one interpolation in the forcing's tables.
+    const fz=x*ZONAL_ROWS;
+    let iz=Math.floor(fz);if(iz>ZONAL_ROWS-1)iz=ZONAL_ROWS-1;
+    const tz=fz-iz;
+    const zf=zonal[iz]!+(zonal[iz+1]!-zonal[iz]!)*tz;
+    const belt=subsidence[iz]!+(subsidence[iz+1]!-subsidence[iz]!)*tz;
+    // surface-climate-2 step 1: snow from positive degree-days (melt), not the
+    // annual mean. snowFraction > 0.6 (the 'Alpine / polar snow' label) is PDD < 190.
+    //
+    // Hand-inlined below (climate-m1 decision-5): degreeDaysAbove (both calls, with
+    // its pddKernelH / kernelAt body), pddKernelG (with kernelAt), smooth and
+    // clamp01. Calls V8 did not inline returned boxed doubles, ~83 B allocated per
+    // sample. Same operations, same order, same constants as the exported helpers
+    // above, which stay for their other users; results are Object.is-identical
+    // (test-results/climate-m1/timing/identity.json).
+    // degreeDaysAbove(annual,half,0) and degreeDaysAbove(annual,half,30):
+    const ex0=annual-273.15-0,ex30=annual-273.15-30;
+    let pdd0:number,pdd30:number;
+    if(half<1e-9){pdd0=ex0>0?ex0*C.YEAR_D:0;pdd30=ex30>0?ex30*C.YEAR_D:0;}
+    else{
+      const v0=ex0/half,v30=ex30/half;
+      let h0:number,h30:number;
+      if(v0<=-1)h0=0;else if(v0>=1)h0=v0;
+      else{const kf=(v0+1)*(KERNEL_STEPS/2);let k=Math.floor(kf);if(k<0)k=0;else if(k>KERNEL_STEPS-1)k=KERNEL_STEPS-1;h0=H_TAB[k]!+(H_TAB[k+1]!-H_TAB[k]!)*(kf-k);}
+      if(v30<=-1)h30=0;else if(v30>=1)h30=v30;
+      else{const kf=(v30+1)*(KERNEL_STEPS/2);let k=Math.floor(kf);if(k<0)k=0;else if(k>KERNEL_STEPS-1)k=KERNEL_STEPS-1;h30=H_TAB[k]!+(H_TAB[k+1]!-H_TAB[k]!)*(kf-k);}
+      pdd0=C.YEAR_D*half*h0;pdd30=C.YEAR_D*half*h30;
+    }
+    // Step 5: effective moisture from a precipitation / PET aridity index.
+    // PET from Holdridge biotemperature (mean of the temperature clipped to 0..30 C):
+    // biotemp = (PDD above 0 C - PDD above 30 C)/year.
+    const biotemp=(pdd0-pdd30)/C.YEAR_D;
+    let pet=C.PET_MM_PER_BIOTEMP_C*biotemp;if(pet<C.PET_MIN_MM)pet=C.PET_MIN_MM;
+    let pTemp=1+C.P_TEMP_PER_K*(annual-C.P_TEMP_REF_K);if(pTemp<C.P_TEMP_MIN)pTemp=C.P_TEMP_MIN;
+    const precip=pWater*pTemp*zf*(C.P_NOISE_BASE+C.P_NOISE_GAIN*moisture);
+    const ai=precip/pet,eff=ai/(ai+C.AI_HALF);
+    // snow = clamp01((PDD_CRIT - pdd0)/PDD_RAMP) on unfrozen wet bodies.
+    let snow:number;
+    if(frozen)snow=1;else if(water>0){const s=(C.PDD_CRIT-pdd0)/C.PDD_RAMP;snow=s<0?0:s>1?1:s;}else snow=0;
     const warmest=annual+half;
-    const treeline=clamp01((warmest-C.T_TREE_WARMEST_K)/C.TREE_RAMP_K);
+    const tl=(warmest-C.T_TREE_WARMEST_K)/C.TREE_RAMP_K,treeline=tl<0?0:tl>1?1:tl;
+    // Fraction of the year above GROW_K: G((annual - GROW_K)/half), tabulated (pddKernelG).
     let grow:number;
     if(half<=1e-9)grow=annual>C.GROW_K?1:0;
-    else{let u=(annual-C.GROW_K)/half;if(u<-1)u=-1;else if(u>1)u=1;grow=1-detAcos(u)/Math.PI;}
+    else{
+      const vg=(annual-C.GROW_K)/half;
+      if(vg<=-1)grow=0;else if(vg>=1)grow=1;
+      else{const kf=(vg+1)*(KERNEL_STEPS/2);let k=Math.floor(kf);if(k<0)k=0;else if(k>KERNEL_STEPS-1)k=KERNEL_STEPS-1;grow=G_TAB[k]!+(G_TAB[k+1]!-G_TAB[k]!)*(kf-k);}
+    }
     let tBin=Math.floor((annual-anchor+32)/2);if(tBin<0)tBin=0;else if(tBin>31)tBin=31;
     let mBin=Math.floor(eff*8);if(mBin<0)mBin=0;else if(mBin>7)mBin=7;
     out.insolation01=q;out.insolationHalfRange=qa;
     out.annualMeanTempK=annual;out.seasonalHalfRangeK=half;out.warmestMonthK=warmest;out.coldestMonthK=annual-half;
-    out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;
-    out.aridity01=clamp01((0.5-eff)*4);
-    out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
-    out.forestSuitability01=habitat?treeline*clamp01((eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP)*clamp01(1-snow/0.2):0;
+    out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;out.precipMm=precip;out.petMm=pet;
+    const ar=(0.5-eff)*4;
+    out.aridity01=ar<0?0:ar>1?1:ar;
+    out.pdd=pdd0;out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
+    // Step 4: heat cap. Forest fades out between a 305 K and a 316 K warmest month
+    // and is 0 wherever the annual mean reaches 320 K. 1 - smooth(warmest, HEAT_LO_K, HEAT_HI_K):
+    let heat:number;
+    if(annual>=C.HEAT_ANNUAL_MAX_K)heat=0;
+    else{const hu=(warmest-C.HEAT_LO_K)/(C.HEAT_HI_K-C.HEAT_LO_K),ht=hu<0?0:hu>1?1:hu;heat=1-ht*ht*(3-2*ht);}
+    if(habitat){
+      const fm=(eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP,fs=1-snow/0.2;
+      out.forestSuitability01=treeline*(fm<0?0:fm>1?1:fm)*(fs<0?0:fs>1?1:fs)*heat;
+    }else out.forestSuitability01=0;
     out.climateCode=(tBin<<3)|mBin;
     return out;
   };
@@ -327,11 +507,13 @@ export function decodeClimateCode(code:number):{deltaTempK:number;moisture:numbe
 
 /**
  * Datum height (m) above which the annual-mean temperature at sin-latitude x is
- * below `thresholdK` (e.g. T_SNOW_K for snow onset). Negative means the datum is
- * already colder. Pure helper for reports and tests.
+ * below `thresholdK`. Negative means the datum is already colder. Pure helper for
+ * reports and tests. Since surface-climate-2 snow is NOT an annual-mean isotherm
+ * (it follows positive degree-days, see degreeDaysAbove).
  */
 export function isothermHeightM(forcing:ClimateForcing,x:number,thresholdK:number):number {
   const out=createClimateSample();
   surfaceClimate(forcing)([0,x,0],C.DATUM_M,out);
-  return C.DATUM_M+(out.annualMeanTempK-thresholdK)/forcing.lapseKPerM;
+  // surface-climate-2: the column's effective lapse includes the warm-column factor.
+  return C.DATUM_M+(out.annualMeanTempK-thresholdK)/(forcing.lapseKPerM*warmColumnLapseFactor(out.annualMeanTempK));
 }

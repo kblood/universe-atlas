@@ -1,0 +1,14 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 180000ms exceeded.
+    at waitFor (C:\LLM\IWSDK\universe-atlas-wt\climate-m1\tests\rock-acceptance.browser.mjs:80:53)
+    at surveyBody (C:\LLM\IWSDK\universe-atlas-wt\climate-m1\tests\rock-acceptance.browser.mjs:224:9)
+    at async file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/rock-acceptance.browser.mjs:298:15 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.7.0
+rock-acceptance exit 1

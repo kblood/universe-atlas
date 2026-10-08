@@ -1,0 +1,4 @@
+[probe 16:47:48] preview serves dist on port 55569 (attempt 1)
+[probe 16:50:03] low100 base frameWork p50/p95 4.06/29.69 gpu sum 6.58/22.27 shadow 0.52/2.23 submission 1.34/9.26 draws 264 
+[probe 16:50:09] groundEye base frameWork p50/p95 5.08/29.47 gpu sum 6.75/16.45 shadow 0.63/2.34 submission 1.58/13.74 draws 297 
+[probe 16:50:10] wrote test-results/climate-m1/merge-prep/render-probe.json errors 0

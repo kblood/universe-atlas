@@ -1,0 +1,872 @@
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 214 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/tsc.log                                                                    [39m[1m[2m    0.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/hash/lod0/smoke.json                                         [39m[1m[2m    0.15 kB[22m[1m[22m[2m │ gzip:     0.14 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/hash/lod1/smoke.json                                         [39m[1m[2m    0.15 kB[22m[1m[22m[2m │ gzip:     0.14 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/mask/lod0/smoke.json                                         [39m[1m[2m    0.15 kB[22m[1m[22m[2m │ gzip:     0.14 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/mask/lod1/smoke.json                                         [39m[1m[2m    0.15 kB[22m[1m[22m[2m │ gzip:     0.13 kB[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/guide-report.json                                                            [39m[1m[2m    0.22 kB[22m[1m[22m[2m │ gzip:     0.18 kB[22m
+[2mdist/[22m[32mtest-results/tree-impostor-render-v2-hardware/node-test.log                                                    [39m[1m[2m    0.23 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/terrain-water-refresh/fixed-pass.txt                                                              [39m[1m[2m    0.24 kB[22m[1m[22m[2m │ gzip:     0.19 kB[22m
+[2mdist/[22m[32mbuild-info.json                                                                                                [39m[1m[2m    0.27 kB[22m[1m[22m[2m │ gzip:     0.23 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/shader-tests.log                                                      [39m[1m[2m    0.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/cpu-tests.log                                                               [39m[1m[2m    0.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/cpu-tap.log                                                                     [39m[1m[2m    0.40 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-desktop-state-review-2026-09-28.metadata.json                                                    [39m[1m[2m    0.45 kB[22m[1m[22m[2m │ gzip:     0.29 kB[22m
+[2mdist/[22m[32mtest-results/tree-impostor-v7-color-a/capture-v2-portability-tests.log                                         [39m[1m[2m    0.50 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/opus/inputs.json                                                            [39m[1m[2m    0.50 kB[22m[1m[22m[2m │ gzip:     0.30 kB[22m
+[2mdist/[22m[32mdocs/opus-tree-family-review-2026-09-28.metadata.json                                                          [39m[1m[2m    0.52 kB[22m[1m[22m[2m │ gzip:     0.31 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/physical-audit.log                                                                 [39m[1m[2m    0.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/physical-audit.log                                                                 [39m[1m[2m    0.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/family-canopy/shader-fbe3c26/report.json                                                          [39m[1m[2m    0.55 kB[22m[1m[22m[2m │ gzip:     0.36 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/smoke-repeat.log                                                                   [39m[1m[2m    0.62 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-surface-progress-review-2026-09-28.metadata.json                                                 [39m[1m[2m    0.63 kB[22m[1m[22m[2m │ gzip:     0.39 kB[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/node-test.log                                                              [39m[1m[2m    0.63 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v6/cpu-test.log                                                                    [39m[1m[2m    0.64 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-leaf-transmission-review/followup/inputs.json                                                [39m[1m[2m    0.65 kB[22m[1m[22m[2m │ gzip:     0.34 kB[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/loader-tests.log                                                                [39m[1m[2m    0.65 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/background-hydrology-regression/baseline-37f0e89-failure.json                                     [39m[1m[2m    0.66 kB[22m[1m[22m[2m │ gzip:     0.36 kB[22m
+[2mdist/[22m[32mtest-results/tree-color-calibration-v1/validated/initial-test-harness-failures.log                             [39m[1m[2m    0.66 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-tree-capture-review/inputs.json                                                              [39m[1m[2m    0.71 kB[22m[1m[22m[2m │ gzip:     0.39 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/baseline-source/manifest.json                                               [39m[1m[2m    0.71 kB[22m[1m[22m[2m │ gzip:     0.37 kB[22m
+[2mdist/[22m[32mtest-results/tree-impostor-views-v1/cpu-test.log                                                               [39m[1m[2m    0.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/tree-regression.log                                                        [39m[1m[2m    0.90 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-worklist-v1/README.md                                                                      [39m[1m[2m    0.99 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-tree-reconstruction-review/inputs.json                                                       [39m[1m[2m    1.00 kB[22m[1m[22m[2m │ gzip:     0.47 kB[22m
+[2mdist/[22m[32mtest-results/opus-tree-reference-review/inputs.json                                                            [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:     0.49 kB[22m
+[2mdist/[22m[32mtest-results/family-canopy/browser-fixes-cpu.log                                                               [39m[1m[2m    1.04 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-tree-reference-family-review/inputs.json                                                     [39m[1m[2m    1.05 kB[22m[1m[22m[2m │ gzip:     0.50 kB[22m
+[2mdist/[22m[32msrc/forest-tree-catalogue.ts                                                                                   [39m[1m[2m    1.11 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-asset-loading/cpu.log                                                                      [39m[1m[2m    1.11 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/cpu-tests.log                                                         [39m[1m[2m    1.14 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/actual-sidecar-report.json                                                   [39m[1m[2m    1.18 kB[22m[1m[22m[2m │ gzip:     0.53 kB[22m
+[2mdist/[22m[32mtest-results/canopy-flight-post-alpha-fix-rerun/README.md                                                      [39m[1m[2m    1.20 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-browser-review-2026-09-28.metadata.json                                                     [39m[1m[2m    1.23 kB[22m[1m[22m[2m │ gzip:     0.62 kB[22m
+[2mdist/[22m[32mtest-results/canopy-proxy-75a7d3b/experiment-doc-link-check.json                                               [39m[1m[2m    1.23 kB[22m[1m[22m[2m │ gzip:     0.23 kB[22m
+[2mdist/[22m[32mtest-results/canopy-water-validity-design/river-water-patches.json                                             [39m[1m[2m    1.24 kB[22m[1m[22m[2m │ gzip:     0.38 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.html                      [39m[1m[2m    1.28 kB[22m[1m[22m[2m │ gzip:     0.75 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-distance-review-2026-09-28.metadata.json                                                    [39m[1m[2m    1.32 kB[22m[1m[22m[2m │ gzip:     0.67 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082/test-evidence.json                                  [39m[1m[2m    1.34 kB[22m[1m[22m[2m │ gzip:     0.65 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707/independent-artifact-hash-audit.json                [39m[1m[2m    1.34 kB[22m[1m[22m[2m │ gzip:     0.56 kB[22m
+[2mdist/[22m[32msrc/life-shadow-priority.ts                                                                                    [39m[1m[2m    1.34 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/actual-sidecars.mjs                                                          [39m[1m[2m    1.36 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/terrain-material-wet-roughness-2026-09-28.md                                                              [39m[1m[2m    1.40 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/final-cpu.log                                                              [39m[1m[2m    1.41 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-census-implementation-review-2026-09-28.metadata.json                                            [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:     0.66 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v3-review-2026-09-28.metadata.json                                                   [39m[1m[2m    1.49 kB[22m[1m[22m[2m │ gzip:     0.71 kB[22m
+[2mdist/[22m[32msrc/instance-update-ranges.ts                                                                                  [39m[1m[2m    1.50 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-validity-design/water-300.json                                                       [39m[1m[2m    1.51 kB[22m[1m[22m[2m │ gzip:     0.71 kB[22m
+[2mdist/[22m[32mtest-results/canopy-water-validity-design/water-3000.json                                                      [39m[1m[2m    1.51 kB[22m[1m[22m[2m │ gzip:     0.71 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az45-el45-impostor.png                                          [39m[1m[2m    1.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-impostor.png                           [39m[1m[2m    1.53 kB[22m[1m[22m
+[2mdist/[22m[32msrc/tree-forest-coverage.ts                                                                                    [39m[1m[2m    1.54 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-water-review-2026-09-28.metadata.json                                                     [39m[1m[2m    1.55 kB[22m[1m[22m[2m │ gzip:     0.72 kB[22m
+[2mdist/[22m[32mtest-results/deploy-4796b1a/README.md                                                                          [39m[1m[2m    1.57 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-review-2026-09-28.metadata.json                                                           [39m[1m[2m    1.57 kB[22m[1m[22m[2m │ gzip:     0.77 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-integration-review-2026-09-28.metadata.json                                               [39m[1m[2m    1.57 kB[22m[1m[22m[2m │ gzip:     0.74 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/top-impostor.png                                                [39m[1m[2m    1.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/top-impostor.png                                 [39m[1m[2m    1.59 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v7-review-2026-09-28.metadata.json                                                   [39m[1m[2m    1.60 kB[22m[1m[22m[2m │ gzip:     0.76 kB[22m
+[2mdist/[22m[32mtest-results/tree-impostor-capture-v2/cpu-test.log                                                             [39m[1m[2m    1.60 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/fauna-closeup-6b87e13/report.json                                                                 [39m[1m[2m    1.61 kB[22m[1m[22m[2m │ gzip:     0.74 kB[22m
+[2mdist/[22m[32mtest-results/forest-selection-66c7728/README.md                                                                [39m[1m[2m    1.62 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az45-el45-mesh.png                                              [39m[1m[2m    1.62 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mesh.png                               [39m[1m[2m    1.62 kB[22m[1m[22m
+[2mdist/[22m[32msrc/terrain-shadow.ts                                                                                          [39m[1m[2m    1.66 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v6-review-2026-09-28.metadata.json                                                   [39m[1m[2m    1.68 kB[22m[1m[22m[2m │ gzip:     0.78 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el85-impostor.png                                           [39m[1m[2m    1.68 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-impostor.png                            [39m[1m[2m    1.68 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/smoke-integrated-audit.log                                                         [39m[1m[2m    1.68 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/flora-recipe-cache-2026-09-28.md                                                                          [39m[1m[2m    1.69 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az90-el0-mesh.png                                               [39m[1m[2m    1.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el85-mesh.png                                               [39m[1m[2m    1.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mesh.png                                [39m[1m[2m    1.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az45-el0-impostor.png                                           [39m[1m[2m    1.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/top-mesh.png                                                    [39m[1m[2m    1.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-impostor.png                            [39m[1m[2m    1.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/top-mesh.png                                     [39m[1m[2m    1.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-canopy-census-8c5ff7f/browser-worker-report.json                                           [39m[1m[2m    1.73 kB[22m[1m[22m[2m │ gzip:     0.57 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-selection-cache-review-2026-09-28.metadata.json                                                  [39m[1m[2m    1.74 kB[22m[1m[22m[2m │ gzip:     0.81 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-impostor.png                           [39m[1m[2m    1.74 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az45-el0-mesh.png                                               [39m[1m[2m    1.75 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mesh.png                                [39m[1m[2m    1.75 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/repeat-audit.json                                                                  [39m[1m[2m    1.75 kB[22m[1m[22m[2m │ gzip:     0.62 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az90-el0-impostor.png                                           [39m[1m[2m    1.77 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mesh.png                               [39m[1m[2m    1.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el15-impostor.png                                           [39m[1m[2m    1.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-impostor.png                            [39m[1m[2m    1.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/inland-rivers-disabled-5130bd5-landing-rerun/README.md                                            [39m[1m[2m    1.78 kB[22m[1m[22m
+[2mdist/[22m[32mtests/life-shadow-priority.test.mjs                                                                            [39m[1m[2m    1.79 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-capture-review-2026-09-28.metadata.json                                                     [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:     0.87 kB[22m
+[2mdist/[22m[32mtest-results/forest-selection-66c7728/browser-movement-lateral-hardware/report.json                            [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:     0.68 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el0-mesh.png                                                [39m[1m[2m    1.84 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mesh.png                                 [39m[1m[2m    1.84 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/forest-selection-cache-browser/report.json                                         [39m[1m[2m    1.84 kB[22m[1m[22m[2m │ gzip:     0.70 kB[22m
+[2mdist/[22m[32mtest-results/background-hydrology-regression/README.md                                                         [39m[1m[2m    1.86 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/family-canopy/README.md                                                                           [39m[1m[2m    1.87 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el15-mesh.png                                               [39m[1m[2m    1.89 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mesh.png                                [39m[1m[2m    1.89 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-near-far-family-review/paired-390m-followup/inputs.json                                      [39m[1m[2m    1.89 kB[22m[1m[22m[2m │ gzip:     0.71 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el-5-mesh.png                                               [39m[1m[2m    1.89 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mesh.png                                [39m[1m[2m    1.89 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el0-impostor.png                                            [39m[1m[2m    1.91 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-impostor.png                             [39m[1m[2m    1.91 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/masks/az0-el-5-impostor.png                                           [39m[1m[2m    1.92 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-impostor.png                            [39m[1m[2m    1.92 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-validity-design/river-probe.mjs                                                      [39m[1m[2m    1.93 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-rendering-review-2026-09-28.metadata.json                                                        [39m[1m[2m    1.95 kB[22m[1m[22m[2m │ gzip:     0.95 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/hash/lod0/smoke-128-date0.png                                [39m[1m[2m    1.97 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/baseline-source/tree-asset-lab.html                                         [39m[1m[2m    1.99 kB[22m[1m[22m[2m │ gzip:     1.02 kB[22m
+[2mdist/[22m[32mtest-results/forest-canopy-census-8c5ff7f/README.md                                                            [39m[1m[2m    2.00 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-transfer-review-2026-09-28.metadata.json                                                         [39m[1m[2m    2.00 kB[22m[1m[22m[2m │ gzip:     0.86 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-host-review-2026-09-28.metadata.json                                                      [39m[1m[2m    2.01 kB[22m[1m[22m[2m │ gzip:     0.89 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-census-design-review-2026-09-28.metadata.json                                                    [39m[1m[2m    2.02 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
+[2mdist/[22m[32mtest-results/opus-leaf-transmission-review/inputs.json                                                         [39m[1m[2m    2.03 kB[22m[1m[22m[2m │ gzip:     0.74 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/mask/lod0/smoke-128-date0.png                                [39m[1m[2m    2.03 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-realism-26b41f5/population-flight/report.json                                             [39m[1m[2m    2.03 kB[22m[1m[22m[2m │ gzip:     0.86 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v5-review-2026-09-28.metadata.json                                                   [39m[1m[2m    2.04 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[32mtest-results/background-hydrology-regression/fixed-cb03169-life-report.json                                    [39m[1m[2m    2.07 kB[22m[1m[22m[2m │ gzip:     0.53 kB[22m
+[2mdist/[22m[32mtest-results/background-hydrology-regression/fixed-cb03169-land-report.json                                    [39m[1m[2m    2.07 kB[22m[1m[22m[2m │ gzip:     0.53 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json                                            [39m[1m[2m    2.07 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/background-hydrology-life/report.json                                              [39m[1m[2m    2.09 kB[22m[1m[22m[2m │ gzip:     0.54 kB[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/background-hydrology-land/report.json                                              [39m[1m[2m    2.09 kB[22m[1m[22m[2m │ gzip:     0.54 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.json                     [39m[1m[2m    2.11 kB[22m[1m[22m[2m │ gzip:     0.68 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.json                   [39m[1m[2m    2.13 kB[22m[1m[22m[2m │ gzip:     0.68 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mid.png                                [39m[1m[2m    2.15 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-reconstruction-review-2026-09-28.metadata.json                                              [39m[1m[2m    2.15 kB[22m[1m[22m[2m │ gzip:     0.98 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/render-sheet.json                   [39m[1m[2m    2.16 kB[22m[1m[22m[2m │ gzip:     0.68 kB[22m
+[2mdist/[22m[32mdocs/forest-census-review-fixes-2026-09-28.md                                                                  [39m[1m[2m    2.16 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-reference-review-2026-09-28.metadata.json                                                   [39m[1m[2m    2.17 kB[22m[1m[22m[2m │ gzip:     0.98 kB[22m
+[2mdist/[22m[32mtest-results/forest-selection-transfer/benchmark.json                                                          [39m[1m[2m    2.17 kB[22m[1m[22m[2m │ gzip:     0.73 kB[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/cpu-tests.log                                                                   [39m[1m[2m    2.18 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/top-mid.png                                      [39m[1m[2m    2.18 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mid.png                                 [39m[1m[2m    2.19 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.json         [39m[1m[2m    2.19 kB[22m[1m[22m[2m │ gzip:     0.68 kB[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/forest-selection-cache-browser/report.json                                         [39m[1m[2m    2.21 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/browser-movement-hardware/report.json                                     [39m[1m[2m    2.23 kB[22m[1m[22m[2m │ gzip:     0.81 kB[22m
+[2mdist/[22m[32msrc/forest-asset-attachment.ts                                                                                 [39m[1m[2m    2.24 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-census-protocol-review/report.json                                                         [39m[1m[2m    2.26 kB[22m[1m[22m[2m │ gzip:     0.82 kB[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/gl-check.mjs                                            [39m[1m[2m    2.27 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-impostor-capture-v2/combined-cpu-test.log                                                    [39m[1m[2m    2.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-three-ez-impostor-review/inputs.json                                                         [39m[1m[2m    2.33 kB[22m[1m[22m[2m │ gzip:     0.84 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mid.png                                 [39m[1m[2m    2.33 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707/test-evidence.json                                  [39m[1m[2m    2.36 kB[22m[1m[22m[2m │ gzip:     1.01 kB[22m
+[2mdist/[22m[32mdocs/forest-worklist-2026-09-28.md                                                                             [39m[1m[2m    2.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-37f0e89/live-deployment.json                                                               [39m[1m[2m    2.38 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[32mtest-results/opus-desktop-state-review/inputs.json                                                             [39m[1m[2m    2.40 kB[22m[1m[22m[2m │ gzip:     0.99 kB[22m
+[2mdist/[22m[32msrc/forest-presentation.ts                                                                                     [39m[1m[2m    2.41 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-canopy-census-481e693/README.md                                                            [39m[1m[2m    2.47 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/render-roundtrip.json                                                              [39m[1m[2m    2.47 kB[22m[1m[22m[2m │ gzip:     0.99 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mid.png                                 [39m[1m[2m    2.48 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/combined-understory-integration/README.md                                                         [39m[1m[2m    2.48 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/terrain-water-refresh/baseline-fail.txt                                                           [39m[1m[2m    2.48 kB[22m[1m[22m[2m │ gzip:     0.96 kB[22m
+[2mdist/[22m[32mdocs/fable-5.1-plan-review.metadata.json                                                                       [39m[1m[2m    2.50 kB[22m[1m[22m[2m │ gzip:     1.00 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mid.png                                [39m[1m[2m    2.57 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mid.png                                  [39m[1m[2m    2.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/repeat-audit.json                                                                  [39m[1m[2m    2.58 kB[22m[1m[22m[2m │ gzip:     0.97 kB[22m
+[2mdist/[22m[32mdocs/background-hydrology-travel-2026-09-28.md                                                                 [39m[1m[2m    2.59 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-lighting-diagnosis-2026-09-28.md                                                                     [39m[1m[2m    2.60 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mid.png                                 [39m[1m[2m    2.61 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/mask/lod1/smoke-128-date0.png                                [39m[1m[2m    2.69 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/hash/lod1/smoke-128-date0.png                                [39m[1m[2m    2.72 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-asset-attachment.test.mjs                                                                         [39m[1m[2m    2.72 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/formation-and-life-integration-2026-09-23.md                                                              [39m[1m[2m    2.74 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-asset-package.test.mjs                                                                            [39m[1m[2m    2.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/render-sheet.json            [39m[1m[2m    2.78 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/render-sheet.json            [39m[1m[2m    2.79 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/README.md                                                                 [39m[1m[2m    2.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/README.md                                                                       [39m[1m[2m    2.95 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/canopy-water-review-assessment-2026-09-28.md                                                              [39m[1m[2m    2.97 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/smoke-tangent-repeat-failure.log                                                   [39m[1m[2m    2.99 kB[22m[1m[22m
+[2mdist/[22m[32mbiome-lab.html                                                                                                 [39m[1m[2m    2.99 kB[22m[1m[22m[2m │ gzip:     1.35 kB[22m
+[2mdist/[22m[32mdocs/deployment-580936f-2026-09-28.md                                                                          [39m[1m[2m    3.04 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-presentation.test.mjs                                                                             [39m[1m[2m    3.09 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/combined-visual-acceptance-c9ba64f/README.md                                                      [39m[1m[2m    3.09 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json                                                  [39m[1m[2m    3.10 kB[22m[1m[22m[2m │ gzip:     1.33 kB[22m
+[2mdist/[22m[32mdocs/terrain-water-refresh-2026-09-28.md                                                                       [39m[1m[2m    3.12 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/README.md                                                                  [39m[1m[2m    3.14 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-proxy-75a7d3b/README.md                                                                    [39m[1m[2m    3.14 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/README.md                                                                   [39m[1m[2m    3.17 kB[22m[1m[22m
+[2mdist/[22m[32mtests/compact-instance-slots.test.mjs                                                                          [39m[1m[2m    3.18 kB[22m[1m[22m
+[2mdist/[22m[32massets/briefs/atlas-three-ez-impostor-reference.json                                                           [39m[1m[2m    3.19 kB[22m[1m[22m[2m │ gzip:     1.39 kB[22m
+[2mdist/[22m[32mtests/cloud-comparison.html                                                                                    [39m[1m[2m    3.20 kB[22m[1m[22m[2m │ gzip:     1.40 kB[22m
+[2mdist/[22m[32mdocs/canopy-foundation-2026-09-28.md                                                                           [39m[1m[2m    3.21 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/final-cpu.log                                                               [39m[1m[2m    3.24 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-selection-cache/benchmark.json                                                             [39m[1m[2m    3.26 kB[22m[1m[22m[2m │ gzip:     0.87 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/serial-repeat-audit.json                                                           [39m[1m[2m    3.27 kB[22m[1m[22m[2m │ gzip:     0.60 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/README.md                                                                   [39m[1m[2m    3.29 kB[22m[1m[22m
+[2mdist/[22m[32msrc/forest-material.ts                                                                                         [39m[1m[2m    3.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/authoring-manifest.json                                                            [39m[1m[2m    3.32 kB[22m[1m[22m[2m │ gzip:     1.39 kB[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/README.md                                                                 [39m[1m[2m    3.33 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-proxy-75a7d3b/field/report.json                                                            [39m[1m[2m    3.38 kB[22m[1m[22m[2m │ gzip:     1.18 kB[22m
+[2mdist/[22m[32mtest-results/forest-impostor-field/report.json                                                                 [39m[1m[2m    3.39 kB[22m[1m[22m[2m │ gzip:     1.18 kB[22m
+[2mdist/[22m[32msrc/compact-instance-slots.ts                                                                                  [39m[1m[2m    3.40 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-review-assessment-2026-09-28.md                                                            [39m[1m[2m    3.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/authoring-receipt.json                                                             [39m[1m[2m    3.45 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[32mtest-results/forest-canopy-census-481e693/worker-census.json                                                   [39m[1m[2m    3.48 kB[22m[1m[22m[2m │ gzip:     1.06 kB[22m
+[2mdist/[22m[32mtests/life-packing.test.mjs                                                                                    [39m[1m[2m    3.49 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-98556a7/README.md                                                                      [39m[1m[2m    3.52 kB[22m[1m[22m
+[2mdist/[22m[32mtests/tree-forest-coverage.test.mjs                                                                            [39m[1m[2m    3.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated/render-sheet.json           [39m[1m[2m    3.54 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated/render-sheet.json           [39m[1m[2m    3.54 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-blend-calibrated/render-sheet.json          [39m[1m[2m    3.54 kB[22m[1m[22m[2m │ gzip:     1.12 kB[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/cpu.log                                                                      [39m[1m[2m    3.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/README.md                                                    [39m[1m[2m    3.56 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-color-calibration-2026-09-28.md                                                                      [39m[1m[2m    3.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/README.md                                                             [39m[1m[2m    3.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-worker/report.json                                                                   [39m[1m[2m    3.63 kB[22m[1m[22m[2m │ gzip:     1.11 kB[22m
+[2mdist/[22m[32mdocs/desktop-render-profiling.md                                                                               [39m[1m[2m    3.65 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/README.md                                                                      [39m[1m[2m    3.66 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-species-asset-contract-2026-09-28.md                                                                 [39m[1m[2m    3.66 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/compact-tree-families/README.md                                                                   [39m[1m[2m    3.68 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-tree-family-review-2026-09-28.md                                                                     [39m[1m[2m    3.69 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/compact-tree-families-2026-09-28.md                                                                       [39m[1m[2m    3.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/README.md                                                                        [39m[1m[2m    3.71 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/star-visibility-and-transitions.md                                                                        [39m[1m[2m    3.73 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-report/README.md                                                   [39m[1m[2m    3.75 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-ordered-work.test.mjs                                                                             [39m[1m[2m    3.75 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/canopy-census-design-2026-09-28.md                                                                        [39m[1m[2m    3.77 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960/authoring-manifest.json                             [39m[1m[2m    3.84 kB[22m[1m[22m[2m │ gzip:     1.65 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790567076137/authoring-manifest.json                             [39m[1m[2m    3.84 kB[22m[1m[22m[2m │ gzip:     1.65 kB[22m
+[2mdist/[22m[32mtest-results/opus-surface-progress-review/inputs.json                                                          [39m[1m[2m    3.85 kB[22m[1m[22m[2m │ gzip:     1.40 kB[22m
+[2mdist/[22m[32mtest-results/understory-opus/README.md                                                                         [39m[1m[2m    3.85 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-near-far-family-review/inputs.json                                                           [39m[1m[2m    3.88 kB[22m[1m[22m[2m │ gzip:     1.44 kB[22m
+[2mdist/[22m[32mtest-results/tree-authoring-v7/tree-family-v7-run.log                                                          [39m[1m[2m    3.88 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-three-ez-impostor-review-2026-09-28.md                                                               [39m[1m[2m    3.89 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-repeat/authoring-manifest.json                      [39m[1m[2m    3.89 kB[22m[1m[22m[2m │ gzip:     1.65 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790567076137-repeat/authoring-manifest.json                      [39m[1m[2m    3.89 kB[22m[1m[22m[2m │ gzip:     1.66 kB[22m
+[2mdist/[22m[32mtest-results/family-canopy/shader-smoke.mjs                                                                    [39m[1m[2m    3.91 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-rendering-stage-c-2026-09-28.md                                                                   [39m[1m[2m    4.12 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-reference-review-2026-09-28.md                                                              [39m[1m[2m    4.15 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/captured-family-relighting-2026-09-28.md                                                                  [39m[1m[2m    4.19 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/ground-realism-spec.md                                                                                    [39m[1m[2m    4.23 kB[22m[1m[22m
+[2mdist/[22m[32mtests/tree-foliage-sidecar.test.mjs                                                                            [39m[1m[2m    4.28 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-4796b1a/live-assets.json                                                                   [39m[1m[2m    4.31 kB[22m[1m[22m[2m │ gzip:     1.77 kB[22m
+[2mdist/[22m[32mdocs/tree-authoring-v5-review-assessment-2026-09-28.md                                                         [39m[1m[2m    4.31 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/fable-review-brief.md                                                                                     [39m[1m[2m    4.32 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-asset-loading/README.md                                                                    [39m[1m[2m    4.37 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-v3-2026-09-28.md                                                                           [39m[1m[2m    4.41 kB[22m[1m[22m
+[2mdist/[22m[32massets/briefs/atlas-ez-tree-family-v1.json                                                                     [39m[1m[2m    4.42 kB[22m[1m[22m[2m │ gzip:     1.88 kB[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/README.md                                                                    [39m[1m[2m    4.45 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-v7-2026-09-28.md                                                                           [39m[1m[2m    4.50 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/fauna-anatomy-increment-2026-10-02.md                                                                     [39m[1m[2m    4.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/live-deployment.json                                                               [39m[1m[2m    4.53 kB[22m[1m[22m[2m │ gzip:     1.47 kB[22m
+[2mdist/[22m[32mdocs/surface-progress-review-assessment-2026-09-28.md                                                          [39m[1m[2m    4.54 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/live-deployment.json                                                               [39m[1m[2m    4.57 kB[22m[1m[22m[2m │ gzip:     1.53 kB[22m
+[2mdist/[22m[32mdocs/surface-lighting-2026-09-28.md                                                                            [39m[1m[2m    4.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/gl-check.json                                           [39m[1m[2m    4.60 kB[22m[1m[22m[2m │ gzip:     0.39 kB[22m
+[2mdist/[22m[32mdocs/opus-leaf-transmission-review-2026-09-28.md                                                               [39m[1m[2m    4.61 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/planetary-orbit-validation.md                                                                             [39m[1m[2m    4.64 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-state-review-assessment-2026-09-28.md                                                             [39m[1m[2m    4.72 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-near-far-family-review/paired-390m-followup/review.md                                        [39m[1m[2m    4.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/life-and-mips-cpu.log                                                            [39m[1m[2m    4.80 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-repeat/asset-brief.json                             [39m[1m[2m    4.82 kB[22m[1m[22m[2m │ gzip:     2.14 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082/asset-brief.json                                    [39m[1m[2m    4.82 kB[22m[1m[22m[2m │ gzip:     2.14 kB[22m
+[2mdist/[22m[32mdocs/tree-asset-candidate-2026-09-28.md                                                                        [39m[1m[2m    4.82 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/family-canopy-visual-decision-2026-09-28.md                                                               [39m[1m[2m    4.84 kB[22m[1m[22m
+[2mdist/[22m[32mtests/terrain-water-refresh.test.mjs                                                                           [39m[1m[2m    4.90 kB[22m[1m[22m
+[2mdist/[22m[32msrc/forest-ordered-work.ts                                                                                     [39m[1m[2m    4.94 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-v4-2026-09-28.md                                                                           [39m[1m[2m    4.96 kB[22m[1m[22m
+[2mdist/[22m[32massets/briefs/temperate-branching-tree-v1.json                                                                 [39m[1m[2m    4.96 kB[22m[1m[22m[2m │ gzip:     2.21 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/README.md                                              [39m[1m[2m    5.04 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/forest-asset-loading-2026-09-28.md                                                                        [39m[1m[2m    5.08 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v7-review-2026-09-28.md                                                              [39m[1m[2m    5.08 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-asset-source.test.mjs                                                                             [39m[1m[2m    5.12 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/live-deployment.json                                                               [39m[1m[2m    5.20 kB[22m[1m[22m[2m │ gzip:     1.76 kB[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/opus/inputs.json                                                          [39m[1m[2m    5.26 kB[22m[1m[22m[2m │ gzip:     2.28 kB[22m
+[2mdist/[22m[32mbiosphere-lab.html                                                                                             [39m[1m[2m    5.26 kB[22m[1m[22m[2m │ gzip:     2.15 kB[22m
+[2mdist/[22m[32mdocs/canopy-host-review-assessment-2026-09-28.md                                                               [39m[1m[2m    5.32 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-near-far-family-assessment-2026-09-28.md                                                             [39m[1m[2m    5.36 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-instance-streaming-2026-09-28.md                                                                     [39m[1m[2m    5.50 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082/authoring-manifest.json                             [39m[1m[2m    5.54 kB[22m[1m[22m[2m │ gzip:     2.07 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-repeat/authoring-manifest.json                      [39m[1m[2m    5.61 kB[22m[1m[22m[2m │ gzip:     2.07 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790569226563/authoring-manifest.json                             [39m[1m[2m    5.63 kB[22m[1m[22m[2m │ gzip:     2.12 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790569291675/authoring-manifest.json                             [39m[1m[2m    5.63 kB[22m[1m[22m[2m │ gzip:     2.12 kB[22m
+[2mdist/[22m[32msrc/local-aerial-perspective.ts                                                                                [39m[1m[2m    5.69 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790569226563-repeat/authoring-manifest.json                      [39m[1m[2m    5.70 kB[22m[1m[22m[2m │ gzip:     2.12 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790569291675-repeat/authoring-manifest.json                      [39m[1m[2m    5.70 kB[22m[1m[22m[2m │ gzip:     2.12 kB[22m
+[2mdist/[22m[32mdocs/authored-tree-capture-2026-09-28.md                                                                       [39m[1m[2m    5.74 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/opus-followup/inputs.json                                                 [39m[1m[2m    5.76 kB[22m[1m[22m[2m │ gzip:     2.49 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.mjs                                [39m[1m[2m    5.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/cpu.log                                                                   [39m[1m[2m    5.80 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-host/report.json                                                                     [39m[1m[2m    5.82 kB[22m[1m[22m[2m │ gzip:     1.36 kB[22m
+[2mdist/[22m[32mdocs/forest-selection-cache-2026-09-28.md                                                                      [39m[1m[2m    5.84 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/offline-foliage-mips-2026-09-28.md                                                                        [39m[1m[2m    5.87 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/hardware-family-f-verified/provenance.json                                [39m[1m[2m    5.90 kB[22m[1m[22m[2m │ gzip:     2.55 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/validation.json                                                                    [39m[1m[2m    5.97 kB[22m[1m[22m[2m │ gzip:     1.40 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960/validation.json                                     [39m[1m[2m    5.97 kB[22m[1m[22m[2m │ gzip:     1.40 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790567076137/validation.json                                     [39m[1m[2m    5.97 kB[22m[1m[22m[2m │ gzip:     1.40 kB[22m
+[2mdist/[22m[32msrc/tree-canopy-bounds.ts                                                                                      [39m[1m[2m    6.04 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide-links.json                                                                   [39m[1m[2m    6.05 kB[22m[1m[22m[2m │ gzip:     1.07 kB[22m
+[2mdist/[22m[32msrc/forest-tree-family-library.ts                                                                              [39m[1m[2m    6.05 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-rendering-validation-2026-09-28.md                                                                [39m[1m[2m    6.15 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/planet-rendering-validation-2026-09-27.md                                                                 [39m[1m[2m    6.16 kB[22m[1m[22m
+[2mdist/[22m[32msrc/tree-foliage-sidecar.ts                                                                                    [39m[1m[2m    6.17 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-forest-integration-2026-09-28.md                                                                     [39m[1m[2m    6.19 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/temporal-universe-implementation-2026-09-23.md                                                            [39m[1m[2m    6.19 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/forest-impostor-experiment-2026-09-28.md                                                                  [39m[1m[2m    6.19 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-transfer-review-2026-09-28.md                                                                    [39m[1m[2m    6.25 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-near-far-family-review/paired-390m-followup/response.json                                    [39m[1m[2m    6.43 kB[22m[1m[22m[2m │ gzip:     3.13 kB[22m
+[2mdist/[22m[32mtest-results/canopy-water-validity-design/prototype.mjs                                                        [39m[1m[2m    6.47 kB[22m[1m[22m
+[2mdist/[22m[32msrc/forest-asset-source.ts                                                                                     [39m[1m[2m    6.49 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-v5-2026-09-28.md                                                                           [39m[1m[2m    6.50 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v6-review-2026-09-28.md                                                              [39m[1m[2m    6.57 kB[22m[1m[22m
+[2mdist/[22m[32mtests/tree-foliage-mips.test.mjs                                                                               [39m[1m[2m    6.57 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/canopy-integration-contract-2026-09-28.md                                                                 [39m[1m[2m    6.65 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/family-canopy-2026-09-28.md                                                                               [39m[1m[2m    6.66 kB[22m[1m[22m
+[2mdist/[22m[32mtests/surface-lighting.test.mjs                                                                                [39m[1m[2m    6.68 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v5-review-2026-09-28.md                                                              [39m[1m[2m    6.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.mjs                                     [39m[1m[2m    6.73 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-ez-family-2026-09-28.md                                                                              [39m[1m[2m    6.75 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-repeat/authoring-manifest.json                      [39m[1m[2m    6.75 kB[22m[1m[22m[2m │ gzip:     2.59 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707/authoring-manifest.json                             [39m[1m[2m    6.75 kB[22m[1m[22m[2m │ gzip:     2.58 kB[22m
+[2mdist/[22m[32mtest-results/forest-asset-loading/family-canopy-cpu.log                                                        [39m[1m[2m    6.78 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/fauna-variation-plan-2026-10-02.md                                                                        [39m[1m[2m    6.82 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/cpu.log                                                                          [39m[1m[2m    6.83 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/fauna-realism-next-2026-10-02.md                                                                          [39m[1m[2m    6.83 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/cosmic-history-simulation-plan-2026-09-23.md                                                              [39m[1m[2m    6.93 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-distance-review-2026-09-28.md                                                               [39m[1m[2m    6.93 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/forest-selection-transfer-2026-09-28.md                                                                   [39m[1m[2m    6.93 kB[22m[1m[22m
+[2mdist/[22m[32mtests/desktop-forest-acceptance.browser.mjs                                                                    [39m[1m[2m    7.01 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/baseline-source/world-time.ts                                               [39m[1m[2m    7.09 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-v6-2026-09-28.md                                                                           [39m[1m[2m    7.11 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-selection-cache-review-2026-09-28.md                                                             [39m[1m[2m    7.16 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/family-canopy/review-fixes-cpu.log                                                                [39m[1m[2m    7.30 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/terrain-v2-first-slice-spec.md                                                                            [39m[1m[2m    7.33 kB[22m[1m[22m
+[2mdist/[22m[32mtests/tree-canopy-bounds.test.mjs                                                                              [39m[1m[2m    7.46 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/fauna-structural-variation-2026-10-02.md                                                                  [39m[1m[2m    7.49 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-capture-review-2026-09-28.md                                                                [39m[1m[2m    7.52 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/baseline-source/tree-asset-lab.ts                                           [39m[1m[2m    7.57 kB[22m[1m[22m
+[2mdist/[22m[32mtests/background-hydrology-flight.browser.mjs                                                                  [39m[1m[2m    7.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/background-hydrology-regression/background-hydrology-flight.browser.mjs                           [39m[1m[2m    7.59 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-browser-review-2026-09-28.md                                                                [39m[1m[2m    7.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-leaf-transmission-review/followup/response.json                                              [39m[1m[2m    7.68 kB[22m[1m[22m[2m │ gzip:     3.68 kB[22m
+[2mdist/[22m[32mtest-results/forest-worklist-v1/focused-cpu.log                                                                [39m[1m[2m    7.73 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-realism-validation-2026-09-28.md                                                                  [39m[1m[2m    7.74 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-author-v3-review-2026-09-28.md                                                              [39m[1m[2m    7.74 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-patch-broadphase.test.mjs                                                                         [39m[1m[2m    7.78 kB[22m[1m[22m
+[2mdist/[22m[32mguide/universe.html                                                                                            [39m[1m[2m    7.91 kB[22m[1m[22m[2m │ gzip:     3.18 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-tree-reconstruction-review-2026-09-28.md                                                         [39m[1m[2m    8.09 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/population-continuity-implementation-2026-09-27.md                                                        [39m[1m[2m    8.11 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/opus/response.json                                                          [39m[1m[2m    8.14 kB[22m[1m[22m[2m │ gzip:     3.66 kB[22m
+[2mdist/[22m[32mtest-results/tree-color-calibration-v1/validated/color-calibration.json                                        [39m[1m[2m    8.25 kB[22m[1m[22m[2m │ gzip:     1.21 kB[22m
+[2mdist/[22m[32mtests/planet-forest-worklist.test.mjs                                                                          [39m[1m[2m    8.29 kB[22m[1m[22m
+[2mdist/[22m[32mguide/determinism.html                                                                                         [39m[1m[2m    8.30 kB[22m[1m[22m[2m │ gzip:     3.43 kB[22m
+[2mdist/[22m[32mdocs/tree-browser-prototype-2026-09-28.md                                                                      [39m[1m[2m    8.40 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/research-creature-locomotion-references-2026-09-14.md                                                     [39m[1m[2m    8.49 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-a58ad07/live-deployment.json                                                               [39m[1m[2m    8.51 kB[22m[1m[22m[2m │ gzip:     2.00 kB[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/opus/response.json                                                        [39m[1m[2m    8.63 kB[22m[1m[22m[2m │ gzip:     4.02 kB[22m
+[2mdist/[22m[32mtest-results/tree-color-calibration-v1/validated/calibration-test-summary.json                                 [39m[1m[2m    8.87 kB[22m[1m[22m[2m │ gzip:     1.18 kB[22m
+[2mdist/[22m[32mtest-results/opus-tree-capture-review/response.json                                                            [39m[1m[2m    8.90 kB[22m[1m[22m[2m │ gzip:     4.32 kB[22m
+[2mdist/[22m[32mdocs/desktop-realism-task-flow-2026-09-28.md                                                                   [39m[1m[2m    8.91 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/physical-river-pilot-spec.md                                                                              [39m[1m[2m    8.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/live-deployment.json                                                               [39m[1m[2m    8.97 kB[22m[1m[22m[2m │ gzip:     2.48 kB[22m
+[2mdist/[22m[32mdocs/fable-review-assessment.md                                                                                [39m[1m[2m    9.19 kB[22m[1m[22m
+[2mdist/[22m[32msrc/tree-leaf-transmission.ts                                                                                  [39m[1m[2m    9.20 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-existing-methods-2026-09-28.md                                                                       [39m[1m[2m    9.27 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-authoring-v7/smoke/authoring-manifest.json                                                   [39m[1m[2m    9.34 kB[22m[1m[22m[2m │ gzip:     2.90 kB[22m
+[2mdist/[22m[32mtest-results/tree-authoring-v7/repeat/authoring-manifest.json                                                  [39m[1m[2m    9.34 kB[22m[1m[22m[2m │ gzip:     2.90 kB[22m
+[2mdist/[22m[32mdocs/authored-tree-distance-design-2026-09-28.md                                                               [39m[1m[2m    9.35 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-tree-reconstruction-review/response.json                                                     [39m[1m[2m    9.37 kB[22m[1m[22m[2m │ gzip:     4.51 kB[22m
+[2mdist/[22m[32mdocs/leaf-diffuse-transmission-2026-09-28.md                                                                   [39m[1m[2m    9.37 kB[22m[1m[22m
+[2mdist/[22m[32msrc/surface-lighting.ts                                                                                        [39m[1m[2m    9.39 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-realism-proposal-2026-09-27.md                                                                    [39m[1m[2m    9.43 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-realism-assessment-2026-09-27.md                                                                  [39m[1m[2m    9.44 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-selection-cache.browser.mjs                                                                       [39m[1m[2m    9.47 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-three-ez-impostor-2026-09-28.md                                                                      [39m[1m[2m    9.60 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v7-color-a/report.json                                                        [39m[1m[2m    9.62 kB[22m[1m[22m[2m │ gzip:     1.70 kB[22m
+[2mdist/[22m[32mtest-results/tree-impostor-v7-color-a/capture-v2-audit.json                                                    [39m[1m[2m    9.65 kB[22m[1m[22m[2m │ gzip:     3.06 kB[22m
+[2mdist/[22m[32mtest-results/opus-three-ez-impostor-review/response.json                                                       [39m[1m[2m    9.66 kB[22m[1m[22m[2m │ gzip:     4.62 kB[22m
+[2mdist/[22m[32mtests/tree-canopy-profile.test.mjs                                                                             [39m[1m[2m    9.67 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-realism-26b41f5/forest-hardware/report.json                                               [39m[1m[2m    9.68 kB[22m[1m[22m[2m │ gzip:     2.43 kB[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v6/report.json                                                                [39m[1m[2m    9.69 kB[22m[1m[22m[2m │ gzip:     1.72 kB[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/opus-followup/response.json                                               [39m[1m[2m    9.77 kB[22m[1m[22m[2m │ gzip:     4.44 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/run.mjs                                                                     [39m[1m[2m    9.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-tree-reference-review/response.json                                                          [39m[1m[2m    9.87 kB[22m[1m[22m[2m │ gzip:     4.74 kB[22m
+[2mdist/[22m[32mdocs/tree-ez-reference-2026-09-28.md                                                                           [39m[1m[2m    9.89 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/canopy-water-validity-design-2026-09-28.md                                                                [39m[1m[2m   10.08 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                                                                                                     [39m[1m[2m   10.18 kB[22m[1m[22m[2m │ gzip:     3.84 kB[22m
+[2mdist/[22m[32mdocs/research-creature-anatomy-references-2026-09-14.md                                                        [39m[1m[2m   10.22 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/desktop.browser.mjs                                                              [39m[1m[2m   10.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-921de57/report.json                                                             [39m[1m[2m   10.32 kB[22m[1m[22m[2m │ gzip:     2.70 kB[22m
+[2mdist/[22m[32mdocs/canopy-runtime-integration-2026-09-28.md                                                                  [39m[1m[2m   10.33 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-water-review-2026-09-28.md                                                                [39m[1m[2m   10.34 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.ts                        [39m[1m[2m   10.35 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/continuous-planet-detail.md                                                                               [39m[1m[2m   10.42 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-surface-progress-review-2026-09-28.md                                                            [39m[1m[2m   10.50 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-tree-reference-family-review/response.json                                                   [39m[1m[2m   10.51 kB[22m[1m[22m[2m │ gzip:     4.98 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/run.mjs                                                               [39m[1m[2m   10.54 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082/v5-render-review-receipt.json                       [39m[1m[2m   10.60 kB[22m[1m[22m[2m │ gzip:     2.86 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-rendering-review-2026-09-28.md                                                                   [39m[1m[2m   10.63 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-impostor-family.test.mjs                                                                          [39m[1m[2m   10.65 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-leaf-transmission-review/response.json                                                       [39m[1m[2m   10.75 kB[22m[1m[22m[2m │ gzip:     5.03 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-census-implementation-review-2026-09-28.md                                                       [39m[1m[2m   10.80 kB[22m[1m[22m
+[2mdist/[22m[32mguide/time.html                                                                                                [39m[1m[2m   10.89 kB[22m[1m[22m[2m │ gzip:     4.25 kB[22m
+[2mdist/[22m[32mtest-results/canopy-runtime-aerial/report.json                                                                 [39m[1m[2m   10.98 kB[22m[1m[22m[2m │ gzip:     2.86 kB[22m
+[2mdist/[22m[32mtest-results/opus-surface-progress-review/response.json                                                        [39m[1m[2m   11.03 kB[22m[1m[22m[2m │ gzip:     5.19 kB[22m
+[2mdist/[22m[32mdocs/ground-realism.md                                                                                         [39m[1m[2m   11.07 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-runtime/report.json                                                                        [39m[1m[2m   11.09 kB[22m[1m[22m[2m │ gzip:     2.85 kB[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/family-manifest.json                                                            [39m[1m[2m   11.14 kB[22m[1m[22m[2m │ gzip:     2.91 kB[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/mid-pair.browser.mjs                                                         [39m[1m[2m   11.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-near-far-family-review/review.md                                                             [39m[1m[2m   11.36 kB[22m[1m[22m
+[2mdist/[22m[32msrc/forest-patch-broadphase.ts                                                                                 [39m[1m[2m   11.57 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-desktop-state-review-2026-09-28.md                                                               [39m[1m[2m   11.58 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-foliage-minification-2026-09-28.md                                                                   [39m[1m[2m   11.63 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/closeup.browser.mjs                                                              [39m[1m[2m   11.64 kB[22m[1m[22m
+[2mdist/[22m[32mtests/canopy-water-date-seek.browser.mjs                                                                       [39m[1m[2m   11.84 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/actual-tree/integration.mjs                                                [39m[1m[2m   11.94 kB[22m[1m[22m
+[2mdist/[22m[32mguide/index.html                                                                                               [39m[1m[2m   11.95 kB[22m[1m[22m[2m │ gzip:     4.39 kB[22m
+[2mdist/[22m[32mguide/water-atmosphere.html                                                                                    [39m[1m[2m   11.98 kB[22m[1m[22m[2m │ gzip:     4.66 kB[22m
+[2mdist/[22m[32mdocs/realistic-clouds-research-2026-09-27.md                                                                   [39m[1m[2m   12.02 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/biome-lab-spec.md                                                                                         [39m[1m[2m   12.29 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/creature-diversity-and-motion-plan-2026-09-14.md                                                          [39m[1m[2m   12.30 kB[22m[1m[22m
+[2mdist/[22m[32mtests/desktop-rendering-acceptance.browser.mjs                                                                 [39m[1m[2m   12.43 kB[22m[1m[22m
+[2mdist/[22m[32mguide/terrain.html                                                                                             [39m[1m[2m   12.46 kB[22m[1m[22m[2m │ gzip:     4.97 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707/v6final-calibrated-render-review-receipt.json       [39m[1m[2m   12.52 kB[22m[1m[22m[2m │ gzip:     3.06 kB[22m
+[2mdist/[22m[32mdocs/population-continuity-review-2026-09-27.md                                                                [39m[1m[2m   12.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-probe.mjs                                                          [39m[1m[2m   12.56 kB[22m[1m[22m
+[2mdist/[22m[32mguide/publishing.html                                                                                          [39m[1m[2m   12.60 kB[22m[1m[22m[2m │ gzip:     4.86 kB[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/acceptance.browser.mjs                                                    [39m[1m[2m   12.68 kB[22m[1m[22m
+[2mdist/[22m[32msrc/tree-foliage-mips.ts                                                                                       [39m[1m[2m   12.77 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/opus-desktop-state-review/response.json                                                           [39m[1m[2m   12.85 kB[22m[1m[22m[2m │ gzip:     6.00 kB[22m
+[2mdist/[22m[32mtest-results/tree-authoring-v7/smoke/validation.json                                                           [39m[1m[2m   12.96 kB[22m[1m[22m[2m │ gzip:     1.73 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707/validation.json                                     [39m[1m[2m   12.96 kB[22m[1m[22m[2m │ gzip:     1.73 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082/validation.json                                     [39m[1m[2m   12.96 kB[22m[1m[22m[2m │ gzip:     1.73 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790569226563/validation.json                                     [39m[1m[2m   12.96 kB[22m[1m[22m[2m │ gzip:     1.73 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790569291675/validation.json                                     [39m[1m[2m   12.96 kB[22m[1m[22m[2m │ gzip:     1.73 kB[22m
+[2mdist/[22m[32mtest-results/opus-near-far-family-review/response.json                                                         [39m[1m[2m   13.03 kB[22m[1m[22m[2m │ gzip:     5.99 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/baseline-source/tree-asset.ts                                               [39m[1m[2m   13.08 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-impostor-v7-color-a/capture-v2-portability-audit.json                                        [39m[1m[2m   13.19 kB[22m[1m[22m[2m │ gzip:     3.82 kB[22m
+[2mdist/[22m[32mdocs/stable-shores.md                                                                                          [39m[1m[2m   13.23 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/compact-tree-families/integration.browser.mjs                                                     [39m[1m[2m   13.25 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/creature-lab-implementation-spec.md                                                                       [39m[1m[2m   13.55 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-stage-c-absolute-date/report.json                                               [39m[1m[2m   13.57 kB[22m[1m[22m[2m │ gzip:     3.01 kB[22m
+[2mdist/[22m[32mdocs/research-evolutionary-history-2026-09-14.md                                                               [39m[1m[2m   13.57 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/report.json                                                            [39m[1m[2m   13.69 kB[22m[1m[22m[2m │ gzip:     2.22 kB[22m
+[2mdist/[22m[32mguide/travel.html                                                                                              [39m[1m[2m   13.72 kB[22m[1m[22m[2m │ gzip:     5.45 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/report.json                                                            [39m[1m[2m   13.73 kB[22m[1m[22m[2m │ gzip:     2.23 kB[22m
+[2mdist/[22m[32mdocs/surface-materials-and-survey.md                                                                           [39m[1m[2m   13.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/render-target-probes/report.json                                            [39m[1m[2m   13.99 kB[22m[1m[22m[2m │ gzip:     1.16 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-forest-implementation-review-2026-09-28.md                                                       [39m[1m[2m   14.03 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/planet-local-rendering-design.md                                                                          [39m[1m[2m   14.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591510207/report.json                                               [39m[1m[2m   14.36 kB[22m[1m[22m[2m │ gzip:     2.06 kB[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/report.json                                           [39m[1m[2m   14.41 kB[22m[1m[22m[2m │ gzip:     3.07 kB[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/report.json                                                             [39m[1m[2m   14.45 kB[22m[1m[22m[2m │ gzip:     3.07 kB[22m
+[2mdist/[22m[32mdocs/deterministic-temporal-universe-design-2026-09-23.md                                                      [39m[1m[2m   14.47 kB[22m[1m[22m
+[2mdist/[22m[32msrc/tree-canopy-profile.ts                                                                                     [39m[1m[2m   14.54 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-selection-66c7728/desktop-rendering-hardware/report.json                                   [39m[1m[2m   14.54 kB[22m[1m[22m[2m │ gzip:     3.12 kB[22m
+[2mdist/[22m[32mdocs/exploration-corrections.md                                                                                [39m[1m[2m   14.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/report.json                                           [39m[1m[2m   14.60 kB[22m[1m[22m[2m │ gzip:     3.15 kB[22m
+[2mdist/[22m[32mdocs/drainage-and-atmospheric-flight.md                                                                        [39m[1m[2m   14.65 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/desktop-rendering-baseline-66c-production-preview/report.json             [39m[1m[2m   14.71 kB[22m[1m[22m[2m │ gzip:     3.14 kB[22m
+[2mdist/[22m[32mcreature-lab.html                                                                                              [39m[1m[2m   14.72 kB[22m[1m[22m[2m │ gzip:     4.36 kB[22m
+[2mdist/[22m[32mtests/tree-impostor-rendering.test.mjs                                                                         [39m[1m[2m   14.72 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/desktop-rendering-production-preview/report.json                          [39m[1m[2m   14.82 kB[22m[1m[22m[2m │ gzip:     3.19 kB[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/desktop-rendering-hardware/report.json                                    [39m[1m[2m   14.86 kB[22m[1m[22m[2m │ gzip:     3.20 kB[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/report.json                                           [39m[1m[2m   14.88 kB[22m[1m[22m[2m │ gzip:     3.23 kB[22m
+[2mdist/[22m[32mtest-results/family-canopy/shader-ee26efa/report.json                                                          [39m[1m[2m   15.05 kB[22m[1m[22m[2m │ gzip:     3.65 kB[22m
+[2mdist/[22m[32mtests/forest-retention.test.mjs                                                                                [39m[1m[2m   15.12 kB[22m[1m[22m
+[2mdist/[22m[32massets/planet-population-worker-eBVgjYcc.js                                                                    [39m[1m[2m   15.21 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/walking-and-time.md                                                                                       [39m[1m[2m   15.31 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/tree-authoring-next-increment-2026-09-28.md                                                               [39m[1m[2m   15.35 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/browser-report.json                                                         [39m[1m[2m   15.46 kB[22m[1m[22m[2m │ gzip:     3.96 kB[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/browser-check.mjs                                                          [39m[1m[2m   15.48 kB[22m[1m[22m
+[2mdist/[22m[32mtests/forest-water-validity.test.mjs                                                                           [39m[1m[2m   15.48 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-host-review-2026-09-28.md                                                                 [39m[1m[2m   15.68 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/family-canopy/shader-stride-fix/report.json                                                       [39m[1m[2m   15.75 kB[22m[1m[22m[2m │ gzip:     3.79 kB[22m
+[2mdist/[22m[32mdocs/planetary-orbit-implementation.md                                                                         [39m[1m[2m   15.80 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/physical-rivers-and-ground-detail.md                                                                      [39m[1m[2m   15.85 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/report.json                                          [39m[1m[2m   16.13 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/integration.browser.mjs                                                      [39m[1m[2m   16.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/report.json                                                     [39m[1m[2m   16.30 kB[22m[1m[22m[2m │ gzip:     3.65 kB[22m
+[2mdist/[22m[32mdocs/biosphere-lab-implementation-spec.md                                                                      [39m[1m[2m   16.47 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/run.mjs                                                [39m[1m[2m   16.51 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-contended-98556a7/report.json                                           [39m[1m[2m   16.52 kB[22m[1m[22m[2m │ gzip:     3.72 kB[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/report.json                                                      [39m[1m[2m   16.58 kB[22m[1m[22m[2m │ gzip:     3.73 kB[22m
+[2mdist/[22m[32mdocs/planet-validation-labs-2026-09-14.md                                                                      [39m[1m[2m   16.79 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/research-vegetation-rocks-2026-09-14.md                                                                   [39m[1m[2m   17.06 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.json                               [39m[1m[2m   17.81 kB[22m[1m[22m[2m │ gzip:     3.05 kB[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591702202/report.json                                               [39m[1m[2m   17.89 kB[22m[1m[22m[2m │ gzip:     2.43 kB[22m
+[2mdist/[22m[32mdocs/research-species-and-simulation-2026-09-14.md                                                             [39m[1m[2m   17.89 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-census-design-review-2026-09-28.md                                                               [39m[1m[2m   18.32 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-integration-review-2026-09-28.md                                                          [39m[1m[2m   18.44 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/research-planet-biome-generation-2026-09-14.md                                                            [39m[1m[2m   19.35 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v7-color-a/color-comparison-v6-v7.json                                             [39m[1m[2m   19.66 kB[22m[1m[22m[2m │ gzip:     3.78 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-desktop-realism-review-2026-09-27.md                                                             [39m[1m[2m   19.79 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/research-procedural-flora-geology-2026-09-14.md                                                           [39m[1m[2m   19.98 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/research-procedural-fauna-habitats-2026-09-14.md                                                          [39m[1m[2m   20.08 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run.mjs                                                                     [39m[1m[2m   20.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/family-canopy/shader-ee26efa/families.png                                                         [39m[1m[2m   20.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/run.mjs                                                                         [39m[1m[2m   21.19 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/mask/report.json                                             [39m[1m[2m   21.36 kB[22m[1m[22m[2m │ gzip:     2.52 kB[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/reference-manifest.json                                                     [39m[1m[2m   21.45 kB[22m[1m[22m[2m │ gzip:     4.74 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/hash/report.json                                             [39m[1m[2m   21.49 kB[22m[1m[22m[2m │ gzip:     2.68 kB[22m
+[2mdist/[22m[32mtest-results/inland-rivers-disabled-5130bd5-landing-rerun/report.json                                          [39m[1m[2m   22.20 kB[22m[1m[22m[2m │ gzip:     2.80 kB[22m
+[2mdist/[22m[32mtest-results/deploy-4796b1a/river-route/report.json                                                            [39m[1m[2m   22.31 kB[22m[1m[22m[2m │ gzip:     2.82 kB[22m
+[2mdist/[22m[32mdocs/research-terrain-river-validation-2026-09-14.md                                                           [39m[1m[2m   23.26 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/planet-realism-goal.md                                                                                    [39m[1m[2m   23.48 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/terrain-research-2026-09-13.md                                                                            [39m[1m[2m   23.68 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/browser-final/directional-back-T1.png                                      [39m[1m[2m   23.93 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-proxy-75a7d3b/guide-link-check.json                                                        [39m[1m[2m   23.95 kB[22m[1m[22m[2m │ gzip:     1.46 kB[22m
+[2mdist/[22m[32mguide/life.html                                                                                                [39m[1m[2m   24.08 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
+[2mdist/[22m[32mdocs/opus-5.5-canopy-review-2026-09-28.md                                                                      [39m[1m[2m   24.66 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v7-color-a/report.json                                                             [39m[1m[2m   24.88 kB[22m[1m[22m[2m │ gzip:     3.18 kB[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v6/report.json                                                                     [39m[1m[2m   25.52 kB[22m[1m[22m[2m │ gzip:     3.49 kB[22m
+[2mdist/[22m[32mdocs/living-worlds-and-time-roadmap.md                                                                         [39m[1m[2m   26.25 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/fable-5.1-plan-review.md                                                                                  [39m[1m[2m   28.55 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/report.json                                             [39m[1m[2m   30.77 kB[22m[1m[22m[2m │ gzip:     4.19 kB[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/mid-pair-down-390m/failure.json                                              [39m[1m[2m   34.13 kB[22m[1m[22m[2m │ gzip:     4.84 kB[22m
+[2mdist/[22m[32mdocs/procedural-biospheres-next-plan-2026-09-14.md                                                             [39m[1m[2m   34.23 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/family-capture/filtering-v3/report.json                                                           [39m[1m[2m   34.24 kB[22m[1m[22m[2m │ gzip:     2.77 kB[22m
+[2mdist/[22m[32mtest-results/canopy-proxy-75a7d3b/silhouette/report.json                                                       [39m[1m[2m   35.75 kB[22m[1m[22m[2m │ gzip:     5.57 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/report.json                                                           [39m[1m[2m   35.76 kB[22m[1m[22m[2m │ gzip:     6.10 kB[22m
+[2mdist/[22m[32mtest-results/forest-impostor/report.json                                                                       [39m[1m[2m   35.88 kB[22m[1m[22m[2m │ gzip:     5.64 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/report.json                                                                 [39m[1m[2m   36.93 kB[22m[1m[22m[2m │ gzip:     4.64 kB[22m
+[2mdist/[22m[32msrc/planet-canopy.ts                                                                                           [39m[1m[2m   37.15 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-date-seek-c02ee95/failure.json                                                       [39m[1m[2m   40.75 kB[22m[1m[22m[2m │ gzip:     4.31 kB[22m
+[2mdist/[22m[32mtests/planet-forest-tree-assets.test.mjs                                                                       [39m[1m[2m   41.04 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/desktop-run/report.json                                                          [39m[1m[2m   41.19 kB[22m[1m[22m[2m │ gzip:     4.84 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-report/report.json                                                 [39m[1m[2m   43.09 kB[22m[1m[22m[2m │ gzip:     3.42 kB[22m
+[2mdist/[22m[32mtest-results/tree-impostor-render-v2-hardware/browser-report.json                                              [39m[1m[2m   44.00 kB[22m[1m[22m[2m │ gzip:     4.32 kB[22m
+[2mdist/[22m[32msrc/tree-asset.ts                                                                                              [39m[1m[2m   45.83 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/desktop-realism-implementation-plan-2026-09-27.md                                                         [39m[1m[2m   46.20 kB[22m[1m[22m
+[2mdist/[22m[32msrc/forest-impostor.ts                                                                                         [39m[1m[2m   48.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/closeup-run/report.json                                                          [39m[1m[2m   48.43 kB[22m[1m[22m[2m │ gzip:     5.70 kB[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/isolated-final/report.json                                                  [39m[1m[2m   50.01 kB[22m[1m[22m[2m │ gzip:     4.53 kB[22m
+[2mdist/[22m[32mtests/planet-canopy.test.mjs                                                                                   [39m[1m[2m   52.64 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-canopy-census-8c5ff7f/unit-tests.log                                                       [39m[1m[2m   54.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/actual-tree/family-f-corrected/report.json                                 [39m[1m[2m   59.98 kB[22m[1m[22m[2m │ gzip:     4.51 kB[22m
+[2mdist/[22m[32mREADME.md                                                                                                      [39m[1m[2m   60.21 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/live-era-9.png                                                               [39m[1m[2m   61.37 kB[22m[1m[22m
+[2mdist/[22m[32massets/river-worker-DhQ3PdFL.js                                                                                [39m[1m[2m   62.11 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/live-era-5.png                                                               [39m[1m[2m   63.23 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-depth-ownership-accepted/report.json                                                       [39m[1m[2m   63.34 kB[22m[1m[22m[2m │ gzip:     6.65 kB[22m
+[2mdist/[22m[32mtest-results/canopy-water-date-seek-98556a7/report.json                                                        [39m[1m[2m   64.24 kB[22m[1m[22m[2m │ gzip:     4.04 kB[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-water-date-seek/report.json                                                 [39m[1m[2m   64.26 kB[22m[1m[22m[2m │ gzip:     4.05 kB[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/browser-final/report.json                                                  [39m[1m[2m   72.33 kB[22m[1m[22m[2m │ gzip:     5.27 kB[22m
+[2mdist/[22m[32msrc/planet-forest.ts                                                                                           [39m[1m[2m   75.44 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.json                                    [39m[1m[2m   79.27 kB[22m[1m[22m[2m │ gzip:     8.58 kB[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/build.log                                                                   [39m[1m[2m   93.97 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/build.log                                                                 [39m[1m[2m   96.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/build.log                                                                        [39m[1m[2m   99.98 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/committed-build-2e00837.log                                                  [39m[1m[2m  106.37 kB[22m[1m[22m
+[2mdist/[22m[32mdocs/time-and-coordinates-contract.md                                                                          [39m[1m[2m  113.74 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/compact-tree-families/browser-run-2/report.json                                                   [39m[1m[2m  127.58 kB[22m[1m[22m[2m │ gzip:    12.07 kB[22m
+[2mdist/[22m[32massets/planet-worker-E-zOrsgf.js                                                                               [39m[1m[2m  130.84 kB[22m[1m[22m
+[2mdist/[22m[32massets/worker-BFFQhtyW.js                                                                                      [39m[1m[2m  133.64 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/hardware-family-f-verified/report.json                                    [39m[1m[2m  135.36 kB[22m[1m[22m[2m │ gzip:    10.38 kB[22m
+[2mdist/[22m[32mtest-results/opus-surface-progress-review/luna-report-final.json                                               [39m[1m[2m  136.27 kB[22m[1m[22m[2m │ gzip:    15.81 kB[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/back-impostor.png                                                     [39m[1m[2m  137.57 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/back-impostor.png                                      [39m[1m[2m  141.84 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/closeup-run/cpu-profile.cpuprofile                                               [39m[1m[2m  145.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/live-era-0.png                                                               [39m[1m[2m  164.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/front-impostor.png                                                    [39m[1m[2m  168.68 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/front-impostor.png                                     [39m[1m[2m  172.32 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/top-impostor.png                                                      [39m[1m[2m  172.93 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/top-impostor.png                                       [39m[1m[2m  175.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-live/live-publication-receipt.json                                                    [39m[1m[2m  181.88 kB[22m[1m[22m[2m │ gzip:    27.93 kB[22m
+[2mdist/[22m[32massets/forest-census-worker-mN0hVfm5.js                                                                        [39m[1m[2m  191.19 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png                  [39m[1m[2m  204.18 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/hero.png                              [39m[1m[2m  204.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/hero.png                            [39m[1m[2m  204.66 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/hero.png                     [39m[1m[2m  206.47 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/hero.png                     [39m[1m[2m  207.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/hero.png                            [39m[1m[2m  207.44 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/report.json                                            [39m[1m[2m  212.44 kB[22m[1m[22m[2m │ gzip:    27.39 kB[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/wire.png                              [39m[1m[2m  214.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/wire.png                            [39m[1m[2m  214.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/wire.png                  [39m[1m[2m  214.50 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/wire.png                     [39m[1m[2m  218.51 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/wire.png                     [39m[1m[2m  218.77 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/wire.png                            [39m[1m[2m  218.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/atlas-oak22m-scaled.png                                                     [39m[1m[2m  230.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/front.png                 [39m[1m[2m  237.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/back.png                  [39m[1m[2m  237.46 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/back.png                              [39m[1m[2m  237.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/back.png                            [39m[1m[2m  237.77 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/front.png                             [39m[1m[2m  238.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/front.png                           [39m[1m[2m  238.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591510207/tinted.png                                                [39m[1m[2m  239.12 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591702202/tinted.png                                                [39m[1m[2m  239.12 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/right.png                    [39m[1m[2m  242.12 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/top-mid.png                                            [39m[1m[2m  243.40 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/right.png                 [39m[1m[2m  243.51 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/right.png                    [39m[1m[2m  243.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/right.png                           [39m[1m[2m  243.64 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/right.png                             [39m[1m[2m  243.74 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/right.png                           [39m[1m[2m  243.81 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/back.png                     [39m[1m[2m  245.48 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/back.png                     [39m[1m[2m  246.60 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/back.png                            [39m[1m[2m  246.67 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/front.png                    [39m[1m[2m  246.86 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/front.png                    [39m[1m[2m  247.97 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/front.png                           [39m[1m[2m  248.05 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/top.png                      [39m[1m[2m  253.91 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/atlas-ash16m-scaled.png                                                     [39m[1m[2m  255.28 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/atlas-full-close.png                                                        [39m[1m[2m  255.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/top.png                   [39m[1m[2m  257.13 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/top.png                      [39m[1m[2m  258.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/top.png                             [39m[1m[2m  258.38 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/top.png                               [39m[1m[2m  258.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/top.png                             [39m[1m[2m  259.01 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/back-mid.png                                           [39m[1m[2m  262.13 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591510207/white-before.png                                          [39m[1m[2m  268.46 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591510207/white-restored.png                                        [39m[1m[2m  268.46 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591702202/white-before.png                                          [39m[1m[2m  268.46 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-instance-updates/run-1790591702202/white-restored.png                                        [39m[1m[2m  268.46 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/browser-run-2e00837/report.json                                              [39m[1m[2m  272.54 kB[22m[1m[22m[2m │ gzip:    35.38 kB[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v6/center-16m-back-shadows-off.png                                            [39m[1m[2m  274.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/lod1-population3.png                                    [39m[1m[2m  277.04 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/top-mesh.png                                           [39m[1m[2m  277.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/top-mesh.png                                                          [39m[1m[2m  277.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/lod0-population3.png                                    [39m[1m[2m  281.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v6/center-16m-back-shadows-on.png                                             [39m[1m[2m  286.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/atlas-oak10m-scaled.png                                                     [39m[1m[2m  288.55 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/front-mid.png                                          [39m[1m[2m  290.39 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/back-mesh.png                                          [39m[1m[2m  296.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/back-mesh.png                                                         [39m[1m[2m  296.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/background-hydrology-regression/baseline-37f0e89-failure.png                                      [39m[1m[2m  298.51 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-4796b1a/river-route/old-river-link-ordinary-body.png                                       [39m[1m[2m  300.97 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/inland-rivers-disabled-5130bd5-landing-rerun/old-river-link-ordinary-body.png                     [39m[1m[2m  300.97 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-upstream-lod2-close.png                                                  [39m[1m[2m  301.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-full-source-normals-close.png                                            [39m[1m[2m  304.93 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-wood-reduced-close.png                                                   [39m[1m[2m  305.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v6/center-16m-front-shadows-off.png                                           [39m[1m[2m  308.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-upstream-lod1-close.png                                                  [39m[1m[2m  310.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v6/center-16m-front-shadows-on.png                                            [39m[1m[2m  315.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-oak22m-full-geometric-normals.png                                        [39m[1m[2m  322.38 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-full-geometric-normals-close.png                                         [39m[1m[2m  330.67 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/inland-rivers-disabled-5130bd5-landing-rerun/ordinary-grounded.png                                [39m[1m[2m  332.65 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-4796b1a/river-route/ordinary-grounded.png                                                  [39m[1m[2m  332.85 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-oak10m-full-geometric-normals.png                                        [39m[1m[2m  344.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/native-map-fix/front-mesh.png                                         [39m[1m[2m  345.98 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/three-ez-impostor-reference/front-mesh.png                                                        [39m[1m[2m  345.98 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/time-390.png                                                                 [39m[1m[2m  346.60 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/terrain-390.png                                                              [39m[1m[2m  356.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v7-color-a/center-16m-back-shadows-off.png                                    [39m[1m[2m  366.87 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/ez-ash16m-full-geometric-normals.png                                        [39m[1m[2m  372.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/terrain-1440.png                                                             [39m[1m[2m  377.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/yaw-0.35deg.png                                                        [39m[1m[2m  402.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/yaw-0.70deg.png                                                        [39m[1m[2m  403.86 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/wind-1750000000.png                                                    [39m[1m[2m  405.20 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/wind-0-a.png                                                           [39m[1m[2m  405.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/wind-0-b.png                                                           [39m[1m[2m  405.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/wind-7s.png                                                            [39m[1m[2m  405.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/wind-neg7s.png                                                         [39m[1m[2m  405.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/yaw-0.00deg.png                                                        [39m[1m[2m  405.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/yaw-1.05deg.png                                                        [39m[1m[2m  405.96 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/lod1-front-shadows-on.png                                              [39m[1m[2m  406.43 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/lod0-front-shadows-on.png                                              [39m[1m[2m  415.83 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v6/lod0-population3.png                                                            [39m[1m[2m  416.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/comparison-oak22m.png                                                       [39m[1m[2m  418.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/lod1-back-shadows-on.png                                               [39m[1m[2m  419.34 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/mask/lod0-back-shadows-on.png                                               [39m[1m[2m  420.75 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lighting-v7-color-a/center-16m-front-shadows-on.png                                    [39m[1m[2m  421.82 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/time-1440.png                                                                [39m[1m[2m  424.05 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/lod1-front-shadows-on.png                                              [39m[1m[2m  433.29 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/yaw-0.35deg.png                                                        [39m[1m[2m  433.37 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/yaw-0.70deg.png                                                        [39m[1m[2m  434.68 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/wind-1750000000.png                                                    [39m[1m[2m  435.43 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/wind-0-a.png                                                           [39m[1m[2m  435.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/wind-0-b.png                                                           [39m[1m[2m  435.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/wind-7s.png                                                            [39m[1m[2m  435.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/wind-neg7s.png                                                         [39m[1m[2m  435.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/yaw-0.00deg.png                                                        [39m[1m[2m  435.58 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/yaw-1.05deg.png                                                        [39m[1m[2m  436.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/lod0-front-shadows-on.png                                              [39m[1m[2m  438.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/comparison.png                                                              [39m[1m[2m  443.29 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/lod0-back-shadows-on.png                                               [39m[1m[2m  450.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-foliage-temporal/hash/lod1-back-shadows-on.png                                               [39m[1m[2m  451.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v7-color-a/lod1-population3.png                                                    [39m[1m[2m  456.08 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/desktop-run/lighting-dated-detailed.png                                          [39m[1m[2m  456.32 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v7-color-a/lod0-population3.png                                                    [39m[1m[2m  460.12 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/index-390.png                                                                [39m[1m[2m  490.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/comparison-ash16m.png                                                       [39m[1m[2m  496.21 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod1-front-shadows-off.png                        [39m[1m[2m  505.73 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-reference-ez-oak/comparison-oak10m.png                                                       [39m[1m[2m  511.28 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-shift.png                 [39m[1m[2m  529.70 kB[22m[1m[22m
+[2mdist/[22m[32massets/soil-albedo-roughness-512-CVk4dJrp.png                                                                  [39m[1m[2m  530.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/date1750000000.png                                      [39m[1m[2m  547.40 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/date0-a.png                                             [39m[1m[2m  547.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/date0-b.png                                             [39m[1m[2m  547.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/date7000000000.png                                      [39m[1m[2m  547.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod1-back-shadows-off.png                         [39m[1m[2m  569.45 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/closeup-run/lighting-dated-detailed.png                                          [39m[1m[2m  574.25 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod0-front-shadows-off.png                        [39m[1m[2m  578.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/guide/index-1440.png                                                               [39m[1m[2m  586.18 kB[22m[1m[22m
+[2mdist/[22m[32massets/soil-normal-512-C5dCKX-b.png                                                                            [39m[1m[2m  602.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/fauna-closeup-6b87e13/01-fauna-closeup.png                                                        [39m[1m[2m  614.44 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/fauna-closeup-6b87e13/02-fauna-paused-repeat.png                                                  [39m[1m[2m  614.45 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod0-back-shadows-off.png                         [39m[1m[2m  614.83 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/settled.png                                                          [39m[1m[2m  633.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/walking-lateral-300m.png                                             [39m[1m[2m  633.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/settled.png                                                                 [39m[1m[2m  653.06 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/walking-lateral-300m.png                                                    [39m[1m[2m  653.06 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-post-alpha-fix-rerun/settled.png                                                    [39m[1m[2m  667.64 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/settled.png                                                [39m[1m[2m  667.75 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/walking-lateral-300m.png                                   [39m[1m[2m  667.75 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-impostor-field/impostor-120m.png                                                           [39m[1m[2m  667.99 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/walking-turned.png                                         [39m[1m[2m  670.73 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/walking-turned.png                                                          [39m[1m[2m  670.78 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/walking-turned.png                                                   [39m[1m[2m  673.74 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-post-alpha-fix-rerun/report.json                                                    [39m[1m[2m  685.54 kB[22m[1m[22m[2m │ gzip:    23.10 kB[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/report.json                                                [39m[1m[2m  691.53 kB[22m[1m[22m[2m │ gzip:    24.09 kB[22m
+[2mdist/[22m[32mtest-results/forest-impostor-field/reference-120m.png                                                          [39m[1m[2m  696.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/report.json                                                                 [39m[1m[2m  707.68 kB[22m[1m[22m[2m │ gzip:    25.56 kB[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png             [39m[1m[2m  707.95 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/report.json                                                          [39m[1m[2m  708.92 kB[22m[1m[22m[2m │ gzip:    25.53 kB[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/walking-close.png                                                    [39m[1m[2m  709.34 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-post-alpha-fix-rerun/walking-close.png                                              [39m[1m[2m  709.81 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/walking-close.png                                          [39m[1m[2m  712.92 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/walking-close.png                                                           [39m[1m[2m  718.55 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-0.png                                       [39m[1m[2m  728.43 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/near-ground-warmed.png                               [39m[1m[2m  728.43 kB[22m[1m[22m
+[2mdist/[22m[32massets/rock-normal-512-BTkA8vMe.png                                                                            [39m[1m[2m  784.08 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-2.png                                       [39m[1m[2m  786.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-realism-26b41f5/population-flight/01-contact.png                                          [39m[1m[2m  793.48 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-warmed.png                                [39m[1m[2m  794.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-0.png                                        [39m[1m[2m  794.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/cloud-aa-0.png                                                  [39m[1m[2m  796.57 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/near-ground-warmed.png                                          [39m[1m[2m  796.57 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/forest-turned.png                                                       [39m[1m[2m  812.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/forest-turned.png                                    [39m[1m[2m  813.21 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/flight-lateral.png                                                   [39m[1m[2m  827.92 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-on.png                            [39m[1m[2m  828.24 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/flight-lateral.png                                                          [39m[1m[2m  830.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/flight-lateral.png                                         [39m[1m[2m  830.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-4.png                                       [39m[1m[2m  834.43 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-off.png                           [39m[1m[2m  841.25 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/forest-turned.png                                     [39m[1m[2m  842.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-2.png                                        [39m[1m[2m  844.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/cloud-aa-2.png                                                  [39m[1m[2m  849.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/flight-near-ground.png                                               [39m[1m[2m  854.17 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-realism-26b41f5/population-flight/02-fauna-low-flight.png                                 [39m[1m[2m  854.84 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/forest-selection-cache-browser/after-move.png                                      [39m[1m[2m  856.73 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-0.png                                        [39m[1m[2m  856.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/near-ground-warmed.png                                [39m[1m[2m  857.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-post-alpha-fix-rerun/flight-near-ground.png                                         [39m[1m[2m  857.01 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/desktop-rendering-production-preview/near-ground-warmed.png               [39m[1m[2m  857.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/desktop-rendering-baseline-66c-production-preview/near-ground-warmed.png  [39m[1m[2m  857.85 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-runtime-aerial/forest-warmed.png                                                           [39m[1m[2m  857.96 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-runtime/forest-warmed.png                                                                  [39m[1m[2m  858.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-transfer-23de0b9/browser-movement-hardware/after-move.png                                  [39m[1m[2m  858.13 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/forest-turned.png                                               [39m[1m[2m  858.28 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-selection-66c7728/browser-movement-lateral-hardware/after-move.png                         [39m[1m[2m  858.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/forest-selection-cache-browser/after-move.png                                      [39m[1m[2m  858.71 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/flight-near-ground.png                                     [39m[1m[2m  858.79 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/near-ground-warmed.png                                [39m[1m[2m  858.95 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-0.png                                        [39m[1m[2m  858.95 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/cloud-aa-0.png                                                   [39m[1m[2m  859.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/near-ground-warmed.png                                           [39m[1m[2m  859.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/forest-turned.png                                                [39m[1m[2m  859.93 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/flight-near-ground.png                                                      [39m[1m[2m  860.07 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-runtime-aerial/forest-turned.png                                                           [39m[1m[2m  861.11 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-runtime/forest-turned.png                                                                  [39m[1m[2m  865.32 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/forest-turned.png                                     [39m[1m[2m  868.56 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/forest-turned.png                                     [39m[1m[2m  873.42 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/near-ground-warmed.png                                                  [39m[1m[2m  876.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/cloud-aa-0.png                                                          [39m[1m[2m  876.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-flight-98556a7/flight-turned.png                                                           [39m[1m[2m  879.69 kB[22m[1m[22m
+[2mdist/[22m[32massets/rock-albedo-roughness-512-BKoM4zkf.png                                                                  [39m[1m[2m  880.41 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/canopy-flight-final/flight-turned.png                                          [39m[1m[2m  880.87 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-flight/flight-turned.png                                                    [39m[1m[2m  883.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4.png                                        [39m[1m[2m  890.14 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/cloud-aa-4.png                                                  [39m[1m[2m  898.25 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-2.png                                        [39m[1m[2m  921.18 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-2.png                                        [39m[1m[2m  921.23 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/cloud-aa-2.png                                                   [39m[1m[2m  929.84 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/cloud-aa-2.png                                                          [39m[1m[2m  939.98 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png                                         [39m[1m[2m  968.14 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-4.png                                        [39m[1m[2m  977.35 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-4.png                                        [39m[1m[2m  979.03 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png                                         [39m[1m[2m  986.43 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/cloud-aa-4.png                                                   [39m[1m[2m  991.20 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/cloud-aa-4.png                                                          [39m[1m[2m  998.14 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-date-seek-98556a7/water--4500m-2.png                                                 [39m[1m[2m1,038.73 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-water-date-seek/water--4500m-2.png                                          [39m[1m[2m1,042.74 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-date-seek-98556a7/water-minus-4500m.png                                              [39m[1m[2m1,047.59 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-water-date-seek/water-minus-4500m.png                                       [39m[1m[2m1,052.82 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png                [39m[1m[2m1,060.20 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-initial.png                    [39m[1m[2m1,061.90 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-impostor-field/reference-1200m.png                                                         [39m[1m[2m1,140.76 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-on.png                           [39m[1m[2m1,148.87 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-off.png                          [39m[1m[2m1,225.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/forest-impostor-field/impostor-1200m.png                                                          [39m[1m[2m1,229.00 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/closeup-run/lighting-basic.png                                                   [39m[1m[2m1,240.88 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated/render-sheet.png            [39m[1m[2m1,292.89 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-blend-calibrated/render-sheet.png           [39m[1m[2m1,294.06 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated/render-sheet.png            [39m[1m[2m1,294.11 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png          [39m[1m[2m1,298.80 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png                    [39m[1m[2m1,302.70 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png                      [39m[1m[2m1,303.03 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/closeup-run/lighting-detailed.png                                                [39m[1m[2m1,315.53 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-date-seek-98556a7/water--4475m-1.png                                                 [39m[1m[2m1,317.85 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/render-sheet.png             [39m[1m[2m1,321.15 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/render-sheet.png             [39m[1m[2m1,329.31 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/render-sheet.png                    [39m[1m[2m1,329.63 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/canopy-water-date-seek/water--4475m-1.png                                          [39m[1m[2m1,335.67 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/canopy-water-date-seek-c02ee95/failure.png                                                        [39m[1m[2m1,342.30 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/compact-tree-families/browser-run-2/legacy-close-baseline.png                                     [39m[1m[2m1,382.81 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/desktop-run/lighting-basic.png                                                   [39m[1m[2m1,499.94 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/surface-lighting/desktop-run/lighting-detailed.png                                                [39m[1m[2m1,581.88 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/lod0-population192.png                                  [39m[1m[2m1,644.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/near-ground-resized-2560x1440.png                    [39m[1m[2m1,665.28 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-ez-family-v1/candidate-f-canvasfinal/lod1-population192.png                                  [39m[1m[2m1,719.82 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/compact-tree-families/browser-run-2/oak-only-close.png                                            [39m[1m[2m1,786.17 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-4-2560x1440.png                             [39m[1m[2m1,800.45 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/near-ground-resized-2560x1440.png                               [39m[1m[2m1,821.81 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-resized-2560x1440.png                     [39m[1m[2m1,842.40 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/browser-run-2e00837/families-default-mips-close.png                          [39m[1m[2m1,875.69 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/browser-run-2e00837/families-offline-mips-close.png                          [39m[1m[2m1,912.69 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/near-ground-resized-2560x1440.png                                [39m[1m[2m1,933.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-profile-98556a7/cloud-aa-4-2560x1440.png                                        [39m[1m[2m1,937.29 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png                              [39m[1m[2m1,949.25 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/near-ground-resized-2560x1440.png                     [39m[1m[2m1,982.13 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/near-ground-resized-2560x1440.png                     [39m[1m[2m1,989.18 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/near-ground-resized-2560x1440.png                                       [39m[1m[2m2,043.07 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-580936f/desktop-rendering/cloud-aa-4-2560x1440.png                                         [39m[1m[2m2,083.26 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png                              [39m[1m[2m2,120.09 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png                              [39m[1m[2m2,130.36 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/compact-tree-families/browser-run-2/oak-plus-pine-close.png                                       [39m[1m[2m2,131.27 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/desktop-rendering-6b87e13/cloud-aa-4-2560x1440.png                                                [39m[1m[2m2,183.02 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/browser-run-2e00837/offline-mid-390m.png                                     [39m[1m[2m2,231.16 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/mid-pair-down-390m-rerun/default-mid-down-angle.png                          [39m[1m[2m2,719.19 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v6/lod0-population192.png                                                          [39m[1m[2m2,740.54 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/mid-pair-down-390m-rerun/offline-mid-down-angle.png                          [39m[1m[2m2,777.16 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v7-color-a/lod1-population192.png                                                  [39m[1m[2m3,584.06 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/tree-asset-lab-v7-color-a/lod0-population192.png                                                  [39m[1m[2m3,643.64 kB[22m[1m[22m
+[2mdist/[22m[32mtest-results/offline-foliage-mips/mid-pair-down-390m-rerun/report.json                                         [39m[1m[2m7,393.48 kB[22m[1m[22m[2m │ gzip: 5,523.73 kB[22m
+[2mdist/[22m[35massets/biomes-Dqf3B3lJ.css                                                                                     [39m[1m[2m    4.89 kB[22m[1m[22m[2m │ gzip:     1.79 kB[22m
+[2mdist/[22m[35massets/creatures-CN8EtKiP.css                                                                                  [39m[1m[2m    5.53 kB[22m[1m[22m[2m │ gzip:     1.77 kB[22m
+[2mdist/[22m[35massets/biosphere-Br8XVK-7.css                                                                                  [39m[1m[2m    5.96 kB[22m[1m[22m[2m │ gzip:     2.08 kB[22m
+[2mdist/[22m[35massets/theme-_FAD6hYY.css                                                                                      [39m[1m[2m    7.44 kB[22m[1m[22m[2m │ gzip:     2.45 kB[22m
+[2mdist/[22m[35massets/atlas-72-JTDok.css                                                                                      [39m[1m[2m   12.84 kB[22m[1m[22m[2m │ gzip:     3.87 kB[22m
+[2mdist/[22m[36massets/guide-time-Bavuqi_W.js                                                                                  [39m[1m[2m    1.10 kB[22m[1m[22m[2m │ gzip:     0.57 kB[22m
+[2mdist/[22m[36massets/world-time-jlnosqkt.js                                                                                  [39m[1m[2m    1.60 kB[22m[1m[22m[2m │ gzip:     0.87 kB[22m
+[2mdist/[22m[36massets/clouds-CYRhThmQ.js                                                                                      [39m[1m[2m    3.13 kB[22m[1m[22m[2m │ gzip:     1.51 kB[22m
+[2mdist/[22m[36massets/BufferGeometryUtils-Cv3eNv5K.js                                                                         [39m[1m[2m    4.89 kB[22m[1m[22m[2m │ gzip:     1.48 kB[22m
+[2mdist/[22m[36massets/ground-walker-CJmGXrkD.js                                                                               [39m[1m[2m    4.92 kB[22m[1m[22m[2m │ gzip:     1.82 kB[22m
+[2mdist/[22m[36massets/catalog-QyyY0iGK.js                                                                                     [39m[1m[2m    8.20 kB[22m[1m[22m[2m │ gzip:     3.95 kB[22m
+[2mdist/[22m[36massets/OrbitControls-BKOjP-ng.js                                                                               [39m[1m[2m   19.15 kB[22m[1m[22m[2m │ gzip:     4.36 kB[22m
+[2mdist/[22m[36massets/volumetric-clouds-gxyzW7Za.js                                                                           [39m[1m[2m   23.12 kB[22m[1m[22m[2m │ gzip:     9.05 kB[22m
+[2mdist/[22m[36massets/biosphere-CJi394Ax.js                                                                                   [39m[1m[2m   24.26 kB[22m[1m[22m[2m │ gzip:     9.83 kB[22m
+[2mdist/[22m[36massets/biomes-C285hm_z.js                                                                                      [39m[1m[2m   38.22 kB[22m[1m[22m[2m │ gzip:    13.01 kB[22m
+[2mdist/[22m[36massets/GLTFLoader-CvCMMnBz.js                                                                                  [39m[1m[2m   43.91 kB[22m[1m[22m[2m │ gzip:    12.95 kB[22m
+[2mdist/[22m[36massets/tree-asset-s4bhY68-.js                                                                                  [39m[1m[2m   44.46 kB[22m[1m[22m[2m │ gzip:    16.00 kB[22m
+[2mdist/[22m[36massets/surface-lighting-cykQ8k2b.js                                                                            [39m[1m[2m   45.72 kB[22m[1m[22m[2m │ gzip:    18.72 kB[22m
+[2mdist/[22m[36massets/biosphere-model-CyRDDWhy.js                                                                             [39m[1m[2m   68.68 kB[22m[1m[22m[2m │ gzip:    25.06 kB[22m
+[2mdist/[22m[36massets/time-nav-D8x5hN7i.js                                                                                    [39m[1m[2m  146.50 kB[22m[1m[22m[2m │ gzip:    55.89 kB[22m
+[2mdist/[22m[36massets/three.core-BW2fOlE1.js                                                                                  [39m[1m[2m  227.74 kB[22m[1m[22m[2m │ gzip:    64.23 kB[22m
+[2mdist/[22m[36massets/creatures-bp5w3gKb.js                                                                                   [39m[1m[2m  292.50 kB[22m[1m[22m[2m │ gzip:   110.15 kB[22m
+[2mdist/[22m[36massets/three.module-D2q-l9wa.js                                                                                [39m[1m[2m  346.28 kB[22m[1m[22m[2m │ gzip:    87.38 kB[22m
+[2mdist/[22m[36massets/atlas-DSlpKEWI.js                                                                                       [39m[1m[2m  523.71 kB[22m[1m[22m[2m │ gzip:   177.70 kB[22m
+[2mdist/[22m[36massets/rapier-physics-iRel_T-y.js                                                                              [39m[1m[33m2,853.14 kB[39m[22m[2m │ gzip: 1,077.80 kB[22m
+[33m
+(!) Some chunks are larger than 800 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 4.61s[39m

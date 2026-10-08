@@ -13,6 +13,7 @@ import {
   CLIMATE_VERSION,CLIMATE_CALIBRATION,TABLE_ROWS,temperateHabitat,surfaceGravityMS2,lapseRateForGravity,
   effectiveObliquityRad,insolationTables,climateForcingFromParams,climateForcingFor,clearClimateForcingCache,
   climateForcingCacheSize,surfaceClimate,createClimateSample,decodeClimateCode,isothermHeightM,
+  KERNEL_STEPS,pddKernelH,pddKernelG,degreeDaysAbove,warmColumnLapseFactor,warmestMonthCeilingK,
 } from '../src/surface-climate.ts';
 import {planetGeophysics} from '../src/planet-geophysics.ts';
 
@@ -33,12 +34,39 @@ const fib=(i,n)=>{const y=1-2*(i+.5)/n,p=i*2.399963229728653,r=Math.sqrt(1-y*y);
 const unit=v=>{const m=Math.hypot(...v);return v.map(x=>x/m);};
 
 test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump',()=>{
-  // surface-climate-1.1-geo-g (P4-RELIEF E): the lapse gravity source moved to
-  // planet-geophysics; CLIMATE_CALIBRATION and its sha are unchanged.
-  assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
+  // surface-climate-2 (backlog #9 BIOME2-CLIMATE M1, docs/surface-climate-v2.md). Old pins:
+  // surface-climate-1.1-geo-g / 7d18c56d825d5a5e9c77403dd029214c6caeeeba60e4eafe462592907d1634c1.
+  assert.equal(CLIMATE_VERSION,'surface-climate-2');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
-  assert.equal(sha,'7d18c56d825d5a5e9c77403dd029214c6caeeeba60e4eafe462592907d1634c1',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+  assert.equal(sha,'f56bf8ab95a9d0fc965e3ba9a0fc693ca8e1c301e75497e456bb5a103dddce6e',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+});
+
+test('PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year',()=>{
+  // Independent platform-math reference of the sinusoidal-year kernel.
+  const H=v=>v<=-1?0:v>=1?v:(Math.sqrt(1-v*v)+v*Math.acos(-v))/Math.PI,G=v=>v<=-1?0:v>=1?1:Math.acos(-v)/Math.PI;
+  assert.equal(KERNEL_STEPS,512,'513 nodes over [-1, 1]');
+  let eH=0,eG=0,prevH=-1,prevG=-1;
+  for(let i=0;i<=100000;i++){
+    const v=-1.2+2.4*i/100000,h=pddKernelH(v),g=pddKernelG(v);
+    eH=Math.max(eH,Math.abs(h-H(v)));eG=Math.max(eG,Math.abs(g-G(v)));
+    assert.ok(h>=prevH&&g>=prevG,`kernel is monotone at v=${v}`);prevH=h;prevG=g;
+  }
+  // Measured: H 1.09e-5 (worst next to v = 1), G 7.0e-3 (the sqrt singularity at +-1).
+  assert.ok(eH<2e-5,`H max error ${eH}`);assert.ok(eG<1e-2,`G max error ${eG}`);
+  for(const v of [-1,1])assert.equal(pddKernelH(v),H(v));
+  assert.equal(pddKernelG(-1),0);assert.equal(pddKernelG(1),1);assert.equal(pddKernelH(0),H(0));
+  // Degree-days: a seasonless year, a year entirely above and entirely below the threshold, and the mid case.
+  assert.equal(degreeDaysAbove(283.15,0,0),10*365.25);assert.equal(degreeDaysAbove(263.15,0,0),0);
+  assert.ok(Math.abs(degreeDaysAbove(293.15,5,0)-20*365.25)<1e-9,'never below 0 C: PDD = annual excess x year');
+  assert.equal(degreeDaysAbove(253.15,5,0),0,'never above 0 C');
+  assert.ok(Math.abs(degreeDaysAbove(273.15,10,0)-365.25*10/Math.PI)<1e-9,'mean at 0 C: A/pi per day');
+  // Against a brute-force integral of max(0, mu + A cos t) over 100k time steps.
+  for(const [mu,A,thr] of [[268,12,0],[275,20,0],[290,9,30],[300,18,30],[262,25,0]]){
+    let s=0;const n=100000;for(let k=0;k<n;k++){const T=mu-273.15+A*Math.cos(2*Math.PI*(k+.5)/n)-thr;if(T>0)s+=T;}
+    const brute=s/n*365.25;
+    assert.ok(Math.abs(degreeDaysAbove(mu,A,thr)-brute)<=365.25*A*2e-5+1e-6,`mu ${mu} A ${A} thr ${thr}: ${degreeDaysAbove(mu,A,thr)} vs ${brute}`);
+  }
 });
 
 test('module boundaries: allowed imports only, no platform transcendentals, no locale collation',()=>{
@@ -104,7 +132,10 @@ test('obliquity: honour the drawn tilt 0..180 deg, folded, with correct high-til
   assert.ok(pole.annualMeanTempK>eq.annualMeanTempK,`60 deg: pole ${pole.annualMeanTempK} > equator ${eq.annualMeanTempK}`);
   assert.ok(pole.seasonalHalfRangeK>3*eq.seasonalHalfRangeK);
   const s90=surfaceClimate(t90)([0,1,0],0,createClimateSample());
-  assert.ok(s90.seasonalHalfRangeK>pole.seasonalHalfRangeK&&s90.warmestMonthK-s90.coldestMonthK===2*s90.seasonalHalfRangeK);
+  // surface-climate-2: the insolation half-range still grows with tilt; the temperature half-range
+  // is saturated by the warmest-month ceiling at both poles (old: s90.seasonalHalfRangeK > pole's).
+  assert.ok(s90.insolationHalfRange>pole.insolationHalfRange&&s90.warmestMonthK-s90.coldestMonthK===2*s90.seasonalHalfRangeK);
+  assert.ok(s90.warmestMonthK<360&&pole.warmestMonthK<360,'warmest month saturates below 360 K');
   // Tilt t and pi-t: bit-identical tables (folding snaps to a power-of-two grid).
   for(let i=0;i<2000;i++){const t=(i+.37)/2000*Math.PI;assert.equal(effectiveObliquityRad(t),effectiveObliquityRad(Math.PI-t),`t=${t}`);}
   for(const t of [.1,.7,1.2,1.5]){assert.ok(same(climateForcingFromParams({anchorTempK:280,obliquityRad:t,water:.4}),climateForcingFromParams({anchorTempK:280,obliquityRad:Math.PI-t,water:.4})));}
@@ -114,17 +145,108 @@ test('obliquity: honour the drawn tilt 0..180 deg, folded, with correct high-til
 });
 
 test('Earth reference forcing (288 K, 23.44 deg, water 0.7, 6.5 K/km) has the right shape',()=>{
+  // surface-climate-2: the snow-line anchors (old: annual-mean isotherm onset 5120 m at the
+  // equator, 2172 m at 45 deg, snow > 0.88 at sea level from 70 deg) moved to the PDD
+  // equilibrium-line bands of tests/climate-earth-reference.test.mjs.
   const e=climateForcingFromParams({anchorTempK:288,obliquityRad:23.44*D,water:.7,lapseKPerM:.0065});
-  const onset=lat=>isothermHeightM(e,Math.sin(lat*D),CLIMATE_CALIBRATION.T_SNOW_K);
-  assert.ok(onset(0)>=4300&&onset(0)<=5500,`equatorial snow onset ${onset(0)} m`);
-  assert.ok(onset(45)>=1200&&onset(45)<=3000,`45 deg snow onset ${onset(45)} m`);
   const s=surfaceClimate(e),o=createClimateSample();
-  for(const lat of [70,75,80,85,90]){s([Math.cos(lat*D),Math.sin(lat*D),0],0,o);assert.ok(o.snowFraction>.6,`lat ${lat}: snow ${o.snowFraction}`);}
+  // isothermHeightM reports the annual-mean isotherm of the datum column, warm-column lapse included.
+  s([1,0,0],0,o);const T0=o.annualMeanTempK,iso=isothermHeightM(e,0,273.15);
+  assert.ok(Math.abs(iso-(T0-273.15)/(.0065*warmColumnLapseFactor(T0)))<1e-6);
+  s([1,0,0],iso,o);assert.ok(Math.abs(o.annualMeanTempK-273.15)<1e-9,'the column is at the threshold there');
   // Area-weighted mean of the datum temperature equals the anchor (sin-lat uniform = area uniform).
   let sum=0;const n=20000;for(let i=0;i<n;i++){const x=(i+.5)/n;s([Math.sqrt(1-x*x),x,0],0,o);sum+=o.annualMeanTempK;}
   assert.ok(Math.abs(sum/n-288)<=.5,`area mean ${sum/n}`);
   // The gravity-derived lapse rate reproduces the same Earth value without an override.
   assert.ok(Math.abs(climateForcingFromParams({anchorTempK:288,obliquityRad:23.44*D,water:.7,surfaceGravityMS2:9.81}).lapseKPerM-.0065)<1e-6);
+});
+
+test('warmest-month ceiling: saturating, symmetric, annual mean unchanged (surface-climate-2 step 3)',()=>{
+  const Cc=CLIMATE_CALIBRATION;
+  assert.equal(warmestMonthCeilingK(300),300);assert.equal(warmestMonthCeilingK(320),320);
+  assert.equal(warmestMonthCeilingK(330),320+10/(1+10/40));
+  let prev=-Infinity;for(let k=0;k<4000;k++){const t=250+k*.1,c=warmestMonthCeilingK(t);assert.ok(c>prev&&c<=t&&c<360);prev=c;}
+  assert.ok(warmestMonthCeilingK(1e6)<360);
+  // Live: on a hot, high-tilt water world the warmest month is the saturated raw one, the coldest
+  // month moves by the same amount, and the annual mean is the uncapped one.
+  const hot=climateForcingFromParams({anchorTempK:320,obliquityRad:89.8*D,water:.4,moistureSeed:7}),s=surfaceClimate(hot),o=createClimateSample();
+  let capped=0;
+  for(let i=0;i<20000;i++){
+    const d=fib(i,20000),h=((i*7919)%3000);s(d,h,o);
+    const halfRaw=Cc.SEASON_K*o.insolationHalfRange*(1-Cc.MARITIME*hot.water);
+    const tw=Math.max(o.annualMeanTempK,warmestMonthCeilingK(o.annualMeanTempK+halfRaw));
+    assert.ok(Math.abs(o.warmestMonthK-tw)<1e-9,`warmest ${o.warmestMonthK} vs ${tw}`);
+    assert.ok(Math.abs((o.warmestMonthK-o.annualMeanTempK)-(o.annualMeanTempK-o.coldestMonthK))<1e-9);
+    assert.ok(o.seasonalHalfRangeK>=0&&o.warmestMonthK<360);
+    capped+=o.annualMeanTempK+halfRaw>Cc.TW_CEILING_K;
+  }
+  assert.ok(capped>5000,`the ceiling binds on this world (${capped}/20000)`);
+});
+
+test('half-range floor: an annual mean above the saturated ceiling gives a seasonless column (step 3)',()=>{
+  // Astra review-1 S3: drive the zero-floor branch. Anchor 460 K (annual > 340 K everywhere): the warmest month
+  // saturates to 320 + e/(1 + e/40) < annual, so the rebuilt half-range floors at 0.
+  for(const obl of [0,23.44,70]){
+    const f=climateForcingFromParams({anchorTempK:460,obliquityRad:obl*D,water:.5,moistureSeed:7});
+    const c=surfaceClimate(f),o=createClimateSample();
+    for(const d of [[1,0,0],unit([1,1,0]),[0,1,0]]){
+      c(d,0,o);
+      assert.ok(o.annualMeanTempK>340,`annual ${o.annualMeanTempK}`);
+      assert.equal(o.seasonalHalfRangeK,0);
+      assert.equal(o.warmestMonthK,o.annualMeanTempK);assert.equal(o.coldestMonthK,o.annualMeanTempK);
+      for(const k of ['pdd','petMm','precipMm','effectiveMoisture'])assert.ok(Number.isFinite(o[k]),k);
+      assert.equal(o.forestSuitability01,0);assert.equal(o.snowFraction,0);
+    }
+  }
+});
+
+test('heat cap: no forest where the warmest month reaches 316 K or the annual mean 320 K (step 4)',()=>{
+  const Cc=CLIMATE_CALIBRATION,smooth=(x,lo,hi)=>{const t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t);};
+  let hot=0,mid=0,cool=0;
+  for(const anchor of [290,300,310,320]){
+    const f=climateForcingFromParams({anchorTempK:anchor,obliquityRad:(anchor-280)*1.5*D,water:.6,moistureSeed:anchor}),s=surfaceClimate(f),o=createClimateSample();
+    for(let i=0;i<20000;i++){
+      s(fib(i,20000),(i*7919)%2500,o);
+      const heat=o.annualMeanTempK>=Cc.HEAT_ANNUAL_MAX_K?0:1-smooth(o.warmestMonthK,Cc.HEAT_LO_K,Cc.HEAT_HI_K);
+      const noHeat=o.treeline01*Math.max(0,Math.min(1,(o.effectiveMoisture-Cc.FOREST_MOIST_LO)/Cc.FOREST_MOIST_RAMP))*Math.max(0,Math.min(1,1-o.snowFraction/.2));
+      assert.equal(o.forestSuitability01,noHeat*heat);
+      if(o.warmestMonthK>=316){assert.equal(o.forestSuitability01,0,`Tw ${o.warmestMonthK}`);hot++;}
+      else if(o.warmestMonthK>305){mid+=o.forestSuitability01>0;}
+      else cool+=o.forestSuitability01>0;
+    }
+  }
+  assert.ok(hot>1000&&mid>100&&cool>1000,`non-vacuous: hot ${hot}, ramp with forest ${mid}, cool with forest ${cool}`);
+});
+
+test('PET effective moisture: P/PET aridity index, Holdridge PET, thresholds keep their AI meaning (step 5)',()=>{
+  const Cc=CLIMATE_CALIBRATION,cl=(v,a,b)=>v<a?a:v>b?b:v;
+  // The 0.43 / 0.44 / 0.52 effective-moisture thresholds are aridity indices 0.45 / 0.47 / 0.65.
+  for(const [e,ai] of [[.43,.4526],[.44,.4714],[.52,.65]])assert.ok(Math.abs(e*Cc.AI_HALF/(1-e)-ai)<1e-3);
+  const bodies=[climateForcingFor(maithea),climateForcingFromParams({anchorTempK:300,obliquityRad:70*D,water:.3,moistureSeed:99}),climateForcingFromParams({anchorTempK:255,obliquityRad:10*D,water:1.4,moistureSeed:5})];
+  let n=0;
+  for(const f of bodies){
+    const s=surfaceClimate(f),o=createClimateSample();
+    for(let i=0;i<20000;i++){
+      s(fib(i,20000),((i*7919)%7000)-300,o);
+      const biotemp=(degreeDaysAbove(o.annualMeanTempK,o.seasonalHalfRangeK,0)-degreeDaysAbove(o.annualMeanTempK,o.seasonalHalfRangeK,30))/Cc.YEAR_D;
+      const pet=Math.max(Cc.PET_MIN_MM,Cc.PET_MM_PER_BIOTEMP_C*biotemp);
+      assert.equal(o.petMm,pet);assert.ok(o.petMm>=Cc.PET_MIN_MM&&o.precipMm>0);
+      const ai=o.precipMm/o.petMm;
+      assert.equal(o.effectiveMoisture,ai/(ai+Cc.AI_HALF));
+      assert.ok(o.effectiveMoisture>0&&o.effectiveMoisture<1);
+      assert.equal(o.aridity01,cl((.5-o.effectiveMoisture)*4,0,1));
+      // The precipitation index scales with the legacy noise: base + gain x legacyMoisture.
+      const base=o.precipMm/(Cc.P_NOISE_BASE+Cc.P_NOISE_GAIN*o.legacyMoisture);
+      assert.ok(Number.isFinite(base)&&base>0);
+      n++;
+    }
+  }
+  assert.equal(n,60000);
+  // Wetter noise means more precipitation and higher effective moisture at the same climate.
+  const f=climateForcingFromParams({anchorTempK:288,obliquityRad:23.44*D,water:.7,moistureSeed:1}),s=surfaceClimate(f),a=createClimateSample();
+  let lo={m:2},hi={m:-1};
+  for(let i=0;i<4000;i++){const d=[Math.cos(i),0.3,Math.sin(i)];s(d,0,a);if(a.legacyMoisture<lo.m)lo={m:a.legacyMoisture,e:a.effectiveMoisture};if(a.legacyMoisture>hi.m)hi={m:a.legacyMoisture,e:a.effectiveMoisture};}
+  assert.ok(hi.e>lo.e);
 });
 
 test('per-planet lapse rate from surface gravity (owner amendment 1)',()=>{
@@ -194,12 +316,12 @@ import {createHash} from 'node:crypto';
 export function climateDigest(SC,bodies,perBody){
   const out={};
   for(const b of bodies){
-    const s=SC.surfaceClimate(SC.climateForcingFor(b)),o=SC.createClimateSample(),buf=new Float64Array(perBody*15);
+    const s=SC.surfaceClimate(SC.climateForcingFor(b)),o=SC.createClimateSample(),buf=new Float64Array(perBody*18);
     for(let i=0;i<perBody;i++){
       const y=1-2*(i+.5)/perBody,p=i*2.399963229728653,r=Math.sqrt(1-y*y),h=((i*7919)%12000)-1000;
       s([Math.cos(p)*r,y,Math.sin(p)*r],h,o);
-      const v=[o.insolation01,o.insolationHalfRange,o.annualMeanTempK,o.seasonalHalfRangeK,o.warmestMonthK,o.coldestMonthK,o.legacyMoisture,o.dryBelt01,o.effectiveMoisture,o.aridity01,o.snowFraction,o.treeline01,o.growingSeason01,o.forestSuitability01,o.climateCode];
-      buf.set(v,i*15);
+      const v=[o.insolation01,o.insolationHalfRange,o.annualMeanTempK,o.seasonalHalfRangeK,o.warmestMonthK,o.coldestMonthK,o.legacyMoisture,o.dryBelt01,o.effectiveMoisture,o.aridity01,o.snowFraction,o.treeline01,o.growingSeason01,o.forestSuitability01,o.climateCode,o.pdd,o.precipMm,o.petMm];
+      buf.set(v,i*18);
     }
     out[b.id]=createHash('sha256').update(Buffer.from(buf.buffer)).digest('hex');
   }
@@ -248,13 +370,17 @@ test('forcing cache: FIFO eviction never changes values',()=>{
   assert.equal(climateForcingFor(maithea,{anchorTempK:300}).provenance.anchorTempK,'override');
 });
 
-test('continuity: no steps at cube edges, poles or the dry-belt edges',()=>{
+test('continuity: no steps at cube edges, poles, table rows or across the zonal band',()=>{
   const forcings=[climateForcingFor(maithea),climateForcingFromParams({anchorTempK:288,obliquityRad:70*D,water:.5,moistureSeed:12345})];
   const fields=['insolation01','insolationHalfRange','annualMeanTempK','seasonalHalfRangeK','warmestMonthK','legacyMoisture','dryBelt01','effectiveMoisture','aridity01','snowFraction','treeline01','growingSeason01','forestSuitability01'];
-  const C=CLIMATE_CALIBRATION;
   const atX=(x,lon)=>{const r=Math.sqrt(1-x*x);return [Math.cos(lon)*r,x,Math.sin(lon)*r];};
   const probes=[unit([1,1,.3]),unit([1,.2,1]),unit([.4,1,1]),unit([1,1,1]),unit([-1,1,-1]),[0,1,0],[0,-1,0],unit([1e-7,1,0])];
-  for(const x of [C.BELT_LO,C.BELT_HI,C.BELT_LO-C.BELT_EDGE,C.BELT_LO+C.BELT_EDGE,C.BELT_HI-C.BELT_EDGE,C.BELT_HI+C.BELT_EDGE])for(const lon of [.3,2.1,4.4])probes.push(atX(x,lon),atX(-x,lon));
+  // surface-climate-2: the fixed dry-belt edges are gone; probe the zonal band's features (ITCZ, the
+  // subsidence centre and its flanks, the storm track, the polar term) for both ITCZ positions, plus
+  // insolation and zonal table row boundaries.
+  const latsDeg=[10,16,28,40,50,62,74,80,88];
+  for(const lat of latsDeg)for(const lon of [.3,2.1,4.4]){const x=Math.sin(lat*D);probes.push(atX(x,lon),atX(-x,lon));}
+  for(const x of [3/64,17/64,40/64,61/64,101/512,333/512,509/512])probes.push(atX(x,1.3),atX(-x,5.1));
   const rot=(d,axis,a)=>{ // Rodrigues rotation by a tiny angle
     const c=Math.cos(a),s=Math.sin(a),k=unit(axis),dot=k[0]*d[0]+k[1]*d[1]+k[2]*d[2];
     const cr=[k[1]*d[2]-k[2]*d[1],k[2]*d[0]-k[0]*d[2],k[0]*d[1]-k[1]*d[0]];
@@ -266,12 +392,18 @@ test('continuity: no steps at cube edges, poles or the dry-belt edges',()=>{
     for(const d of probes)for(const axis of [[1,0,0],[0,0,1],[1,1,0],[0,1,1]])for(const h of [0,800,2500]){
       s(d,h,a);s(rot(d,axis,1e-6),h,b);
       for(const k of fields){assert.ok(Math.abs(a[k]-b[k])<=1e-3,`${k} jumps ${a[k]}->${b[k]} at ${d} h=${h}`);checked++;}
+      // Degree-days, precipitation and PET are in C*d and mm: 0.1 of either moves snowFraction / effM by < 1e-3.
+      for(const k of ['pdd','precipMm','petMm'])assert.ok(Math.abs(a[k]-b[k])<=.1,`${k} jumps ${a[k]}->${b[k]} at ${d} h=${h}`);
     }
   }
   assert.ok(checked>5000);
-  // The legacy hard step at sin-lat 0.18/0.52 is gone: the belt ramps smoothly.
-  const belt=x=>surfaceClimate(forcings[0])(atX(x,1),0,createClimateSample()).dryBelt01;
-  assert.ok(belt(.18)>.4&&belt(.18)<.6&&belt(.52)>.4&&belt(.52)<.6&&belt(.35)===1&&belt(.1)===0&&belt(.6)===0);
+  // The subsidence diagnostic is the zonal band's Hadley term e^-((dI-28)/12)^2, centred 28 deg from the ITCZ.
+  const belt=(f,lat)=>surfaceClimate(f)(atX(Math.sin(lat*D),1),0,createClimateSample()).dryBelt01;
+  const g=x=>Math.exp(-x*x);
+  for(const lat of [0,10,20,28,35,45,60]){
+    assert.ok(Math.abs(belt(forcings[0],lat)-g((lat-28)/12))<2e-3,`ITCZ at the equator, lat ${lat}`);
+    assert.ok(Math.abs(belt(forcings[1],lat)-g((90-lat-28)/12))<2e-2,`ITCZ at the pole, lat ${lat}`);
+  }
 });
 
 test('sample fields: ranges, climate code round-trip, frozen and dry worlds',()=>{
@@ -286,6 +418,9 @@ test('sample fields: ranges, climate code round-trip, frozen and dry worlds',()=
     for(const k of ['dryBelt01','aridity01','snowFraction','treeline01','growingSeason01','forestSuitability01'])assert.ok(o[k]>=0&&o[k]<=1,`${k}=${o[k]}`);
     assert.ok(Number.isInteger(o.climateCode)&&o.climateCode>=0&&o.climateCode<256);
     assert.ok(o.seasonalHalfRangeK>=0&&o.warmestMonthK>=o.annualMeanTempK);
+    assert.ok(Number.isFinite(o.pdd)&&o.pdd>=0,`pdd=${o.pdd}`);
+    // The snow rule: clamp01((PDD_CRIT - pdd)/PDD_RAMP) on a water world.
+    assert.equal(o.snowFraction,Math.max(0,Math.min(1,(CLIMATE_CALIBRATION.PDD_CRIT-o.pdd)/CLIMATE_CALIBRATION.PDD_RAMP)));
     const {deltaTempK}=decodeClimateCode(o.climateCode);
     if(o.annualMeanTempK-maithea.temperatureK>-31&&o.annualMeanTempK-maithea.temperatureK<31)assert.ok(Math.abs(deltaTempK-(o.annualMeanTempK-maithea.temperatureK))<=1);
   }

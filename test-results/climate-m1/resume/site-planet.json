@@ -1,0 +1,102 @@
+{
+ "climateVersion": "surface-climate-2",
+ "search": {
+  "points": 65536
+ },
+ "rule": {
+  "minAboveSeaM": 250,
+  "minMoisture": 0.6,
+  "minRingForestShare": 0.8,
+  "ringsM": [
+   500,
+   1000,
+   2000
+  ],
+  "ringSamples": 32
+ },
+ "classRule": {
+  "halfShiftK": 1,
+  "extraRingsM": [
+   5000,
+   10000
+  ],
+  "extraRingSamples": 64
+ },
+ "ms": 2636,
+ "rejectedLand": 337,
+ "old": {
+  "literalM": [
+   4075043.7,
+   -1510938.2,
+   2845723.8
+  ],
+  "latDeg": -16.909,
+  "lonDeg": 34.928,
+  "distanceFromLegacyKm": 11.64,
+  "heightM": 280.2,
+  "aboveSeaM": 280.2,
+  "biome": "Dry upland",
+  "forestPotential": false,
+  "effM": 0.3799,
+  "forestSuitability01": 0,
+  "ringForestShare": 0,
+  "minRingAboveSeaM": 255.4,
+  "minRingMoisture": 0.3789,
+  "siteRulePass": false,
+  "centreClasses": [
+   5,
+   8,
+   5
+  ],
+  "tcMarginK": 0.497,
+  "groundLook": [
+   0,
+   0.21679258346557617,
+   0,
+   0
+  ],
+  "failed": [
+   "1:SITE_RULE",
+   "4:groundLook",
+   "2:classes+-1K"
+  ]
+ },
+ "new": {
+  "rank": 708,
+  "index": 35760,
+  "distanceKm": 1083.137,
+  "bodyRadiusM": 5194907.072465867,
+  "literalM": [
+   4098749.6,
+   -474698.8,
+   3161300.3
+  ],
+  "latDeg": -5.24,
+  "lonDeg": 37.642,
+  "distanceFromLegacyKm": 1083.137,
+  "heightM": 3064.3,
+  "aboveSeaM": 3064.3,
+  "biome": "Temperate ground",
+  "forestPotential": true,
+  "effM": 0.6443,
+  "forestSuitability01": 0.7307,
+  "ringForestShare": 1,
+  "minRingAboveSeaM": 2971.5,
+  "minRingMoisture": 0.6398,
+  "siteRulePass": true,
+  "centreClasses": [
+   4,
+   4,
+   4
+  ],
+  "tcMarginK": 6.643,
+  "groundLook": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "failed": []
+ },
+ "oldToNewKm": 1085.134
+}
