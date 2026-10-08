@@ -1,0 +1,68 @@
+✔ Earth reference: the PDD snow line (label) lies in every Earth ELA band (1.24ms)
+ℹ [{"lat":0,"elaM":4608},{"lat":45,"elaM":3003},{"lat":60,"elaM":1505},{"lat":70,"elaM":719},{"lat":78,"elaM":426}]
+✔ negative: the shipped annual-mean rule (surface-climate-1, T_SNOW 268 K, ramp 6 K) fails the 60 deg band (0.1478ms)
+✔ warm-column lapse: the factor, its clamps, and why it is mandatory (equator without it < 4450 m) (0.3054ms)
+✔ ITCZ: argmax row of the annual insolation table; equator below ~54 deg obliquity, pole above (13.5727ms)
+✔ Earth reference zonal targets (calibrated band): P ratios and effective moisture per band (8.3181ms)
+ℹ {"subOverItcz":0.1987292546137822,"midOverSub":1.2212660084910323,"polOverItcz":0.0718548449929969,"effItcz":0.6265525165796612,"effDry":0.2637125325405898,"effMid":0.6267215275876976}
+✔ negative: the uncalibrated starting band (P_REF 1000, a = .9/.6/.55/.4, w = 10/12/9/12) misses the Earth targets (5.3148ms)
+✔ high-tilt synthetic world (70 deg): the wettest band is polar and the driest band moves with the ITCZ (8.3325ms)
+ℹ {"wettestLat":87.5,"driestLat":62.5,"effItcz":0.6802003374756341,"effSub":0.32279361831472586}
+✔ Earth reference: share of directions with forestSuitability01 > 0.5 lies in 25-55 % (decision 5) (6.6958ms)
+ℹ {"forestShare":0.4684333333333333,"n":28106,"N":60000}
+✔ calibration constants are pinned; any change forces a CLIMATE_VERSION bump (0.9249ms)
+✔ PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year (20.3179ms)
+✔ module boundaries: allowed imports only, no platform transcendentals, no locale collation (1.1756ms)
+✔ Berger daily-mean insolation: annual tables match an independent platform-math reference (40.4996ms)
+✔ obliquity: honour the drawn tilt 0..180 deg, folded, with correct high-tilt physics (13.0437ms)
+✔ Earth reference forcing (288 K, 23.44 deg, water 0.7, 6.5 K/km) has the right shape (10.8789ms)
+✔ warmest-month ceiling: saturating, symmetric, annual mean unchanged (surface-climate-2 step 3) (11.3065ms)
+✔ half-range floor: an annual mean above the saturated ceiling gives a seasonless column (step 3) (1.6536ms)
+✔ heat cap: no forest where the warmest month reaches 316 K or the annual mean 320 K (step 4) (21.0219ms)
+✔ PET effective moisture: P/PET aridity index, Holdridge PET, thresholds keep their AI meaning (step 5) (13.9889ms)
+✔ per-planet lapse rate from surface gravity (owner amendment 1) (117.3932ms)
+✔ legacyMoisture is bit-identical to the classifier; temperateHabitat equals the renderer gate (37.283ms)
+✔ determinism: 50k samples identical across cold processes, cache states and body order (372.7278ms)
+✔ forcing cache: FIFO eviction never changes values (134.7898ms)
+✔ continuity: no steps at cube edges, poles, table rows or across the zonal band (10.7666ms)
+✔ sample fields: ranges, climate code round-trip, frozen and dry worlds (12.6225ms)
+✔ Maithea: snow emerges from its own gravity, and the 18 km equatorial summit is snow (0.32ms)
+# scan colour:level0 [{"id":"G001/C2128,0,1/0/planet/1","land":32982,"snowy":6752,"forested":6592,"digest":"14b0660b93a0dbe7","ms":154},{"id":"G001/C2142,3,4/0/planet/0","land":23571,"snowy":0,"forested":476,"digest":"e71de2bd817ab131","ms":175},{"id":"G001/C2143,4,3/0/planet/1","land":31372,"snowy":0,"forested":56,"digest":"6674f268de3d74a9","ms":73},{"id":"G001/C2142,6,1/1/planet/1","land":22641,"snowy":2495,"forested":5450,"digest":"b9bc326964d3940e","ms":122}]
+✔ versions: terrain colour v2 names the climate model it reads (0.5441ms)
+✔ water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds (532.1181ms)
+﹣ water-world land colour identity on the carved truth, 20k land directions x 4 worlds (test:full) (0.0707ms) # test:full only (T6 decision 3): truth colour identity solves M3 blocks
+✔ the snow in the colour is surfaceClimate.snowFraction at that height (colour and classifier agree by construction) (6.9652ms)
+﹣ snow colour/classifier identity on the carved truth (test:full) (0.0694ms) # test:full only (T6 decision 3): truth snow identity solves M3 blocks
+✔ every non-water body keeps the base colour exactly (no climate path off water worlds) (821.5724ms)
+✔ climate zones read as distinct colours on Maithea (forest green, alpine meadow olive, snow white, dry tan) (48.0745ms)
+✔ PDD invariant: every Maithea land column with a warmest month below 271 K carries snow (decision 4) (51.8293ms)
+ℹ {"fellThresholdK":271,"columns":22401,"snowFree":0,"minSnow":1,"maxPdd":0}
+✖ fell-field / rock colour: neutral grey-brown on snow-free cold columns (49.4413ms) # surface-climate-2 finding (decision 4): under PDD snow no snow-free fell band exists; the climate rock band in waterWorldLandColour is unreachable. Follow-up for the coordinator: retire the rock band, or redefine it on PDD in a later terrain-colour version.
+ℹ tests 34
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 2
+ℹ todo 1
+ℹ duration_ms 1673.0099
+
+✖ failing tests:
+
+test at tests\terrain-climate-colour.test.mjs:128:1
+✖ fell-field / rock colour: neutral grey-brown on snow-free cold columns (49.4413ms) # surface-climate-2 finding (decision 4): under PDD snow no snow-free fell band exists; the climate rock band in waterWorldLandColour is unreachable. Follow-up for the coordinator: retire the rock band, or redefine it on PDD in a later terrain-colour version.
+  AssertionError [ERR_ASSERTION]: fell zone has 0 snow-free samples
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/terrain-climate-colour.test.mjs:131:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
