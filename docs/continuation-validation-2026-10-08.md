@@ -73,7 +73,13 @@ arrival predicate and its wiring in `main.ts`.
   original 2 km test tolerance is unchanged. Four new regressions and
   TypeScript pass. The landing scan moves outside GPU ownership with its
   unchanged criteria. See `surface-arrival-precision-2026-10-09.md`.
-  Affected-code and final browser receipts are recorded on completion.
+  The affected-code run passes 120 tests with zero failures and one existing
+  TODO. The clean navigation artifact is commit `256c99b`, built
+  `2026-10-08T22:03:29.507Z`. Final surface acceptance passes: coast miss
+  12.511 m (previously 9,112 m), ground-detail RGB delta 8.505 with 97.68%
+  changed pixels, orbital detail-toggle delta zero, survey replay/export
+  identical and no browser errors. Its report/captures are in
+  `surface-navigation-fixed/`; the original failing run remains preserved.
 
 ## Inspectable evidence and remaining acceptance
 
