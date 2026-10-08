@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {floraShadowOrder,compareFaunaVisibility} from './life-shadow-priority.ts';
 import {patchMorphHeader,patchMorphVertex,terrainDepthMaterial,boundMorphedTerrain} from './terrain-shadow.ts';
+import {installShadowWindowFade} from './surface-lighting.ts';
 import {type RenderProfile,systemTimer} from './render-profile.ts';
 import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-aerial-perspective.ts';
 import { AU, type Body, type V3 } from './catalog.ts';
@@ -834,6 +835,8 @@ export class PlanetRenderer {
   private groundLifeOn=false;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
+    // Audit F4: shadows fade out toward the edge of the surface shadow window.
+    if(this.continuity)installShadowWindowFade();
     this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
     this.groundAtlas=detailTexture(anisotropy);
     this.groundPbrTextures=acquireGroundPbrTextures(anisotropy);
