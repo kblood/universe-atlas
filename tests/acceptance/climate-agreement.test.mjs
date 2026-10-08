@@ -28,11 +28,12 @@ import { scanBodies, inOrder, logScan } from '../helpers/body-chunks.mjs';
 const N = 20000;
 
 // Re-pinned for P4-RELIEF: surface-biomes-2.1-sea-datum (gates and climate datum
-// relative to the current sea level) and surface-climate-1.1-geo-g (lapse gravity
-// from planet-geophysics). The agreement assertions below are unchanged.
-test('versions: the agreement is between surface-biomes-2.1-sea-datum and surface-climate-1.1-geo-g', () => {
+// relative to the current sea level). Re-pinned for BIOME2-CLIMATE M1: surface-climate-2
+// (old surface-climate-1.1-geo-g; PDD snow, warm-column lapse, warmest-month ceiling,
+// heat cap, PET moisture, ITCZ band). The agreement assertions below are unchanged.
+test('versions: the agreement is between surface-biomes-2.1-sea-datum and surface-climate-2', () => {
   assert.equal(BIOME_VERSION, 'surface-biomes-2.1-sea-datum');
-  assert.equal(CLIMATE_VERSION, 'surface-climate-1.1-geo-g');
+  assert.equal(CLIMATE_VERSION, 'surface-climate-2');
 });
 
 // Pointwise agreement, run on two samplers: level 0 by default, the carved truth (terrainSampler) in test:full (T6

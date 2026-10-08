@@ -40,7 +40,7 @@ const LABELS=new Set(['Ocean','Ice field','Volcanic rock','Rock escarpment','Reg
 // 0d2c1c03ae63407ce5295a1b55f485df92ae4ed1a8909285eb3242b766ec809e): the gates and
 // the climate datum are relative to the current sea level (the -4500 m rows move)
 // and the lapse gravity comes from planet-geophysics.
-const GOLDEN={biomeVersion:'surface-biomes-2.1-sea-datum',climateVersion:'surface-climate-1.1-geo-g',sha256:'66f515e63093c8d87ee5d36b2859e3ab66031f9757a2a6432d2fea18fe8ada41'};
+const GOLDEN={biomeVersion:'surface-biomes-2.1-sea-datum',climateVersion:'surface-climate-2',sha256:'c53118c20bebf416f65cbf6e5c402f1e211cc82ca067eda98e507a2cc7c88b44'};
 export function classifierGolden(bodies=GOLDEN_BODIES()){
   const rows=[];
   for(const body of bodies)for(const water of [0,-4500]){

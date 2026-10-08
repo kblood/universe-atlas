@@ -30,7 +30,7 @@ import {spinStateFor} from './stellar-evolution.ts';
 import {detAcos,sine} from './det-math.ts';
 import {planetGeophysics} from './planet-geophysics.ts';
 
-export const CLIMATE_VERSION='surface-climate-1.1-geo-g';
+export const CLIMATE_VERSION='surface-climate-2';
 
 /**
  * Heuristic-v1 constants. A test pins sha256(JSON.stringify(CLIMATE_CALIBRATION)),
@@ -61,7 +61,7 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   K_LAT_K:60,
   LAPSE_MOIST_FACTOR:0.6652, CP_J_PER_KG_K:1004, LAPSE_MIN_K_PER_M:0.001, LAPSE_MAX_K_PER_M:0.0098,
   DATUM_M:0,
-  T_SNOW_K:268, SNOW_RAMP_K:6,
+  PDD_CRIT:250, PDD_RAMP:100, YEAR_D:365.25,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
   BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03, BELT_MOISTURE:0.0425,
@@ -106,6 +106,8 @@ export type ClimateSample={
   dryBelt01:number;
   effectiveMoisture:number;
   aridity01:number;
+  /** Positive degree-days above 0 C (C*d per year) of the sinusoidal year (surface-climate-2). */
+  pdd:number;
   snowFraction:number;
   treeline01:number;
   growingSeason01:number;
@@ -114,13 +116,52 @@ export type ClimateSample={
 };
 export function createClimateSample():ClimateSample {
   return {insolation01:0,insolationHalfRange:0,annualMeanTempK:0,seasonalHalfRangeK:0,warmestMonthK:0,coldestMonthK:0,
-    legacyMoisture:0,dryBelt01:0,effectiveMoisture:0,aridity01:0,snowFraction:0,treeline01:0,growingSeason01:0,
+    legacyMoisture:0,dryBelt01:0,effectiveMoisture:0,aridity01:0,pdd:0,snowFraction:0,treeline01:0,growingSeason01:0,
     forestSuitability01:0,climateCode:0};
 }
 
 const clamp01=(v:number)=>v<0?0:v>1?1:v;
 /** Arithmetic smoothstep (no platform transcendental). */
 const smooth=(x:number,lo:number,hi:number)=>{const t=clamp01((x-lo)/(hi-lo));return t*t*(3-2*t);};
+
+/**
+ * surface-climate-2 positive-degree-day kernel. The year is the sinusoid
+ * T(t) = mu + A cos(2 pi t) (mu = annual mean, A = seasonal half-range). With
+ * v = (mu - thr)/A, the time-mean of max(0, T - thr) is A*H(v) and the
+ * fraction of the year with T > thr is G(v), where
+ *   H(v) = (sqrt(1-v^2) + v*acos(-v))/pi,   G(v) = acos(-v)/pi,
+ * H(v) = 0 and G(v) = 0 for v <= -1, H(v) = v and G(v) = 1 for v >= 1 (both
+ * continuous at +-1). Both are tabulated ONCE at module init on 513 nodes over
+ * v in [-1,1] (detAcos only here) and read with linear interpolation, so the
+ * per-sample path has no transcendental at all.
+ */
+export const KERNEL_STEPS=512;
+const H_TAB=new Float64Array(KERNEL_STEPS+1),G_TAB=new Float64Array(KERNEL_STEPS+1);
+for(let k=0;k<=KERNEL_STEPS;k++){
+  const v=-1+2*k/KERNEL_STEPS,a=detAcos(-v);
+  H_TAB[k]=(Math.sqrt(Math.max(0,1-v*v))+v*a)/Math.PI;G_TAB[k]=a/Math.PI;
+}
+// Exact end nodes (H(-1) = G(-1) = 0, H(1) = G(1) = 1), whatever detAcos rounds to.
+H_TAB[0]=0;G_TAB[0]=0;H_TAB[KERNEL_STEPS]=1;G_TAB[KERNEL_STEPS]=1;
+/** Linear interpolation in a kernel table for v strictly inside (-1, 1). */
+function kernelAt(tab:Float64Array,v:number):number {
+  const f=(v+1)*(KERNEL_STEPS/2);
+  let i=Math.floor(f);if(i<0)i=0;else if(i>KERNEL_STEPS-1)i=KERNEL_STEPS-1;
+  return tab[i]!+(tab[i+1]!-tab[i]!)*(f-i);
+}
+/** The tabulated H(v) (mean positive excess per unit half-range). */
+export function pddKernelH(v:number):number {return v<=-1?0:v>=1?v:kernelAt(H_TAB,v);}
+/** The tabulated G(v) (fraction of the year above the threshold). */
+export function pddKernelG(v:number):number {return v<=-1?0:v>=1?1:kernelAt(G_TAB,v);}
+/**
+ * Degree-days (C*d per year) above `thresholdC` of a sinusoidal year with annual
+ * mean `annualK` (K) and half-range `halfK` (K). A < 1e-9 is a seasonless year.
+ */
+export function degreeDaysAbove(annualK:number,halfK:number,thresholdC:number):number {
+  const excess=annualK-273.15-thresholdC;
+  if(halfK<1e-9)return excess>0?excess*C.YEAR_D:0;
+  return C.YEAR_D*halfK*pddKernelH(excess/halfK);
+}
 
 /**
  * Byte-identical to the renderer's habitat gate (planet-renderer.ts:830) and
@@ -300,19 +341,21 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     const moisture=noise(d[0]*5+13,d[1]*5+37,d[2]*5+19,seed);
     const belt=smooth(x,beltLoA,beltLoB)*(1-smooth(x,beltHiA,beltHiB));
     const eff=moisture-C.BELT_MOISTURE*belt;
-    const snow=frozen?1:water>0?clamp01((C.T_SNOW_K-annual)/C.SNOW_RAMP_K):0;
+    // surface-climate-2 step 1: snow from positive degree-days (melt), not the
+    // annual mean. snowFraction > 0.6 (the 'Alpine / polar snow' label) is PDD < 190.
+    const pdd0=degreeDaysAbove(annual,half,0);
+    const snow=frozen?1:water>0?clamp01((C.PDD_CRIT-pdd0)/C.PDD_RAMP):0;
     const warmest=annual+half;
     const treeline=clamp01((warmest-C.T_TREE_WARMEST_K)/C.TREE_RAMP_K);
-    let grow:number;
-    if(half<=1e-9)grow=annual>C.GROW_K?1:0;
-    else{let u=(annual-C.GROW_K)/half;if(u<-1)u=-1;else if(u>1)u=1;grow=1-detAcos(u)/Math.PI;}
+    // Fraction of the year above GROW_K: G((annual - GROW_K)/half), tabulated.
+    const grow=half<=1e-9?(annual>C.GROW_K?1:0):pddKernelG((annual-C.GROW_K)/half);
     let tBin=Math.floor((annual-anchor+32)/2);if(tBin<0)tBin=0;else if(tBin>31)tBin=31;
     let mBin=Math.floor(eff*8);if(mBin<0)mBin=0;else if(mBin>7)mBin=7;
     out.insolation01=q;out.insolationHalfRange=qa;
     out.annualMeanTempK=annual;out.seasonalHalfRangeK=half;out.warmestMonthK=warmest;out.coldestMonthK=annual-half;
     out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;
     out.aridity01=clamp01((0.5-eff)*4);
-    out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
+    out.pdd=pdd0;out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
     out.forestSuitability01=habitat?treeline*clamp01((eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP)*clamp01(1-snow/0.2):0;
     out.climateCode=(tBin<<3)|mBin;
     return out;
@@ -327,8 +370,9 @@ export function decodeClimateCode(code:number):{deltaTempK:number;moisture:numbe
 
 /**
  * Datum height (m) above which the annual-mean temperature at sin-latitude x is
- * below `thresholdK` (e.g. T_SNOW_K for snow onset). Negative means the datum is
- * already colder. Pure helper for reports and tests.
+ * below `thresholdK`. Negative means the datum is already colder. Pure helper for
+ * reports and tests. Since surface-climate-2 snow is NOT an annual-mean isotherm
+ * (it follows positive degree-days, see degreeDaysAbove).
  */
 export function isothermHeightM(forcing:ClimateForcing,x:number,thresholdK:number):number {
   const out=createClimateSample();
