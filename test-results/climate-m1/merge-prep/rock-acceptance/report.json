@@ -1,0 +1,553 @@
+{
+  "ok": false,
+  "base": "http://127.0.0.1:50905/",
+  "date": "435084631200000032044300000",
+  "dateLow": "457349741945613603724699264",
+  "dateHigh": "457223652528232484423595952",
+  "levels": {
+    "low": -2425,
+    "high": -2400,
+    "lossFraction": 0.6
+  },
+  "livingYearNs": "24789042948826344",
+  "comparisonSunAngleRad": 0,
+  "hardware": false,
+  "contention": "shared GPU: other headless browsers were running; timings are contended",
+  "errors": [],
+  "scenarios": {
+    "barren": {
+      "body": "G001/C2128,0,1/0/planet/1/moon/0",
+      "type": "Airless moon",
+      "water": 0,
+      "wide": {
+        "pose": {
+          "position": [
+            -856420.5325317383,
+            -105678.78679183498,
+            -580673.9340209961
+          ],
+          "heading": [
+            -0.2547904181870142,
+            0.7437819552182742,
+            -0.4766637465997443,
+            -0.3932707954695624
+          ],
+          "clearanceM": 115.88972251401196,
+          "walking": false
+        },
+        "capture": "test-results/climate-m1/merge-prep/rock-acceptance/barren-wide.png",
+        "diagnostics": {
+          "version": "atlas-rock-field-1",
+          "geometryVersion": "atlas-rock-geometry-1",
+          "materialVersion": "atlas-rock-material-2",
+          "enabled": true,
+          "reason": "ok",
+          "representation": "canonical-cell-rocks/shared-procedural-lod-instanced",
+          "families": [
+            {
+              "id": "biosphere-lab-3/planet/fcc8e033fafce850/rock/angular",
+              "form": "angular",
+              "scaleM": 1.312
+            },
+            {
+              "id": "biosphere-lab-3/planet/fcc8e033fafce850/rock/layered",
+              "form": "layered",
+              "scaleM": 1.12
+            },
+            {
+              "id": "biosphere-lab-3/planet/fcc8e033fafce850/rock/rounded",
+              "form": "rounded",
+              "scaleM": 0.948
+            }
+          ],
+          "tiers": [
+            {
+              "id": "scatter",
+              "cellSizeM": 6,
+              "rangeM": 64,
+              "wanted": 0,
+              "resident": 0,
+              "pending": 0,
+              "truncated": 0,
+              "rocks": 0
+            },
+            {
+              "id": "boulder",
+              "cellSizeM": 16,
+              "rangeM": 280,
+              "wanted": 2138,
+              "resident": 2138,
+              "pending": 0,
+              "truncated": 0,
+              "rocks": 486
+            },
+            {
+              "id": "outcrop",
+              "cellSizeM": 64,
+              "rangeM": 960,
+              "wanted": 1634,
+              "resident": 1634,
+              "pending": 0,
+              "truncated": 0,
+              "rocks": 317
+            }
+          ],
+          "drawn": {
+            "lod0": 0,
+            "lod1": 86,
+            "lod2": 77,
+            "total": 163
+          },
+          "draws": 18,
+          "batches": 27,
+          "triangles": 6499,
+          "cameraCulled": 391,
+          "shadowOnly": 64,
+          "nearUnculled": 0,
+          "budgetDrops": 0,
+          "nearDrops": 0,
+          "caps": {
+            "lod": [
+              512,
+              1536,
+              2048
+            ],
+            "batchCapacity": [
+              214,
+              640,
+              854
+            ],
+            "residentCells": [
+              3000,
+              2600,
+              2000
+            ],
+            "cellsPerFrame": 96,
+            "samplesPerFrame": 320,
+            "workBudgetMs": 1.5,
+            "workBudgetNote": "configured process time guard; not a measured or accepted frame budget",
+            "drawUnitsPerFrame": 4096,
+            "publishMax": 4819,
+            "nearUnculledM": 8,
+            "maxAltitudeM": 960
+          },
+          "bytes": {
+            "geometry": 488160,
+            "instances": 2705472,
+            "staging": 245952,
+            "job": 0,
+            "surfaceCells": 1689856,
+            "records": 1358848,
+            "pinned": 0,
+            "textures": 0,
+            "total": 6488288,
+            "transient": 2472000,
+            "peak": 8960288,
+            "wantedCells": 3772,
+            "residentCells": 3772,
+            "residentRocks": 803,
+            "pinnedRocks": 0,
+            "budget": 29360128,
+            "worstCase": 26323200,
+            "texturesNote": "shared terrain rock PBR lease; accounted once by terrain groundPbrTextureBytes",
+            "geometryNote": "CPU arrays + equal-sized GPU buffers, from array sizes",
+            "recordsNote": "estimated JS heap (V8-calibrated)",
+            "stagingNote": "estimated staged + published reference slots",
+            "pinnedNote": "estimated heap of evicted rocks still referenced by staged/published slots, each counted once",
+            "transientNote": "reserved rescatter + mesh-construction peak inside update(); not live between frames"
+          },
+          "originVersion": 3,
+          "originRebased": false,
+          "originRebaseM": 256,
+          "work": {
+            "updateMs": 0.08500000089406967,
+            "rebuilds": 128,
+            "process": {
+              "cells": 0,
+              "samples": 0,
+              "ms": 0.004999998956918716,
+              "pendingCells": 0,
+              "rescatters": 2,
+              "rescatterMs": 0
+            },
+            "draw": {
+              "units": 0,
+              "maxUnits": 4097,
+              "cells": 0,
+              "rocks": 0,
+              "cellsSkipped": 0,
+              "cellsCulled": 0,
+              "ms": 0.05000000074505806,
+              "jobsStarted": 0,
+              "published": 0,
+              "publishInstances": 0,
+              "publishes": 128,
+              "publishDeferred": 1,
+              "pending": false,
+              "pendingCells": 0,
+              "pendingUnitsMax": 0,
+              "awaitingPublish": false,
+              "jobFrames": 0,
+              "publishedAgeFrames": 5,
+              "lastJobFrames": 2,
+              "maxJobFrames": 2,
+              "stale": false
+            }
+          },
+          "collision": "none: rocks are visual only; walker, landing and fauna do not collide with them"
+        },
+        "probe": {
+          "waterLevelM": -1000000,
+          "bodyWater": 0,
+          "probed": 163,
+          "measured": 163,
+          "byTier": {
+            "boulder": 106,
+            "outcrop": 57
+          },
+          "byLod": [
+            0,
+            86,
+            77
+          ],
+          "forms": {
+            "angular": 69,
+            "rounded": 66,
+            "layered": 28
+          },
+          "diameterM": {
+            "min": 0.5232800388879736,
+            "p50": 1.4700112950379456,
+            "max": 4.19593454147815
+          },
+          "nearestM": 119.42457725625113,
+          "farthestM": 845.3268832967148,
+          "drawnVsCanonicalGroundM": {
+            "p50": 0.01475849788744199,
+            "p95": 0.061888036194318374,
+            "max": 0.5605552933454874
+          },
+          "baseGapM": {
+            "p50": -0.17853973200226392,
+            "p95": -0.06115521473475383,
+            "max": 0.15686642887021662
+          },
+          "focalPx": 1123.0183869521081,
+          "floating": 0,
+          "floatingExamples": [],
+          "marginalFloating": 1,
+          "marginalFloatingExamples": [
+            {
+              "id": "boulder|x-/108967/56917|0",
+              "lod": 1,
+              "distanceM": 141.6376617174179,
+              "gapM": 0.10020057462247678,
+              "gapPx": 0.7944715149895064,
+              "heightM": 0.5644262987268821,
+              "tileLevel": 11,
+              "canonicalDeltaM": -0.2657939572104624
+            }
+          ],
+          "subPixelFloating": 3,
+          "subPixelFloatingExamples": [
+            {
+              "id": "boulder|x-/108976/56935|0",
+              "lod": 2,
+              "distanceM": 235.07650540183678,
+              "gapM": 0.09180550282155764,
+              "gapPx": 0.4385775069939733,
+              "heightM": 0.308439713296136,
+              "tileLevel": 11,
+              "canonicalDeltaM": -0.1780282844241583
+            },
+            {
+              "id": "boulder|x-/108977/56939|0",
+              "lod": 2,
+              "distanceM": 271.63394839607207,
+              "gapM": 0.09097509023615657,
+              "gapPx": 0.3761190370095449,
+              "heightM": 0.5400077854550671,
+              "tileLevel": 11,
+              "canonicalDeltaM": -0.2200779052298003
+            },
+            {
+              "id": "outcrop|x-/27239/14240|0",
+              "lod": 1,
+              "distanceM": 501.7341565539668,
+              "gapM": 0.15686642887021662,
+              "gapPx": 0.35111000838911394,
+              "heightM": 1.7677164353625123,
+              "tileLevel": 11,
+              "canonicalDeltaM": -0.5605552933454874
+            }
+          ],
+          "buried": 0,
+          "buriedExamples": [],
+          "onOcean": 0,
+          "onWet": 0,
+          "minAboveWaterM": null,
+          "tileLevels": [
+            10,
+            11
+          ]
+        },
+        "census": {
+          "version": "atlas-rock-field-1",
+          "geometryVersion": "atlas-rock-geometry-1",
+          "reason": "ok",
+          "tiers": [
+            {
+              "id": "scatter",
+              "wantedCells": 0,
+              "resolvedCells": 0,
+              "count": 0,
+              "digest": "811c9dc55ea7f60f",
+              "forms": {
+                "angular": 0,
+                "layered": 0,
+                "rounded": 0
+              }
+            },
+            {
+              "id": "boulder",
+              "wantedCells": 2138,
+              "resolvedCells": 2138,
+              "count": 486,
+              "digest": "24ad8daa88b028ef",
+              "forms": {
+                "angular": 186,
+                "layered": 64,
+                "rounded": 236
+              }
+            },
+            {
+              "id": "outcrop",
+              "wantedCells": 1634,
+              "resolvedCells": 1634,
+              "count": 317,
+              "digest": "156b2302f30aaf4b",
+              "forms": {
+                "angular": 114,
+                "layered": 41,
+                "rounded": 162
+              }
+            }
+          ],
+          "total": {
+            "count": 803,
+            "digest": "d0971901f3c7c8a2",
+            "forms": {
+              "angular": 300,
+              "layered": 105,
+              "rounded": 398
+            }
+          }
+        }
+      },
+      "wideStationary": {
+        "label": "wide stationary",
+        "windowMs": 5000,
+        "drive": null,
+        "movedM": 0,
+        "work": {
+          "historyLimit": 600,
+          "targetMs": 1.5,
+          "targetNote": "configured rock work guard used as the per-frame traversal target; not an accepted frame budget",
+          "frames": 5,
+          "enabledFrames": 5,
+          "updateMs": {
+            "samples": 5,
+            "p50": 0.08500000089406967,
+            "p95": 0.17499999701976776,
+            "p99": 0.17499999701976776,
+            "max": 0.17499999701976776
+          },
+          "processMs": {
+            "samples": 5,
+            "p50": 0,
+            "p95": 0.07499999925494194,
+            "p99": 0.07499999925494194,
+            "max": 0.07499999925494194
+          },
+          "drawMs": {
+            "samples": 5,
+            "p50": 0.044999998062849045,
+            "p95": 0.08999999985098839,
+            "p99": 0.08999999985098839,
+            "max": 0.08999999985098839
+          },
+          "drawUnits": {
+            "samples": 5,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "overTarget": {
+            "draw": 0,
+            "update": 0
+          },
+          "jobFrames": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        },
+        "context": {
+          "frameIntervalMs": {
+            "samples": 6,
+            "p50": 191.78499999642372,
+            "p95": 2898.72500000149,
+            "p99": 2898.72500000149,
+            "max": 2898.72500000149
+          },
+          "frameWorkMs": {
+            "samples": 6,
+            "p50": 191.3449999988079,
+            "p95": 1718.160000000149,
+            "p99": 1718.160000000149,
+            "max": 1718.160000000149
+          },
+          "planetUpdateMs": {
+            "samples": 6,
+            "p50": 10.635000001639128,
+            "p95": 177.660000000149,
+            "p99": 177.660000000149,
+            "max": 177.660000000149
+          }
+        },
+        "drawnAtEnd": {
+          "lod0": 0,
+          "lod1": 86,
+          "lod2": 77,
+          "total": 163
+        },
+        "publishedAgeFrames": 89,
+        "maxJobFrames": 2
+      },
+      "wideFlying": {
+        "label": "wide flying forward (W)",
+        "windowMs": 5000,
+        "drive": "w",
+        "movedM": 15.265093815408067,
+        "work": {
+          "historyLimit": 600,
+          "targetMs": 1.5,
+          "targetNote": "configured rock work guard used as the per-frame traversal target; not an accepted frame budget",
+          "frames": 7,
+          "enabledFrames": 7,
+          "updateMs": {
+            "samples": 7,
+            "p50": 0.30000000074505806,
+            "p95": 822.0850000008941,
+            "p99": 822.0850000008941,
+            "max": 822.0850000008941
+          },
+          "processMs": {
+            "samples": 7,
+            "p50": 0,
+            "p95": 0.010000001639127731,
+            "p99": 0.010000001639127731,
+            "max": 0.010000001639127731
+          },
+          "drawMs": {
+            "samples": 7,
+            "p50": 0.2850000001490116,
+            "p95": 822.0599999986589,
+            "p99": 822.0599999986589,
+            "max": 822.0599999986589
+          },
+          "drawUnits": {
+            "samples": 7,
+            "p50": 4096,
+            "p95": 4096,
+            "p99": 4096,
+            "max": 4096
+          },
+          "overTarget": {
+            "draw": 1,
+            "update": 1
+          },
+          "jobFrames": {
+            "samples": 5,
+            "p50": 2,
+            "p95": 2,
+            "p99": 2,
+            "max": 2
+          }
+        },
+        "context": {
+          "frameIntervalMs": {
+            "samples": 7,
+            "p50": 844.695000000298,
+            "p95": 1929.245000001043,
+            "p99": 1929.245000001043,
+            "max": 1929.245000001043
+          },
+          "frameWorkMs": {
+            "samples": 7,
+            "p50": 57.83500000089407,
+            "p95": 830.3849999979138,
+            "p99": 830.3849999979138,
+            "max": 830.3849999979138
+          },
+          "planetUpdateMs": {
+            "samples": 7,
+            "p50": 1.5099999979138374,
+            "p95": 825.730000000447,
+            "p99": 825.730000000447,
+            "max": 825.730000000447
+          }
+        },
+        "drawnAtEnd": {
+          "lod0": 0,
+          "lod1": 92,
+          "lod2": 72,
+          "total": 164
+        },
+        "publishedAgeFrames": 1,
+        "maxJobFrames": 2
+      },
+      "afterFlight": {
+        "pose": {
+          "position": [
+            -856415.3100891113,
+            -105664.90363390744,
+            -580670.3274841309
+          ],
+          "heading": [
+            -0.2547904181870142,
+            0.7437819552182742,
+            -0.4766637465997443,
+            -0.3932707954695624
+          ],
+          "clearanceM": 107.65954833319552,
+          "walking": false
+        },
+        "capture": "test-results/climate-m1/merge-prep/rock-acceptance/barren-wide-after-flight.png",
+        "drawn": {
+          "lod0": 0,
+          "lod1": 92,
+          "lod2": 72,
+          "total": 164
+        }
+      }
+    }
+  },
+  "timer": {
+    "crossOriginIsolated": true,
+    "resolutionMs": 0.004999998956918716
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "buildInfo": {
+    "commit": "0bda2a0e7b7e1b4c8870197f5ebd9587852e3b46",
+    "branch": "climate/m1",
+    "subject": "climate-m1 merge prep: golden re-pin (strict four-engine PASS) - climate, biomes, placeQuery, census",
+    "dirty": false,
+    "builtAt": "2026-10-08T12:02:15.662Z"
+  },
+  "failure": "page.waitForFunction: Timeout 180000ms exceeded.\n    at waitFor (C:\\LLM\\IWSDK\\universe-atlas-wt\\climate-m1\\tests\\rock-acceptance.browser.mjs:80:53)\n    at surveyBody (C:\\LLM\\IWSDK\\universe-atlas-wt\\climate-m1\\tests\\rock-acceptance.browser.mjs:224:9)\n    at async file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/rock-acceptance.browser.mjs:298:15",
+  "collision": "none: rocks are visual only; walker, landing and fauna do not collide with them"
+}

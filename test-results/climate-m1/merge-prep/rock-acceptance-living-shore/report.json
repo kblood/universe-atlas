@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "base": "http://127.0.0.1:56485/",
+  "date": "435084631200000032044300000",
+  "dateLow": "457349741945613603724699264",
+  "dateHigh": "457223652528232484423595952",
+  "levels": {
+    "low": -2425,
+    "high": -2400,
+    "lossFraction": 0.6
+  },
+  "livingYearNs": "24789042948826344",
+  "comparisonSunAngleRad": 0,
+  "hardware": false,
+  "contention": "shared GPU: other headless browsers were running; timings are contended",
+  "errors": [],
+  "scenarios": {
+    "living": {
+      "body": "G001/C2128,0,1/0/planet/1",
+      "type": "Oceanic world",
+      "water": 0.4153434117278084
+    }
+  },
+  "timer": {
+    "crossOriginIsolated": true,
+    "resolutionMs": 0.004999998956918716
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "buildInfo": {
+    "commit": "0bda2a0e7b7e1b4c8870197f5ebd9587852e3b46",
+    "branch": "climate/m1",
+    "subject": "climate-m1 merge prep: golden re-pin (strict four-engine PASS) - climate, biomes, placeQuery, census",
+    "dirty": false,
+    "builtAt": "2026-10-08T12:02:15.662Z"
+  },
+  "failure": "page.waitForFunction: Timeout 180000ms exceeded.\n    at waitFor (C:\\LLM\\IWSDK\\universe-atlas-wt\\climate-m1\\tests\\rock-acceptance.browser.mjs:80:53)\n    at surveyBody (C:\\LLM\\IWSDK\\universe-atlas-wt\\climate-m1\\tests\\rock-acceptance.browser.mjs:195:9)\n    at async file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/rock-acceptance.browser.mjs:306:15",
+  "collision": "none: rocks are visual only; walker, landing and fauna do not collide with them"
+}

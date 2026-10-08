@@ -688,3 +688,16 @@ Only climate-attributable keys move; every count and every other key (terrain, c
 | `placeQuery` | fc07ab6b05d169e396781cda6b87b08bdec7d17961693f52789b80b41e7c1d0e | ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9 | place query reports climate/biome fields |
 | `census` | 060898a2699af91770d2b668b45a14275ac92984920e4102da4bde38db45ef35 | bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5 | forest census reads forestSuitability01 (heat cap, PET moisture) |
 | `terrain` and all others | | unchanged | |
+
+### 9.1 SITE_A browser tests on 0bda2a0 (dist `dirty:false`, one browser at a time under `.gpu-browser-lock`, outside the test slot)
+
+| Harness | Exit | Result |
+|---|---|---|
+| desktop-perf (`ATLAS_PERF_REPEATS=1`, native) | 0 (harness completed) | **FAIL (CONTENDED)**, not acceptance evidence: user Opera open. 0 page errors, shadow warm-up 0 failures. CPU budget FAIL is in the Overhead/submission row on S1, S3 and S5 (for example S1 ground host 12.05 ms against 4.8). Terrain FAILs on S2 (1.65 host) and S3 (2.21 host), and Fauna FAILs on S2 (4.33 host). Every other per-system row PASSes. S4 date seek: stale→0 in 2.8-5.1 s, peak reserved 319-326 / 416 MiB. S6 first appearance: forest 3437 m, trees 547 m, flora 121 m, fauna 346 m, rocks 831 m. |
+| rock-acceptance (all scenarios) | 1 | barren: timeout at `surveyBody` line 224, waiting for the close-view walker `grounded`. 0 page errors. |
+| rock-acceptance `ROCK_SCENARIOS=living,shore` | 1 | living: timeout at line 195, waiting for `terrainCruise` and `surfaceReady` after `#find-life`. 0 page errors. |
+| rock-acceptance on **main c97c04b** (baseline, temporary detached worktree, removed afterwards) | 1 / 1 | All scenarios: barren `page.screenshot` timeout at line 207. Living only: the same line-195 timeout as the branch. **The failure predates climate/m1.** It is T03 HARNESS-RERUN territory and is not tuned here. |
+| render-probe `--poses low100,groundEye` | 0 | 0 errors. low100: frameWork p50/p95 4.06/29.69 ms, gpu 6.58/22.27, draws 264. groundEye: 5.08/29.47, gpu 6.75/16.45, draws 297. Contended. |
+| forest-frame fixture (`tests/planet-forest-frame-digest.test.mjs`, via the slot) | 0 | 1/1 pass. Frame outputs are identical to the reference forest. |
+
+Evidence is in `test-results/climate-m1/merge-prep/`. The desktop-perf report.json (16 MB) is not committed; summary.md is.

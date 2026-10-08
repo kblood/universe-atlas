@@ -1,0 +1,23 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.screenshot: Timeout 30000ms exceeded.
+Call log:
+[2m  - taking page screenshot[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+
+    at capture (C:\LLM\IWSDK\universe-atlas-wt\main-c97c04b\tests\rock-acceptance.browser.mjs:106:14)
+    at async surveyBody (C:\LLM\IWSDK\universe-atlas-wt\main-c97c04b\tests\rock-acceptance.browser.mjs:207:44)
+    at async file:///C:/LLM/IWSDK/universe-atlas-wt/main-c97c04b/tests/rock-acceptance.browser.mjs:298:15 {
+  log: [
+    '  - taking page screenshot',
+    '  - waiting for fonts to load...',
+    '  - fonts loaded'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.7.0
+rock-acceptance exit 1

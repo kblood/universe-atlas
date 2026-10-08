@@ -1,0 +1,5 @@
+[perf 12:02:21] searching deterministic shore site (rock-shore-site.mjs)…
+[perf 12:11:24] vite preview on http://127.0.0.1:5195/
+[perf 12:11:25] run native repeat 1
+[perf 12:17:58]   done native r1: errors 0
+[perf 12:17:58] report: test-results/climate-m1/merge-prep/desktop-perf/report.json  summary: test-results/climate-m1/merge-prep/desktop-perf/summary.md  overall: FAIL (CONTENDED)
