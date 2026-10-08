@@ -188,6 +188,7 @@ closest candidate, not the most robust one. Decision 3 keeps this choice: the 0.
 | Raiva forest > 0.5 | <= 15 % | 47.8 | 0.2 | pass |
 | Maithea land snow (label) | 15-40 % | 19.7 | 20.5 | pass |
 | Selawyn / Raiva land snow | 0 % | 0 / 0 | 0 / 0 | pass |
+| Earth reference forest > 0.5 (h = 0, 60k directions; decision 5, pre-registered in c05ec06) | 25-55 % | - | 46.8 % | pass |
 | SITE_A, original SITE_RULE (moisture, height, forest, rings) | pass | pass (effM 0.750) | **fail** (effM 0.380, no forest) | **STOP** |
 | SITE_A, Q2(a) extension: {4,5,6} with >= 1 K Tc margin | pass | fail (class 6, margin 0.549 K) | fail (class 5, 0.497 K) | **STOP** |
 | lod-consistency L6 ceilings (Maithea / Lethuris rgbP99 26.3 / 39.2; snow kept >= 98 %) | within | pass (within both ceilings) | 43.01 / 58.06; snow kept 95.3 % | **STOP** |
