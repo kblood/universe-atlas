@@ -1,0 +1,20 @@
+✔ Earth reference: the PDD snow line (label) lies in every Earth ELA band (1.673ms)
+ℹ [{"lat":0,"elaM":4608},{"lat":45,"elaM":3003},{"lat":60,"elaM":1505},{"lat":70,"elaM":719},{"lat":78,"elaM":426}]
+✔ negative: the shipped annual-mean rule (surface-climate-1, T_SNOW 268 K, ramp 6 K) fails the 60 deg band (0.2695ms)
+✔ warm-column lapse: the factor, its clamps, and why it is mandatory (equator without it < 4450 m) (0.2122ms)
+✔ ITCZ: argmax row of the annual insolation table; equator below ~54 deg obliquity, pole above (11.5317ms)
+✔ Earth reference zonal targets (calibrated band): P ratios and effective moisture per band (10.6512ms)
+ℹ {"subOverItcz":0.1987292546137822,"midOverSub":1.2212660084910323,"polOverItcz":0.0718548449929969,"effItcz":0.6265525165796612,"effDry":0.2637125325405898,"effMid":0.6267215275876976}
+✔ negative: the uncalibrated starting band (P_REF 1000, a = .9/.6/.55/.4, w = 10/12/9/12) misses the Earth targets (5.2636ms)
+✔ high-tilt synthetic world (70 deg): the wettest band is polar and the driest band moves with the ITCZ (8.6791ms)
+ℹ {"wettestLat":87.5,"driestLat":62.5,"effItcz":0.6802003374756341,"effSub":0.32279361831472586}
+✔ Earth reference: share of directions with forestSuitability01 > 0.5 lies in 25-55 % (decision 5) (6.7975ms)
+ℹ {"forestShare":0.4684333333333333,"n":28106,"N":60000}
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 187.5586
