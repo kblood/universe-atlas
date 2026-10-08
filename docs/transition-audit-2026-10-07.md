@@ -61,6 +61,7 @@ Checked and smooth, with no action needed:
 ## 2. The top findings in detail
 
 ### F1. Terrain tile LOD: only position is morphed
+- **Status (2026-10-08, branch `presentation/terrain-morph`, not merged):** F1.2 (reverse-morph merge), F1.3 (inherit on replace) and F1.4 (smoothstep) are done behind `presentationContinuity`, plus fractional edge locks. F1.1 (normals/colour) is a design note only. CPU tests only; R1–R3 NOT RUN. See `docs/terrain-morph-continuity-2026-10.md`.
 - **What blends.** A child's vertex position goes `mix(parentPosition, position, patchMorph)` (`terrain-shadow.ts:7`), and the height varying does the same (`planet-renderer.ts:1097`).
   The morph is **time-based and linear**: `morph += dt/.22` (`planet-renderer.ts:1562`). Width 0.22 s.
 - **Discontinuities:**
@@ -107,6 +108,7 @@ Checked and smooth, with no action needed:
 - **GPU.** R5.
 
 ### F4. The surface shadow window ends hard (Opus-only)
+- **Status (2026-10-08, branch `presentation/terrain-morph`, not merged):** done behind `presentationContinuity`: the receiver fades the shadow over the outer 36 m of the ±160 m window, and the weight is exactly 0 at the edge (`tests/shadow-window-edge-fade.test.mjs`). R6 NOT RUN. See `docs/terrain-morph-continuity-2026-10.md`.
 - **Code.** There is one orthographic shadow camera, `widthM:320` (`surface-lighting.ts:8`), centred under the eye (`:69`), with `left/right/top/bottom = ±160 m` (`:86`).
   Only the altitude is faded (`:66`). There is no fade toward the window edge.
 - **Effect.** In three.js a fragment outside the shadow frustum is unshadowed. So casters and receivers beyond about 160–226 m (the square's half-width to its corner, in sun space) lose their shadows along a straight line that moves with the eye.
