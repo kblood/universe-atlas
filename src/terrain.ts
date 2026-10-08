@@ -335,6 +335,13 @@ function macroNoise(body: Body) {
   return { code, n };
 }
 
+/** Presentation-only orbit palette. Shared climate/terrain query colours keep
+ * their existing pins; the coarse globe makes the smaller climate-v2 forests
+ * distinguishable from humid grassland. */
+export const ORBIT_FOREST_COLOUR = Object.freeze({
+  version: 'orbit-forest-colour-1', strength: 0.8,
+  rgb: Object.freeze([18, 55, 25] as const),
+});
 /**
  * Water-world land colour v2 (terrain-1.7.0-climate-colour), 0..255 per channel
  * BEFORE the grain factor. Pure function of one annual `ClimateSample`
@@ -358,18 +365,19 @@ function macroNoise(body: Body) {
  * Deviation from the plan's single grey term, which painted every treeless
  * zone (meadow included) bare-rock grey: see this package's report.
  */
-export function waterWorldLandColour(climate: ClimateSample, heightM: number, out: number[] = [0, 0, 0]): number[] {
+export function waterWorldLandColour(climate: ClimateSample, heightM: number, out: number[] = [0, 0, 0], orbitForestTint = false): number[] {
   // Scalar form of the mix() chain (v + (b - v) * clamp(t) per channel): the
   // per-land-sample budget (+0.2 us) does not allow eight array allocations.
   const arid = clamp(climate.aridity01);
-  const forest = clamp(0.35 * climate.forestSuitability01);
+  const forest = clamp((orbitForestTint ? ORBIT_FOREST_COLOUR.strength : 0.35) * climate.forestSuitability01);
+  const forestColour = orbitForestTint ? ORBIT_FOREST_COLOUR.rgb : FOREST;
   const treeless = clamp(1 - climate.treeline01);
   const fell = clamp((ALPINE_ROCK_WARMEST_K - climate.warmestMonthK) / TREE_RAMP_K) * clamp((heightM - 160) / 600);
   const coast = heightM < 120 ? clamp(heightM / 120) : -1;
   const snow = clamp(climate.snowFraction);
   for (let i = 0; i < 3; i++) {
     let v = HUMID[i] + (ARID[i] - HUMID[i]) * arid;
-    v += (FOREST[i] - v) * forest;
+    v += (forestColour[i] - v) * forest;
     const meadow = MEADOW_HUMID[i] + (MEADOW_DRY[i] - MEADOW_HUMID[i]) * arid;
     v += (meadow - v) * treeless;
     v += (ROCK[i] - v) * fell;
@@ -1066,8 +1074,9 @@ export const TERRAIN_MOUNTAINS_WIRED = true;
  * widened to two lattice cells (lod-ladder-4, never deeper than the truth). Omitted, the sampler is the truth (full
  * carving and rock), as collision, physics and place queries require (contract section 8).
  * `mountains`: whether the mountain belts are evaluated (default TERRAIN_MOUNTAINS_WIRED).
+ * `orbitForestTint`: coarse-globe presentation only; never set for cached terrain tiles or queries.
  */
-export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean};
+export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean; orbitForestTint?: boolean};
 /** The mountain carving state a sampler with `options` evaluates on `body`: null when no mountain belt is
  * evaluated (not wired, or not a relief water world: the level then changes nothing); false below the carving
  * cut (the baked coarse field); true from the cut (exact M3 carving, no rock); 'rock' where the M5 rock detail
@@ -1170,7 +1179,7 @@ export function terrainSampler(
     let surfaceColor: number[];
     if (climate && !ocean) {
       const aboveSeaM = uncrateredHeightM - waterLevelM;
-      const c = waterWorldLandColour(climate(d, uncrateredHeightM - seaDatumM, climateScratch!), aboveSeaM);
+      const c = waterWorldLandColour(climate(d, uncrateredHeightM - seaDatumM, climateScratch!), aboveSeaM, undefined, options.orbitForestTint);
       // The base reports localGrain=1 where IT saw ocean; the land colour
       // always takes the land local grain on the same 800 m noise (terrain-1.8.1:
       // the reduced TERRAIN_LOCAL_GRAIN; baseTerrainSampler keeps .88/.24).
@@ -1321,7 +1330,7 @@ function bilinearGrid(grid: Float32Array, cols: number, rows: number, u: number,
   return top * (1 - ty) + bottom * ty;
 }
 
-export function planetSurface(body: Body, width = 1024, segments = 192, surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR, applyCraters: boolean = false) {
+export function planetSurface(body: Body, width = 1024, segments = 192, surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR, applyCraters: boolean = false, orbitForestTint = true) {
   const height = width / 2;
   // Both the per-pixel diffuse/relief/roughness texture AND the coarser
   // `elevations` mesh grid below sample far too densely to call
@@ -1404,7 +1413,7 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
   // equator cannot hold the 16 km M3 band), so it samples at level 0, the declared lod-ladder-2 reduction (carving +0,
   // an upper envelope; docs/lod-ladder-contract-v1.md section 3). It solves no M3 block. While the mountains are not
   // wired the level changes nothing.
-  const denseSample = terrainSampler(body, undefined, surfaceAgeMyr, false, 0, undefined, false, {lodLevel: 0});
+  const denseSample = terrainSampler(body, undefined, surfaceAgeMyr, false, 0, undefined, false, {lodLevel: 0, orbitForestTint});
   const craters = applyCraters ? buildCraterField(body, surfaceAgeMyr) : null;
   const craterGrid = craters
     ? (() => {
@@ -1491,6 +1500,7 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
     elevations,
     segments,
     version: TERRAIN_VERSION,
+    colourVersion: orbitForestTint ? ORBIT_FOREST_COLOUR.version : TERRAIN_VERSION,
     landFraction: landPixels / totalWeight,
     /** The relief texture encoding: byte/255 * (reliefMaxM - reliefMinM) + reliefMinM. */
     reliefMinM: reliefRange.minM,
