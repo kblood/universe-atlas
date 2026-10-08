@@ -14,8 +14,10 @@ Package R5-ATLAS-CLIMATE-M1, branch `climate/m1`. Plan: `docs/biome-climate-incr
 Steps 1-7 were implemented and passed their own acceptance; nothing was retuned to keep the site or the ceilings.
 The package was then resumed under the six decisions in section 2a (climate-m1-decision, 2026-10-08), which settle
 both STOPs without changing the physics. Resume state: steps 1-6 done (SITE_A moved, section 6; Earth forest 46.8 %,
-section 4); **step 7 STOPPED**: lod-consistency fails 20 rows at L6, L8 and L10 (snow, forest, name and colour),
-not only the L6 colour rows decision 2 allowed re-pinning (section 6b). Steps 8-11 were not run.
+section 4); step 7 first STOPPED: lod-consistency fails 20 rows at L6, L8 and L10 (snow, forest, name and colour),
+not only the L6 colour rows decision 2 allowed re-pinning (section 6b). That STOP was decided in climate-m1-decision-2
+(section 2b): SITE_A accepted as found; bisect per climate step, then re-pin with a ledger. Both are done (sections 6
+and 6b); the package continued from step 8.
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -96,6 +98,22 @@ d134a87.
    cold build) blocks the merge because this is on the hot path of every land sample. Not blocking:
    `planet-geophysics:162` (pre-existing, unrelated), the weaker obliquity assertion (accepted), `eco-identity-site:54`
    (stays `todo`).
+
+## 2b. Second resume decisions (climate-m1-decision-2, 2026-10-08)
+
+Both are **Opus-decided on Kasper's instruction, overrulable**.
+
+- **(a) SITE_A accepted as found** (the equatorial highland, section 6). No constraint is added to the search after
+  seeing the result. Gates: `life-cpu-digest` (including its "output changes on most frames" assertion),
+  `terrain-leaf-loop-digest`, `terrain-elevation-identity` and `terrain-relief-hypsometry` pass unmodified at the new
+  site; the SITE_A browser tests go on the coordinator's merge ledger. Result: section 6.
+- **(b) The 20 LOD rows:** bisect per climate step with `lod-measure.mjs` (gates G1: heights and ocean identical to
+  main at every level; G2: step 0 equals main and every failing row starts at a named step; G3: no failure at L12 or
+  L14; G4: the tip within 5 % of the e3c3358 table), then re-pin every failing row in `SHIPPED_CEILINGS` at the
+  measured value rounded up to 0.1 with a per-row ledger naming the step, a Maithea L6 snow-kept retention limit of
+  95.2 %, no `LOD_TOLERANCES` change, dated A3 lines, the `terrain-mountains-assembly` heights+ocean / colour split,
+  and a follow-up item for the LOD owner and A4. The climate code is not changed to reduce the disagreement. Result:
+  section 6b.
 
 ### Open M2 physics question (decision 5)
 
@@ -193,7 +211,7 @@ closest candidate, not the most robust one. Decision 3 keeps this choice: the 0.
 | Earth reference forest > 0.5 (h = 0, 60k directions; decision 5, pre-registered in c05ec06) | 25-55 % | - | 46.8 % | pass |
 | SITE_A, original SITE_RULE (moisture, height, forest, rings) | pass | pass (effM 0.750) | old site fails (effM 0.380, no forest); **new site passes** (effM 0.644, ring forest 1.0) | pass after move (section 6) |
 | SITE_A, decision-1 clauses: {4,5,6} live and at +-1 K, 5/10 km rings, ground look 0 | pass | fail (class 6, margin 0.549 K) | old fails (class 5, 0.497 K); **new passes** (class 4, margin 6.64 K) | pass after move (section 6) |
-| lod-consistency rows (all levels; decision-2 conditions) | within | pass (every row) | 20 rows fail (L6, L8, L10); snow kept 95.26 % | **STOP** (section 6b, resume step 7) |
+| lod-consistency rows (all levels; decision-2 conditions) | within | pass (every row) | 20 rows fail (L6, L8, L10); snow kept 95.26 % | STOP, then decided by decision-2 (b): bisect G1-G4 pass, 20 rows re-pinned, retention 95.2 % (section 6b) |
 
 Negative tests, each kept in the suite:
 
@@ -288,9 +306,26 @@ Gates (`tests/harness-sites.test.mjs`, `tests/eco-identity-site.test.mjs`, share
 disc search no longer pass); eco-identity-site :32 (class 4, ground look all zeros) and :45-46 (all rings in
 {4,5,6}) pass. :54 (60 km ring) stays `todo` (decision 6): the ring is now {2:5, 4:26, 6:4, 8:29}.
 
+**Decision-2 (a) gates at the new site** (`test-results/climate-m1/resume/site-a-gates.log`, all four files
+unmodified since main): `life-cpu-digest` 2/2 (the life output is identical to the reference for the fixed pose
+sequence, and "output changes on most frames" holds), `terrain-leaf-loop-digest` pass, `terrain-elevation-identity`
+4/4 (one test:full skip), `terrain-relief-hypsometry` 7/7 (three test:full skips): 15 pass, 0 fail, 4 skipped.
+
+**Margins of the new site** (recorded for M2, which re-checks SITE_A):
+
+| Clause | Value | Rule | Margin |
+|---|---|---|---|
+| effM centre / ring minimum | 0.644 / 0.640 | >= 0.6 | +0.044 / +0.040 (P can fall about 17 % before the centre fails) |
+| Height above sea, centre / ring minimum | 3064.3 / 2971.5 m | >= 250 m | +2814 / +2722 m |
+| Ring forest share | 1.0 | >= 0.8 | +0.2 |
+| Tc (Ta 285.95 K) | 284.51 K | class 4: Tc < 291.15 K and >= 270.15 K | 6.64 K to the tropical edge, 14.36 K to the boreal edge |
+| Distance / rank | 1083.1 km from SITE_A_LEGACY, 1085.1 km from the old site | nearest-first | rank 708 of 65,536 (index 35760) |
+
 Users of SITE_A that move with it (they import the constant): `tests/life-scenario.mjs`,
 `tests/forest-frame-fixture.mjs`, `tests/desktop-perf.browser.mjs`, `tests/rock-acceptance.browser.mjs`,
-`scripts/render-probe.browser.mjs`, `scripts/climate-calibration-report.mjs`.
+`scripts/render-probe.browser.mjs`, `scripts/climate-calibration-report.mjs`. The browser ones
+(`desktop-perf.browser`, `rock-acceptance.browser`, `forest-frame-fixture` users, `render-probe.browser`) go on the
+coordinator's merge ledger, to run at merge under the GPU lock.
 
 ## 6b. lod-consistency: STOP (LOD ceiling exceeded), and STOP again at resume step 7
 
@@ -372,6 +407,68 @@ Every other row passes (heights, ocean, L12 and L14, Maithea L10, forest retenti
 Evidence: `test-results/climate-m1/resume/lod-measure.json` (resume tip), `lod-measure-main-290472d.json`,
 `lod-measure-d134a87.json`.
 
+### Resolution (climate-m1-decision-2 (b))
+
+**Bisect** (`test-results/climate-m1/resume/lod-bisect.mjs`, output `lod-bisect.json`; a scratch worktree at e3c3358
+with each step commit's `src/surface-climate.ts`). Failing rows per variant: step 0 (main's climate) 0, step 1 (PDD
+snow) 14, step 2 (warm-column lapse) 16, steps 3 and 4 (warmest-month ceiling, heat cap) 16, step 5 (PET moisture) 23,
+step 6 (ITCZ band) 21, tip 21 (20 cross rows + retention). Steps 3, 4 and 6 add no failing row on these tiles.
+
+| Gate | Result |
+|---|---|
+| G1 heights, height max, ocean and shared-ocean rows identical to main 290472d, every level, both worlds, every variant | **pass** (0 differences) |
+| G2 step 0 passes every row and equals main's table; every failing row starts at a named step | **pass** (step 0 table identical to main; 0 unattributed rows) |
+| G3 no failing row at L12 or L14 | **pass** |
+| G4 tip no more than 5 % worse than the e3c3358 table | **pass** (identical) |
+
+**Re-pins in `tests/lod-consistency.test.mjs`** (rounded up to 0.1; cause = the step from which the row fails at
+every later step, the first failing step in brackets where earlier):
+
+| Row | Old limit | Measured | New ceiling | Cause |
+|---|---|---|---|---|
+| Maithea L6 rgbP99 | 26.3 | 43.013 | 43.1 | step 1 PDD snow |
+| Maithea L6 snow | 1.3 | 1.478 | 1.5 | step 1 PDD snow |
+| Maithea L6 forest | plan 0.5 | 1.848 | 1.9 | step 5 PET moisture |
+| Maithea L6 name | 3.2 | 3.988 | 4.0 | step 5 PET (step 1) |
+| Maithea L6 carriedName | 3.5 | 4.383 | 4.4 | step 5 PET (step 1) |
+| Maithea L8 rgbP99 | plan 4 | 5.750 | 5.8 | step 1 PDD snow |
+| Maithea L8 forest | plan 0.5 | 0.694 | 0.7 | step 5 PET moisture |
+| Maithea L8 name | 0.8 | 1.264 | 1.3 | step 2 warm-column lapse |
+| Maithea L8 carriedName | 1.2 | 1.333 | 1.4 | step 5 PET moisture |
+| Lethuris L6 rgbP99 | 39.2 | 58.058 | 58.1 | step 1 PDD snow |
+| Lethuris L6 forest | 1.8 | 3.327 | 3.4 | step 1 PDD snow |
+| Lethuris L8 rgbP99 | 11.1 | 15.212 | 15.3 | step 2 warm-column lapse |
+| Lethuris L8 snow | 1.0 | 1.042 | 1.1 | step 2 warm-column lapse |
+| Lethuris L8 forest | 2.2 | 2.472 | 2.5 | step 2 warm-column lapse |
+| Lethuris L8 name | 1.9 | 2.458 | 2.5 | step 1 PDD snow |
+| Lethuris L8 carriedName | 1.7 | 2.958 | 3.0 | step 1 PDD snow |
+| Lethuris L10 rgbP99 | plan 1 | 1.276 | 1.3 | step 1 PDD snow |
+| Lethuris L10 forest | 0.7 | 0.861 | 0.9 | step 2 warm-column lapse |
+| Lethuris L10 name | plan 0.5 | 0.944 | 1.0 | step 1 PDD snow |
+| Lethuris L10 carriedName | plan 0.5 | 0.917 | 1.0 | step 1 PDD snow |
+| Maithea L6 snow kept (retention) | >= 98 % | 95.261 % | >= 95.2 % (new `SHIPPED_RETENTION`; 98 % stays the target) | step 1 PDD snow |
+
+`LOD_TOLERANCES` (`src/lod-ladder.ts`) is unchanged. Rows now above a plan tolerance are dated lines on owner sheet A3
+(`docs/owner-decisions-2026-10-04.md`).
+
+**`tests/terrain-mountains-assembly.test.mjs`.** Each HARD outsideBelt / outsideMassif test is split into a HARD
+heights+ocean test (literals unchanged; main 290472d computes them, `resume/assembly-main-290472d.log`; the branch
+equals them, so the gate holds) and a colour PIN that moves only with the climate version. Colour digests:
+outsideBelt e04aa67d... -> d6ed2564..., outsideMassif 35a334d2... -> a87f2664... (full values in the test).
+
+**`tests/lod-carving-reduction.test.mjs`.** 31 literals re-pinned (COST_IDENTITY, COST_SAMPLER_IDENTITY,
+RISER_SAMPLER_IDENTITY). Per-field digests show only the climate-driven fields moved: tile `color`, `materials`, `meta`
+and sampler `color`. Every geometry, height, ocean and water field is bit-identical to main's climate, and main's
+climate reproduces every old literal (`resume/carving-digests-*.json`, `carving-repin.json`).
+
+After the re-pins: the three files give 40 pass, 0 fail, 1 skipped (test:full only), `resume/lod-step7-repinned.log`.
+
+**Follow-up (LOD owner + A4 renderer), no code in M1.** Under PDD snow and height-dependent moisture, the snow and
+forest edges follow height closely, so coarse and fine tiles disagree more where they meet (Maithea L6->7 RGB p99
+15.2 -> 43.0, snow kept 99.0 -> 95.3 %, forest 0.42 -> 1.85 %; Lethuris L6->7 RGB p99 20.5 -> 58.1, L8->9 5.2 -> 15.2).
+Options: carry the snow and forest edges across levels, or blend colour across levels. Recorded on the owner sheet
+under A4.
+
 ## 7. Ledger: moved pins in files this package does not own
 
 First pass (d134a87): the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot
@@ -386,9 +483,9 @@ resume's targeted runs.
 | `tests/eco-identity-site.test.mjs:54` | 60 km ring classes | pre-existing OPEN item (BIOME2-REPLAN), `todo` | stays `todo` (decision 6); ring now {2:5, 4:26, 6:4, 8:29} |
 | `tests/harness-sites.test.mjs` (owned) | no forest at SITE_A; search finds no site | first-pass STOP | **passes** (6/6) after the move |
 | `tests/terrain-climate-colour.test.mjs` fell colour (owned) | no snow-free fell column | decision 4 | `todo` with the finding; PDD invariant added and passing |
-| `tests/lod-carving-reduction.test.mjs:83,99` (mountains; first pass cited :69,79) | 8 tile-buffer and sampler-output digests, 4 worlds | moved pins (digests include climate colour) | **not re-pinned** (step-7 STOP) |
-| `tests/lod-consistency.test.mjs` (mountains) | 20 rows at L6, L8, L10 plus L6 snow retention | **STOP** (section 6b) | **not re-pinned** (step-7 STOP) |
-| `tests/terrain-mountains-assembly.test.mjs` HARD outsideBelt (:38) and HARD outsideMassif | bit-identity to main (heights, ocean, colour) | moved pins (colour comes from the climate) | **not re-pinned**; outsideMassif is not in decision 2's grant |
+| `tests/lod-carving-reduction.test.mjs:83,99` (mountains; first pass cited :69,79) | 31 tile-buffer and sampler-output digests, 4 worlds | moved pins (only `color`, `materials`, `meta` moved) | **re-pinned** with ledger (section 6b) |
+| `tests/lod-consistency.test.mjs` (mountains) | 20 rows at L6, L8, L10 plus L6 snow retention | decision-2 (b) | **re-pinned** at measured values rounded up to 0.1; retention 95.2 % (section 6b) |
+| `tests/terrain-mountains-assembly.test.mjs` HARD outsideBelt (:38) and HARD outsideMassif | bit-identity to main (heights, ocean, colour) | decision-2 (b): split | HARD heights+ocean unchanged and equal to main 290472d; colour split into a climate PIN, re-pinned |
 | `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated | not blocking (decision 6) |
 
 Not run in this package (test:full or coordinator-owned): the `tests/golden/golden.json` sections climate, biomes,

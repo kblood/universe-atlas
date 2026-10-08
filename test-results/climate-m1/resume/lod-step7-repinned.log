@@ -1,0 +1,62 @@
+✔ Maithea: cost optimisation preserves every coarse/switch tile buffer (1237.4716ms)
+✔ Selawyn: cost optimisation preserves every coarse/switch tile buffer (1152.816ms)
+✔ Raiva: cost optimisation preserves every coarse/switch tile buffer (1162.1652ms)
+✔ Lethuris: cost optimisation preserves every coarse/switch tile buffer (1391.948ms)
+✔ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (933.4861ms)
+✔ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (771.6421ms)
+✔ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (921.9229ms)
+✔ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (487.5544ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (0.2824ms)
+✔ wired (T6): on by default, the level changes nothing without mountains, carving state per level (1.9079ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (296.1151ms)
+✔ Maithea: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2594.8068ms)
+ℹ filtered-level points above the truth: 41
+✔ Selawyn: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2650.4414ms)
+ℹ filtered-level points above the truth: 30
+✔ Raiva: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2646.1444ms)
+ℹ filtered-level points above the truth: 5
+✔ Lethuris: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (2779.2145ms)
+ℹ filtered-level points above the truth: 60
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1712.0607ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0072 m, seam 0.0054 m; mutant 901.7 / 138.7 m; mean step at the cut -177.7 m (min -1028.2 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1476.0834ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0041 m, seam 0.0038 m; mutant 140.5 / 3.9 m; mean step at the cut -13.7 m (min -208.9 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1643.983ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0047 m, seam 0.0034 m; mutant 1597.1 / 1350.1 m; mean step at the cut -507.0 m (min -1612.3 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1216.844ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0050 m; mutant 1325.5 / 113.4 m; mean step at the cut -104.4 m (min -1286.8 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1776.8522ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0058 m, seam 0.0052 m; mutant 469.5 / 250.8 m; mean step at the cut -100.5 m (min -554.9 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1495.4951ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0053 m, seam 0.0045 m; mutant 1034.2 / 15.8 m; mean step at the cut -249.0 m (min -1101.3 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1780.1648ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0062 m, seam 0.0050 m; mutant 1908.9 / 506.0 m; mean step at the cut -477.8 m (min -1970.9 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1204.7999ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0048 m, seam 0.0031 m; mutant 1936.3 / 26.1 m; mean step at the cut -388.5 m (min -1936.3 m)
+✔ ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance policy (1.1635ms)
+✔ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (4557.4886ms)
+✔ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (3906.1915ms)
+✔ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (8128.8355ms)
+✔ coarse heights are a declared reduction: point sample plus a bounded non-negative correction (137.8666ms)
+✔ morph: a child starts exactly on its corrected parent at every co-located node (114.1704ms)
+✔ determinism: bit-identical rebuilds, independent of visit order and of process (955.7699ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":300,"area":31998.375,"density":9.375476098395621}
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights and ocean (243.5258ms)
+✔ PIN: outsideBelt colour digest (moves only with the climate version; heights are the HARD row above) (26.2973ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights and ocean (25.021ms)
+✔ PIN: outsideMassif colour digest (moves only with the climate version; heights are the HARD row above) (24.1487ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (73.5152ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (level 0) (118.1053ms)
+﹣ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (carved truth) (0.0812ms) # test:full only (T6 decision 3): ~400 in-massif truth samples with M3 block solves
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.3017ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (305.9429ms)
+✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2, M3 and M5 (0.8673ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (5340.6797ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 31521.1308

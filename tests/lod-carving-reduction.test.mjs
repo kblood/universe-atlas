@@ -44,28 +44,33 @@ const ROCK = {Maithea: 10, Selawyn: 11, Raiva: 9, Lethuris: 11};
 // Carving C1 (terrain-1.9.1-carving-c1, mountain-carving-3 + mountain-assembly-4): COST_IDENTITY[1] and
 // COST_SAMPLER_IDENTITY[1], [2] re-pinned (carved levels and the truth); [0] (uncarved L(cut-1)) unchanged.
 // Old -> new: docs/mountain-carving-c1-2026-10-07.md.
+// surface-climate-2 (R5-ATLAS-CLIMATE-M1, granted by climate-m1-decision 2 and decision-2 (b), 2026-10-08; Opus-decided on
+// Kasper's instruction, overrulable): all 31 literals below (COST_IDENTITY, COST_SAMPLER_IDENTITY, RISER_SAMPLER_IDENTITY)
+// re-pinned. Only the climate-driven fields moved: tile color, materials and meta, and sampler color; every geometry,
+// height, ocean and water field is bit-identical to main 290472d. Main's climate reproduces every old literal. Old -> new
+// map and per-field digests: test-results/climate-m1/resume/carving-repin.json, carving-digests-*.json.
 const COST_IDENTITY = {
-  Maithea: ['6c4bf8046e49e179c0d4c7e9ab8223963d1645eadd15babdaaf18faaf8714b1d', '026b284a69284619fbd031dea0ee77ea3e64af5763e972fc0f4b04a8f395a342'],
-  Selawyn: ['c455f00ad1539773f2a855253c467cec2de9a8c2c681f22747dcc9595b45728f', 'acda960fecf57667d934cb54e9f93a8dfa8fa8578156a16eb9d0867e8defe32d'],
-  Raiva: ['b6c55c60a34a26ab1dfe241ecc9b5078b2a1cd712e0344e57bea96186b8e2ac6', '5a947b9d9e2855db1eee89416604c31501c2109ae87fff7908fff3c8b0f7fe34'],
-  Lethuris: ['acf6482bbfe06f80880de8482b1b2f6308dfa7fc89918a29da3bb1d5ce5e1a48', '2c4088746ba0d5d054f922c2e5aa3ba441cdc2641401b71f128e8e1f6dba03c5'],
+  Maithea: ['f9a05355ea77048c17d088ff9f75a4528097ee8456023811da64722e7313b4ae', '98ff583fe32afa1ada8c073d3d1acc78def25a5770bb0c95f7cba8d6fbf904ff'],
+  Selawyn: ['4ea1a7fee7c8c4e8f2f2e8570c970c480f783edb5d5da3b1165538e40259764d', '6ac59fd7b381c9f26990c08ddb1ecce24a7d24f299dd33d4beb07526552c527f'],
+  Raiva: ['88490857dbbdefc8a3874474dea55bede2af67f7a640609580a1ea6af1436053', 'f4055545134d078cda51738981b230e2fb65a3e3b0af32ef41cad4edbde769c5'],
+  Lethuris: ['3c9a96a5489ab03316c3e20e263bcaee16f9a437ac336d40ebce7d84c8e358dd', 'f4d76b5d9969d93d3f31baf99666123b96180fdc96e84ba310b70d9bd042f701'],
 };
 const COST_SAMPLER_IDENTITY = {
-  Maithea: ['6da066889d287cdb32d528d5aaec3f5d4a426d3869547e174806f9e98905225d', '8fc436b6804d0bf564ed4d1b892bb1202e683d1fe33012605628c6a462c64cbc', '0bd5ce54678c1c673630692171cfd0af7f0d61cebb061e9e47f2208fdb1ef6e6'],
-  Selawyn: ['5fdbe43b04673c3b1a9785c7cf937459de4caf4d9ce55a5d47266ed12f2ab0b2', '667a16d6afb147627e8b3c534cb173464ee793fa876b3bd5421ee27d23a82ca5', '6339283780c086b140bb55641077547f02cbdb5c89794136bedaba73caafe278'],
-  Raiva: ['0b215f0689780c575b21f1c226e5470bbbf0789b466f6269cbaf6099a5472270', '84c0f1e056c4cab4172cee41879db444f9f35e969a2024f72917d7c0ff2b6bc7', '86503962720206916eb486c9766d4b0c21a0a03ca9a1ca1a9f8778a658b1c26c'],
-  Lethuris: ['1c5faaacd4faa4d7db7e8353629a8e77f0539d90a728e17cc3f4872e35b16878', 'cb266bdaf3d2a358725d50ba792350bf3ef888c5963d98e4a47c3c72bc42b787', '16773c77632727157c8092524dba195badb10e6b39d1f5ef9c4142de75808579'],
+  Maithea: ['74ef8ff2358e094702bc7196e7108d7c454722aeae6b7a8753dfd7e02c05d984', '99950b5a4a2082991827375d131ea484d4d823370fcf697cf1b1842f3043fe18', 'b62e5cbe7bf73587e648b628e88f428acedb12d6497ae575695e3c8ca5b870e7'],
+  Selawyn: ['4f6f2022bd8846f9c8b0fd956bf1b426e22bc078a0a3d390c3e7a76c5d6952e3', '44043b0fce962ce104ed4ff6a87357799953a8f273be19c2a0d120cc7b8b8af3', '62e9174778cc8ce93558c1f2a264ceec0de7cafef1d821e4dee6cfd3a284b8e1'],
+  Raiva: ['888d92ba2bd47676e4bc5d25c64331fc55e4044668a6b2e6cfda9c3a99ebe1be', 'daaa5d4167d4ae2014dac4f8d61a6ac4b53eb13ed7be00cda4a582c1b9a20769', '76fa5ffd77cae11b827e7ca3a7e11d27c9d62b6ed9dfcfc7eddb748542ed0a32'],
+  Lethuris: ['888318418df66e72e51515fff95d8d9edaf0b2150d78c15cf4c515b3724f698a', 'a34a25e0a77d5e059a312dff838573e334819b5b896ac8b99b9be3ee11308f20', 'f52807fc78b1f19ca4a490250aa1541f93d1162c4fb2e670beab456e6053810f'],
 };
 // lod-ladder-4 riser reduction (docs/mountain-riser-lod-2026-10-07.md): the filtered levels rockDetailFromLevel ..
 // riserSharpFromLevel - 1 whose digest moved get their own pin (old: COST_SAMPLER_IDENTITY[name][2]); a filtered level not
 // listed (no strata in these 259 directions at that riser width) and the truth and levels >= the sharp level stay on [2].
 const RISER_SAMPLER_IDENTITY = {
-  Maithea: {10: '803ae4210e45bab35ee665391eaadbb428fa3c6dc8f14372662c96e1493d09e0', 11: '45541e1b22dfc093ac4de1115b60d15a17f5f7cf71199b5ec44f319d08d95523',
-    12: '7cd1996ee1104d7bfe65120a0c52e8df770134a213b76dbd89c12a201629f72e', 13: '5b1427cc0baffa7b8b532dc8defcc0d700777799700cc406717dc47277da6438'},
-  Selawyn: {11: 'f18be3c386db83433d4e18be0b57a87b13572490a3bbcf164d142a7b848113cf', 12: '2321aaf05833a41d92523ae6a5044f6d776e466bcf57024de1b308e931416b19'},
-  Raiva: {9: '9f3d4feef46be7759db41df5f9e2254dc06bdf3d6d5f684baf1b9698ea99f3a0', 10: '5dce9009625dff163450d401a71fa8c3398a495ff46f8e983d5788d5b1ed41bc'},
-  Lethuris: {11: 'c53de4e0a3fcb04edb2e83e69709bbb7062102d62af9b0aa7d6fddc3efe4c8ca', 12: '90bfd244599611b527cf6c17fb2e8c8b90a51a90f8186ec96ec7796ce39ed78c',
-    13: 'b0dbd52baee6d39f7bb61e3bae82426518d91b135c202566f05eb884ec314c6a'},
+  Maithea: {10: '0e64486cb040817e33847ce99d355a9e2ea12e5fa5ac7dc1bb8cadfad34c7bd5', 11: 'dfa0871c60e6f548de80fb3c3300b0e56490ce76a13d8b7990c0181d081c2354',
+    12: '6ab621325cdb4c827e93830fedeaa4c798221d8589109ba363370f12f779e013', 13: 'd6da672d5f7792a025a3eb902f988ce81fb83a8681b822ae51e6db48a4bff876'},
+  Selawyn: {11: 'f804f64896ce2f88ddd2afbae954e45a865a43d01403f1f4fc18e796fd8e5535', 12: 'da67b9325a4fff6c090389997a0725e335b41b04e4b72a60477d9f9efc9e9eea'},
+  Raiva: {9: 'ef687b03c80374b5e8100067975fad57722e161c73cd3dc776a1e80486236300', 10: 'e39bb748342f6db6897632bec9e9f6da37de916279c80867a26c69bc92b3f4af'},
+  Lethuris: {11: '200b458253af30e122acde02e0fee547a88f4134792f54b6bde32964494e2890', 12: '8530fc2c076401b3096cf2aaa73389d6073dd7fa9c6d0129a22b84adc8320104',
+    13: '9154279ee6d1d085ceb8b7ba5b7d79c40a2bbc068cc295fe34de4ce67d54785c'},
 };
 function costIdentityDigest(value) {
   const h = createHash('sha256');
