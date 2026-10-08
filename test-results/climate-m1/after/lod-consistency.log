@@ -1,0 +1,65 @@
+✖ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (1861.5339ms)
+✖ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (1325.28ms)
+✖ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (7894.2547ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11235.1383
+
+✖ failing tests:
+
+test at tests\lod-consistency.test.mjs:95:42
+✖ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (1861.5339ms)
+  AssertionError [ERR_ASSERTION]: Maithea L6->7: RGB p99 43.01
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-consistency.test.mjs:109:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lod-consistency.test.mjs:95:42
+✖ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (1325.28ms)
+  AssertionError [ERR_ASSERTION]: Lethuris L6->7: RGB p99 58.06
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-consistency.test.mjs:109:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lod-consistency.test.mjs:115:1
+✖ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (7894.2547ms)
+  AssertionError [ERR_ASSERTION]: L6 snow kept 95.3%
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/lod-consistency.test.mjs:125:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

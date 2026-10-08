@@ -183,6 +183,23 @@ test('warmest-month ceiling: saturating, symmetric, annual mean unchanged (surfa
   assert.ok(capped>5000,`the ceiling binds on this world (${capped}/20000)`);
 });
 
+test('half-range floor: an annual mean above the saturated ceiling gives a seasonless column (step 3)',()=>{
+  // Astra review-1 S3: drive the zero-floor branch. Anchor 460 K (annual > 340 K everywhere): the warmest month
+  // saturates to 320 + e/(1 + e/40) < annual, so the rebuilt half-range floors at 0.
+  for(const obl of [0,23.44,70]){
+    const f=climateForcingFromParams({anchorTempK:460,obliquityRad:obl*D,water:.5,moistureSeed:7});
+    const c=surfaceClimate(f),o=createClimateSample();
+    for(const d of [[1,0,0],unit([1,1,0]),[0,1,0]]){
+      c(d,0,o);
+      assert.ok(o.annualMeanTempK>340,`annual ${o.annualMeanTempK}`);
+      assert.equal(o.seasonalHalfRangeK,0);
+      assert.equal(o.warmestMonthK,o.annualMeanTempK);assert.equal(o.coldestMonthK,o.annualMeanTempK);
+      for(const k of ['pdd','petMm','precipMm','effectiveMoisture'])assert.ok(Number.isFinite(o[k]),k);
+      assert.equal(o.forestSuitability01,0);assert.equal(o.snowFraction,0);
+    }
+  }
+});
+
 test('heat cap: no forest where the warmest month reaches 316 K or the annual mean 320 K (step 4)',()=>{
   const Cc=CLIMATE_CALIBRATION,smooth=(x,lo,hi)=>{const t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t);};
   let hot=0,mid=0,cool=0;

@@ -101,7 +101,7 @@ test('climate zones read as distinct colours on Maithea (forest green, alpine me
   // ground colour UNDER the snow (snowFraction 0 in the colour call): the fell tint the assertion checks is
   // the rock mix, which the snow layer covers. The thresholds and the fell assertion are unchanged.
   if(zones.fell.length<=20){
-    const maxM=bodyHeightBoundM(body).maxM,bare=createClimateSample();
+    const maxM=bodyHeightBoundM(body).maxM,bare=createClimateSample();let liveSnowFell=0;
     for(let i=0;i<4096;i++){
       const d=fib(i,4096),s=sample(d);if(s.ocean)continue;
       for(let h=800;h<=maxM;h+=250){
@@ -109,10 +109,14 @@ test('climate zones read as distinct colours on Maithea (forest green, alpine me
         if(o.forestSuitability01>.8)continue;
         if(o.treeline01===0&&o.warmestMonthK>CLIMATE_CALIBRATION.T_TREE_WARMEST_K-CLIMATE_CALIBRATION.TREE_RAMP_K&&o.aridity01<.2)continue;
         if(o.warmestMonthK<CLIMATE_CALIBRATION.T_TREE_WARMEST_K-2*CLIMATE_CALIBRATION.TREE_RAMP_K){
+          // Live coverage: the rendered column IS snow-covered (no melt season); only the substrate colour
+          // below the snow is added to the fell zone.
+          assert.ok(o.snowFraction>0,`fell column without snow: Tw ${o.warmestMonthK} K, pdd ${o.pdd}`);liveSnowFell++;
           Object.assign(bare,o);bare.snowFraction=0;zones.fell.push(waterWorldLandColour(bare,h));
         }
       }
     }
+    assert.ok(liveSnowFell>20,`substrate fell samples ${liveSnowFell}, all on live snow-covered columns`);
   }
   const mean=a=>[0,1,2].map(k=>a.reduce((s,c)=>s+c[k],0)/a.length);
   const m=Object.fromEntries(Object.entries(zones).map(([k,v])=>{assert.ok(v.length>20,`${k} zone has ${v.length} samples`);return [k,mean(v)];}));

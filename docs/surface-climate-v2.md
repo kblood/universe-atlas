@@ -5,9 +5,13 @@ Package R5-ATLAS-CLIMATE-M1, branch `climate/m1`. Plan: `docs/biome-climate-incr
 `TREE_HABITAT_VERSION` `tree-habitat-2-climate` -> `tree-habitat-3-heat` (expression unchanged; the heat cap moves the
 `forestSuitability01` it reads). `TERRAIN_VERSION` is not touched here (coordinator).
 
-**Status: STOP at step 8.** The harness site SITE_A fails the complete SITE_RULE after M1, and the existing
-deterministic search finds no replacement in its 100 km disc (section 6). Steps 1-7 are implemented and pass their
-own acceptance. Nothing was retuned to keep the site.
+**Status: two STOP conditions hit.**
+
+1. **SITE_A (step 8).** The harness site fails the complete SITE_RULE after M1, and the existing deterministic search
+   finds no replacement in its 100 km disc (section 6).
+2. **LOD ceiling (lod-consistency).** PDD snow (step 1) pushes the frozen L6 ceilings over their limits (section 6b).
+
+Steps 1-7 are implemented and pass their own acceptance. Nothing was retuned to keep the site or the ceilings.
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -34,10 +38,14 @@ All are Opus-decided on Kasper's instruction and can be overruled.
   forest.** Selawyn falls from 48.7 % of land to 2.0 %, and Raiva from 47.8 % to 0.2 %. Across the corpus, the median
   share of land with forest > 0.5 falls from 42.1 % to 4.7 %.
 - **Half-range floor.** After the ceiling, the rebuilt half-range is floored at 0.
-- **P_REF_MM 1000 -> 650 (new, step 6).** With P_REF 1000, none of the 7776 round-1 candidates and none of the 15840
-  round-2 coarse candidates met the plan's Earth targets. The cause is that mid-latitude effM sits near 0.8, and the
-  required 1.2x P(45-60)/P(15-35) ratio rules out a mid-latitude dip. P_REF is the one number that sets P against PET,
-  so it was calibrated together with the band.
+- **P_REF_MM 1000 -> 650 (new, step 6).** Round 1 scanned 7776 candidates with P_REF fixed at 1000. None met the
+  plan's Earth targets. Mid-latitude effM sits near 0.8, and the required 1.2x P(45-60)/P(15-35) ratio rules out a
+  mid-latitude dip. P_REF is the one number that sets P against PET, so round 2 calibrated it together with the band:
+
+  - The coarse grid (15840 candidates) varied P_REF from 400 to 1000. None passed; the best margin was 0.006.
+  - The fine grid varied P_REF from 600 to 800 and found 240 passing candidates.
+
+  These finite grids do not prove that no band works at 1000 mm. They show only that none of the scanned bands did.
 
 ## 3. Calibration (step 6)
 
@@ -95,7 +103,9 @@ closest candidate, not the most robust one.
 | Raiva forest > 0.5 | <= 15 % | 47.8 | 0.2 | pass |
 | Maithea land snow (label) | 15-40 % | 19.7 | 20.5 | pass |
 | Selawyn / Raiva land snow | 0 % | 0 / 0 | 0 / 0 | pass |
-| SITE_A, complete SITE_RULE plus {4,5,6} with >= 1 K Tc margin | pass | pass (class 6, Tc margin 0.549 K) | **fail** | **STOP** |
+| SITE_A, original SITE_RULE (moisture, height, forest, rings) | pass | pass (effM 0.750) | **fail** (effM 0.380, no forest) | **STOP** |
+| SITE_A, Q2(a) extension: {4,5,6} with >= 1 K Tc margin | pass | fail (class 6, margin 0.549 K) | fail (class 5, 0.497 K) | **STOP** |
+| lod-consistency L6 ceilings (Maithea / Lethuris rgbP99 26.3 / 39.2; snow kept >= 98 %) | within | pass (within both ceilings) | 43.01 / 58.06; snow kept 95.3 % | **STOP** |
 
 Negative tests, each kept in the suite:
 
@@ -163,17 +173,57 @@ Options for the owner (not taken here):
 The life and forest digests that read SITE_A (`life-cpu-digest`, `terrain-leaf-loop-digest`) still pass unmodified.
 They pin rendered life at fixed inputs, not the site rule.
 
+## 6b. lod-consistency: STOP (LOD ceiling exceeded)
+
+`tests/lod-consistency.test.mjs` is owned by the mountains/riser-lod agent and was not edited. It passes on main
+7419733 and fails on this branch (`test-results/climate-m1/after/lod-consistency.log`):
+
+| Check | Ceiling | main | climate/m1 |
+|---|---|---|---|
+| Maithea L6->7 edge-tile RGB p99 | 26.3 | pass | 43.01 |
+| Lethuris L6->7 edge-tile RGB p99 | 39.2 | pass | 58.06 |
+| Maithea L6 coarse snow kept (`lod-ladder.ts` coarseKeeps.snowL6) | >= 98 % | pass | 95.3 % |
+
+A bisect over the step commits, swapping in each step's `src/surface-climate.ts`, places the cause at **step 1 (PDD
+snow)**:
+
+| Commit | Step | Maithea RGB p99 | Lethuris RGB p99 | Snow kept |
+|---|---|---|---|---|
+| c506b41 | 1 | 43.00 | 56.52 | 95.4 % |
+| 2f49abb, 0814edd, f87eba5 | 2-4 | 41.62 | 58.21 | 95.3 % |
+| 730094c | 5 | 43.01 | 59.99 | 95.3 % |
+| 7200557 | 6 | 43.01 | 58.06 | 95.3 % |
+
+The PDD ramp (100 C d) is much narrower in height than the old 6 K ramp. At 60 deg it spans roughly 100 m, against
+roughly 900 m before. The L6 height error between levels therefore produces a much larger snow-colour difference at
+the snow line.
+
+The fix belongs to the LOD owner, not to the climate physics. Options:
+
+- re-measure and re-pin the L6 ceilings;
+- carry the snow line across levels, as the coarse retention already does for peaks;
+- widen only the visual snow blend.
+
 ## 7. Ledger: moved pins in files this package does not own
 
-This ledger comes from the 88-file affected run (`after/test-affected.log`, list in `after/test-affected-files.txt`).
-See the package report for the per-file list. Expected owners and movers:
+Source: the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot with 4 tokens.
+Result: 691 pass, 17 fail, 11 skipped. Log: `after/test-affected.log`.
 
-- `tests/golden/golden.json` sections climate / biomes / census / placeQuery / terrain (coordinator)
-- `tests/acceptance/version-compat.test.mjs` (climate version string)
-- `tests/lod-consistency.test.mjs` (mountains/riser-lod owner; not touched)
-- `tests/place-query.test.mjs`
-- `tests/tile-metadata.test.mjs`
-- `scripts/climate-calibration-report.mjs` reads the removed `T_SNOW_K` / `SNOW_RAMP_K` (needs an owner edit)
+| File (owner) | Failure | Kind |
+|---|---|---|
+| `tests/acceptance/version-compat.test.mjs:335` | climate version 'surface-climate-1.1-geo-g' pinned | moved pin (version string) |
+| `tests/eco-identity-site.test.mjs:32` | SITE_A ground look [0, 0.217, 0, 0], expected all zeros | consequence of the SITE_A STOP (site now class 5, arid) |
+| `tests/eco-identity-site.test.mjs:54` | 60 km ring classes | pre-existing OPEN item (BIOME2-REPLAN); classes moved {6,7,11} -> {5,8,11} |
+| `tests/harness-sites.test.mjs:18,35` (owned) | no forest at SITE_A; search finds no site | **STOP** (section 6), left failing on purpose |
+| `tests/lod-carving-reduction.test.mjs:69,79` (mountains) | tile-buffer and sampler-output digests, 4 worlds | moved pins (the digests include climate colour) |
+| `tests/lod-consistency.test.mjs:95,115` (mountains) | L6 ceilings | **STOP** (section 6b) |
+| `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated to climate |
+| `tests/terrain-mountains-assembly.test.mjs:38` | outsideBelt bit-identity to main (heights, ocean, colour) | moved pin (colour comes from the climate) |
+
+Not run in this package (test:full or coordinator-owned): the `tests/golden/golden.json` sections climate, biomes,
+census, placeQuery and terrain.
+
+`scripts/climate-calibration-report.mjs` reads the removed `T_SNOW_K` / `SNOW_RAMP_K` and needs an owner edit.
 
 ## 8. Deferred (no timing measured in this package)
 
