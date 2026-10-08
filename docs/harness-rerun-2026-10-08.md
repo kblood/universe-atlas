@@ -52,6 +52,13 @@ The application artifact used for this run is clean commit `f2f2c62`, built at
 repairs when the run began; the startup cleanup and broader failure-state
 recording were completed during that run. No product code changed.
 The receipt and screenshots remain under the results path above.
+The completed diagnostic run exits 0 with `ok: true`, no page/console errors,
+and all barren, living, and shore assertions passing. All three exact-date
+replays restore identical census and published sets. Shore band rocks change
+from 4 at the low sea to 0 at the high sea; minimum observed clearances are
+0.951 m and 3.136 m. Nineteen screenshots are preserved. The owned browser,
+preview, and GPU lock are released. This is evidence for the renderer diagnosis;
+a clean final integration receipt remains the coordinator's next check.
 
 Verification: syntax checks pass for all four changed scripts; TypeScript
 passes through the shared one-token test slot. These checks do not certify
