@@ -1503,7 +1503,7 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
     elevations,
     segments,
     version: TERRAIN_VERSION,
-    colourVersion: orbitForestTint ? ORBIT_FOREST_COLOUR.version : TERRAIN_VERSION,
+    colourVersion: orbitForestTint ? ORBIT_FOREST_COLOUR.version : 'terrain-1.10.0-climate-2',
     landFraction: landPixels / totalWeight,
     /** The relief texture encoding: byte/255 * (reliefMaxM - reliefMinM) + reliefMinM. */
     reliefMinM: reliefRange.minM,

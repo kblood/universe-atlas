@@ -28,6 +28,7 @@ test('forest palette changes colour only; non-colour queries and dry-world bakes
     const a=planetSurface(body,64,16,undefined,false,false),b=planetSurface(body,64,16);
     for(const k of ['relief','roughness','elevations','landFraction','reliefMinM','reliefMaxM','version'])assert.deepEqual(b[k],a[k],`${body.name} ${k}`);
     assert.equal(b.colourVersion,ORBIT_FOREST_COLOUR.version);
+    assert.equal(a.colourVersion,'terrain-1.10.0-climate-2','review baseline is labelled with its original palette version');
   }
   assert.ok(changed>0,'real forest-bearing worlds receive the presentation change');
   for(const body of goldenTerrainBodies().filter(b=>!b.water)){
