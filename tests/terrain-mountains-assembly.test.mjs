@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {terrainSampler, tectonicReliefOf} from '../src/terrain.ts';
+import {terrainSampler, tectonicReliefOf, TERRAIN_VERSION} from '../src/terrain.ts';
 import {orogenLayout} from '../src/mountain-layout.ts';
 import {maxEnvelopeM, massifHalfWidthM, massifEnvelopeM, composeRidgeTermM, MASSIF_ENVELOPE_VERSION} from '../src/mountain-envelope.ts';
 import {mountainRidgeTermM, carvingStrip, carvingSeed, MOUNTAIN_ASSEMBLY, MOUNTAIN_ASSEMBLY_VERSION, MASSIF_IS_ONE_STRIP} from '../src/mountain-assembly.ts';
@@ -27,7 +27,7 @@ import {statisticSampler, fullOnly} from './helpers/statistic-level.mjs';
 
 // Heights + ocean are the HARD terrain identity and never move with the climate. The colour digest folds in the
 // climate fields (snow, forest, aridity), so it is a separate climate pin (R5-ATLAS-CLIMATE-M1, climate-m1-decision-2
-// (b) item 4, 2026-10-08; Opus-decided on Kasper's instruction, overrulable): a climate version bump re-pins `colour`
+// (b) item 4, 2026-10-08; Opus-decided on Kasper's instruction, overrulable): a climate or palette version bump re-pins `colour`
 // with a ledger line, while `heights` must stay equal to main. Verified: main 290472d computes these `heights` literals
 // (test-results/climate-m1/resume/assembly-main-290472d.log) and surface-climate-2 leaves them unchanged.
 const MAIN_DIGESTS = {
@@ -40,9 +40,13 @@ const MAIN_DIGESTS = {
  * outsideBelt e04aa67d90a7950f4924c468d03b78c00c23bb762614f28184de239c913940ea, outsideMassif
  * 35a334d2c174dd99fecd3848c48b3779c2e4dd5154d6b596cd728acd70c8f4b0 -> surface-climate-2 (steps 1-6, colour reads the
  * PDD snow, heat-capped forest and PET aridity) below. */
+// terrain-1.10.1-forest-colour: authorized forest palette change, climate remains surface-climate-2.
+// Old colour hashes: outsideBelt d6ed25648c5a529ed0992dc619ab0868a517425a4e1eba0fe4471d9122d99c13,
+// outsideMassif a87f266410a86b33af75524525b9bf8218db4233ac4dbe542ed42aa33bafea7b.
+// Physical MAIN_DIGESTS above and the ocean digest below remain unchanged.
 const CLIMATE_COLOUR_DIGESTS = {
-  outsideBelt: 'd6ed25648c5a529ed0992dc619ab0868a517425a4e1eba0fe4471d9122d99c13',
-  outsideMassif: 'a87f266410a86b33af75524525b9bf8218db4233ac4dbe542ed42aa33bafea7b',
+  outsideBelt: '353c922cbd3e3bb4b10d490e04e251e93c365111cbce2d498f679d1238e0218f',
+  outsideMassif: 'd20211469180f8c96235debfbefd001e5f6d4a9cf26b5368acc45d7fd486ab7f',
 };
 
 for (const [label, select] of [['outsideBelt', outsideBelt], ['outsideMassif', outsideMassif]]) {
@@ -51,7 +55,8 @@ for (const [label, select] of [['outsideBelt', outsideBelt], ['outsideMassif', o
     assert.deepEqual(h.counts, pin.counts);
     assert.equal(h.sha, pin.heights);
   });
-  test(`PIN: ${label} colour digest (moves only with the climate version; heights are the HARD row above)`, () => {
+  test(`PIN: ${label} colour digest (versioned climate/palette; heights are the HARD row above)`, () => {
+    assert.equal(TERRAIN_VERSION,'terrain-1.10.1-forest-colour');
     assert.equal(identityDigest(terrainSampler, {select, colour: true}).sha, CLIMATE_COLOUR_DIGESTS[label]);
   });
 }

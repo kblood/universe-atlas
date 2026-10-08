@@ -31,6 +31,12 @@ Both are addressed while retaining those contracts. Golden colour/version
 references must be updated by the coordinator after four-engine equality.
 The corrected focused run has 28 tests: 24 pass, 0 fail, 3 full-tier skips
 and the existing unreachable fell-field TODO. TypeScript passes.
+The first combined full run stopped on the two assembly colour pins. Their
+old/new hashes are recorded beside `CLIMATE_COLOUR_DIGESTS` in the assembly
+test, and the new pins assert the palette's terrain version. The height,
+ocean and selection-count pins remain unchanged and passed that run. This
+is an intentional colour re-pin under the authorized forest-colour task;
+it does not change numeric terrain or LOD tolerances.
 
 Review artifacts: `Assets/_assetctl/orbit-forest-2026-10-08/` at the IWSDK
 root contains `comparison.png`, individual before/after PNGs and
