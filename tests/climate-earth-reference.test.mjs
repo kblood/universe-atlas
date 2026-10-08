@@ -124,3 +124,16 @@ test('high-tilt synthetic world (70 deg): the wettest band is polar and the drie
   // The shipped fixed belt's negative is the corpus polar-ITCZ test (tests/acceptance/climate-agreement.test.mjs):
   // on this synthetic world its belt deficit (0.0425) is below the legacy noise, so a band minimum does not locate it.
 });
+
+// ---------------- decision 5: Earth forest share (pre-registered, set before measuring) ----------------
+// climate-m1-decision 2026-10-08, decision 5 (Opus-decided on Kasper's instruction, overrulable): on the Earth
+// reference (h = 0, 60k Fibonacci directions; the reference has no terrain, so every direction is land) the share of
+// directions with forestSuitability01 > 0.5 must lie in 25-55 %. The band is a judgement; Earth's present forest is
+// about 31 % of land (from memory). Outside the band is a STOP for the owner, never a tuning target.
+export const EARTH_FOREST_BAND=Object.freeze([.25,.55]);
+test('Earth reference: share of directions with forestSuitability01 > 0.5 lies in 25-55 % (decision 5)',t=>{
+  const N=60000,c=surfaceClimate(forcing),s=createClimateSample();let n=0;
+  for(let i=0;i<N;i++){c(fib(i,N),0,s);if(s.forestSuitability01>.5)n++;}
+  const share=n/N;t.diagnostic(JSON.stringify({forestShare:share,n,N}));
+  assert.ok(share>=EARTH_FOREST_BAND[0]&&share<=EARTH_FOREST_BAND[1],`Earth forest > 0.5 share ${share}`);
+});
