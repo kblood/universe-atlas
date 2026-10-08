@@ -20,10 +20,10 @@ const N=20000;
 test('versions: terrain colour v2 names the climate model it reads',()=>{
   // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g),
   // then for mountains step G (terrain-1.8.1-grain: reduced 800 m land grain), then T6 (terrain-1.9.0-mountains).
-  assert.equal(TERRAIN_VERSION,'terrain-1.9.1-carving-c1'); // then carving C1 (terrain-1.9.1-carving-c1)
+  assert.equal(TERRAIN_VERSION,'terrain-1.10.0-climate-2'); // then carving C1 (terrain-1.9.1-carving-c1), then BIOME2-CLIMATE M1 (terrain-1.10.0-climate-2)
   assert.equal(TERRAIN_CLIMATE_VERSION,CLIMATE_VERSION);
-  // Re-pinned for BIOME2-CLIMATE M1 (surface-climate-2, old surface-climate-1.1-geo-g); TERRAIN_VERSION is the
-  // coordinator's bump (not changed by the climate package).
+  // Re-pinned for BIOME2-CLIMATE M1 (surface-climate-2, old surface-climate-1.1-geo-g); TERRAIN_VERSION moved
+  // with it at merge prep (coordinator dispatch 2026-10-08), see the assertion above.
   assert.equal(CLIMATE_VERSION,'surface-climate-2');
 });
 

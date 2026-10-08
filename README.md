@@ -817,7 +817,7 @@ the panel. The design manipulates the model without artificial head motion.
   being applied to a different body. Moons' orbital paths follow their moving
   parent during playback. Very distant system context still uses directional sky
   markers, with negligible AU-scale parallax for most stars.
-- `src/terrain.ts`, version `terrain-1.9.1-carving-c1`, keeps the seeded
+- `src/terrain.ts`, version `terrain-1.10.0-climate-2`, keeps the seeded
   continents and coastlines and adds the relief, mountain belts and M3 carving of
   the relief and mountains rounds above (`docs/terrain-relief-v1.md`); the dated
   sea level is the ocean-volume model (`ocean-volume-1`, `src/ocean-volume.ts`).

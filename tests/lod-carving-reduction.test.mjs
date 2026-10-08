@@ -124,7 +124,7 @@ test('lod-ladder-2: carving starts at the first level with edge <= 128 km; const
 
 test('wired (T6): on by default, the level changes nothing without mountains, carving state per level', () => {
   assert.equal(TERRAIN_MOUNTAINS_WIRED, true, 'wired at cost plan T6 together with TERRAIN_VERSION and the goldens');
-  assert.equal(TERRAIN_VERSION, 'terrain-1.9.1-carving-c1'); // was terrain-1.9.0-mountains (carving C1)
+  assert.equal(TERRAIN_VERSION, 'terrain-1.10.0-climate-2'); // was terrain-1.9.1-carving-c1 (BIOME2-CLIMATE M1); was terrain-1.9.0-mountains (carving C1)
   const body = bodies.Maithea, cut = CUT.Maithea, rock = ROCK.Maithea;
   assert.equal(rockDetailFromLevel(body.radiusM), rock);
   assert.equal(mountainCarvingState(body), 'rock');assert.equal(mountainCarvingState(body, {lodLevel: 0}), false);
