@@ -89,7 +89,17 @@ export interface LifeGateContext {
   rocks?: RockGate;
 }
 
-type Patch ={ key: string; tile: Tile; mesh: THREE.Mesh; ocean:THREE.Mesh<THREE.BufferGeometry,OceanWaterMaterial>|null; localEye:{value:THREE.Vector3}; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; pbrDetail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number; waterBucket: number };
+type Patch ={ key: string; tile: Tile; mesh: THREE.Mesh; ocean:THREE.Mesh<THREE.BufferGeometry,OceanWaterMaterial>|null; localEye:{value:THREE.Vector3}; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; pbrDetail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number; waterBucket: number;
+  /** presentationContinuity only: the linear morph clock (0..1 over 0.22 s);
+   * `morph.value` is its eased weight (`easeTerrainMorph`). Off: unused (0). */
+  clock:number };
+/** presentationContinuity (audit F1.4): the drawn morph weight for a linear
+ * morph clock, a smoothstep, so a vertex starts and stops moving with zero
+ * velocity (peak 1.5 x the linear rate). It is applied once, on the CPU, to the
+ * `patchMorph` uniform that the terrain, depth and ocean materials share, and
+ * `renderedGroundHeightM` reads the same uniform, so the shader formula
+ * (terrain-shadow.ts patchMorphVertex) and its CPU replica stay identical. */
+export function easeTerrainMorph(clock:number){return clock<=0?0:clock>=1?1:clock*clock*(3-2*clock);}
 /** Selection estimates use the already resident lattice. Calling the complete
  * procedural geology twice for every leaf and parent stalled contact frames.
  * Collision continues to use the actual settled mesh and authoritative field. */
@@ -478,6 +488,13 @@ export class PlanetRenderer {
   private leafLoopPatchVersion=-1;
   private leafLoopDirty=true;
   private morphingLeaves=0;
+  /** presentationContinuity (audit F1.2): merges in progress, keyed by the
+   * parent's key. Their children stay leaves and morph back to the parent's
+   * shape; `reversingKids` holds their keys, `mergedParents` the parents that
+   * enter the leaf set this frame already at morph 1 (see `deferMerges`). */
+  private readonly reverseMerges=new Map<string,{parent:Tile;kids:string[]}>();
+  private readonly reversingKids=new Set<string>();
+  private readonly mergedParents=new Set<string>();
   private readonly shownPatches:Patch[]=[];
   // Selection caches. The ancestor maps depend only on the leaf set (keyed by
   // the `leafTiles` array, replaced on every rebuild). Projected distance terms
@@ -987,7 +1004,9 @@ export class PlanetRenderer {
     const ix=Math.min(n-1,Math.floor(gx)),iy=Math.min(n-1,Math.floor(gy)),a=gx-ix,b=gy-iy;
     const pos=patch.data.positions,par=patch.data.parents,anchor=patch.data.anchor,edge=patch.edge.value,morph=patch.morph.value;
     const vertex=(x:number,y:number):V3=>{
-      const lock=(x===0&&edge.x>0)||(x===n&&edge.y>0)||(y===0&&edge.z>0)||(y===n&&edge.w>0),blend=lock?0:morph,i=(y*stride+x)*3;
+      // The shader's lockEdge (terrain-shadow.ts): the largest lock of the
+      // edges through the vertex. Locks are 0/1 except under presentationContinuity.
+      const lock=Math.max(x===0?edge.x:0,x===n?edge.y:0,y===0?edge.z:0,y===n?edge.w:0),blend=morph*(1-lock),i=(y*stride+x)*3;
       return [anchor[0]+par[i]!+(pos[i]!-par[i]!)*blend,anchor[1]+par[i+1]!+(pos[i+1]!-par[i+1]!)*blend,anchor[2]+par[i+2]!+(pos[i+2]!-par[i+2]!)*blend];
     };
     // Index order per cell: (a, a+1, a+stride+1) and (a, a+stride+1, a+stride).
@@ -1066,7 +1085,7 @@ export class PlanetRenderer {
     // water-bucket rebuild or a retry) keeps the morph of the patch it
     // replaces, so a settled leaf does not drop to its parent's shape and
     // regrow. Off: every new patch starts at morph 0 (former behaviour).
-    const inheritedMorph=this.continuity&&stale?stale.morph.value:0;
+    const inheritedClock=this.continuity&&stale?stale.clock:0;
     if(stale)this.release(stale);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
@@ -1091,7 +1110,7 @@ export class PlanetRenderer {
     map.anisotropy = this.anisotropy;
     map.needsUpdate = true;
     const material = new THREE.MeshStandardMaterial({map, roughness: this.body.water ? .72 : .95});
-    const morph = {value: inheritedMorph};
+    const morph = {value: this.continuity?easeTerrainMorph(inheritedClock):0};
     const detail={value:0};
     const pbrDetail={value:0};
     const edge={value:new THREE.Vector4()};
@@ -1182,7 +1201,7 @@ export class PlanetRenderer {
     const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.surfaceRoughness.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0)+oceanSkirtBytes;
     const bytes=bufferBytes*2+Math.ceil(d.color.byteLength*(1+4/3));
     this.patchVersion++;
-    this.patches.set(key, {key,tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,pbrDetail,edge,data:d,bytes,touched: this.frame,waterBucket});
+    this.patches.set(key, {key,tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,pbrDetail,edge,data:d,bytes,touched: this.frame,waterBucket,clock:inheritedClock});
     this.residentBytes+=bytes;
   }
   // `worldNs`: elapsed Ns since the Big Bang (world-time.ts's absolute axis).
@@ -1435,6 +1454,8 @@ export class PlanetRenderer {
         }
         eligible.sort((a,b)=>a.score-b.score||(a.key<b.key?-1:a.key>b.key?1:0));
         const removed=new Set<string>();let freed=0;
+        // A merge in progress frees its children's bytes once it completes.
+        if(this.continuity)for(const merge of this.reverseMerges.values())for(const kid of merge.kids)freed+=this.patches.get(kid)?.bytes??0;
         for(const merge of eligible){
           if(freed>=excess)break;
           for(const kid of merge.kids){removed.add(kid);freed+=this.patches.get(kid)?.bytes??0;}
@@ -1519,6 +1540,11 @@ export class PlanetRenderer {
             for(const key of missing)plannedKeys.add(key);
           }
           kids.forEach(request);
+          // presentationContinuity: a leaf still morphing is not split (its
+          // children start from its full shape, so the split would pop by the
+          // unfinished part of its morph and flip its neighbours' edge locks).
+          // Mandatory contact support is exempt. Its children are requested above.
+          if(this.continuity&&!mandatory&&(this.patches.get(tileKey(t))?.morph.value??1)<1){this.selectionDirty=true;continue;}
           if (leaves.length + 3 <= drawLimit && kids.every(k => this.patches.has(tileKey(k)))) {
             leaves.splice(leaves.indexOf(t), 1, ...kids);
             split = true;
@@ -1539,14 +1565,17 @@ export class PlanetRenderer {
     //   frame preserves those reads exactly);
     // - visibility, the active set, local eye and detail flags are recomputed
     //   only when eye, frusta, root readiness, leaf set or patches changed.
+    // presentationContinuity: a merge becomes a reverse morph (`deferMerges`).
+    // Off, `frontier` is `leaves` and only a selection pass can change it.
+    const frontier=this.continuity&&(selectedLeaves||this.reverseMerges.size)?this.deferMerges(leaves,selectedLeaves):leaves;
     let leafSetChanged=false;
-    if(selectedLeaves){
-      leafSetChanged=leaves.length!==this.leafRecords.length;
-      for(let i=0;!leafSetChanged&&i<leaves.length;i++)leafSetChanged=leaves[i]!==this.leafRecords[i].tile;
+    if(selectedLeaves||frontier!==leaves){
+      leafSetChanged=frontier.length!==this.leafRecords.length;
+      for(let i=0;!leafSetChanged&&i<frontier.length;i++)leafSetChanged=frontier[i]!==this.leafRecords[i].tile;
     }
     if(leafSetChanged){
       const byCode=new Map<number,LeafRecord>(),records:LeafRecord[]=[],tiles:Tile[]=[],protectedLeaves=new Set<string>(),index=new Map<string,Tile>();
-      for(const t of leaves){
+      for(const t of frontier){
         const code=tileCode(t);let record=this.leafRecordByCode.get(code);
         if(record)record.tile=t;else record=this.leafRecord(t,code);
         byCode.set(code,record);records.push(record);tiles.push(t);index.set(record.key,t);
@@ -1577,6 +1606,16 @@ export class PlanetRenderer {
     const ocean=this.oceanFrameScratch;ocean.sunDirection=this.sunUniform.value;ocean.oceanPhaseS=oceanPhaseS;
     const oceanLeafKeys=restitch&&this.body.water?new Set(this.leafRecords.map(r=>r.key)):null;
     let morphing=0;
+    // presentationContinuity: every leaf's morph is advanced before the loop
+    // below, so the fractional edge locks read this frame's neighbour morphs.
+    if(this.continuity)for(const record of this.leafRecords){
+      const key=record.key,p=this.patches.get(key);
+      if(!p)continue;
+      // A parent whose children finished morphing back enters at its own shape.
+      if(!previous.has(record.code))p.clock=this.mergedParents.has(key)||!record.tile.level?1:0;
+      if(!this.debug.freezeMorph)p.clock=this.reversingKids.has(key)?Math.max(0,p.clock-dt/.22):Math.min(1,p.clock+dt/.22);
+      p.morph.value=easeTerrainMorph(p.clock);
+    }
     for (const record of this.leafRecords) {
       const key=record.key,p=this.patches.get(key);
       // A retained frontier can stop refining while its baked water bucket is
@@ -1585,8 +1624,10 @@ export class PlanetRenderer {
       if(!(p&&p.waterBucket===waterBucket)&&!this.pending.has(key)&&!this.failures.has(key)&&(this.retryAfter.get(key)||0)<=this.frame&&!wanted.has(key))wanted.set(key,record.tile);
       if (!p) continue;
       p.touched = this.frame;
-      if (!previous.has(record.code)) p.morph.value = record.tile.level ? 0 : 1;
-      if(!this.debug.freezeMorph)p.morph.value = Math.min(1, p.morph.value + dt / .22);
+      if(!this.continuity){
+        if (!previous.has(record.code)) p.morph.value = record.tile.level ? 0 : 1;
+        if(!this.debug.freezeMorph)p.morph.value = Math.min(1, p.morph.value + dt / .22);
+      }
       if(!sameFrame){
         const sphere=this.leafSphere(record,p,horizonMargin),bounds=renderTileBounds(record.tile,record.center,record.bound,p,this.patches,this.body,this.relief,snappedWaterLevelM,distance,direction);
         const visible=bounds.horizon&&(!frusta.length||retainedFrusta.some(f=>f.intersectsSphere(bounds.sphere)))&&this.rootsReady;
@@ -1601,7 +1642,19 @@ export class PlanetRenderer {
       if(p.ocean){ocean.localEyeM=p.localEye.value;setOceanWaterPatchFrame(p.ocean.material,ocean);}
       if(restitch){
         const n=record.neighbourCodes,parents=record.neighbourParentCodes,kids=record.neighbourChildCodes;
-        p.edge.value.set(current.has(parents[0])?1:0,current.has(parents[1])?1:0,current.has(parents[2])?1:0,current.has(parents[3])?1:0);
+        if(this.continuity){
+          // Fractional edge locks (presentationContinuity): an edge toward a
+          // same-level leaf follows that leaf's morph (lock 1 - morph), so a
+          // split or a merge beside this patch moves the shared edge with the
+          // morph instead of flipping its lock in one frame. Both sides then
+          // draw the edge at morph x morph. Settled neighbours give 0 or 1 as before.
+          const lock=(e:number)=>{
+            if(current.has(parents[e]!))return 1;
+            const r=current.get(n[e]!),q=r&&this.patches.get(r.key);
+            return q?1-q.morph.value:0;
+          };
+          p.edge.value.set(lock(0),lock(1),lock(2),lock(3));
+        }else p.edge.value.set(current.has(parents[0])?1:0,current.has(parents[1])?1:0,current.has(parents[2])?1:0,current.has(parents[3])?1:0);
         // Skirts are a streaming fallback. Once neighbouring edges are settled
         // and at most one level apart, edge locks already close the surface.
         // Keeping skirts there lets nearly coplanar vertical faces leak through
@@ -1632,7 +1685,7 @@ export class PlanetRenderer {
       if(p.morph.value<1)morphing++;
       // Contact hand-off is enabled only after fine coverage has finished morphing.
     }
-    this.morphingLeaves=morphing;
+    this.morphingLeaves=morphing;this.mergedParents.clear();
     // Keep the orbital preview until the focused replacement tree has
     // reached useful resolution. Six coarse root maps caused a blur on focus.
     if(!this.surfaceReady&&this.rootsReady&&
@@ -1679,6 +1732,63 @@ export class PlanetRenderer {
       this.workers[this.nextWorker=(this.nextWorker+1)%this.workers.length].worker.postMessage({key, tile, body: this.body, relief: this.relief, waterLevelM: snappedWaterLevelM, waterBucket});
     }
     this.updateMs=performance.now()-started;systemTimer.add('planetUpdate',this.updateMs);
+  }
+  /** presentationContinuity (audit F1.2): a merge is a reverse morph, so the
+   * visible sequence is fine -> parent, never fine -> grandparent -> parent.
+   * When a selection pass replaces four leaves by their parent, the children
+   * stay in the frontier and morph back to the parent's shape (morph 0, which
+   * is the parent's own drawn triangles); once all four are there the parent
+   * is swapped in at morph 1. A selection pass that re-chooses a pending
+   * merge keeps it pending. The merge is cancelled (the children morph
+   * forward again) when a child is split or otherwise leaves the frontier, or
+   * when the parent would complete beside a leaf more than one level finer.
+   * If a child's patch is missing the selection's merge stands as before.
+   * Returns `leaves` itself when the frontier is unchanged. */
+  private deferMerges(leaves:Tile[],selected:boolean):Tile[]{
+    const before=this.leafIndex;
+    if(selected&&before.size)for(const t of leaves){
+      if(!t.level)continue;
+      const key=tileKey(t);
+      if(before.has(key)||this.reverseMerges.has(key))continue;
+      const kids=children(t).map(tileKey);
+      if(kids.every(k=>before.has(k)&&this.patches.has(k)))this.reverseMerges.set(key,{parent:t,kids});
+    }
+    this.reversingKids.clear();
+    if(!this.reverseMerges.size)return leaves;
+    const at=new Map<string,number>();
+    for(let i=0;i<leaves.length;i++)at.set(tileKey(leaves[i]!),i);
+    const replace=new Map<number,Tile[]>();
+    for(const [key,merge] of this.reverseMerges){
+      const parentAt=at.get(key),kidsAt=merge.kids.map(k=>at.get(k)),kidPatches=merge.kids.map(k=>this.patches.get(k));
+      const intact=this.patches.has(key)&&kidPatches.every(p=>!!p),reversed=intact&&kidPatches.every(p=>p!.morph.value<=0);
+      if(parentAt!==undefined){
+        // The selection chose (or re-chose) the merge in this pass.
+        if(reversed)this.mergedParents.add(key);
+        if(reversed||!intact||merge.kids.some(k=>!before.has(k))){this.reverseMerges.delete(key);continue;}
+        replace.set(parentAt,merge.kids.map(k=>before.get(k)!));
+      }else if(kidsAt.every(i=>i!==undefined)){
+        if(intact&&!reversed)continue;
+        if(!intact||this.unbalancedMerge(merge.parent,leaves)){this.reverseMerges.delete(key);continue;}
+        replace.set(kidsAt[0]!,[merge.parent]);
+        for(const i of kidsAt.slice(1))replace.set(i!,[]);
+        this.mergedParents.add(key);this.reverseMerges.delete(key);
+      }else this.reverseMerges.delete(key);
+    }
+    for(const merge of this.reverseMerges.values())for(const kid of merge.kids)this.reversingKids.add(kid);
+    if(!replace.size)return leaves;
+    const out:Tile[]=[];
+    for(let i=0;i<leaves.length;i++){const r=replace.get(i);if(r)out.push(...r);else out.push(leaves[i]!);}
+    return out;
+  }
+  /** The selection's 2:1 rule for a merge: no leaf under an edge neighbour of
+   * `parent` may be more than one level finer than it. */
+  private unbalancedMerge(parent:Tile,leaves:Tile[]){
+    const around=new Set([0,1,2,3].map(e=>tileKey(tileNeighbour(parent,e))));
+    for(const t of leaves){
+      const s=t.level-parent.level;
+      if(s>1&&around.has(tileKey({face:t.face,level:parent.level,x:Math.floor(t.x/2**s),y:Math.floor(t.y/2**s)})))return true;
+    }
+    return false;
   }
   private leafRecord(tile:Tile,code:number):LeafRecord{
     const neighbours=[0,1,2,3].map(e=>tileNeighbour(tile,e));
@@ -2159,7 +2269,10 @@ export class PlanetRenderer {
       const key=tileKey(directionTile(d,level)),p=this.patches.get(key);
       if(!this.leafIndex.has(key)){sampleKey??=key;missingLeaf++;continue;}
       if(!p){sampleKey??=key;missingResident++;continue;}
-      if(p.morph.value<1){sampleKey??=key;unmorphed++;continue;}
+      // Contact geometry mirrors 0/1 edge locks only (terrain-contact.ts), so a
+      // fractional lock (presentationContinuity) also waits for the neighbour.
+      const edge=p.edge.value,partial=this.continuity&&[edge.x,edge.y,edge.z,edge.w].some(v=>v>0&&v<1);
+      if(p.morph.value<1||partial){sampleKey??=key;unmorphed++;continue;}
       selected.set(key,p);
     }
     const requested=offsets.length*offsets.length;
