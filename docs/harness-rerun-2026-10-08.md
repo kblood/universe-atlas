@@ -29,6 +29,15 @@ It resolves the unchanged search from the actual living close-view pose once
 that pose exists. The legacy one-shot helper remains available to desktop-perf.
 A caller that already holds the GPU lock remains responsible for scheduling
 that CPU preparation; the harness does not request a CPU slot under that lock.
+Before shoreline refinement, the harness closes its browser and releases its
+own GPU holder. Refinement uses the saved living pose through the CPU slot;
+the slot is released before reacquiring the GPU lock and opening a fresh shore
+browser. The second browser's renderer is checked again. An inherited parent
+holder is preserved and refinement then runs without requesting a CPU slot.
+An optional progress callback reports global sampling every 25,000 samples,
+refinement every 4,096 samples, and the final found/not-found stage. The rock
+harness logs these counters with timestamps; the helper is silent by default
+and retains its original candidate order and shoreline criteria.
 
 Run rock acceptance from this checkout, outside the CPU test slot:
 
@@ -43,6 +52,13 @@ The application artifact used for this run is clean commit `f2f2c62`, built at
 repairs when the run began; the startup cleanup and broader failure-state
 recording were completed during that run. No product code changed.
 The receipt and screenshots remain under the results path above.
+The completed diagnostic run exits 0 with `ok: true`, no page/console errors,
+and all barren, living, and shore assertions passing. All three exact-date
+replays restore identical census and published sets. Shore band rocks change
+from 4 at the low sea to 0 at the high sea; minimum observed clearances are
+0.951 m and 3.136 m. Nineteen screenshots are preserved. The owned browser,
+preview, and GPU lock are released. This is evidence for the renderer diagnosis;
+a clean final integration receipt remains the coordinator's next check.
 
 Verification: syntax checks pass for all four changed scripts; TypeScript
 passes through the shared one-token test slot. These checks do not certify

@@ -87,18 +87,20 @@ assert.equal(LEVEL_HIGH, LEVEL_LOW + 25, 'high water date is one bucket higher')
 // search from the actual living close pose once it is available.
 assertCaptureOutsideSlot('rock-acceptance');
 defaultSharedSlotOn();
+const shoreProgress = progress => console.error(`[rock] shoreline ${JSON.stringify({ ...progress, at: new Date().toISOString() })}`);
 const shoreSearch = scenarios.includes('shore')
   ? process.env.ATLAS_GPU_LOCK_HELD
-    ? prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH })
+    ? prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH, onProgress: shoreProgress })
     : await withTestSlot({ owner: 'rock shore candidates', tokens: 1, mode: 'shared' },
-      () => prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH })) : null;
+      () => prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH, onProgress: shoreProgress })) : null;
 await mkdir(out, { recursive: true });
 assertCaptureOutsideSlot('rock-acceptance');
 const server = process.env.ATLAS_URL ? null
   : await startDistPreview({ dist: process.env.ATLAS_DIST || 'dist', log: line => console.error('[rock] preview:', line) });
 if (server) process.on('exit', () => stopServer(server.child));
 const base = process.env.ATLAS_URL || server.base;
-const lock = process.env.ATLAS_GPU_LOCK_HELD ? null
+const inheritedGpuLock = process.env.ATLAS_GPU_LOCK_HELD;
+let lock = inheritedGpuLock ? null
   : await acquireGpuLock({ owner: `rock-acceptance ${scenarios.join(',')} ${base}`, capture: true, retryMs: 30000 });
 let browser, page;
 const errors = [];
@@ -339,7 +341,8 @@ async function replay(name, dates, levels) {
   return { result, a, b, a2 };
 }
 
-try {
+async function launchBrowser() {
+  assertCaptureOutsideSlot('rock-acceptance');
   browser = await chromium.launch({ headless: true, args: launchArgs });
   page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   page.on('pageerror', error => errors.push(`page: ${error.message}`));
@@ -347,14 +350,21 @@ try {
     if (message.type() === 'error' && !message.text().startsWith('[vite] failed to connect to websocket.')) errors.push(`console: ${message.text()}`);
   });
   if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
+}
+const readRenderer = () => page.evaluate(() => {
+  const gl = document.createElement('canvas').getContext('webgl2'), ext = gl?.getExtension('WEBGL_debug_renderer_info');
+  return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';
+});
+function requireRenderer(renderer) {
+  if (!SOFTWARE) assert.ok(!/swiftshader|llvmpipe|software/i.test(renderer),
+    `hardware run asked for, but the browser renders with ${renderer}; the rock scenes do not fit the harness waits in software (set ROCK_SOFTWARE=1 to run there anyway)`);
+}
+try {
+  await launchBrowser();
   report.timer = await (async () => { await page.goto(base); return page.evaluate(() => ({ crossOriginIsolated: self.crossOriginIsolated,
     resolutionMs: (() => { let min = Infinity, last = performance.now(); for (let i = 0; i < 200000; i++) { const t = performance.now(); if (t > last) { min = Math.min(min, t - last); last = t; } } return min; })() })); })();
-  report.renderer = await page.evaluate(() => {
-    const gl = document.createElement('canvas').getContext('webgl2'), ext = gl?.getExtension('WEBGL_debug_renderer_info');
-    return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';
-  });
-  if (!SOFTWARE) assert.ok(!/swiftshader|llvmpipe|software/i.test(report.renderer),
-    `hardware run asked for, but the browser renders with ${report.renderer}; the rock scenes do not fit the harness waits in software (set ROCK_SOFTWARE=1 to run there anyway)`);
+  report.renderer = await readRenderer();
+  requireRenderer(report.renderer);
   report.buildInfo = await fetch(new URL('build-info.json', base)).then(r => r.ok ? r.json() : null).catch(() => null);
 
   if (scenarios.includes('barren')) {
@@ -374,10 +384,28 @@ try {
   if (scenarios.includes('shore')) {
     // Search from the living close-view site (body-relative), or its recorded value.
     const start = report.scenarios.living?.close?.pose?.position ?? [...SITE_A_M];
-    const site = shoreSearch(start);
+    step = 'shore: close browser before CPU shoreline refinement';
+    await browser.close();
+    browser = page = undefined;
+    // Only this harness's holder is released. An inherited parent holder stays
+    // held and forbids taking the CPU slot, as it does during global preparation.
+    await lock?.release();
+    lock = null;
+    step = 'shore: CPU shoreline refinement from the saved living pose';
+    const refinementStarted = Date.now();
+    const site = inheritedGpuLock ? shoreSearch(start)
+      : await withTestSlot({ owner: 'rock shore refinement', tokens: 1, mode: 'shared' }, () => shoreSearch(start));
     assert.ok(site, 'a deterministic coastal site exists');
-    const r = { body: living.id, site };
+    const r = { body: living.id, site, refinementElapsedMs: Date.now() - refinementStarted };
     report.scenarios.shore = r;
+    await save();
+    step = 'shore: reacquire GPU after CPU slot release';
+    if (!inheritedGpuLock) lock = await acquireGpuLock({ owner: `rock-acceptance shore ${base}`, capture: true, retryMs: 30000 });
+    r.gpuLock = lock?.owner ?? `inherited: ${inheritedGpuLock}`;
+    await launchBrowser();
+    await page.goto(base);
+    r.renderer = await readRenderer();
+    requireRenderer(r.renderer);
     const up = new THREE.Vector3(...site.observer), eye = up.clone().multiplyScalar(living.radiusM + site.observerGroundHeightM + 1.6);
     const toward = new THREE.Vector3(...site.facing).multiplyScalar(living.radiusM + LEVEL_LOW);
     const heading = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye, toward, up));
