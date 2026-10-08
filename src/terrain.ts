@@ -129,7 +129,9 @@ import {carvingAtLevel,rockDetailAtLevel,rockRiserWidthM} from './lod-ladder.ts'
 // 1.10.0-climate-2 (BIOME2-CLIMATE M1, docs/surface-climate-v2.md; plan v2 versioning, climate-m1-decision item 6):
 // the land colour reads surface-climate-2 (PDD snow, warm-column lapse, warmest-month ceiling, heat cap, PET
 // moisture, ITCZ band; was surface-climate-1.1-geo-g). Heights, ocean and every other field are unchanged.
-export const TERRAIN_VERSION = "terrain-1.10.0-climate-2";
+// Forest palette only: shared across orbit, local tiles and query colours.
+// Climate, heights, oceans and population rules retain their previous values.
+export const TERRAIN_VERSION = "terrain-1.10.1-forest-colour";
 /**
  * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
  * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x
@@ -335,9 +337,8 @@ function macroNoise(body: Body) {
   return { code, n };
 }
 
-/** Presentation-only orbit palette. Shared climate/terrain query colours keep
- * their existing pins; the coarse globe makes the smaller climate-v2 forests
- * distinguishable from humid grassland. */
+/** Shared forest palette: stronger contrast makes the smaller climate-v2
+ * forests distinguishable from humid grassland on the globe and local tiles. */
 export const ORBIT_FOREST_COLOUR = Object.freeze({
   version: 'orbit-forest-colour-1', strength: 0.8,
   rgb: Object.freeze([18, 55, 25] as const),
@@ -365,7 +366,7 @@ export const ORBIT_FOREST_COLOUR = Object.freeze({
  * Deviation from the plan's single grey term, which painted every treeless
  * zone (meadow included) bare-rock grey: see this package's report.
  */
-export function waterWorldLandColour(climate: ClimateSample, heightM: number, out: number[] = [0, 0, 0], orbitForestTint = false): number[] {
+export function waterWorldLandColour(climate: ClimateSample, heightM: number, out: number[] = [0, 0, 0], orbitForestTint = true): number[] {
   // Scalar form of the mix() chain (v + (b - v) * clamp(t) per channel): the
   // per-land-sample budget (+0.2 us) does not allow eight array allocations.
   const arid = clamp(climate.aridity01);
@@ -1074,7 +1075,7 @@ export const TERRAIN_MOUNTAINS_WIRED = true;
  * widened to two lattice cells (lod-ladder-4, never deeper than the truth). Omitted, the sampler is the truth (full
  * carving and rock), as collision, physics and place queries require (contract section 8).
  * `mountains`: whether the mountain belts are evaluated (default TERRAIN_MOUNTAINS_WIRED).
- * `orbitForestTint`: coarse-globe presentation only; never set for cached terrain tiles or queries.
+ * `orbitForestTint`: false restores the old palette for before/after review only.
  */
 export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean; orbitForestTint?: boolean};
 /** The mountain carving state a sampler with `options` evaluates on `body`: null when no mountain belt is
@@ -1179,7 +1180,7 @@ export function terrainSampler(
     let surfaceColor: number[];
     if (climate && !ocean) {
       const aboveSeaM = uncrateredHeightM - waterLevelM;
-      const c = waterWorldLandColour(climate(d, uncrateredHeightM - seaDatumM, climateScratch!), aboveSeaM, undefined, options.orbitForestTint);
+      const c = waterWorldLandColour(climate(d, uncrateredHeightM - seaDatumM, climateScratch!), aboveSeaM, undefined, options.orbitForestTint ?? true);
       // The base reports localGrain=1 where IT saw ocean; the land colour
       // always takes the land local grain on the same 800 m noise (terrain-1.8.1:
       // the reduced TERRAIN_LOCAL_GRAIN; baseTerrainSampler keeps .88/.24).

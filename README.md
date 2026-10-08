@@ -817,10 +817,13 @@ the panel. The design manipulates the model without artificial head motion.
   being applied to a different body. Moons' orbital paths follow their moving
   parent during playback. Very distant system context still uses directional sky
   markers, with negligible AU-scale parallax for most stars.
-- `src/terrain.ts`, version `terrain-1.10.0-climate-2`, keeps the seeded
+- `src/terrain.ts`, version `terrain-1.10.1-forest-colour`, keeps the seeded
   continents and coastlines and adds the relief, mountain belts and M3 carving of
   the relief and mountains rounds above (`docs/terrain-relief-v1.md`); the dated
   sea level is the ocean-volume model (`ocean-volume-1`, `src/ocean-volume.ts`).
+  Forest colours now have stronger contrast against humid grassland in the
+  shared orbit/tile palette; climate and vegetation placement are unchanged
+  (`docs/orbit-forest-colour-2026-10-08.md`).
   `src/planet-tiles.ts` samples
   that field over a cube-sphere, including matching face edges and pole centres.
   `src/planet-renderer.ts` streams patches through a dedicated worker, retains

@@ -6,19 +6,19 @@ import {waterWorlds,fib,goldenTerrainBodies} from './terrain-climate-fixtures.mj
 
 test('orbit forest contrast follows suitability; treeless and snow endpoints remain exact',()=>{
   const c={...createClimateSample(),aridity01:0,forestSuitability01:1,treeline01:1,warmestMonthK:290};
-  const old=waterWorldLandColour(c,500),next=waterWorldLandColour(c,500,undefined,true);
+  const old=waterWorldLandColour(c,500,undefined,false),next=waterWorldLandColour(c,500);
   assert.ok(old[1]-next[1]>20,'forested pixels are visibly darker than the previous humid green');
   assert.ok(next[1]>next[0]+25&&next[1]>next[2]+25,'forest remains green');
   for(const special of [{forestSuitability01:0},{snowFraction:1},{treeline01:0},{forestSuitability01:0,aridity01:1}]){
-    assert.deepEqual(waterWorldLandColour({...c,...special},500,undefined,true),waterWorldLandColour({...c,...special},500));
+    assert.deepEqual(waterWorldLandColour({...c,...special},500),waterWorldLandColour({...c,...special},500,undefined,false));
   }
 });
 
-test('orbit palette changes colour only; terrain queries and dry-world bakes keep their existing identity',()=>{
+test('forest palette changes colour only; non-colour queries and dry-world bakes keep their existing identity',()=>{
   let changed=0;
   for(const body of waterWorlds()){
-    const off=terrainSampler(body,undefined,undefined,false,0,undefined,false,{lodLevel:0});
-    const on=terrainSampler(body,undefined,undefined,false,0,undefined,false,{lodLevel:0,orbitForestTint:true});
+    const off=terrainSampler(body,undefined,undefined,false,0,undefined,false,{lodLevel:0,orbitForestTint:false});
+    const on=terrainSampler(body,undefined,undefined,false,0,undefined,false,{lodLevel:0});
     for(let i=0;i<1024;i++){
       const d=fib(i,1024),a=off(d),b=on(d),{color:ac,...af}=a,{color:bc,...bf}=b;
       assert.deepEqual(bf,af,body.name);
