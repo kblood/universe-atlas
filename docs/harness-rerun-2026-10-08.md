@@ -34,6 +34,10 @@ own GPU holder. Refinement uses the saved living pose through the CPU slot;
 the slot is released before reacquiring the GPU lock and opening a fresh shore
 browser. The second browser's renderer is checked again. An inherited parent
 holder is preserved and refinement then runs without requesting a CPU slot.
+An optional progress callback reports global sampling every 25,000 samples,
+refinement every 4,096 samples, and the final found/not-found stage. The rock
+harness logs these counters with timestamps; the helper is silent by default
+and retains its original candidate order and shoreline criteria.
 
 Run rock acceptance from this checkout, outside the CPU test slot:
 

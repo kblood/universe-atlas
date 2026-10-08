@@ -87,11 +87,12 @@ assert.equal(LEVEL_HIGH, LEVEL_LOW + 25, 'high water date is one bucket higher')
 // search from the actual living close pose once it is available.
 assertCaptureOutsideSlot('rock-acceptance');
 defaultSharedSlotOn();
+const shoreProgress = progress => console.error(`[rock] shoreline ${JSON.stringify({ ...progress, at: new Date().toISOString() })}`);
 const shoreSearch = scenarios.includes('shore')
   ? process.env.ATLAS_GPU_LOCK_HELD
-    ? prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH })
+    ? prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH, onProgress: shoreProgress })
     : await withTestSlot({ owner: 'rock shore candidates', tokens: 1, mode: 'shared' },
-      () => prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH })) : null;
+      () => prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH, onProgress: shoreProgress })) : null;
 await mkdir(out, { recursive: true });
 assertCaptureOutsideSlot('rock-acceptance');
 const server = process.env.ATLAS_URL ? null

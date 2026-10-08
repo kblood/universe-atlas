@@ -13,24 +13,32 @@ const offset=(d,e,n,x,z,r)=>norm([d[0]+(e[0]*x+n[0]*z)/r,d[1]+(e[1]*x+n[1]*z)/r,
  * nearest the start first) are dry sites a few metres above the high level;
  * the first with open ocean (at the low level) within `reachM` along one of
  * 16 bearings, crossing the band on the way, is returned. */
-export function prepareShoreSearch(body,{lowLevelM,highLevelM,globalSamples=400000,siteAboveM=[3,40],reachM=2400,stepM=20}={}){
+export function prepareShoreSearch(body,{lowLevelM,highLevelM,globalSamples=400000,siteAboveM=[3,40],reachM=2400,stepM=20,onProgress}={}){
   const sample=terrainSampler(body,undefined,undefined,undefined,lowLevelM),r=body.radiusM;
   const coarse=[];
+  onProgress?.({stage:'global',samples:0,totalSamples:globalSamples,candidates:0});
   for(let i=0;i<globalSamples;i++){
     const y=1-2*(i+.5)/globalSamples,phi=i*2.399963229728653,q=Math.sqrt(1-y*y),d=[Math.cos(phi)*q,y,Math.sin(phi)*q];
-    const p=sample(d);if(p.ocean||!(p.groundHeightM>highLevelM+siteAboveM[0]&&p.groundHeightM<highLevelM+siteAboveM[1]))continue;
-    coarse.push({d,h:p.groundHeightM});
+    const p=sample(d);
+    if(!p.ocean&&p.groundHeightM>highLevelM+siteAboveM[0]&&p.groundHeightM<highLevelM+siteAboveM[1])coarse.push({d,h:p.groundHeightM});
+    if((i+1)%25000===0||i+1===globalSamples)onProgress?.({stage:'global',samples:i+1,totalSamples:globalSamples,candidates:coarse.length});
   }
   return start=>{
   const s=norm(start);
   const candidates=coarse.map(c=>({...c,dot:c.d[0]*s[0]+c.d[1]*s[1]+c.d[2]*s[2]}));
   candidates.sort((a,b)=>b.dot-a.dot);
-  for(const c of candidates){
+  let refinementSamples=0,bearings=0;
+  onProgress?.({stage:'refinement',candidate:0,totalCandidates:candidates.length,bearings,samples:refinementSamples});
+  for(let candidateIndex=0;candidateIndex<candidates.length;candidateIndex++){
+    const c=candidates[candidateIndex];
     const b=basis(c.d);
     for(let q=0;q<16;q++){
+      bearings++;
       const t=2*Math.PI*q/16,dir=[Math.cos(t),Math.sin(t)];let band=0,ocean=null,firstBand=null,firstBandHeight=null;
       for(let m=stepM;m<=reachM;m+=stepM){
         const p=sample(offset(c.d,b.e,b.n,dir[0]*m,dir[1]*m,r));
+        refinementSamples++;
+        if(refinementSamples%4096===0)onProgress?.({stage:'refinement',candidate:candidateIndex+1,totalCandidates:candidates.length,bearing:q+1,bearings,samples:refinementSamples});
         if(p.ocean||p.groundHeightM<lowLevelM){ocean=m;break;}
         if(p.groundHeightM>=lowLevelM+.3&&p.groundHeightM<highLevelM+.3){band++;if(firstBand===null){firstBand=m;firstBandHeight=p.groundHeightM;}}
       }
@@ -41,12 +49,14 @@ export function prepareShoreSearch(body,{lowLevelM,highLevelM,globalSamples=4000
         const observer=offset(c.d,b.e,b.n,dir[0]*firstBand,dir[1]*firstBand,r);
         // Waterline stand: the last dry sample before the low-level ocean.
         const shoreM=ocean-stepM,waterline=offset(c.d,b.e,b.n,dir[0]*shoreM,dir[1]*shoreM,r);
+        onProgress?.({stage:'found',candidate:candidateIndex+1,totalCandidates:candidates.length,bearings,samples:refinementSamples});
         return {direction:c.d,groundHeightM:c.h,facing,oceanAtM:ocean,bandSamples:band,firstBandM:firstBand,
           observer,observerGroundHeightM:firstBandHeight,waterline,waterlineGroundHeightM:sample(waterline).groundHeightM,waterlineM:shoreM,candidates:coarse.length,
           fromStartKm:Math.acos(Math.min(1,c.dot))*r/1000};
       }
     }
   }
+  onProgress?.({stage:'not-found',candidate:candidates.length,totalCandidates:candidates.length,bearings,samples:refinementSamples});
   return null;
   };
 }
