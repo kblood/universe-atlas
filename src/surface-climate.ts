@@ -138,10 +138,6 @@ export function createClimateSample():ClimateSample {
     forestSuitability01:0,climateCode:0};
 }
 
-const clamp01=(v:number)=>v<0?0:v>1?1:v;
-/** Arithmetic smoothstep (no platform transcendental). */
-const smooth=(x:number,lo:number,hi:number)=>{const t=clamp01((x-lo)/(hi-lo));return t*t*(3-2*t);};
-
 /**
  * surface-climate-2 positive-degree-day kernel. The year is the sinusoid
  * T(t) = mu + A cos(2 pi t) (mu = annual mean, A = seasonal half-range). With
@@ -440,31 +436,64 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     const belt=subsidence[iz]!+(subsidence[iz+1]!-subsidence[iz]!)*tz;
     // surface-climate-2 step 1: snow from positive degree-days (melt), not the
     // annual mean. snowFraction > 0.6 (the 'Alpine / polar snow' label) is PDD < 190.
-    const pdd0=degreeDaysAbove(annual,half,0);
+    //
+    // Hand-inlined below (climate-m1 decision-5): degreeDaysAbove (both calls, with
+    // its pddKernelH / kernelAt body), pddKernelG (with kernelAt), smooth and
+    // clamp01. Calls V8 did not inline returned boxed doubles, ~83 B allocated per
+    // sample. Same operations, same order, same constants as the exported helpers
+    // above, which stay for their other users; results are Object.is-identical
+    // (test-results/climate-m1/timing/identity.json).
+    // degreeDaysAbove(annual,half,0) and degreeDaysAbove(annual,half,30):
+    const ex0=annual-273.15-0,ex30=annual-273.15-30;
+    let pdd0:number,pdd30:number;
+    if(half<1e-9){pdd0=ex0>0?ex0*C.YEAR_D:0;pdd30=ex30>0?ex30*C.YEAR_D:0;}
+    else{
+      const v0=ex0/half,v30=ex30/half;
+      let h0:number,h30:number;
+      if(v0<=-1)h0=0;else if(v0>=1)h0=v0;
+      else{const kf=(v0+1)*(KERNEL_STEPS/2);let k=Math.floor(kf);if(k<0)k=0;else if(k>KERNEL_STEPS-1)k=KERNEL_STEPS-1;h0=H_TAB[k]!+(H_TAB[k+1]!-H_TAB[k]!)*(kf-k);}
+      if(v30<=-1)h30=0;else if(v30>=1)h30=v30;
+      else{const kf=(v30+1)*(KERNEL_STEPS/2);let k=Math.floor(kf);if(k<0)k=0;else if(k>KERNEL_STEPS-1)k=KERNEL_STEPS-1;h30=H_TAB[k]!+(H_TAB[k+1]!-H_TAB[k]!)*(kf-k);}
+      pdd0=C.YEAR_D*half*h0;pdd30=C.YEAR_D*half*h30;
+    }
     // Step 5: effective moisture from a precipitation / PET aridity index.
     // PET from Holdridge biotemperature (mean of the temperature clipped to 0..30 C):
     // biotemp = (PDD above 0 C - PDD above 30 C)/year.
-    const biotemp=(pdd0-degreeDaysAbove(annual,half,30))/C.YEAR_D;
+    const biotemp=(pdd0-pdd30)/C.YEAR_D;
     let pet=C.PET_MM_PER_BIOTEMP_C*biotemp;if(pet<C.PET_MIN_MM)pet=C.PET_MIN_MM;
     let pTemp=1+C.P_TEMP_PER_K*(annual-C.P_TEMP_REF_K);if(pTemp<C.P_TEMP_MIN)pTemp=C.P_TEMP_MIN;
     const precip=pWater*pTemp*zf*(C.P_NOISE_BASE+C.P_NOISE_GAIN*moisture);
     const ai=precip/pet,eff=ai/(ai+C.AI_HALF);
-    const snow=frozen?1:water>0?clamp01((C.PDD_CRIT-pdd0)/C.PDD_RAMP):0;
+    // snow = clamp01((PDD_CRIT - pdd0)/PDD_RAMP) on unfrozen wet bodies.
+    let snow:number;
+    if(frozen)snow=1;else if(water>0){const s=(C.PDD_CRIT-pdd0)/C.PDD_RAMP;snow=s<0?0:s>1?1:s;}else snow=0;
     const warmest=annual+half;
-    const treeline=clamp01((warmest-C.T_TREE_WARMEST_K)/C.TREE_RAMP_K);
-    // Fraction of the year above GROW_K: G((annual - GROW_K)/half), tabulated.
-    const grow=half<=1e-9?(annual>C.GROW_K?1:0):pddKernelG((annual-C.GROW_K)/half);
+    const tl=(warmest-C.T_TREE_WARMEST_K)/C.TREE_RAMP_K,treeline=tl<0?0:tl>1?1:tl;
+    // Fraction of the year above GROW_K: G((annual - GROW_K)/half), tabulated (pddKernelG).
+    let grow:number;
+    if(half<=1e-9)grow=annual>C.GROW_K?1:0;
+    else{
+      const vg=(annual-C.GROW_K)/half;
+      if(vg<=-1)grow=0;else if(vg>=1)grow=1;
+      else{const kf=(vg+1)*(KERNEL_STEPS/2);let k=Math.floor(kf);if(k<0)k=0;else if(k>KERNEL_STEPS-1)k=KERNEL_STEPS-1;grow=G_TAB[k]!+(G_TAB[k+1]!-G_TAB[k]!)*(kf-k);}
+    }
     let tBin=Math.floor((annual-anchor+32)/2);if(tBin<0)tBin=0;else if(tBin>31)tBin=31;
     let mBin=Math.floor(eff*8);if(mBin<0)mBin=0;else if(mBin>7)mBin=7;
     out.insolation01=q;out.insolationHalfRange=qa;
     out.annualMeanTempK=annual;out.seasonalHalfRangeK=half;out.warmestMonthK=warmest;out.coldestMonthK=annual-half;
     out.legacyMoisture=moisture;out.dryBelt01=belt;out.effectiveMoisture=eff;out.precipMm=precip;out.petMm=pet;
-    out.aridity01=clamp01((0.5-eff)*4);
+    const ar=(0.5-eff)*4;
+    out.aridity01=ar<0?0:ar>1?1:ar;
     out.pdd=pdd0;out.snowFraction=snow;out.treeline01=treeline;out.growingSeason01=grow;
     // Step 4: heat cap. Forest fades out between a 305 K and a 316 K warmest month
-    // and is 0 wherever the annual mean reaches 320 K.
-    const heat=annual>=C.HEAT_ANNUAL_MAX_K?0:1-smooth(warmest,C.HEAT_LO_K,C.HEAT_HI_K);
-    out.forestSuitability01=habitat?treeline*clamp01((eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP)*clamp01(1-snow/0.2)*heat:0;
+    // and is 0 wherever the annual mean reaches 320 K. 1 - smooth(warmest, HEAT_LO_K, HEAT_HI_K):
+    let heat:number;
+    if(annual>=C.HEAT_ANNUAL_MAX_K)heat=0;
+    else{const hu=(warmest-C.HEAT_LO_K)/(C.HEAT_HI_K-C.HEAT_LO_K),ht=hu<0?0:hu>1?1:hu;heat=1-ht*ht*(3-2*ht);}
+    if(habitat){
+      const fm=(eff-C.FOREST_MOIST_LO)/C.FOREST_MOIST_RAMP,fs=1-snow/0.2;
+      out.forestSuitability01=treeline*(fm<0?0:fm>1?1:fm)*(fs<0?0:fs>1?1:fs)*heat;
+    }else out.forestSuitability01=0;
     out.climateCode=(tBin<<3)|mBin;
     return out;
   };
