@@ -56,7 +56,17 @@ test('the sparse-global callers pass level 0 (S0) and the dense/truth callers pa
   assert.match(src('ocean-volume.ts'), level0, 'ocean hypsometry');
   assert.match(src('surface-survey.ts'), level0, 'surface survey');
   // Contract section 8: collision, physics and place queries keep the truth (no level).
-  for (const p of ['place-query.ts', 'travel.ts']) assert.doesNotMatch(src(p), /lodLevel/, `${p} keeps the truth sampler`);
+  assert.doesNotMatch(src('travel.ts'), /lodLevel/, 'travel.ts keeps the truth sampler');
+  // place-query-2 (docs/place-query-v2.md): every place-query-1 field and coastAt keep the truth; the only level sampler
+  // is the opt-in rung answer (rungAt), the renderer's own tile sampler, built only when options.rung is set.
+  const pq = src('place-query.ts').replace(/\r\n/g, '\n');
+  const body = name => { const i = pq.indexOf(`function ${name}(`); assert.ok(i >= 0, name); return pq.slice(i, pq.indexOf('\n}\n', i)); };
+  for (const f of ['datedPlace', 'placeAtTruth', 'coastAtTruth', 'depthAndPressureAt'])
+    assert.doesNotMatch(body(f), /lodLevel/, `place-query.ts ${f} keeps the truth sampler`);
+  const levelSamplers = [...pq.matchAll(/terrainSampler\([^;\n]*\{lodLevel: ?[\w.]+\}\)/g)].length;
+  assert.equal(levelSamplers, 1, 'place-query.ts builds exactly one level sampler');
+  assert.match(body('rungAt'), /terrainSampler\([^;\n]*\{lodLevel: ?tileLevel\}\)/, 'and it is the rung answer');
+  assert.match(body('placeAtTruth'), /if \(options\.rung\) result\.rung = rungAt\(/, 'built only on request');
   // world-surface.ts keeps the truth by default; T6 decision 2 (addendum 4) adds ONE opt-in level-0 view, the landing
   // candidate heights (planetSnapshotAt().landingSurface). Every other query (walk, collision, physics) passes no level.
   const ws = src('world-surface.ts');
