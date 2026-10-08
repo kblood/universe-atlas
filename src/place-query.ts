@@ -1,5 +1,6 @@
-/** place-query-1: the documented query surface for games built on the
- * universe platform (docs/place-query-v1.md).
+/** place-query-2: the documented query surface for games built on the
+ * universe platform (docs/place-query-v1.md, additions in docs/place-query-v2.md,
+ * guide in docs/platform-getting-started.md).
  *
  * `placeAt(ctx, direction, level?)` answers "what is here, at this date" as
  * plain DERIVED DATA: ground and seabed height, the dated sea level and water
@@ -26,10 +27,15 @@
  * trace and returns the answer plus copies of every carving block it touched; post them from a worker with
  * `placeBlockTransferables` as the transfer list, and `importPlaceBlocks` them on the main thread, after which
  * the same `placeAt` is a memo hit with a bit-identical answer. In-session only (version-checked, never
- * persisted). Adding these functions changes no field or answer, so `PLACE_QUERY_VERSION` is unchanged. */
+ * persisted). Adding these functions changes no field or answer, so `PLACE_QUERY_VERSION` is unchanged.
+ *
+ * place-query-2 (additive, docs/place-query-v2.md): `coastAt` (sign of the ground height above the DATED sea level,
+ * always agreeing with `placeAt`), the hypsometric air pressure at the place (`airPressurePa`, `airScaleHeightM`, from
+ * planet-geophysics-1 data only), the opt-in `rung` answer (the renderer's tile sampler at a tile level) and
+ * `versions.lodLadder`. Every place-query-1 field keeps its value; only the version keys move. */
 import {AU, type Body, type StarSystem, type V3} from './catalog.ts';
 import type {Ns} from './world-time.ts';
-import {TERRAIN_VERSION, terrainFloorSampler} from './terrain.ts';
+import {TERRAIN_VERSION, terrainFloorSampler, terrainSampler} from './terrain.ts';
 import {
   starLifecycle, planetLifecycle, waterKeysFor, planetStateAt,
   type PlanetLifecycle, type StarLifecycle, type ParentPlanetContext,
@@ -37,7 +43,12 @@ import {
 import type {BodyAddress} from './address.ts';
 import {datedOceanState, datedSurfaceSampler, waterLossAt, SURFACE_VERSION} from './world-surface.ts';
 import {OCEAN_VOLUME_VERSION} from './ocean-volume.ts';
-import {planetGeophysics, pressureAtDepthPa, GEOPHYSICS_VERSION, type PlanetGeophysics, type AirClass} from './planet-geophysics.ts';
+import {
+  planetGeophysics, pressureAtDepthPa, GEOPHYSICS_VERSION, BOLTZMANN_J_PER_K, N2_MOLECULE_KG,
+  type PlanetGeophysics, type AirClass,
+} from './planet-geophysics.ts';
+import {LOD_LADDER_VERSION, ladderFor, ladderIdForLevel, type LadderId} from './lod-ladder.ts';
+import {detExp} from './det-math.ts';
 import {biomeClassifier, BIOME_VERSION} from './surface-biomes.ts';
 import {CLIMATE_VERSION} from './surface-climate.ts';
 import {
@@ -45,7 +56,7 @@ import {
   type CarvingBlockExport,
 } from './mountain-carving.ts';
 
-export const PLACE_QUERY_VERSION = 'place-query-1';
+export const PLACE_QUERY_VERSION = 'place-query-2';
 
 /** Detail-ladder rung: S0 space/orbit, S1 atmosphere/horizon, S2 far ground,
  * S3 near ground, S4 fine; or an explicit quadtree tile level (0..22). */
@@ -58,16 +69,19 @@ export type PlaceOptions = {
   /** Measure the slope from the ground itself (+-5 m central differences,
    * four extra ground samples) instead of `upDot`. */
   measureSlope?: boolean;
+  /** place-query-2: add the `rung` block, the renderer's tile sampler answer at `level` (a numeric tile level, or the
+   * finest tile level of a ladder rung on this body). The place-query-1 fields stay the full-detail truth. */
+  rung?: boolean;
 };
 
 export type PlaceVersions = Readonly<{
   placeQuery: string; surface: string; terrain: string; oceanVolume: string;
-  geophysics: string; biome: string; climate: string; lodLadder: string | null;
+  geophysics: string; biome: string; climate: string; lodLadder: string;
 }>;
 export const PLACE_VERSIONS: PlaceVersions = Object.freeze({
   placeQuery: PLACE_QUERY_VERSION, surface: SURFACE_VERSION, terrain: TERRAIN_VERSION,
   oceanVolume: OCEAN_VOLUME_VERSION, geophysics: GEOPHYSICS_VERSION, biome: BIOME_VERSION,
-  climate: CLIMATE_VERSION, lodLadder: null,
+  climate: CLIMATE_VERSION, lodLadder: LOD_LADDER_VERSION,
 });
 
 export type PlaceBiome = {name: string; weights: number[]; forestPotential: boolean; slopeDeg: number};
@@ -75,6 +89,8 @@ export type PlaceClimate = {
   annualMeanTempK: number; warmestMonthK: number; snowFraction: number;
   treeline01: number; effectiveMoisture: number;
 };
+/** place-query-2 `rung` block: what the renderer's tile sampler answers at `lodLevel` (docs/place-query-v2.md). */
+export type PlaceRung = {lodLevel: number; ladder: LadderId; groundHeightM: number; ocean: boolean};
 export type PlaceSample = {
   version: string;
   exists: true;
@@ -103,6 +119,12 @@ export type PlaceSample = {
   biome: PlaceBiome;
   climate: PlaceClimate;
   tectonicRelief: number;
+  /** place-query-2: hypsometric air pressure at the surface the air touches (ground on land, dated sea surface on the ocean). */
+  airPressurePa: number;
+  /** place-query-2: isothermal scale height k_B T / (m_N2 g0); null without air or without a positive temperature. */
+  airScaleHeightM: number | null;
+  /** place-query-2: present only with `options.rung: true`. */
+  rung?: PlaceRung;
   versions: PlaceVersions;
 };
 export type PlaceAbsent = {
@@ -113,6 +135,25 @@ export type PlaceAbsent = {
   versions: PlaceVersions;
 };
 export type PlaceResult = PlaceSample | PlaceAbsent;
+
+/** place-query-2 `coastAt` answer: which side of the dated shoreline a direction lies on. */
+export type CoastSample = {
+  version: string;
+  exists: true;
+  stage: 'molten' | 'solid';
+  groundHeightM: number;
+  /** Dated global sea level (m); null when no global ocean exists at t. */
+  seaLevelM: number | null;
+  /** groundHeightM - seaLevelM; null when seaLevelM is null. */
+  heightAboveSeaM: number | null;
+  /** -1 under the dated sea, +1 on land (and everywhere without a sea). */
+  seaSign: -1 | 1;
+  /** seaSign === -1; equals placeAt(...).ocean. */
+  ocean: boolean;
+  versions: PlaceVersions;
+};
+export type CoastAbsent = {version: string; exists: false; stage: PlaceAbsent['stage']; versions: PlaceVersions};
+export type CoastResult = CoastSample | CoastAbsent;
 
 export type DepthPressure = {
   /** Requested depth below the water surface, clamped to [0, seabedDepthM]. */
@@ -150,6 +191,10 @@ type DatedPlace = {
   stage: ReturnType<typeof planetStateAt>['stage'];
   sample: ReturnType<typeof datedSurfaceSampler>['sample'];
   seaLevelM: number | null;
+  /** The water level the renderer hands its tile workers (datedOceanState renderWaterLevelM). */
+  renderWaterLevelM: number;
+  /** Renderer tile samplers by tile level (place-query-2 rung), built on first use. */
+  rungSamplers: Map<number, ReturnType<typeof terrainSampler>>;
   lossFraction: number;
   geo: PlanetGeophysics;
   classify: ReturnType<typeof biomeClassifier>;
@@ -169,6 +214,7 @@ function datedPlace(ctx: PlaceContext): DatedPlace {
   const dated: DatedPlace = {
     stage, sample: sampler.sample,
     seaLevelM: ocean.globalOceanAvailable ? ocean.waterLevelM : null,
+    renderWaterLevelM: ocean.renderWaterLevelM, rungSamplers: new Map(),
     lossFraction, geo: planetGeophysics(body),
     // The classifier's ocean flag must use the same dated sea level as the surface.
     classify: biomeClassifier(body, ocean.globalOceanAvailable ? ocean.waterLevelM : -1_000_000),
@@ -184,6 +230,47 @@ function datedPlace(ctx: PlaceContext): DatedPlace {
 function gravityAt(geo: PlanetGeophysics, radiusM: number, heightM: number): number {
   const q = radiusM / (radiusM + heightM);
   return geo.surfaceGravityMS2 * q * q;
+}
+
+/** Isothermal scale height H = k_B T / (m_N2 g0) (m) from planet-geophysics-1 data and the catalogue temperature;
+ * null when the body has no air (surface pressure 0) or the temperature is not positive. docs/place-query-v2.md. */
+export function airScaleHeightM(geo: PlanetGeophysics, temperatureK: number): number | null {
+  if (!(geo.surfacePressurePa > 0) || !(temperatureK > 0) || !(geo.surfaceGravityMS2 > 0)) return null;
+  return BOLTZMANN_J_PER_K * temperatureK / (N2_MOLECULE_KG * geo.surfaceGravityMS2);
+}
+/** Hypsometric (isothermal barometric) air pressure at `heightM` above the 0 m datum: P0 * exp(-h / H), with P0 the
+ * planet-geophysics-1 datum pressure and exp from det-math (engine-independent). Airless bodies answer 0; without a
+ * scale height the pressure is P0 at or below the datum and 0 above it. */
+export function airPressureAtHeightPa(geo: PlanetGeophysics, temperatureK: number, heightM: number): number {
+  const p0 = geo.surfacePressurePa;
+  if (!(p0 > 0)) return 0;
+  const h = airScaleHeightM(geo, temperatureK);
+  if (h === null) return heightM <= 0 ? p0 : 0;
+  return p0 * detExp(-heightM / h);
+}
+
+/** The tile level a rung request names: a numeric level as given (integer 0..30), a ladder id as the finest level
+ * of that rung on this body (lod-ladder.ts ladderFor). */
+function rungLevel(radiusM: number, level: PlaceLevel): number {
+  if (typeof level === 'number') {
+    if (!Number.isInteger(level) || level < 0 || level > 30) throw new RangeError(`placeAt rung: tile level ${level} is not an integer in 0..30`);
+    return level;
+  }
+  const rung = ladderFor(radiusM).find(r => r.id === level);
+  if (!rung) throw new RangeError(`placeAt rung: unknown ladder rung ${String(level)}`);
+  return rung.levels[1];
+}
+/** The renderer's tile sampler answer at a tile level (planet-tiles.ts buildTile: terrainSampler with the tile level
+ * and the dated render water level). It is the field the drawn triangles interpolate between lattice points. */
+function rungAt(dated: DatedPlace, body: Body, direction: V3, level: PlaceLevel): PlaceRung {
+  const tileLevel = rungLevel(body.radiusM, level);
+  let sample = dated.rungSamplers.get(tileLevel);
+  if (!sample) {
+    sample = terrainSampler(body, undefined, undefined, undefined, dated.renderWaterLevelM, undefined, false, {lodLevel: tileLevel});
+    dated.rungSamplers.set(tileLevel, sample);
+  }
+  const s = sample(direction);
+  return {lodLevel: tileLevel, ladder: ladderIdForLevel(body.radiusM, tileLevel), groundHeightM: s.groundHeightM, ocean: s.ocean};
 }
 
 const tangentA: V3 = [0, 0, 0], tangentB: V3 = [0, 0, 0], probe: V3 = [0, 0, 0];
@@ -228,7 +315,9 @@ function placeAtTruth(ctx: PlaceContext, direction: V3, level: PlaceLevel, optio
   const floor = dated.floor(direction).floorM;
   const upDot = options.measureSlope ? measuredUpDot(dated.sample, direction, body.radiusM) : options.upDot ?? 1;
   const b = dated.classify(direction, ground, upDot);
-  return {
+  // place-query-2: hypsometric pressure at the surface the air touches (the dated sea surface on the ocean).
+  const airHeightM = ocean && dated.seaLevelM !== null ? dated.seaLevelM : ground;
+  const result: PlaceSample = {
     version: PLACE_QUERY_VERSION, exists: true, stage: dated.stage === 'molten' ? 'molten' : 'solid',
     level, resolution: 'full',
     groundHeightM: ground,
@@ -247,7 +336,32 @@ function placeAtTruth(ctx: PlaceContext, direction: V3, level: PlaceLevel, optio
     climate: {annualMeanTempK: b.annualMeanTempK, warmestMonthK: b.warmestMonthK, snowFraction: b.snowFraction,
       treeline01: b.treeline01, effectiveMoisture: b.effectiveMoisture},
     tectonicRelief: geo.tectonicRelief,
+    airPressurePa: airPressureAtHeightPa(geo, body.temperatureK, airHeightM),
+    airScaleHeightM: airScaleHeightM(geo, body.temperatureK),
     versions: PLACE_VERSIONS,
+  };
+  if (options.rung) result.rung = rungAt(dated, body, direction, level);
+  return result;
+}
+
+/** Which side of the dated shoreline `direction` lies on at `t` (docs/place-query-v2.md): the sign of the ground
+ * height above the dated global sea level, from the same dated surface sampler as `placeAt`, so `ocean` and
+ * `groundHeightM` always agree with it. No classifier, floor or climate work: the cheap call for maps and spawns. */
+export function coastAt(ctx: PlaceContext, direction: V3): CoastResult {
+  enterCarvingPointQuery();
+  try { return coastAtTruth(ctx, direction); } finally { exitCarvingPointQuery(); }
+}
+function coastAtTruth(ctx: PlaceContext, direction: V3): CoastResult {
+  const {body} = ctx;
+  if (body.kind === 'star') return {version: PLACE_QUERY_VERSION, exists: false, stage: 'star', versions: PLACE_VERSIONS};
+  const dated = datedPlace(ctx);
+  if (dated.stage !== 'molten' && dated.stage !== 'solid') return {version: PLACE_QUERY_VERSION, exists: false,
+    stage: dated.stage, versions: PLACE_VERSIONS};
+  const s = dated.sample(direction), ground = s.groundHeightM, sea = dated.seaLevelM;
+  return {
+    version: PLACE_QUERY_VERSION, exists: true, stage: dated.stage === 'molten' ? 'molten' : 'solid',
+    groundHeightM: ground, seaLevelM: sea, heightAboveSeaM: sea === null ? null : ground - sea,
+    seaSign: s.ocean ? -1 : 1, ocean: s.ocean, versions: PLACE_VERSIONS,
   };
 }
 
