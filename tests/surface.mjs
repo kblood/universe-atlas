@@ -1,6 +1,7 @@
 import {chromium} from 'playwright';
 import {browserArgs} from './browser-options.mjs';
 import {acquireGpuLock,assertCaptureOutsideSlot} from './helpers/gpu-lock.mjs';
+import {defaultSharedSlotOn,withTestSlot} from './helpers/test-slot.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {galaxies,refByAddress,system,bodyPosition} from '../src/catalog.ts';
@@ -30,7 +31,7 @@ const base=process.env.ATLAS_URL||'http://127.0.0.1:5186/',out=process.env.ATLAS
  * incident sun direction via `dayNightAt` (contract §4.4), not to the
  * surface geometry — a plain `dot(normal, sunDirWorld)` ignoring spin is
  * wrong for any rotating body. */
-function resolveLitLandingPoint(addr){
+function resolveLitLandingPoint(addr,{onProgress}={}){
   const g=galaxies(addr.seed).find(x=>x.id===addr.g);
   if(!g)throw new Error('resolveLitLandingPoint: galaxy not found: '+addr.g);
   const ref=refByAddress(g,addr.system);
@@ -50,6 +51,7 @@ function resolveLitLandingPoint(addr){
   const sample=terrainSampler(body),query=surfaceQuery(body),N=200000;
   let best=null;
   for(let i=0;i<N;i++){
+    if(i%10000===0)onProgress?.({samples:i,totalSamples:N,best:best?{illum:best.illum,slopeDeg:best.slopeDeg,elevationM:best.elevationM}:null});
     const y=1-2*(i+.5)/N,phi=i*2.399963229728653,r=Math.sqrt(Math.max(0,1-y*y));
     const d=[Math.cos(phi)*r,y,Math.sin(phi)*r],s=sample(d);
     // Bounded to ordinary ground-level dry land (the invalidated literal
@@ -65,16 +67,24 @@ function resolveLitLandingPoint(addr){
     if(illum<.5)continue;
     if(!best||illum>best.illum)best={d,illum,slopeDeg,elevationM:s.elevationM,rockHeightM:q.rockHeightM};
   }
+  onProgress?.({samples:N,totalSamples:N,best:best?{illum:best.illum,slopeDeg:best.slopeDeg,elevationM:best.elevationM}:null});
   if(!best)throw new Error('resolveLitLandingPoint: no walkable+sunlit candidate found on '+addr.body);
   const radiusOut=body.radiusM+best.rockHeightM+.92;
   return {point:best.d.map(v=>v*radiusOut),illum:best.illum,slopeDeg:best.slopeDeg,elevationM:best.elevationM,rockHeightM:best.rockHeightM};
 }
 await mkdir(out,{recursive:true});
 assertCaptureOutsideSlot('surface');
-const lock=process.env.ATLAS_GPU_LOCK_HELD?null:await acquireGpuLock({owner:`surface ${base}`,capture:true});
+defaultSharedSlotOn();
+const inheritedGpuLock=process.env.ATLAS_GPU_LOCK_HELD;
+const address={seed:'LETHRA-001',g:'G001',system:'G001/C2128,0,1/0',body:'G001/C2128,0,1/0/planet/1'};
+const scanOptions={onProgress:progress=>console.error(`[surface] landing scan ${JSON.stringify({...progress,at:new Date().toISOString()})}`)};
+const landingSite=inheritedGpuLock?resolveLitLandingPoint(address,scanOptions)
+  :await withTestSlot({owner:'surface lit landing scan',mode:'shared',tokens:1},()=>resolveLitLandingPoint(address,scanOptions));
+console.log('resolved landing site: '+JSON.stringify(landingSite));
+assert.ok(landingSite.illum>.5,'resolved landing site is comfortably sunlit');
+const lock=inheritedGpuLock?null:await acquireGpuLock({owner:`surface ${base}`,capture:true});
 let browser,page;
 const errors=[];
-const address={seed:'LETHRA-001',g:'G001',system:'G001/C2128,0,1/0',body:'G001/C2128,0,1/0/planet/1'};
 const pixels=async(a,b)=>page.evaluate(async([aa,bb])=>{
   const load=async(src)=>{const img=new Image();img.src=src;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);return ctx.getImageData(0,0,c.width,c.height).data;};
   const [x,y]=await Promise.all([load(aa),load(bb)]);let delta=0,changed=0;
@@ -95,9 +105,6 @@ try{
   // night side, confirmed via dayNightAt) — real signal on the shader fix
   // (delta 0.0 -> 1.83) but structurally incapable of clearing the >3
   // threshold there.
-  const landingSite=resolveLitLandingPoint(address);
-  console.log('resolved landing site: '+JSON.stringify(landingSite));
-  assert.ok(landingSite.illum>.5,'resolved landing site is comfortably sunlit');
   await page.goto(base+'?'+new URLSearchParams({...address,walk:landingSite.point.join(',')}));
   await page.waitForFunction(()=>window.__atlas?.travel.walking?.grounded,undefined,{timeout:240000});
   await page.waitForTimeout(6000);

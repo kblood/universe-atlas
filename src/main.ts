@@ -55,6 +55,7 @@ import {
   safeScaleFactorAt,canonicalDigest,
 } from './time-nav.ts';
 import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
+import {surfaceSiteReached} from './surface-navigation.ts';
 import {INLAND_RIVERS_UNAVAILABLE} from './inland-rivers.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
@@ -2112,9 +2113,10 @@ function updateFlight(dt: number) {
     const body=bodyById(surfaceJourney.bodyId)!, center=vec(bodyPosition(body,state.sys!,epoch));
     const relative=vec(localPose()).sub(center), radius=relative.length(), radial=relative.clone().normalize();
     const angle=radial.angleTo(surfaceJourney.direction);
+    const arrived=surfaceSiteReached(angle,body.radiusM);
     const safeHeight=Math.max(80000,body.radiusM*.04);
     const nextRadius=radius+(body.radiusM+safeHeight-radius)*Math.min(1,dt*2);
-    if(radius>body.radiusM+30000 && angle>.002) {
+    if(radius>body.radiusM+30000 && !arrived) {
       const rotation=new THREE.Quaternion().setFromUnitVectors(radial,surfaceJourney.direction);
       rotation.slerp(new THREE.Quaternion(),1-Math.min(1,dt*.35/angle));
       radial.applyQuaternion(rotation);
@@ -2126,7 +2128,7 @@ function updateFlight(dt: number) {
     camera.up.copy(surfaceJourney.up);
     camera.lookAt(center.clone().sub(systemOrigin).multiplyScalar(systemUnit));
     controls.target.copy(center.clone().sub(systemOrigin).multiplyScalar(systemUnit));
-    if(angle<.002 && radius>body.radiusM+30000) {
+    if(arrived && radius>body.radiusM+30000) {
       surfaceJourney=null; approachAltitude=0; approachClearance=480;
       startCruiseAfterLook=true; autopilot={kind:'body',id:body.id};
     }
