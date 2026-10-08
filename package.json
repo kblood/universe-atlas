@@ -44,7 +44,8 @@
     "test:rivers": "node tests/rivers.mjs",
     "test:biomes": "node tests/biome-lab.mjs",
     "test:biosphere": "node tests/biosphere-lab.mjs",
-    "test:creatures": "node tests/creature-lab.mjs"
+    "test:creatures": "node tests/creature-lab.mjs",
+    "test:coat-allocation": "node tests/helpers/test-slot.mjs -- node --expose-gc tests/fauna-coat-allocation.bench.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.20.0",
