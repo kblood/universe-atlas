@@ -345,7 +345,9 @@ test('biome-climate model versions are pinned and part of the model manifest', a
   // surface-survey-2 -> surface-survey-2.1-relief (survey sites move with the
   // relief terrain). habitat-suitability-1 is unchanged.
   assert.equal(BIOME_VERSION, 'surface-biomes-2.1-sea-datum', 'was surface-biomes-2-climate (was surface-biomes-1: climate snowline, treeline forest window and labels, dry belt)');
-  assert.equal(CLIMATE_VERSION, 'surface-climate-1.1-geo-g', 'was surface-climate-1 (per-planet annual climate field); lapse gravity now from planet-geophysics');
+  // BIOME2-CLIMATE M1 (2026-10-08, docs/surface-climate-v2.md): surface-climate-1.1-geo-g -> surface-climate-2
+  // (PDD snow, warm-column lapse, warmest-month ceiling, heat cap, PET effective moisture, ITCZ zonal band).
+  assert.equal(CLIMATE_VERSION, 'surface-climate-2', 'was surface-climate-1.1-geo-g (lapse gravity from planet-geophysics); was surface-climate-1 (per-planet annual climate field)');
   assert.equal(HABITAT_SUITABILITY_VERSION, 'habitat-suitability-1', 'new: niche evaluation against the climate field');
   assert.equal(SURVEY_VERSION, 'surface-survey-2.1-relief', 'was surface-survey-2 (was surface-survey-1: survey sites move through classifier v2)');
   assert.equal(SURVEY_REEXPORT, SURVEY_VERSION);
