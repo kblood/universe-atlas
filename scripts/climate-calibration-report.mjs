@@ -53,10 +53,21 @@ function landStats(body,n,lapses,withBands=false){
   }
   return res;
 }
+// surface-climate-2: snow comes from positive degree-days (PDD), not an annual-mean isotherm, so the snowline is
+// found on the live field: the lowest height (0..30 km, bisection to < 1 m) where snowFraction > 0 (onset) and
+// > 0.6 (heavy, the classifier's 'Alpine / polar snow' label), on the lon-0 meridian. 0 = snow at the datum,
+// null = no snow below 30 km. (The surface-climate-1 version read the removed T_SNOW_K / SNOW_RAMP_K isotherms.)
+function snowHeightM(climate,lat,thr,o){
+  const d=[Math.cos(lat/D),Math.sin(lat/D),0],snowy=h=>{climate(d,h,o);return o.snowFraction>thr;};
+  if(snowy(0))return 0;
+  let lo=0,hi=30000;if(!snowy(hi))return null;
+  while(hi-lo>.5){const m=(lo+hi)/2;if(snowy(m))hi=m;else lo=m;}
+  return Math.round(hi);
+}
 function snowlines(body,lapses){
-  const out={};
-  for(const l of lapses){const f=SC.climateForcingFor(body,l===undefined?undefined:{lapseKPerM:l}),key=l===undefined?'gravity':String(l*1000)+'K/km';
-    out[key]=Object.fromEntries([0,45,70].map(lat=>{const x=Math.sin(lat/D);return [lat+'deg',{onsetM:Math.round(SC.isothermHeightM(f,x,SC.CLIMATE_CALIBRATION.T_SNOW_K)),heavyM:Math.round(SC.isothermHeightM(f,x,SC.CLIMATE_CALIBRATION.T_SNOW_K-.6*SC.CLIMATE_CALIBRATION.SNOW_RAMP_K))}];}));}
+  const out={},o=SC.createClimateSample();
+  for(const l of lapses){const c=SC.surfaceClimate(SC.climateForcingFor(body,l===undefined?undefined:{lapseKPerM:l})),key=l===undefined?'gravity':String(l*1000)+'K/km';
+    out[key]=Object.fromEntries([0,45,70].map(lat=>[lat+'deg',{onsetM:snowHeightM(c,lat,0,o),heavyM:snowHeightM(c,lat,.6,o)}]));}
   return out;
 }
 const LAPSES=[undefined,.004,.005,.0065];
