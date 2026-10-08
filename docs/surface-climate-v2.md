@@ -285,7 +285,7 @@ the run takes 2.6 s.
 
 | | surface-climate-1.1 SITE_A (old) | surface-climate-2 SITE_A (new) |
 |---|---|---|
-| Literal (body-frame m, direction x radius) | [4075043.7, -1510938.2, 2845723.8] | [4096333.3, -474418.9, 3159436.6] |
+| Literal (body-frame m, direction x radius) | [4075043.7, -1510938.2, 2845723.8] | [4096333.3, -474418.9, 3159436.6] (the search evidence `resume/site-planet.json` prints direction x (radius + ground height), [4098749.6, -474698.8, 3161300.3]: the same direction) |
 | Found by | SITE_SEARCH disc, index 55 | SITE_PLANET_SEARCH, index 35760, rank 708 |
 | Distance from SITE_A_LEGACY | 11.64 km | 1083.1 km (1085.1 km from the old site) |
 | Latitude, longitude | -16.91, 34.93 deg | -5.24, 37.64 deg |
@@ -538,8 +538,8 @@ test:full, captures, Astra) were not run after this STOP. The timing bench stays
 
 All three rulings are **Opus-decided on Kasper's instruction, overrulable**.
 
-- **Ruling 1, shipped with a deviation.** `recede-360.patch` is committed unchanged (the test file differs from 9da8139
-  only by that patch). **Deviation, recorded rather than waived:** ruling 1 of decision-3 asked for a pass at both
+- **Ruling 1, shipped with a deviation.** `recede-360.patch` is committed unchanged in 6a4714b (at that commit the test
+  file differs from 9da8139 only by that patch; the FAUNA-NEAR-DROP reproducer was added afterwards in dedd5ad). **Deviation, recorded rather than waived:** ruling 1 of decision-3 asked for a pass at both
   sites; the change passes at the shipped (new) SITE_A (56 frames fading past 95 m, 0 hard drops; the former-cut
   negative hard-drops 9 at 95.0-95.4 m) and fails at the old site only through the pre-existing in-exit drops below.
   Decision-4 counts the gate as met in substance.
@@ -558,9 +558,9 @@ All three rulings are **Opus-decided on Kasper's instruction, overrulable**.
 ## 7. Ledger: moved pins in files this package does not own
 
 First pass (d134a87): the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot
-with 4 tokens, gave 691 pass, 17 fail, 11 skipped (`after/test-affected.log`). The resume stopped at step 7, so the
-real `npm run test:affected` and `test:full` (resume step 8) were **not** run; the rows below are updated from the
-resume's targeted runs.
+with 4 tokens, gave 691 pass, 17 fail, 11 skipped (`after/test-affected.log`). The resume's targeted runs updated
+the rows below; the real `npm run test:affected` then ran at 9086499 (771 tests, 755 pass, 1 fail = version-compat:335,
+4 todo; `step8/affected-real.log`), after the step-8 STOP and its decisions (sections 6c, 6d).
 
 | File (owner) | Failure | Kind | Resume state |
 |---|---|---|---|
