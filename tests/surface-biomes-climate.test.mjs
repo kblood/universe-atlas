@@ -40,7 +40,7 @@ const LABELS=new Set(['Ocean','Ice field','Volcanic rock','Rock escarpment','Reg
 // 0d2c1c03ae63407ce5295a1b55f485df92ae4ed1a8909285eb3242b766ec809e): the gates and
 // the climate datum are relative to the current sea level (the -4500 m rows move)
 // and the lapse gravity comes from planet-geophysics.
-const GOLDEN={biomeVersion:'surface-biomes-2.1-sea-datum',climateVersion:'surface-climate-2',sha256:'80cc59382d26740001b1e5954cfab8f138c613942ca474cad082960fbca75988'};
+const GOLDEN={biomeVersion:'surface-biomes-2.1-sea-datum',climateVersion:'surface-climate-2',sha256:'a7773e14ffbaf0680f694a937f39f069a87a542b78ca9faa9a91c1359c78bf3f'};
 export function classifierGolden(bodies=GOLDEN_BODIES()){
   const rows=[];
   for(const body of bodies)for(const water of [0,-4500]){
@@ -147,9 +147,7 @@ test('Maithea sites: the 18 km equatorial summit is snow, the pole is snow, both
   assert.ok(high.weights[3]>.9,`highMountain snow ${high.weights[3]}`);assert.equal(high.name,'Alpine / polar snow');assert.equal(high.forestPotential,false);
   const polar=at('polar');assert.ok(polar.snowFraction>.9,`polar snow ${polar.snowFraction}`);assert.equal(polar.name,'Alpine / polar snow');
   for(const k of ['equatorLowland','midLatForest']){const c=at(k);assert.equal(c.forestPotential,true,k);assert.ok(c.forestSuitability01>0,k);assert.equal(c.name,'Temperate ground',k);}
-  // surface-climate-2 step 5 (PET moisture without the zonal band): this 23.6 deg subtropical site
-  // reads effM 0.468 ('Temperate ground'); the ITCZ zonal band (step 6) restores its dryness.
-  assert.ok(['Dry upland','Temperate ground'].includes(at('dryUpland').name),at('dryUpland').name);
+  assert.equal(at('dryUpland').name,'Dry upland');
   assert.equal(at('coast').name,'Coastal sand');
   // 54 deg, 3975 m: snow-capped under Maithea's 4.62 K/km lapse (legacy: snow 0.54, 'Mountain meadow').
   assert.equal(at('midLatSnowMountain').name,'Alpine / polar snow');

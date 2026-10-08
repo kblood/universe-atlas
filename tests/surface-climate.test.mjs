@@ -39,7 +39,7 @@ test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump
   assert.equal(CLIMATE_VERSION,'surface-climate-2');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
-  assert.equal(sha,'a8df8585372ff4b149f242d902e0fdc53fcbea6163ec307707fbbfd751a1d3d1',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+  assert.equal(sha,'f56bf8ab95a9d0fc965e3ba9a0fc693ca8e1c301e75497e456bb5a103dddce6e',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
 });
 
 test('PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year',()=>{
@@ -299,12 +299,12 @@ import {createHash} from 'node:crypto';
 export function climateDigest(SC,bodies,perBody){
   const out={};
   for(const b of bodies){
-    const s=SC.surfaceClimate(SC.climateForcingFor(b)),o=SC.createClimateSample(),buf=new Float64Array(perBody*16);
+    const s=SC.surfaceClimate(SC.climateForcingFor(b)),o=SC.createClimateSample(),buf=new Float64Array(perBody*18);
     for(let i=0;i<perBody;i++){
       const y=1-2*(i+.5)/perBody,p=i*2.399963229728653,r=Math.sqrt(1-y*y),h=((i*7919)%12000)-1000;
       s([Math.cos(p)*r,y,Math.sin(p)*r],h,o);
-      const v=[o.insolation01,o.insolationHalfRange,o.annualMeanTempK,o.seasonalHalfRangeK,o.warmestMonthK,o.coldestMonthK,o.legacyMoisture,o.dryBelt01,o.effectiveMoisture,o.aridity01,o.snowFraction,o.treeline01,o.growingSeason01,o.forestSuitability01,o.climateCode,o.pdd];
-      buf.set(v,i*16);
+      const v=[o.insolation01,o.insolationHalfRange,o.annualMeanTempK,o.seasonalHalfRangeK,o.warmestMonthK,o.coldestMonthK,o.legacyMoisture,o.dryBelt01,o.effectiveMoisture,o.aridity01,o.snowFraction,o.treeline01,o.growingSeason01,o.forestSuitability01,o.climateCode,o.pdd,o.precipMm,o.petMm];
+      buf.set(v,i*18);
     }
     out[b.id]=createHash('sha256').update(Buffer.from(buf.buffer)).digest('hex');
   }
@@ -353,13 +353,17 @@ test('forcing cache: FIFO eviction never changes values',()=>{
   assert.equal(climateForcingFor(maithea,{anchorTempK:300}).provenance.anchorTempK,'override');
 });
 
-test('continuity: no steps at cube edges, poles or the dry-belt edges',()=>{
+test('continuity: no steps at cube edges, poles, table rows or across the zonal band',()=>{
   const forcings=[climateForcingFor(maithea),climateForcingFromParams({anchorTempK:288,obliquityRad:70*D,water:.5,moistureSeed:12345})];
   const fields=['insolation01','insolationHalfRange','annualMeanTempK','seasonalHalfRangeK','warmestMonthK','legacyMoisture','dryBelt01','effectiveMoisture','aridity01','snowFraction','treeline01','growingSeason01','forestSuitability01'];
-  const C=CLIMATE_CALIBRATION;
   const atX=(x,lon)=>{const r=Math.sqrt(1-x*x);return [Math.cos(lon)*r,x,Math.sin(lon)*r];};
   const probes=[unit([1,1,.3]),unit([1,.2,1]),unit([.4,1,1]),unit([1,1,1]),unit([-1,1,-1]),[0,1,0],[0,-1,0],unit([1e-7,1,0])];
-  for(const x of [C.BELT_LO,C.BELT_HI,C.BELT_LO-C.BELT_EDGE,C.BELT_LO+C.BELT_EDGE,C.BELT_HI-C.BELT_EDGE,C.BELT_HI+C.BELT_EDGE])for(const lon of [.3,2.1,4.4])probes.push(atX(x,lon),atX(-x,lon));
+  // surface-climate-2: the fixed dry-belt edges are gone; probe the zonal band's features (ITCZ, the
+  // subsidence centre and its flanks, the storm track, the polar term) for both ITCZ positions, plus
+  // insolation and zonal table row boundaries.
+  const latsDeg=[10,16,28,40,50,62,74,80,88];
+  for(const lat of latsDeg)for(const lon of [.3,2.1,4.4]){const x=Math.sin(lat*D);probes.push(atX(x,lon),atX(-x,lon));}
+  for(const x of [3/64,17/64,40/64,61/64,101/512,333/512,509/512])probes.push(atX(x,1.3),atX(-x,5.1));
   const rot=(d,axis,a)=>{ // Rodrigues rotation by a tiny angle
     const c=Math.cos(a),s=Math.sin(a),k=unit(axis),dot=k[0]*d[0]+k[1]*d[1]+k[2]*d[2];
     const cr=[k[1]*d[2]-k[2]*d[1],k[2]*d[0]-k[0]*d[2],k[0]*d[1]-k[1]*d[0]];
@@ -371,14 +375,18 @@ test('continuity: no steps at cube edges, poles or the dry-belt edges',()=>{
     for(const d of probes)for(const axis of [[1,0,0],[0,0,1],[1,1,0],[0,1,1]])for(const h of [0,800,2500]){
       s(d,h,a);s(rot(d,axis,1e-6),h,b);
       for(const k of fields){assert.ok(Math.abs(a[k]-b[k])<=1e-3,`${k} jumps ${a[k]}->${b[k]} at ${d} h=${h}`);checked++;}
-      // Degree-days are in C*d: 0.1 C*d moves snowFraction by 1e-3 (PDD_RAMP 100), the bound above.
-      assert.ok(Math.abs(a.pdd-b.pdd)<=.1,`pdd jumps ${a.pdd}->${b.pdd} at ${d} h=${h}`);
+      // Degree-days, precipitation and PET are in C*d and mm: 0.1 of either moves snowFraction / effM by < 1e-3.
+      for(const k of ['pdd','precipMm','petMm'])assert.ok(Math.abs(a[k]-b[k])<=.1,`${k} jumps ${a[k]}->${b[k]} at ${d} h=${h}`);
     }
   }
   assert.ok(checked>5000);
-  // The legacy hard step at sin-lat 0.18/0.52 is gone: the belt ramps smoothly.
-  const belt=x=>surfaceClimate(forcings[0])(atX(x,1),0,createClimateSample()).dryBelt01;
-  assert.ok(belt(.18)>.4&&belt(.18)<.6&&belt(.52)>.4&&belt(.52)<.6&&belt(.35)===1&&belt(.1)===0&&belt(.6)===0);
+  // The subsidence diagnostic is the zonal band's Hadley term e^-((dI-28)/12)^2, centred 28 deg from the ITCZ.
+  const belt=(f,lat)=>surfaceClimate(f)(atX(Math.sin(lat*D),1),0,createClimateSample()).dryBelt01;
+  const g=x=>Math.exp(-x*x);
+  for(const lat of [0,10,20,28,35,45,60]){
+    assert.ok(Math.abs(belt(forcings[0],lat)-g((lat-28)/12))<2e-3,`ITCZ at the equator, lat ${lat}`);
+    assert.ok(Math.abs(belt(forcings[1],lat)-g((90-lat-28)/12))<2e-2,`ITCZ at the pole, lat ${lat}`);
+  }
 });
 
 test('sample fields: ranges, climate code round-trip, frozen and dry worlds',()=>{

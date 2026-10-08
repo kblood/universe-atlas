@@ -22,7 +22,9 @@ test('versions: terrain colour v2 names the climate model it reads',()=>{
   // then for mountains step G (terrain-1.8.1-grain: reduced 800 m land grain), then T6 (terrain-1.9.0-mountains).
   assert.equal(TERRAIN_VERSION,'terrain-1.9.1-carving-c1'); // then carving C1 (terrain-1.9.1-carving-c1)
   assert.equal(TERRAIN_CLIMATE_VERSION,CLIMATE_VERSION);
-  assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
+  // Re-pinned for BIOME2-CLIMATE M1 (surface-climate-2, old surface-climate-1.1-geo-g); TERRAIN_VERSION is the
+  // coordinator's bump (not changed by the climate package).
+  assert.equal(CLIMATE_VERSION,'surface-climate-2');
 });
 
 // Pointwise colour identity, run on two samplers: level 0 by default, the carved truth (terrainSampler) in test:full

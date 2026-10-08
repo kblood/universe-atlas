@@ -17,7 +17,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { planetSurface, waterWorldLandColour } from '../../src/terrain.ts';
 import { biomeClassifier, BIOME_VERSION } from '../../src/surface-biomes.ts';
-import { climateForcingFor, createClimateSample, surfaceClimate, CLIMATE_VERSION } from '../../src/surface-climate.ts';
+import { climateForcingFor, createClimateSample, surfaceClimate, temperateHabitat, CLIMATE_VERSION } from '../../src/surface-climate.ts';
+import { galaxies, sector, system } from '../../src/catalog.ts';
 import { waterWorlds } from '../terrain-climate-fixtures.mjs';
 // T6 decision 3: the global agreement statistic reads the level-0 field; the orbit bake IS the level-0 field (T4).
 import { statisticSampler, fullOnly } from '../helpers/statistic-level.mjs';
@@ -87,4 +88,49 @@ test('the orbit bake stores terrainSampler colour per pixel (orbit view = sample
     console.log(`# ${body.name} orbit ${W}x${H}: land ${land}, snow-labelled ${white}`);
     assert.ok(land > 0);
   }
+});
+
+// BIOME2-CLIMATE M1 acceptance 2 (plan v2 P1 step 6): the polar-ITCZ branch is a main path. Corpus = the
+// W0-CLIMATE definition (temperate-habitat bodies of the first 2000 systems from sector x = 266 of LETHRA-001,
+// land share >= 1 % on 8000 Fibonacci directions, level-0 sampler). Selected: ITCZ (argmax row of the annual
+// insolation table) poleward of 45 deg. Judged: >= 50 land samples both within 10 deg of the ITCZ and 18-35 deg
+// from it. Every judged planet must have mean effective moisture near the ITCZ >= in its subsidence band.
+// Negative: the shipped surface-climate-1.1 rule (legacyMoisture - 0.0425 x fixed sin-lat 0.18-0.52 belt; legacy
+// noise is unchanged by M1) fails it on many planets (step-0 baseline: 93 of 213 judged).
+test('polar ITCZ: every judged corpus planet is wetter near the ITCZ than 18-35 deg from it (shipped belt fails)', t => {
+  const g0 = galaxies('LETHRA-001')[0], CN = 8000, D = 180 / Math.PI;
+  const fibN = i => { const y = 1 - 2 * (i + .5) / CN, p = i * 2.399963229728653, r = Math.sqrt(1 - y * y); return [Math.cos(p) * r, y, Math.sin(p) * r]; };
+  const sm = (x, lo, hi) => { const u = Math.max(0, Math.min(1, (x - lo) / (hi - lo))); return u * u * (3 - 2 * u); };
+  const shippedBelt = x => sm(x, .15, .21) * (1 - sm(x, .49, .55));
+  const corpus = []; let systems = 0;
+  for (let sx = 266; systems < 2000; sx++) for (const ref of sector(g0, [sx, 0, 0]).refs) {
+    if (systems >= 2000) break; systems++;
+    for (const b of system(ref).planets) if (temperateHabitat(b)) corpus.push(b);
+  }
+  let selected = 0, judged = 0, shippedFails = 0; const fails = [];
+  for (const b of corpus) {
+    const f = climateForcingFor(b);
+    if (!(f.itczLatDeg > 45)) continue; // not selected; land share is only needed for selected bodies
+    const ts = statisticSampler(b), c = surfaceClimate(f), s = createClimateSample();
+    let land = 0; const near = [0, 0, 0], sub = [0, 0, 0];
+    for (let i = 0; i < CN; i++) {
+      const d = fibN(i), x = ts(d); if (x.ocean) continue; land++;
+      c(d, x.groundHeightM, s);
+      const ax = Math.min(1, Math.abs(d[1])), dI = Math.abs(Math.asin(ax) * D - f.itczLatDeg);
+      const shipped = s.legacyMoisture - .0425 * shippedBelt(ax);
+      if (dI <= 10) { near[0]++; near[1] += s.effectiveMoisture; near[2] += shipped; }
+      else if (dI >= 18 && dI <= 35) { sub[0]++; sub[1] += s.effectiveMoisture; sub[2] += shipped; }
+    }
+    if (100 * land / CN < 1) continue;
+    selected++;
+    if (near[0] < 50 || sub[0] < 50) continue;
+    judged++;
+    if (!(near[1] / near[0] >= sub[1] / sub[0])) fails.push({ id: b.id, near: near[1] / near[0], sub: sub[1] / sub[0] });
+    if (!(near[2] / near[0] >= sub[2] / sub[0])) shippedFails++;
+  }
+  t.diagnostic(JSON.stringify({ corpus: corpus.length, selected, judged, fails: fails.length, shippedFails }));
+  assert.equal(selected, 311, 'selected polar-ITCZ planets (plan v2: 311)');
+  assert.equal(judged, 213, 'judged planets (>= 50 land samples in both bands)');
+  assert.deepEqual(fails, [], 'every judged planet passes');
+  assert.ok(shippedFails >= 50, `negative: the shipped fixed belt fails ${shippedFails} judged planets (baseline 93)`);
 });

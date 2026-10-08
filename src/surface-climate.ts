@@ -27,7 +27,7 @@
  */
 import {G,hash64,noise,type Body,type V3} from './catalog.ts';
 import {spinStateFor} from './stellar-evolution.ts';
-import {detAcos,sine} from './det-math.ts';
+import {detAcos,detExp,sine} from './det-math.ts';
 import {planetGeophysics} from './planet-geophysics.ts';
 
 export const CLIMATE_VERSION='surface-climate-2';
@@ -67,9 +67,11 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   HEAT_LO_K:305, HEAT_HI_K:316, HEAT_ANNUAL_MAX_K:320,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
-  BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03,
+  ZONAL_A1:1.6, ZONAL_A2:0, ZONAL_A3:0.75, ZONAL_A4:0.4,
+  ZONAL_W1:10, ZONAL_W2:12, ZONAL_W3:12, ZONAL_W4:12,
+  ZONAL_C2:50, ZONAL_C3:28, ZONAL_C4:88, HADLEY_EDGE_DEG:30,
   PET_MIN_MM:120, PET_MM_PER_BIOTEMP_C:58.93,
-  P_REF_MM:1000, P_WATER_REF:0.7, P_WATER_MIN:0.2, P_WATER_MAX:1.2, P_TEMP_REF_K:288, P_TEMP_PER_K:0.025, P_TEMP_MIN:0.2,
+  P_REF_MM:650, P_WATER_REF:0.7, P_WATER_MIN:0.2, P_WATER_MAX:1.2, P_TEMP_REF_K:288, P_TEMP_PER_K:0.025, P_TEMP_MIN:0.2,
   P_NOISE_BASE:0.4, P_NOISE_GAIN:1.2, AI_HALF:0.6,
   FOREST_MOIST_LO:0.44, FOREST_MOIST_RAMP:0.08,
   GROW_K:278,
@@ -96,6 +98,12 @@ export type ClimateForcing=Readonly<{
   qMean:Float64Array;
   /** Seasonal half-range (max-min)/2 of daily insolation per row, same normalisation. Do not mutate. */
   qAmp:Float64Array;
+  /** surface-climate-2: sin(latitude) of the ITCZ = the argmax row of qMean (equator below ~54 deg
+   * obliquity, the poles above), its latitude (deg) and the fixed Hadley edge (owner Q4: 30 deg). */
+  itczSinLat:number; itczLatDeg:number; hadleyEdgeDeg:number;
+  /** Zonal precipitation factor Z and the subsidence diagnostic (dryBelt01) per x = sin|lat|,
+   * ZONAL_ROWS+1 rows. Do not mutate. */
+  zonal:Float64Array; subsidence:Float64Array;
   provenance:ClimateProvenance;
 }>;
 
@@ -312,10 +320,46 @@ export function climateForcingFromParams(p:ClimateForcingParams):ClimateForcing 
   const g=p.surfaceGravityMS2??9.81;
   const lapseKPerM=p.lapseKPerM??lapseRateForGravity(g);
   const {qMean,qAmp}=insolationTables(obliquityRad);
+  const itczSinLat=itczSinLatOf(qMean),itczLatDeg=LAT_DEG[Math.round(itczSinLat*ZONAL_ROWS)]!;
+  const {zonal,subsidence}=zonalTables(itczLatDeg);
   return Object.freeze({version:CLIMATE_VERSION,anchorTempK:p.anchorTempK,obliquityRad,water:p.water,
     frozen:!!p.frozen,habitat:p.habitat??true,moistureSeed:p.moistureSeed??0,surfaceGravityMS2:g,lapseKPerM,qMean,qAmp,
+    itczSinLat,itczLatDeg,hadleyEdgeDeg:C.HADLEY_EDGE_DEG,zonal,subsidence,
     provenance:Object.freeze({anchorTempK:'override',obliquityRad:'override',surfaceGravityMS2:'override',
       lapseKPerM:p.lapseKPerM===undefined?'derived-heuristic':'override',table:'derived-heuristic',...p.provenance}) as ClimateProvenance});
+}
+
+/**
+ * surface-climate-2 step 6, the ITCZ zonal band. Rows k = 0..ZONAL_ROWS over
+ * x = sin|latitude| = k/ZONAL_ROWS; LAT_DEG is their latitude (detAcos at module
+ * init only). Per forcing, with dI = |lat - itczLatDeg| (deg),
+ *   Z(dI) = 1 + A1 e^-(dI/W1)^2 + A2 e^-((dI-50)/W2)^2 - A3 e^-((dI-28)/W3)^2 - A4 e^-((dI-88)/W4)^2
+ * (ITCZ convergence, mid-latitude storm track, Hadley subsidence, polar desert;
+ * the squares are products and e^ is detExp) and the subsidence term
+ * e^-((dI-28)/W3)^2 alone is the dryBelt01 diagnostic. Both move with the ITCZ,
+ * so on a high-tilt world (ITCZ at the pole) the wet band is polar and the dry
+ * band follows it. Calibration: docs/surface-climate-v2.md.
+ */
+export const ZONAL_ROWS=512;
+const LAT_DEG=new Float64Array(ZONAL_ROWS+1);
+for(let k=0;k<=ZONAL_ROWS;k++)LAT_DEG[k]=90-detAcos(k/ZONAL_ROWS)*180/Math.PI;
+LAT_DEG[0]=0;LAT_DEG[ZONAL_ROWS]=90;
+const gauss=(x:number,w:number)=>{const u=x/w;return detExp(-(u*u));};
+/** The ITCZ row of a qMean table (first maximum) as sin(latitude). */
+export function itczSinLatOf(qMean:Float64Array):number {
+  let best=0;for(let k=1;k<=TABLE_ROWS;k++)if(qMean[k]!>qMean[best]!)best=k;
+  return best/TABLE_ROWS;
+}
+/** Zonal factor Z and subsidence diagnostic tables for an ITCZ latitude (deg). */
+export function zonalTables(itczLatDeg:number):{zonal:Float64Array;subsidence:Float64Array} {
+  const zonal=new Float64Array(ZONAL_ROWS+1),subsidence=new Float64Array(ZONAL_ROWS+1);
+  for(let k=0;k<=ZONAL_ROWS;k++){
+    const dI=LAT_DEG[k]!>itczLatDeg?LAT_DEG[k]!-itczLatDeg:itczLatDeg-LAT_DEG[k]!;
+    const sub=gauss(dI-C.ZONAL_C3,C.ZONAL_W3);
+    zonal[k]=1+C.ZONAL_A1*gauss(dI,C.ZONAL_W1)+C.ZONAL_A2*gauss(dI-C.ZONAL_C2,C.ZONAL_W2)-C.ZONAL_A3*sub-C.ZONAL_A4*gauss(dI-C.ZONAL_C4,C.ZONAL_W4);
+    subsidence[k]=sub;
+  }
+  return {zonal,subsidence};
 }
 
 const FORCING_CACHE_CAP=64;
@@ -362,12 +406,11 @@ export function climateForcingCacheSize():number {return forcingCache.size;}
  * no allocation, no hash64 per call.
  */
 export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,number,number],heightM:number,out:ClimateSample)=>ClimateSample {
-  const {qMean,qAmp,anchorTempK:anchor,lapseKPerM:lapse,water,frozen,habitat,moistureSeed}=forcing;
+  const {qMean,qAmp,zonal,subsidence,anchorTempK:anchor,lapseKPerM:lapse,water,frozen,habitat,moistureSeed}=forcing;
   const seed=moistureSeed+30;
   const maritime=1-C.MARITIME*water;
   // Step 5: the water term of the precipitation index (per forcing).
   const wr=water/C.P_WATER_REF,pWater=C.P_REF_MM*(wr<C.P_WATER_MIN?C.P_WATER_MIN:wr>C.P_WATER_MAX?C.P_WATER_MAX:wr);
-  const beltLoA=C.BELT_LO-C.BELT_EDGE,beltLoB=C.BELT_LO+C.BELT_EDGE,beltHiA=C.BELT_HI-C.BELT_EDGE,beltHiB=C.BELT_HI+C.BELT_EDGE;
   return (d,heightM,out)=>{
     let x=d[1]<0?-d[1]:d[1];
     if(x>1)x=1;
@@ -389,7 +432,12 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     if(excess>0){half=C.TW_CEILING_K+excess/(1+excess/C.TW_CEILING_SCALE_K)-annual;if(half<0)half=0;}
     // Exactly the legacy classifier's moisture expression (surface-biomes.ts).
     const moisture=noise(d[0]*5+13,d[1]*5+37,d[2]*5+19,seed);
-    const belt=smooth(x,beltLoA,beltLoB)*(1-smooth(x,beltHiA,beltHiB));
+    // Step 6: the ITCZ zonal band, one interpolation in the forcing's tables.
+    const fz=x*ZONAL_ROWS;
+    let iz=Math.floor(fz);if(iz>ZONAL_ROWS-1)iz=ZONAL_ROWS-1;
+    const tz=fz-iz;
+    const zf=zonal[iz]!+(zonal[iz+1]!-zonal[iz]!)*tz;
+    const belt=subsidence[iz]!+(subsidence[iz+1]!-subsidence[iz]!)*tz;
     // surface-climate-2 step 1: snow from positive degree-days (melt), not the
     // annual mean. snowFraction > 0.6 (the 'Alpine / polar snow' label) is PDD < 190.
     const pdd0=degreeDaysAbove(annual,half,0);
@@ -399,7 +447,7 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     const biotemp=(pdd0-degreeDaysAbove(annual,half,30))/C.YEAR_D;
     let pet=C.PET_MM_PER_BIOTEMP_C*biotemp;if(pet<C.PET_MIN_MM)pet=C.PET_MIN_MM;
     let pTemp=1+C.P_TEMP_PER_K*(annual-C.P_TEMP_REF_K);if(pTemp<C.P_TEMP_MIN)pTemp=C.P_TEMP_MIN;
-    const precip=pWater*pTemp*(C.P_NOISE_BASE+C.P_NOISE_GAIN*moisture);
+    const precip=pWater*pTemp*zf*(C.P_NOISE_BASE+C.P_NOISE_GAIN*moisture);
     const ai=precip/pet,eff=ai/(ai+C.AI_HALF);
     const snow=frozen?1:water>0?clamp01((C.PDD_CRIT-pdd0)/C.PDD_RAMP):0;
     const warmest=annual+half;

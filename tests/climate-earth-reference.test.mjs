@@ -9,7 +9,7 @@
 // 1200-1700 m, 70 deg 550-1000 m, 78 deg 250-650 m.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {climateForcingFromParams,surfaceClimate,createClimateSample,degreeDaysAbove,warmColumnLapseFactor,CLIMATE_CALIBRATION as C} from '../src/surface-climate.ts';
+import {climateForcingFromParams,surfaceClimate,createClimateSample,degreeDaysAbove,warmColumnLapseFactor,itczSinLatOf,insolationTables,ZONAL_ROWS,CLIMATE_CALIBRATION as C} from '../src/surface-climate.ts';
 
 const D=Math.PI/180;
 export const EARTH={anchorTempK:288,obliquityRad:23.44*D,water:.7,surfaceGravityMS2:9.81,moistureSeed:1};
@@ -62,4 +62,65 @@ test('warm-column lapse: the factor, its clamps, and why it is mandatory (equato
   assert.ok(Math.abs(eq-4302)<=2,`no warm column: ${eq} m`);
   assert.ok(!inBand(0,eq),'without the warm-column factor the equator fails the >= 4450 m band');
   assert.ok(half>0);
+});
+
+// ---------------- step 6: the ITCZ zonal band ----------------
+const fib=(i,n)=>{const y=1-2*(i+.5)/n,p=i*2.399963229728653,r=Math.sqrt(1-y*y);return [Math.cos(p)*r,y,Math.sin(p)*r];};
+/** Zonal means relative to the ITCZ over N Fibonacci directions at the datum (the reference has no terrain). */
+export function zonalBands(f,N=20000,effOf=null){
+  const c=surfaceClimate(f),s=createClimateSample(),B={itcz:[0,10],sub:[15,35],dry:[18,32],mid:[45,60],pol:[75,90.1]},acc={};
+  for(const k in B)acc[k]={n:0,P:0,eff:0};
+  const bins=Array.from({length:18},()=>({n:0,P:0,eff:0}));
+  for(let i=0;i<N;i++){
+    const d=fib(i,N);c(d,0,s);
+    const lat=Math.asin(Math.abs(d[1]))/D,dI=Math.abs(lat-f.itczLatDeg),eff=effOf?effOf(s,lat):s.effectiveMoisture;
+    for(const k in B)if(dI>=B[k][0]&&dI<B[k][1]){acc[k].n++;acc[k].P+=s.precipMm;acc[k].eff+=eff;}
+    const b=bins[Math.min(17,Math.floor(lat/5))];b.n++;b.P+=s.precipMm;b.eff+=eff;
+  }
+  const m=k=>({P:acc[k].P/acc[k].n,eff:acc[k].eff/acc[k].n});
+  return {itcz:m('itcz'),sub:m('sub'),dry:m('dry'),mid:m('mid'),pol:m('pol'),bins:bins.map((b,k)=>({lat:k*5+2.5,P:b.P/b.n,eff:b.eff/b.n}))};
+}
+
+test('ITCZ: argmax row of the annual insolation table; equator below ~54 deg obliquity, pole above',()=>{
+  assert.equal(ZONAL_ROWS,512);
+  for(const [deg,itcz] of [[0,0],[23.44,0],[45,0],[53,0],[56,1],[61.4,1],[70,1],[89.8,1]])
+    assert.equal(itczSinLatOf(insolationTables(deg*D).qMean),itcz,`obliquity ${deg}`);
+  assert.equal(forcing.itczSinLat,0);assert.equal(forcing.itczLatDeg,0);assert.equal(forcing.hadleyEdgeDeg,30);
+  const f70=climateForcingFromParams({...EARTH,obliquityRad:70*D});
+  assert.equal(f70.itczSinLat,1);assert.equal(f70.itczLatDeg,90);
+});
+
+test('Earth reference zonal targets (calibrated band): P ratios and effective moisture per band',t=>{
+  const z=zonalBands(forcing);
+  const r={subOverItcz:z.sub.P/z.itcz.P,midOverSub:z.mid.P/z.sub.P,polOverItcz:z.pol.P/z.itcz.P,effItcz:z.itcz.eff,effDry:z.dry.eff,effMid:z.mid.eff};
+  t.diagnostic(JSON.stringify(r));
+  assert.ok(r.subOverItcz<=.55,`P(15-35) / P(0-10) = ${r.subOverItcz}`);
+  assert.ok(r.midOverSub>=1.2,`P(45-60) / P(15-35) = ${r.midOverSub}`);
+  assert.ok(r.polOverItcz<.35,`P(>75) / P(0-10) = ${r.polOverItcz}`);
+  assert.ok(r.effItcz>=.6,`effM(0-10) = ${r.effItcz}`);
+  assert.ok(r.effDry<=.4,`effM(18-32) = ${r.effDry}`);
+  assert.ok(r.effMid>=.45&&r.effMid<=.65,`effM(45-60) = ${r.effMid}`);
+});
+
+test('negative: the uncalibrated starting band (P_REF 1000, a = .9/.6/.55/.4, w = 10/12/9/12) misses the Earth targets',()=>{
+  // Re-statement of plan v1's starting band on the live temperature field: effM = AI/(AI+0.6),
+  // AI = P/max(120, 58.93 biotemp), P = 1000 x pTemp x Z0 x (0.4 + 1.2 noise).
+  const g=(x,w)=>Math.exp(-(x/w)*(x/w)),Z0=dI=>1+.9*g(dI,10)+.6*g(dI-50,12)-.55*g(dI-28,9)-.4*g(dI-88,12);
+  const z=zonalBands(forcing,20000,(s,lat)=>{
+    const pet=Math.max(120,58.93*(degreeDaysAbove(s.annualMeanTempK,s.seasonalHalfRangeK,0)-degreeDaysAbove(s.annualMeanTempK,s.seasonalHalfRangeK,30))/365.25);
+    const P=1000*Math.max(.2,1+.025*(s.annualMeanTempK-288))*Z0(lat)*(.4+1.2*s.legacyMoisture),ai=P/pet;return ai/(ai+.6);});
+  // Measured: effM(18-32) 0.472 (> 0.40), effM(45-60) 0.799 (> 0.65).
+  assert.ok(z.dry.eff>.4&&z.mid.eff>.65,`uncalibrated: dry ${z.dry.eff}, mid ${z.mid.eff}`);
+});
+
+test('high-tilt synthetic world (70 deg): the wettest band is polar and the driest band moves with the ITCZ',t=>{
+  const f70=climateForcingFromParams({...EARTH,obliquityRad:70*D});
+  const z=zonalBands(f70);
+  const wettest=z.bins.reduce((a,b)=>b.P>a.P?b:a),driest=z.bins.reduce((a,b)=>b.eff<a.eff?b:a);
+  t.diagnostic(JSON.stringify({wettestLat:wettest.lat,driestLat:driest.lat,effItcz:z.itcz.eff,effSub:z.sub.eff}));
+  assert.ok(wettest.lat>=75,`wettest 5 deg band at ${wettest.lat}`);
+  const dI=90-driest.lat;assert.ok(dI>=18&&dI<=35,`driest band ${dI} deg from the ITCZ`);
+  assert.ok(z.itcz.eff>z.sub.eff,'near the ITCZ wetter than 15-35 deg from it');
+  // The shipped fixed belt's negative is the corpus polar-ITCZ test (tests/acceptance/climate-agreement.test.mjs):
+  // on this synthetic world its belt deficit (0.0425) is below the legacy noise, so a band minimum does not locate it.
 });
