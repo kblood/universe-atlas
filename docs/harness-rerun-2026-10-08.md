@@ -74,3 +74,9 @@ terrain acceptance. Script: `test-results/harness-rerun/shore-identity.mjs`;
 receipt: `shore-identity-analytic.log` (exit 0). A duplicate real-terrain
 comparison was interrupted to release the CPU slot for allocation verification;
 its interrupted result is not an acceptance receipt.
+The callback-enabled variant also passes the same nine exact comparisons and
+checks global completion/found-event counts (exit 0,
+`test-results/harness-rerun/shore-identity-progress.log`). The actual harness
+negative case rejects a capture invoked inside a CPU slot before launching a
+browser and leaves the live GPU holder unchanged (expected refusal;
+`rock-lifecycle-negative.log`).
