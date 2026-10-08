@@ -15,12 +15,12 @@ const MUST_VENDOR = [
   'fauna-composer-species', 'fauna-composer', 'fauna-composer-export', 'fauna-composer-lod',
 ].map(m => `src/${m}.ts`).concat(['scripts/export-creature.mjs']);
 
-test('creature-kit vendor: VENDOR.json names a kit commit, the NOASSERTION licence and covers the composer core', () => {
+test('creature-kit vendor: VENDOR.json names a kit commit, the UNLICENSED licence and covers the composer core', () => {
   const v = readVendor();
   assert.equal(v.schema, VENDOR_SCHEMA);
   assert.equal(v.kit.name, 'creature-kit');
   assert.match(v.kit.commit, /^[0-9a-f]{40}$/);
-  assert.equal(v.kit.license, 'NOASSERTION', 'licence is owner question A13; change only with the owner answer');
+  assert.equal(v.kit.license, 'UNLICENSED', 'owner decision A13, 2026-10-07');
   for (const p of MUST_VENDOR) assert.ok(VENDORED_PATHS.includes(p), `${p} must be vendored from the kit`);
   assert.deepEqual(v.files.map(f => f.path), [...VENDORED_PATHS], 'VENDOR.json lists exactly VENDORED_PATHS, in order');
 });

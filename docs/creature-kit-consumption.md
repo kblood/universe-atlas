@@ -40,6 +40,53 @@ Owner decision: Kasper, 2026-10-07, the creature kit is its own repo (`C:/LLM/IW
   `CREATURE_KIT_DIR` set, the vendor test also compares a kit checkout.
 - **Line endings:** sha256 is over LF-normalised text, so the CRLF Windows checkout and the LF blobs hash the same.
 
+## Sync 2 (2026-10-08, branch `infra/creature-kit-sync-2`, task R7)
+
+- `node scripts/sync-creature-kit.mjs --write --kit C:/LLM/IWSDK/creature-kit` at kit main `c5b0cde` (was `6ca5e18`):
+  coat crisp v1 (`fauna-composer-skin-5`, `fauna-composer-coat-crisp-1`), export v3 (`fauna-composer-export-3`,
+  `fauna-composer-skeleton-1`), the re-keyed export `V1_PINS` and the kit README. 15 vendored files changed.
+- Two paths added to `VENDORED_PATHS` (44 -> 46): `tests/fixtures/composer-skin5-links.json` (the vendored
+  `fauna-composer-skin4-links.test.mjs` now reads it) and `tests/fauna-composer-coat-crisp.test.mjs` (Atlas-free, so
+  vendored like the other composer tests).
+- **Licence: `UNLICENSED`** (owner decision A13, 2026-10-07: "Den licens skal være den samme som resten"). The sync
+  script copies the kit's `package.json` licence, so it needed no change; `tests/creature-kit-vendor.test.mjs` now
+  expects `UNLICENSED` with the message "owner decision A13, 2026-10-07" (it expected `NOASSERTION` while A13 was open).
+- Gates (through `test-slot.mjs --shared 4`): tsc 0; `creature-kit-vendor` 3 / 3 with `CREATURE_KIT_DIR` set;
+  `life-cpu-digest` 2 / 2 against `e6a0b39`, unchanged (lineage B imports `fauna-coat-*`), which is also guarded by
+  the kit's `coat-lineage-b-guard.json`.
+- First attempt at `c5b0cde` (commit `031f4b5`): golden NOT re-pinned. The strict four-engine run failed on `fauna` only:
+  WebKit 26.5 built the ostrich's two coincident `round eyes` vertices (3654, 3674) up to 8.1e-6 m away from Node
+  (WebKit a8e59237... vs Node fefcb903...). Cause, found in the kit (`docs/fauna-eye-seat-tie-2026-10-08.md`): the
+  catalogue eye patch's `surfaceZ` fallback took the first strict minimum of `closestPointOnSoup` on an exact tie
+  across a shared quad edge, so 1 ULP of engine noise picked the triangle (and the lift normal). Fixed in the kit as
+  R7a-KIT-EYE-TIE (lowest-index tie within 1e-9, catalogue patch only; Node golden corpus byte-identical; 3 eye-catalogue
+  entries re-pinned with `eyeTieDrift`), merged to kit main `aa89701`.
+- **Re-sync at kit main `aa89701`** (the R7 commit after `031f4b5`): 5 vendored files moved (`src/fauna-composer-eye.ts`,
+  `tests/fauna-composer-export.test.mjs` (V1_PINS `core` re-key only), `tests/fauna-composer-mesh-stability.test.mjs`,
+  `tests/fixtures/composer-eye-catalogue-links.json`, `VENDOR.json`); still 46 paths, licence `UNLICENSED`.
+- Gates at `aa89701` (through `test-slot.mjs --shared 4` unless noted): `creature-kit-vendor` 3 / 3 with
+  `CREATURE_KIT_DIR`; `life-cpu-digest` 2 / 2 against `e6a0b39`, unchanged; tsc 0; `test:affected --base main` (takes the
+  slot itself): 1208 tests, 1190 pass, 0 fail, 16 skipped, 2 todo; `tests/golden/perturbation.test.mjs` 5 / 5 (`fauna`
+  655 records, golden flips 0).
+- **GOLDEN-FAUNA-2 folded back into `fauna`; the `faunaKnownUnstable` key is dropped** (D2's next-round plan,
+  `docs/fauna-composer-stability-2026-10-07.md`): `tests/golden/generator.ts` loses `FAUNA_KNOWN_UNSTABLE` and the key;
+  `tests/golden/perturbation.test.mjs` drops the key from its section list and `EXACT_FLIP_FINDINGS` (an empty key
+  fails its "section is non-trivial" check); the stale fold note in `run-cross-engine.mjs` is updated. Records:
+  `fauna` 625 + 30 = 655.
+- **Golden re-pinned** (`run-cross-engine.mjs --strict --update`): "GOLDEN CROSS-ENGINE GATE: PASS (all four engines
+  equal)"; Node, Chromium 149, Firefox 151 and WebKit 26.5 equal on every key. `golden.json` diff, with its ledger:
+
+  | Key | Was | Now | Why |
+  |---|---|---|---|
+  | `fauna` | `6bf5d085...` (skin-4) | `75a59833...` | skin-5 coat crisp v1 (kit `c5b0cde`, gives `fefcb903...` on all four engines with the eye-tie fix, proved by a strict `--fixture` run before the fold), then GOLDEN-FAUNA-2 folded in (`fefcb903...` -> `75a59833...`) |
+  | `faunaKnownUnstable` | `61e258fc...` | dropped | the fold above |
+  | counts | `faunaRecords` 625, `faunaKnownUnstableRecords` 31 | `faunaRecords` 655 | the fold above |
+
+  No other key moved: the R5/R6 `climate`, `biomes`, `census`, `placeQuery` and `terrain` pins already on main equal
+  all four engines. Evidence (local, `test-results/` is ignored): `test-results/round-2026-10-08/golden-kit-sync-2/`.
+- `package.json` "test" now registers `tests/fauna-composer-coat-crisp.test.mjs` (after the gloss test).
+- `needs: tests/tiers.json`: tier `tests/fauna-composer-coat-crisp.test.mjs` with the other composer tests.
+
 ## Moving to the plan's phase 4b later
 
 Option B (vendored `dist/`, `creature-kit/three` and `creature-kit/gltf` entry points, the Lab as a kit app) stays the
@@ -51,4 +98,4 @@ it: the sync script and `VENDOR.json` carry over, only the vendored paths change
 
 - `needs: package.json` "test": register `tests/creature-kit-vendor.test.mjs` (package.json is merger-owned). Until then
   `npm run test:affected` selects it, `npm test` does not.
-- `needs: tests/tiers.json`: put `tests/creature-kit-vendor.test.mjs` in the fastest tier (it reads 44 small files, < 1 s).
+- `needs: tests/tiers.json`: put `tests/creature-kit-vendor.test.mjs` in the fastest tier (it reads 46 small files, < 1 s).

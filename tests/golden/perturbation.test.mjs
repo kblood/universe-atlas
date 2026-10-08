@@ -186,7 +186,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const GENERATOR_URL = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), "generator.ts")).href;
-const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna", "faunaKnownUnstable"];
+const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna"];
 const PLATFORM_PERTURBED_NAMES = [...PERTURBED_NAMES, "asin", "hypot", "log2", "log10", "log1p", "expm1", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh"];
 
 /** Recorded determinism findings: section -> why a raw platform transcendental
@@ -207,7 +207,6 @@ const EXACT_FLIP_FINDINGS = {
   census: "planet-tiles.ts cubeDirection normalises with Math.hypot: population-cell directions move by 1 ULP, ground heights by ~1e-10 m",
   rocks: "rock-field.ts Math.hypot normalisations (faceDirection, tangentBasis, up) and slopeGap Math.tan(Math.acos(upDot))",
   fauna: "fauna-composer-rig.ts / fauna-composer-mesh.ts build poses and rings with three.js and raw Math trig",
-  faunaKnownUnstable: "same composer paths as fauna; this key holds the specimen WebKit disagreed on before the seamNormal fix (generator.ts FAUNA_KNOWN_UNSTABLE; four engines equal since, fold next round)",
 };
 
 /** Runs inside the worker (serialised with Function.prototype.toString). */
