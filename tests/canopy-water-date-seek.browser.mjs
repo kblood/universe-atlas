@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { browserArgs } from './browser-options.mjs';
+import { acquireGpuLock, assertCaptureOutsideSlot } from './helpers/gpu-lock.mjs';
 import { galaxies, refByAddress, system } from '../src/catalog.ts';
 import { parseAddress } from '../src/address.ts';
 import { CURRENT_VERSIONS, encodeVersions } from '../src/time-nav.ts';
@@ -51,14 +52,11 @@ const sourceCommit = buildInfo.commit;
 if(process.env.ATLAS_SOURCE_COMMIT)assert.ok(sourceCommit.startsWith(process.env.ATLAS_SOURCE_COMMIT), 'served revision matches expected snapshot');
 assert.equal(buildInfo.dirty, false, 'acceptance requires a clean published or preview artifact');
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ headless: true, args: browserArgs });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+assertCaptureOutsideSlot('canopy-water-date-seek');
+const lock = process.env.ATLAS_GPU_LOCK_HELD ? null
+  : await acquireGpuLock({ owner: `canopy-water-date-seek ${base}`, capture: true });
+let browser, page;
 const errors = [];
-page.on('pageerror', error => errors.push(`page: ${error.message}`));
-page.on('console', message => {
-  if (message.type() === 'error' && !message.text().startsWith('[vite] failed to connect to websocket.')) errors.push(`console: ${message.text()}`);
-});
-if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
 const waitFor = (fn, arg, timeout = 180000) => page.waitForFunction(fn, arg, { timeout });
 const query = new URLSearchParams({ seed, g: 'G001', system: systemId, body: bodyId,
   date: dates[0].dateNs.toString(), wv: encodeVersions(CURRENT_VERSIONS) });
@@ -94,6 +92,13 @@ const report = { ok: false, base, bodyId, sourceCommit, buildInfo,
   waterTargets: dates.map(d => ({ levelM: d.levelM, dateNs: d.dateNs.toString(), waterLevelM: d.waterLevelM,
     stage: d.stage, oceanAvailable: d.oceanAvailable })), errors, phases: [] };
 try {
+  browser = await chromium.launch({ headless: true, args: browserArgs });
+  page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+  page.on('pageerror', error => errors.push(`page: ${error.message}`));
+  page.on('console', message => {
+    if (message.type() === 'error' && !message.text().startsWith('[vite] failed to connect to websocket.')) errors.push(`console: ${message.text()}`);
+  });
+  if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
   await page.goto(`${base}?${query}`, { waitUntil: 'domcontentloaded' });
   await waitFor(id => window.__atlas?.ready && window.__atlas.state.level === 'body' &&
     window.__atlas.state.body?.id === id && !window.__atlas.camera.animating, bodyId);
@@ -162,11 +167,12 @@ try {
   console.log(JSON.stringify(summary, null, 2));
 } catch (error) {
   report.ok = false; report.failure = String(error); report.errors = errors;
-  report.current = await diagnostics().catch(() => null);
+  report.current = page ? await diagnostics().catch(() => null) : null;
   await writeFile(`${out}/failure.json`, JSON.stringify(report, null, 2));
-  await page.screenshot({ path: `${out}/failure.png` }).catch(() => {});
+  await page?.screenshot({ path: `${out}/failure.png` }).catch(() => {});
   throw error;
 } finally {
-  await page.keyboard.up('q').catch(() => {});
-  await browser.close();
+  await page?.keyboard.up('q').catch(() => {});
+  await browser?.close().catch(() => {});
+  await lock?.release();
 }
