@@ -129,7 +129,9 @@ rung).
   water level (`datedOceanState(...).renderWaterLevelM`, the value the renderer
   hands its tile workers). Below `carvingFromLevel(R)` it is the baked,
   uncarved band field (an upper envelope of the truth); from the cut the M3
-  carving is exact; from `rockDetailFromLevel(R)` the M5 rock is on, and the
+  carving is exact; from `rockDetailFromLevel(R)` the M5 rock is on, with the
+  declared riser widening up to `riserSharpFromLevel(R) - 1` (`lod-ladder-4`,
+  docs/mountain-riser-lod-2026-10-07.md); from `riserSharpFromLevel(R)` the
   answer equals the truth.
 - **The drawn surface is not the sample at an arbitrary direction.** A tile
   stores this sampler at its 33 x 33 lattice points and the GPU draws flat

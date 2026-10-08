@@ -18,7 +18,7 @@ import {
   placeAt, depthAndPressureAt, importPlaceBlocks, coastAt, airPressureAtHeightPa, airScaleHeightM,
   PLACE_QUERY_VERSION, PLACE_VERSIONS,
 } from '../src/place-query.ts';
-import {LOD_LADDER_VERSION, ladderFor, carvingFromLevel, rockDetailFromLevel, contactLevelFor} from '../src/lod-ladder.ts';
+import {LOD_LADDER_VERSION, ladderFor, carvingFromLevel, rockDetailFromLevel, riserSharpFromLevel, contactLevelFor} from '../src/lod-ladder.ts';
 import {detExp} from '../src/det-math.ts';
 import {carvingBuildStats} from '../src/mountain-carving.ts';
 import {frozenMassifJobs, placeWorlds, warmInWorker} from './helpers/place-warm-worker.mjs';
@@ -264,7 +264,10 @@ test('rung: Object.is-equal to the renderer tile sampler (terrainSampler with lo
     const water = datedOceanState(body, planetLc, starLc, t).renderWaterLevelM;
     const dirs = [...massif.filter(j => j.world === w).map(j => j.d), ...DIRS.filter((_, i) => i % 75 === 0)];
     const levels = [...new Set([0, 2, carvingFromLevel(R) - 1, carvingFromLevel(R), 9, 12, rockDetailFromLevel(R) - 1,
-      rockDetailFromLevel(R), contactLevelFor(R), 22])].filter(l => l >= 0);
+      rockDetailFromLevel(R), riserSharpFromLevel(R) - 1, riserSharpFromLevel(R), contactLevelFor(R), 22])].filter(l => l >= 0);
+    // lod-ladder-4: from the rock level up to riserSharpFromLevel - 1 the rock term widens the riser (a declared
+    // reduction); from the sharp level on the tile sampler is the truth bit for bit (lod-ladder contract, M5 riser amendment).
+    const truthFrom = Math.max(rockDetailFromLevel(R), riserSharpFromLevel(R));
     for (const level of levels) {
       // Built at runtime with the renderer's arguments (planet-tiles.ts buildTile): numbers are never pinned here.
       const renderer = terrainSampler(body, undefined, undefined, undefined, water, undefined, false, {lodLevel: level});
@@ -279,8 +282,7 @@ test('rung: Object.is-equal to the renderer tile sampler (terrainSampler with lo
         const plain = placeAt(ctx, d, level);
         assert.equal('rung' in plain, false, 'no rung key without the option');
         assert.deepStrictEqual({...p, rung: undefined}, {...plain, rung: undefined});
-        // From the rock level the tile sampler is the truth (lod-ladder contract section 3).
-        if (level >= rockDetailFromLevel(R)) assert.ok(Object.is(p.rung.groundHeightM, p.groundHeightM), `${body.name} L${level} equals the truth`);
+        if (level >= truthFrom) assert.ok(Object.is(p.rung.groundHeightM, p.groundHeightM), `${body.name} L${level} equals the truth`);
       }
     }
     // Ladder ids resolve to the finest tile level of the rung (ladderFor), and echo that rung.
