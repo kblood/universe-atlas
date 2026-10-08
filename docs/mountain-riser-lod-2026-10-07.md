@@ -558,3 +558,23 @@ Branch <= main in 9/9 stills (3 are equal). The branch stays above rock-off at c
 where the judge saw no notch rows; the residual is periodic-texture energy that is not read as notches.
 
 Pair sheet for Kasper (private artifact): https://claude.ai/artifact/VMbHHV3J33TjnFCWsMco8e, built from `gpu/pair-sheet.template.html` and `gpu/pair-sheet.rows.json`. The images are the pair JPEGs listed in `gpu/pairs.sha256`.
+
+## Step 6: test:full (run once, 2026-10-08)
+
+The suite is **GREEN** (`test-results/mountains/riser-lod/step6-test-full.log`):
+
+| Measure | Result |
+|---|---|
+| Tests | 1682: pass 1674, fail 0, skip 6, todo 2 (pre-existing, OPEN) |
+| Steps | 258/258 |
+| Failures | 0 NEW, 0 KNOWN matched, 0 stale |
+| Wall time | 695.1 s |
+| Peak step RSS | 1370.8 MiB |
+
+The run log is at `test-results/tiers/1a72107b0c2b-full-2026-10-08T08-23-38-514Z`.
+
+**Pending for the coordinator's quiet window before merge (not run here, as instructed):**
+- tile-build cost at the filtered levels (expect about +30 %);
+- the in-massif warm bench;
+- test:perf;
+- cost rows.
