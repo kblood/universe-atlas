@@ -35,19 +35,11 @@
  * template-literal `Map` key, so `submit()` never allocates a string or a
  * Map entry on the survivor path.
  *
- * Measured (60,000 frames x 500 candidates/frame, ~425 surviving+drawn per
- * frame, deterministic synthetic scatter, `node --trace-gc`, this repo's
- * scratchpad `gc-harness.mjs`): calling `drawFloraCandidates` every frame
- * went from 1523 Scavenge (minor) GCs before this fix to 923 after. That
- * 923 is NOT residual allocation in this module: an isolated run of the
- * exact same 60,000-frame candidate-generation loop with
- * `drawFloraCandidates` never called at all (only `FloraCandidateBuffer.push`,
- * unchanged by this fix) already produces ~919-920 Scavenge GCs by itself -
- * i.e. the harness's own float/typed-array churn, not this module. Net
- * Scavenge GCs attributable to `drawFloraCandidates`/`cull()`/`submit()`:
- * ~603 before this fix, ~3-4 after (statistically indistinguishable from
- * that harness-floor noise) - see tests/flora-culling.test.mjs and the fix
- * report for the full before/after/harness-floor numbers.
+ * The original net-GC comparison missed the returned counts object (~41
+ * B/frame). PERF-ALLOC-AUDIT phase 2 reuses buffer.drawResult and counts GC
+ * bytes plus heap growth against a no-op control (tests/helpers/alloc-audit).
+ * The result is borrowed until the next draw with the same buffer; copy its
+ * numeric fields if retaining counts across frames.
  *
  * Pure-Three: no IWSDK, no app singletons, no imports outside `three` and
  * this project's own `flora-field.ts` (for `FloraKind`/`FLORA_KIND_NAMES`/
@@ -398,6 +390,8 @@ export type FloraLodOwner = { floraLod?: number };
 export class FloraCandidateBuffer {
   readonly capacity: number;
   count = 0;
+  /** Borrowed counts, overwritten by the next draw using this buffer. */
+  readonly drawResult = { survivorCount: 0, drawnCount: 0 };
   readonly centerX: Float32Array;
   readonly centerY: Float32Array;
   readonly centerZ: Float32Array;
@@ -497,9 +491,8 @@ export function submitFloraCandidate(renderer: FloraFieldRenderer, buffer: Flora
  *     key or `Map.get` (see `FloraFieldRenderer.submit`).
  *   - The cull output and per-bucket write cursors reuse buffers sized once
  *     at construction.
- * Measured (60,000 frames x 500 candidates, `node --trace-gc`): see the
- * module header and tests/flora-culling.test.mjs for the before/after
- * Scavenge-GC counts this claim is based on.
+ * Returns buffer.drawResult, borrowed until the next draw with this buffer.
+ * GC-counted regression check: tests/helpers/alloc-audit/h-flora.mjs.
  */
 export function drawFloraCandidates(
   buffer: FloraCandidateBuffer,
@@ -520,5 +513,7 @@ export function drawFloraCandidates(
     if (submitFloraCandidate(renderer, buffer, idx, distance)) drawnCount++;
   }
   renderer.endFrame();
-  return { survivorCount, drawnCount };
+  buffer.drawResult.survivorCount = survivorCount;
+  buffer.drawResult.drawnCount = drawnCount;
+  return buffer.drawResult;
 }

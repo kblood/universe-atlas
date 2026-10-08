@@ -1115,8 +1115,8 @@ export function terrainSampler(
   const craters = includeCraters ? buildCraterField(body, surfaceAgeMyr) : null;
   // Climate colour v2 (terrain-1.7.0-climate-colour): water worlds only. Built
   // once per sampler; the forcing is cached per body in surface-climate.ts.
-  // The per-sample path reuses one scratch sample (no allocation in the
-  // climate call) and the identical seeded grain helper `baseTerrainSampler`
+  // The per-sample climate call reuses one scratch result sample and the
+  // identical seeded grain helper `baseTerrainSampler`
   // uses, so colour = waterWorldLandColour(climate, h) x grain x localGrain.
   const climate = body.water ? surfaceClimate(climateForcingFor(body)) : null;
   // Climate datum: the current shoreline, or 0 m when the sea has fully gone.
@@ -1179,8 +1179,10 @@ export function terrainSampler(
     } else if (sample.color) surfaceColor = sample.color;
     else surfaceColor = applyGrain(core.legacyWaterLandColour(d, sample.elevationM), sample.grain, sample.localGrain);
     const baseline:SurfaceSample = {
-      // Keep the common no-region path to one result allocation. Do not spread
-      // a sampler result for every tile vertex: this is the hot terrain loop.
+      // Construct the returned result directly; avoid an extra spread copy
+      // for every tile vertex. This is not a single-allocation path: upstream
+      // terrain/color helpers also create transient objects and arrays (the
+      // phase-1 GC audit measured ~3 KB/call for the complete sampler).
       elevationM,
       ocean,
       color: surfaceColor,

@@ -1,0 +1,1084 @@
+{
+  "node": "v24.7.0",
+  "baseline": "f2f2c62",
+  "rounds": [
+    {
+      "round": 1,
+      "tree": "base",
+      "harness": "h2-eco-class.mjs",
+      "status": 1,
+      "name": "ecoClass2@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 400000,
+      "loops": 5,
+      "control": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5464,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "real": {
+        "calls": 2000000,
+        "gcEvents": 64,
+        "scavenges": 64,
+        "heapGrowthBytes": 1779760,
+        "freedByGcBytes": 134205872,
+        "bytesPerCall": 67.993,
+        "heapGrowthPerCall": 0.89
+      },
+      "classOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5848,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "lifeOnly": {
+        "calls": 2000000,
+        "gcEvents": 7,
+        "scavenges": 7,
+        "heapGrowthBytes": 814208,
+        "freedByGcBytes": 14676992,
+        "bytesPerCall": 7.746,
+        "heapGrowthPerCall": 0.407
+      },
+      "lookOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5656,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "control2": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2480,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.001,
+        "heapGrowthPerCall": 0.001
+      },
+      "sink": true
+    },
+    {
+      "round": 1,
+      "tree": "base",
+      "harness": "h-niche.mjs",
+      "status": 1,
+      "name": "nicheEvaluator@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 200000,
+      "loops": 15,
+      "control": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 12968,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.004,
+        "heapGrowthPerCall": 0.004
+      },
+      "real": {
+        "calls": 3000000,
+        "gcEvents": 185,
+        "scavenges": 185,
+        "heapGrowthBytes": 2215832,
+        "freedByGcBytes": 387944944,
+        "bytesPerCall": 130.054,
+        "heapGrowthPerCall": 0.739
+      },
+      "benchRunEv": {
+        "calls": 3000000,
+        "gcEvents": 288,
+        "scavenges": 288,
+        "heapGrowthBytes": 3526568,
+        "freedByGcBytes": 603906288,
+        "bytesPerCall": 202.478,
+        "heapGrowthPerCall": 1.176
+      },
+      "benchClimateOnly": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1548936,
+        "freedByGcBytes": 215991256,
+        "bytesPerCall": 72.513,
+        "heapGrowthPerCall": 0.516
+      },
+      "control2": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 6840,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.002,
+        "heapGrowthPerCall": 0.002
+      },
+      "species": 24,
+      "sink": true
+    },
+    {
+      "round": 1,
+      "tree": "base",
+      "harness": "h-flora.mjs",
+      "status": 1,
+      "name": "drawFloraCandidates@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 5000,
+      "loops": 10,
+      "control": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "real": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2044128,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 40.883,
+        "heapGrowthPerCall": 40.883
+      },
+      "control2": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5784,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.116,
+        "heapGrowthPerCall": 0.116
+      },
+      "candidatesPerFrame": 256,
+      "unit": "frame",
+      "seen": {
+        "survivors": 208,
+        "drawn": 208
+      },
+      "sink": true
+    },
+    {
+      "round": 1,
+      "tree": "wt",
+      "harness": "h2-eco-class.mjs",
+      "status": 0,
+      "name": "ecoClass2@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 400000,
+      "loops": 5,
+      "control": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "real": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "classOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "lifeOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 9840,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.005,
+        "heapGrowthPerCall": 0.005
+      },
+      "lookOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5576,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "control2": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2400,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.001,
+        "heapGrowthPerCall": 0.001
+      },
+      "sink": true
+    },
+    {
+      "round": 1,
+      "tree": "wt",
+      "harness": "h-niche.mjs",
+      "status": 0,
+      "name": "nicheEvaluator@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 200000,
+      "loops": 15,
+      "control": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 868768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.29,
+        "heapGrowthPerCall": 0.29
+      },
+      "real": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 457016,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.152,
+        "heapGrowthPerCall": 0.152
+      },
+      "benchRunEv": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1759680,
+        "freedByGcBytes": 215990568,
+        "bytesPerCall": 72.583,
+        "heapGrowthPerCall": 0.587
+      },
+      "benchClimateOnly": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1824328,
+        "freedByGcBytes": 215989864,
+        "bytesPerCall": 72.605,
+        "heapGrowthPerCall": 0.608
+      },
+      "control2": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5816,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.002,
+        "heapGrowthPerCall": 0.002
+      },
+      "species": 24,
+      "sink": true
+    },
+    {
+      "round": 1,
+      "tree": "wt",
+      "harness": "h-flora.mjs",
+      "status": 0,
+      "name": "drawFloraCandidates@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 5000,
+      "loops": 10,
+      "control": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5752,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "real": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 43992,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.88,
+        "heapGrowthPerCall": 0.88
+      },
+      "control2": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "candidatesPerFrame": 256,
+      "unit": "frame",
+      "seen": {
+        "survivors": 208,
+        "drawn": 208
+      },
+      "sink": true
+    },
+    {
+      "round": 2,
+      "tree": "wt",
+      "harness": "h2-eco-class.mjs",
+      "status": 0,
+      "name": "ecoClass2@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 400000,
+      "loops": 5,
+      "control": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "real": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "classOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "lifeOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 9840,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.005,
+        "heapGrowthPerCall": 0.005
+      },
+      "lookOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5576,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "control2": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2400,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.001,
+        "heapGrowthPerCall": 0.001
+      },
+      "sink": true
+    },
+    {
+      "round": 2,
+      "tree": "wt",
+      "harness": "h-niche.mjs",
+      "status": 0,
+      "name": "nicheEvaluator@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 200000,
+      "loops": 15,
+      "control": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 13440,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.004,
+        "heapGrowthPerCall": 0.004
+      },
+      "real": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 346136,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "benchRunEv": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1719888,
+        "freedByGcBytes": 215990176,
+        "bytesPerCall": 72.57,
+        "heapGrowthPerCall": 0.573
+      },
+      "benchClimateOnly": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1740864,
+        "freedByGcBytes": 215989936,
+        "bytesPerCall": 72.577,
+        "heapGrowthPerCall": 0.58
+      },
+      "control2": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5816,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.002,
+        "heapGrowthPerCall": 0.002
+      },
+      "species": 24,
+      "sink": true
+    },
+    {
+      "round": 2,
+      "tree": "wt",
+      "harness": "h-flora.mjs",
+      "status": 0,
+      "name": "drawFloraCandidates@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 5000,
+      "loops": 10,
+      "control": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5752,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "real": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 43896,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.878,
+        "heapGrowthPerCall": 0.878
+      },
+      "control2": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "candidatesPerFrame": 256,
+      "unit": "frame",
+      "seen": {
+        "survivors": 208,
+        "drawn": 208
+      },
+      "sink": true
+    },
+    {
+      "round": 2,
+      "tree": "base",
+      "harness": "h2-eco-class.mjs",
+      "status": 1,
+      "name": "ecoClass2@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 400000,
+      "loops": 5,
+      "control": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5464,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "real": {
+        "calls": 2000000,
+        "gcEvents": 64,
+        "scavenges": 64,
+        "heapGrowthBytes": 1779728,
+        "freedByGcBytes": 134205872,
+        "bytesPerCall": 67.993,
+        "heapGrowthPerCall": 0.89
+      },
+      "classOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5848,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "lifeOnly": {
+        "calls": 2000000,
+        "gcEvents": 7,
+        "scavenges": 7,
+        "heapGrowthBytes": 814224,
+        "freedByGcBytes": 14676992,
+        "bytesPerCall": 7.746,
+        "heapGrowthPerCall": 0.407
+      },
+      "lookOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5656,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "control2": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2480,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.001,
+        "heapGrowthPerCall": 0.001
+      },
+      "sink": true
+    },
+    {
+      "round": 2,
+      "tree": "base",
+      "harness": "h-niche.mjs",
+      "status": 1,
+      "name": "nicheEvaluator@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 200000,
+      "loops": 15,
+      "control": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 13472,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.004,
+        "heapGrowthPerCall": 0.004
+      },
+      "real": {
+        "calls": 3000000,
+        "gcEvents": 185,
+        "scavenges": 185,
+        "heapGrowthBytes": 2374128,
+        "freedByGcBytes": 387945936,
+        "bytesPerCall": 130.107,
+        "heapGrowthPerCall": 0.791
+      },
+      "benchRunEv": {
+        "calls": 3000000,
+        "gcEvents": 288,
+        "scavenges": 288,
+        "heapGrowthBytes": 3854744,
+        "freedByGcBytes": 603906208,
+        "bytesPerCall": 202.587,
+        "heapGrowthPerCall": 1.285
+      },
+      "benchClimateOnly": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1724768,
+        "freedByGcBytes": 215990208,
+        "bytesPerCall": 72.572,
+        "heapGrowthPerCall": 0.575
+      },
+      "control2": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 6840,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.002,
+        "heapGrowthPerCall": 0.002
+      },
+      "species": 24,
+      "sink": true
+    },
+    {
+      "round": 2,
+      "tree": "base",
+      "harness": "h-flora.mjs",
+      "status": 1,
+      "name": "drawFloraCandidates@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 5000,
+      "loops": 10,
+      "control": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "real": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2044288,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 40.886,
+        "heapGrowthPerCall": 40.886
+      },
+      "control2": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5784,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.116,
+        "heapGrowthPerCall": 0.116
+      },
+      "candidatesPerFrame": 256,
+      "unit": "frame",
+      "seen": {
+        "survivors": 208,
+        "drawn": 208
+      },
+      "sink": true
+    },
+    {
+      "round": 3,
+      "tree": "base",
+      "harness": "h2-eco-class.mjs",
+      "status": 1,
+      "name": "ecoClass2@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 400000,
+      "loops": 5,
+      "control": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5464,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "real": {
+        "calls": 2000000,
+        "gcEvents": 64,
+        "scavenges": 64,
+        "heapGrowthBytes": 1779744,
+        "freedByGcBytes": 134205872,
+        "bytesPerCall": 67.993,
+        "heapGrowthPerCall": 0.89
+      },
+      "classOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5848,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "lifeOnly": {
+        "calls": 2000000,
+        "gcEvents": 7,
+        "scavenges": 7,
+        "heapGrowthBytes": 814208,
+        "freedByGcBytes": 14676992,
+        "bytesPerCall": 7.746,
+        "heapGrowthPerCall": 0.407
+      },
+      "lookOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5656,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "control2": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2480,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.001,
+        "heapGrowthPerCall": 0.001
+      },
+      "sink": true
+    },
+    {
+      "round": 3,
+      "tree": "base",
+      "harness": "h-niche.mjs",
+      "status": 1,
+      "name": "nicheEvaluator@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 200000,
+      "loops": 15,
+      "control": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 1045240,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.348,
+        "heapGrowthPerCall": 0.348
+      },
+      "real": {
+        "calls": 3000000,
+        "gcEvents": 185,
+        "scavenges": 185,
+        "heapGrowthBytes": 2882168,
+        "freedByGcBytes": 387945952,
+        "bytesPerCall": 130.276,
+        "heapGrowthPerCall": 0.961
+      },
+      "benchRunEv": {
+        "calls": 3000000,
+        "gcEvents": 288,
+        "scavenges": 288,
+        "heapGrowthBytes": 3540112,
+        "freedByGcBytes": 603906032,
+        "bytesPerCall": 202.482,
+        "heapGrowthPerCall": 1.18
+      },
+      "benchClimateOnly": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1745240,
+        "freedByGcBytes": 215990208,
+        "bytesPerCall": 72.578,
+        "heapGrowthPerCall": 0.582
+      },
+      "control2": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 6840,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.002,
+        "heapGrowthPerCall": 0.002
+      },
+      "species": 24,
+      "sink": true
+    },
+    {
+      "round": 3,
+      "tree": "base",
+      "harness": "h-flora.mjs",
+      "status": 1,
+      "name": "drawFloraCandidates@base",
+      "node": "v24.7.0",
+      "callsPerLoop": 5000,
+      "loops": 10,
+      "control": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "real": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2044768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 40.895,
+        "heapGrowthPerCall": 40.895
+      },
+      "control2": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5784,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.116,
+        "heapGrowthPerCall": 0.116
+      },
+      "candidatesPerFrame": 256,
+      "unit": "frame",
+      "seen": {
+        "survivors": 208,
+        "drawn": 208
+      },
+      "sink": true
+    },
+    {
+      "round": 3,
+      "tree": "wt",
+      "harness": "h2-eco-class.mjs",
+      "status": 0,
+      "name": "ecoClass2@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 400000,
+      "loops": 5,
+      "control": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "real": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "classOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5448,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "lifeOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 9840,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.005,
+        "heapGrowthPerCall": 0.005
+      },
+      "lookOnly": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5576,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.003,
+        "heapGrowthPerCall": 0.003
+      },
+      "control2": {
+        "calls": 2000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 2400,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.001,
+        "heapGrowthPerCall": 0.001
+      },
+      "sink": true
+    },
+    {
+      "round": 3,
+      "tree": "wt",
+      "harness": "h-niche.mjs",
+      "status": 0,
+      "name": "nicheEvaluator@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 200000,
+      "loops": 15,
+      "control": {
+        "calls": 3000000,
+        "gcEvents": 1,
+        "scavenges": 1,
+        "heapGrowthBytes": 673440,
+        "freedByGcBytes": 2095416,
+        "bytesPerCall": 0.923,
+        "heapGrowthPerCall": 0.224
+      },
+      "real": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 293600,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.098,
+        "heapGrowthPerCall": 0.098
+      },
+      "benchRunEv": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1677760,
+        "freedByGcBytes": 215959224,
+        "bytesPerCall": 72.546,
+        "heapGrowthPerCall": 0.559
+      },
+      "benchClimateOnly": {
+        "calls": 3000000,
+        "gcEvents": 103,
+        "scavenges": 103,
+        "heapGrowthBytes": 1593424,
+        "freedByGcBytes": 215989936,
+        "bytesPerCall": 72.528,
+        "heapGrowthPerCall": 0.531
+      },
+      "control2": {
+        "calls": 3000000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5816,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.002,
+        "heapGrowthPerCall": 0.002
+      },
+      "species": 24,
+      "sink": true
+    },
+    {
+      "round": 3,
+      "tree": "wt",
+      "harness": "h-flora.mjs",
+      "status": 0,
+      "name": "drawFloraCandidates@wt",
+      "node": "v24.7.0",
+      "callsPerLoop": 5000,
+      "loops": 10,
+      "control": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5752,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "real": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 44760,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.895,
+        "heapGrowthPerCall": 0.895
+      },
+      "control2": {
+        "calls": 50000,
+        "gcEvents": 0,
+        "scavenges": 0,
+        "heapGrowthBytes": 5768,
+        "freedByGcBytes": 0,
+        "bytesPerCall": 0.115,
+        "heapGrowthPerCall": 0.115
+      },
+      "candidatesPerFrame": 256,
+      "unit": "frame",
+      "seen": {
+        "survivors": 208,
+        "drawn": 208
+      },
+      "sink": true
+    }
+  ],
+  "identity": [
+    {
+      "name": "eco-class",
+      "node": "v24.7.0",
+      "calls": 7500000,
+      "comparisons": 18187500,
+      "differences": 0,
+      "firstDiffs": [],
+      "shas": {
+        "base": "c24d0b5100f515857216fc7a74bd7129ea3c65834fb1826542bd5f30b28e5cfd",
+        "wt": "f4e8e236ba7cdc50c94d05cb07232a08db8dc6922714ed3a9c362313af4937a9"
+      },
+      "samples": 1500000,
+      "classTally": [
+        653615,
+        18407,
+        42537,
+        27084,
+        70141,
+        31218,
+        14141,
+        30048,
+        18571,
+        37353,
+        49054,
+        20584,
+        412785,
+        74462,
+        0
+      ],
+      "lookInteriorTally": [
+        189534,
+        236905,
+        79350,
+        631298
+      ],
+      "summary": {
+        "samples": 1500000,
+        "classTally": "653615,18407,42537,27084,70141,31218,14141,30048,18571,37353,49054,20584,412785,74462,0",
+        "lookInterior": "189534,236905,79350,631298"
+      }
+    },
+    {
+      "name": "niche",
+      "node": "v24.7.0",
+      "calls": 4512000,
+      "comparisons": 39849128,
+      "differences": 0,
+      "firstDiffs": [],
+      "shas": {
+        "base": "580361f0ae03579d68a5d06ab0572ad9276ab0e51346700cc6ffdd003d9746ba",
+        "wt": "5db5542bcb33cf010a973f308c831d39591cd31530fb165185535222af17d4f7"
+      },
+      "bodies": 282,
+      "speciesSets": 564,
+      "plantsSeen": 5125,
+      "animalsSeen": 4837,
+      "outputTally": {
+        "nonzero": 1055469,
+        "zeros": 18868531
+      },
+      "summary": {
+        "bodies": 282,
+        "speciesSets": 564,
+        "nonzero": 1055469,
+        "zeros": 18868531
+      }
+    },
+    {
+      "name": "flora",
+      "node": "v24.7.0",
+      "calls": 2000,
+      "comparisons": 3773792,
+      "differences": 0,
+      "firstDiffs": [],
+      "shas": {
+        "base": "4eba5dbeb60235fceb18c9d2102c54dd8e364564c9c8bd6ad58aec1a0527c679",
+        "wt": "d207a59bc6effc52e7b2bacef2348374cbdd79be55fbc01d1dac96b5dbac9caf"
+      },
+      "frames": 2000
+    }
+  ]
+}
