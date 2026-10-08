@@ -1,0 +1,197 @@
+Changed vs main:
+docs/owner-decisions-2026-10-04.md
+docs/surface-climate-v2.md
+scripts/climate-calibration-report.mjs
+src/forest-habitat.ts
+src/surface-climate.ts
+test-results/climate-m1/after/lod-consistency.log
+test-results/climate-m1/after/measure-all.err
+test-results/climate-m1/after/measure-all.json
+test-results/climate-m1/after/site-disc.json
+test-results/climate-m1/after/test-affected-files.txt
+test-results/climate-m1/after/test-affected.log
+test-results/climate-m1/astra/prompt.md
+test-results/climate-m1/astra/response-1.md
+test-results/climate-m1/astra/review-1.txt
+test-results/climate-m1/before/corpus.err
+test-results/climate-m1/before/corpus.json
+test-results/climate-m1/before/ela-site.err
+test-results/climate-m1/before/ela-site.json
+test-results/climate-m1/before/worlds-zonal.err
+test-results/climate-m1/before/worlds-zonal.json
+test-results/climate-m1/calibrate-zonal-2-fine.out.jsonl
+test-results/climate-m1/calibrate-zonal-2.mjs
+test-results/climate-m1/calibrate-zonal-2.out.jsonl
+test-results/climate-m1/calibrate-zonal.mjs
+test-results/climate-m1/calibrate-zonal.out.jsonl
+test-results/climate-m1/measure.mjs
+test-results/climate-m1/resume/assembly-main-290472d.log
+test-results/climate-m1/resume/carving-digests-branch.json
+test-results/climate-m1/resume/carving-digests-mainclimate.json
+test-results/climate-m1/resume/carving-digests.mjs
+test-results/climate-m1/resume/carving-repin.json
+test-results/climate-m1/resume/carving-repin.mjs
+test-results/climate-m1/resume/earth-forest.json
+test-results/climate-m1/resume/lod-bisect.json
+test-results/climate-m1/resume/lod-bisect.mjs
+test-results/climate-m1/resume/lod-bisect.stderr.log
+test-results/climate-m1/resume/lod-measure-d134a87.json
+test-results/climate-m1/resume/lod-measure-main-290472d.json
+test-results/climate-m1/resume/lod-measure.json
+test-results/climate-m1/resume/lod-measure.mjs
+test-results/climate-m1/resume/lod-step7-repinned.log
+test-results/climate-m1/resume/lod-step7-tests.log
+test-results/climate-m1/resume/site-a-gates.log
+test-results/climate-m1/resume/site-planet.json
+test-results/climate-m1/resume/site-planet.mjs
+test-results/climate-m1/site-disc.mjs
+tests/acceptance/climate-agreement.test.mjs
+tests/climate-earth-reference.test.mjs
+tests/forest-habitat.test.mjs
+tests/harness-sites.mjs
+tests/harness-sites.test.mjs
+tests/helpers/harness-site-search.mjs
+tests/lod-carving-reduction.test.mjs
+tests/lod-consistency.test.mjs
+tests/surface-biomes-climate.test.mjs
+tests/surface-climate.test.mjs
+tests/terrain-climate-colour.test.mjs
+tests/terrain-mountains-assembly.test.mjs
+tests/ground-wet-roughness.test.mjs: tests/ground-wet-roughness.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/planet-canopy-invalidation.test.mjs: references path: tests/planet-canopy-invalidation.test.mjs -> src/planet-canopy.ts -> src/forest-census.ts -> src/surface-climate.ts
+tests/planet-forest-tree-assets.test.mjs: references path: tests/planet-forest-tree-assets.test.mjs -> src/planet-forest.ts -> src/forest-habitat.ts
+tests/forest-patch-broadphase.test.mjs: tests/forest-patch-broadphase.test.mjs -> src/planet-canopy.ts -> src/forest-census.ts -> src/surface-climate.ts
+tests/planet-forest-worklist.test.mjs: references path: tests/planet-forest-worklist.test.mjs -> src/planet-forest.ts -> src/forest-habitat.ts
+tests/life-packing.test.mjs: references path: tests/life-packing.test.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/life-altitude-hysteresis.test.mjs: tests/life-altitude-hysteresis.test.mjs -> src/planet-detail.ts -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/life-continuity-scenario.test.mjs: tests/life-continuity-scenario.test.mjs -> tests/life-scenario.mjs -> tests/harness-sites.mjs
+tests/forest-patch-selection.test.mjs: tests/forest-patch-selection.test.mjs -> src/forest-patch-selection.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/forest-census.test.mjs: tests/forest-census.test.mjs -> src/forest-habitat.ts
+tests/forest-water-validity.test.mjs: tests/forest-water-validity.test.mjs -> src/forest-habitat.ts
+tests/planet-canopy.test.mjs: tests/planet-canopy.test.mjs -> src/planet-canopy.ts -> src/forest-census.ts -> src/surface-climate.ts
+tests/forest-selection-transfer.test.mjs: references path: tests/forest-selection-transfer.test.mjs -> src/forest-selection-cache.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/forest-selection-cache.test.mjs: tests/forest-selection-cache.test.mjs -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/forest-habitat.test.mjs: tests/forest-habitat.test.mjs
+tests/forest-patch.test.mjs: tests/forest-patch.test.mjs -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/flora-cache-ownership.test.mjs: tests/flora-cache-ownership.test.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/forest-retention.test.mjs: references path: tests/forest-retention.test.mjs -> src/planet-forest.ts -> src/forest-habitat.ts
+tests/planet-detail.test.mjs: tests/planet-detail.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/ocean-gerstner.test.mjs: tests/ocean-gerstner.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/river-determinism.test.mjs: tests/river-determinism.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/world-surface.test.mjs: tests/world-surface.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/stellar-evolution.test.mjs: tests/stellar-evolution.test.mjs -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/world-time.test.mjs: tests/world-time.test.mjs -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/catalog.test.mjs: tests/catalog.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/planet.test.mjs: tests/planet.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/world.test.mjs: tests/world.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/ground.test.mjs: tests/ground.test.mjs -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/surface.test.mjs: tests/surface.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/drainage.test.mjs: tests/drainage.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/river.test.mjs: tests/river.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/river-terrain.test.mjs: tests/river-terrain.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/river-environment.test.mjs: tests/river-environment.test.mjs -> src/river-environment.ts -> src/surface-biomes.ts -> src/surface-climate.ts
+tests/golden/perturbation.test.mjs: tests/golden/perturbation.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/acceptance/t-seek-independence.test.mjs: tests/acceptance/t-seek-independence.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/acceptance/visit-order-independence.test.mjs: tests/acceptance/visit-order-independence.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/acceptance/existence-gating.test.mjs: tests/acceptance/existence-gating.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/acceptance/version-compat.test.mjs: tests/acceptance/version-compat.test.mjs -> src/surface-climate.ts
+tests/time-nav.test.mjs: tests/time-nav.test.mjs -> src/time-nav.ts -> src/surface-climate.ts
+tests/time-integration.test.mjs: tests/time-integration.test.mjs -> src/time-nav.ts -> src/surface-climate.ts
+tests/terrain-water-refresh.test.mjs: references path: tests/terrain-water-refresh.test.mjs -> tests/terrain-renderer-fixture.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/terrain-budget-starvation.test.mjs: tests/terrain-budget-starvation.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/terrain-leaf-loop-digest.test.mjs: tests/terrain-leaf-loop-digest.test.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/terrain-morph-continuity.test.mjs: references path: tests/terrain-morph-continuity.test.mjs -> tests/terrain-renderer-fixture.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/shadow-window-edge-fade.test.mjs: references path: tests/shadow-window-edge-fade.test.mjs -> tests/terrain-renderer-fixture.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/inland-rivers-disabled.test.mjs: references path: tests/inland-rivers-disabled.test.mjs -> src/ -> src/forest-habitat.ts
+tests/rock-field.test.mjs: tests/rock-field.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/rock-altitude-hysteresis.test.mjs: tests/rock-altitude-hysteresis.test.mjs -> src/planet-detail.ts -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/rock-flora-lod-sweep.test.mjs: tests/rock-flora-lod-sweep.test.mjs -> src/planet-rocks.ts -> src/planet-detail.ts -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/planet-rocks.test.mjs: tests/planet-rocks.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/planet-rocks-draw.test.mjs: tests/planet-rocks-draw.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/ocean-seam-continuity.test.mjs: tests/ocean-seam-continuity.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/tree-handoff-debug.test.mjs: references path: tests/tree-handoff-debug.test.mjs -> src/planet-forest.ts -> src/forest-habitat.ts
+tests/life-cpu-digest.test.mjs: tests/life-cpu-digest.test.mjs -> tests/life-scenario.mjs -> tests/harness-sites.mjs
+tests/planet-forest-frame-digest.test.mjs: tests/planet-forest-frame-digest.test.mjs -> tests/forest-frame-fixture.mjs -> tests/harness-sites.mjs
+tests/surface-climate.test.mjs: tests/surface-climate.test.mjs
+tests/habitat-suitability.test.mjs: tests/habitat-suitability.test.mjs -> src/surface-climate.ts
+tests/season.test.mjs: references path: tests/season.test.mjs -> src/ -> src/forest-habitat.ts
+tests/sun-frame.test.mjs: tests/sun-frame.test.mjs -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/surface-biomes-climate.test.mjs: tests/surface-biomes-climate.test.mjs
+tests/acceptance/climate-seek-independence.test.mjs: tests/acceptance/climate-seek-independence.test.mjs -> src/surface-climate.ts
+tests/terrain-elevation-identity.test.mjs: tests/terrain-elevation-identity.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/terrain-climate-colour.test.mjs: tests/terrain-climate-colour.test.mjs
+tests/ground-climate-shader.test.mjs: tests/ground-climate-shader.test.mjs -> src/surface-climate.ts
+tests/acceptance/climate-agreement.test.mjs: tests/acceptance/climate-agreement.test.mjs
+tests/planet-geophysics.test.mjs: tests/planet-geophysics.test.mjs -> src/surface-climate.ts
+tests/terrain-floor-window.test.mjs: tests/terrain-floor-window.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/lod-consistency.test.mjs: tests/lod-consistency.test.mjs
+tests/lod-carving-reduction.test.mjs: tests/lod-carving-reduction.test.mjs
+tests/mountain-coarse-field.test.mjs: tests/mountain-coarse-field.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/mountain-tile-set.test.mjs: tests/mountain-tile-set.test.mjs -> tests/helpers/mountain-tile-set.mjs -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/tile-metadata.test.mjs: tests/tile-metadata.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/ocean-volume.test.mjs: tests/ocean-volume.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/place-query.test.mjs: tests/place-query.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/platform-getting-started.test.mjs: tests/platform-getting-started.test.mjs -> src/place-query.ts -> src/surface-climate.ts
+tests/readme-versions.test.mjs: tests/readme-versions.test.mjs -> src/surface-climate.ts
+tests/test-selection.test.mjs: references path: tests/test-selection.test.mjs -> src/ -> src/forest-habitat.ts
+tests/life-guard.test.mjs: references path: tests/life-guard.test.mjs -> tests/helpers/life-files.mjs -> src/planet-renderer.ts -> src/surface-climate.ts
+tests/terrain-relief-hypsometry.test.mjs: tests/terrain-relief-hypsometry.test.mjs -> src/surface-climate.ts
+tests/render-bounds.test.mjs: tests/render-bounds.test.mjs -> tests/helpers/render-bounds-suite.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/harness-sites.test.mjs: tests/harness-sites.test.mjs
+tests/climate-grid.test.mjs: tests/climate-grid.test.mjs -> src/surface-climate.ts
+tests/landing-site.test.mjs: tests/landing-site.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/eco-identity-site.test.mjs: tests/eco-identity-site.test.mjs -> src/surface-climate.ts
+tests/mountain-carving.test.mjs: tests/mountain-carving.test.mjs -> scripts/mountain-render-carving.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/mountain-carving-pin.test.mjs: tests/mountain-carving-pin.test.mjs -> scripts/mountain-render-carving.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/terrain-mountains-assembly.test.mjs: tests/terrain-mountains-assembly.test.mjs
+tests/sparse-consumer-levels.test.mjs: tests/sparse-consumer-levels.test.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/lod-coarse-frame.test.mjs: tests/lod-coarse-frame.test.mjs -> tests/helpers/lod-coarse-frame.mjs -> src/planet-tiles.ts -> src/terrain.ts -> src/surface-climate.ts
+tests/tier-sets.test.mjs: tests/tier-sets.test.mjs -> scripts/tier-sets/generate.mjs -> src/terrain.ts -> src/surface-climate.ts
+tests/terrain-structural-spectrum.test.mjs: tests/terrain-structural-spectrum.test.mjs -> tests/helpers/mountain-coarse-tiles.mjs -> src/terrain.ts -> src/surface-climate.ts
+UNREGISTERED tests/climate-earth-reference.test.mjs: tests/climate-earth-reference.test.mjs
+Outside graph (review manually):
+docs/owner-decisions-2026-10-04.md
+docs/surface-climate-v2.md
+scripts/climate-calibration-report.mjs
+test-results/climate-m1/after/lod-consistency.log
+test-results/climate-m1/after/measure-all.err
+test-results/climate-m1/after/measure-all.json
+test-results/climate-m1/after/site-disc.json
+test-results/climate-m1/after/test-affected-files.txt
+test-results/climate-m1/after/test-affected.log
+test-results/climate-m1/astra/prompt.md
+test-results/climate-m1/astra/response-1.md
+test-results/climate-m1/astra/review-1.txt
+test-results/climate-m1/before/corpus.err
+test-results/climate-m1/before/corpus.json
+test-results/climate-m1/before/ela-site.err
+test-results/climate-m1/before/ela-site.json
+test-results/climate-m1/before/worlds-zonal.err
+test-results/climate-m1/before/worlds-zonal.json
+test-results/climate-m1/calibrate-zonal-2-fine.out.jsonl
+test-results/climate-m1/calibrate-zonal-2.mjs
+test-results/climate-m1/calibrate-zonal-2.out.jsonl
+test-results/climate-m1/calibrate-zonal.mjs
+test-results/climate-m1/calibrate-zonal.out.jsonl
+test-results/climate-m1/measure.mjs
+test-results/climate-m1/resume/assembly-main-290472d.log
+test-results/climate-m1/resume/carving-digests-branch.json
+test-results/climate-m1/resume/carving-digests-mainclimate.json
+test-results/climate-m1/resume/carving-digests.mjs
+test-results/climate-m1/resume/carving-repin.json
+test-results/climate-m1/resume/carving-repin.mjs
+test-results/climate-m1/resume/earth-forest.json
+test-results/climate-m1/resume/lod-bisect.json
+test-results/climate-m1/resume/lod-bisect.mjs
+test-results/climate-m1/resume/lod-bisect.stderr.log
+test-results/climate-m1/resume/lod-measure-d134a87.json
+test-results/climate-m1/resume/lod-measure-main-290472d.json
+test-results/climate-m1/resume/lod-measure.json
+test-results/climate-m1/resume/lod-measure.mjs
+test-results/climate-m1/resume/lod-step7-repinned.log
+test-results/climate-m1/resume/lod-step7-tests.log
+test-results/climate-m1/resume/site-a-gates.log
+test-results/climate-m1/resume/site-planet.json
+test-results/climate-m1/resume/site-planet.mjs
+test-results/climate-m1/site-disc.mjs
+58 changed; 92 selected

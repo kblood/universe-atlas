@@ -1,0 +1,121 @@
+{
+ "site": [
+  0.784430530530838,
+  -0.2908499002907157,
+  0.547791089989595
+ ],
+ "startPhase": "walk",
+ "startClearanceM": 1.7,
+ "frames": 100,
+ "maxActiveRigs": 6,
+ "framesWithFadingOut": 22,
+ "framesFadingOutBeyondExit": 5,
+ "maxVisible": 1036,
+ "maxWithin110": 65,
+ "nearestMFirst": 35.3908582704594,
+ "nearestMLast": 19.007380968165034,
+ "nearestMMin": 16.701406359607994,
+ "unlistedDropsLast": 0,
+ "sample": [
+  {
+   "i": 0,
+   "active": 1,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1033,
+   "within110": 65,
+   "nearestM": 35.3908582704594,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 10,
+   "active": 1,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1031,
+   "within110": 64,
+   "nearestM": 31.855895479197,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 20,
+   "active": 2,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1025,
+   "within110": 61,
+   "nearestM": 28.46710460314429,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 30,
+   "active": 3,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1030,
+   "within110": 60,
+   "nearestM": 25.28251514411911,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 40,
+   "active": 3,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1036,
+   "within110": 59,
+   "nearestM": 22.38853623267335,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 50,
+   "active": 4,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1035,
+   "within110": 58,
+   "nearestM": 19.911299096764733,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 60,
+   "active": 4,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1034,
+   "within110": 56,
+   "nearestM": 18.022411698215908,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 70,
+   "active": 5,
+   "fadingOut": 0,
+   "fadingOutBeyondExit": 0,
+   "visible": 1030,
+   "within110": 57,
+   "nearestM": 16.918984976663594,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 80,
+   "active": 6,
+   "fadingOut": 2,
+   "fadingOutBeyondExit": 0,
+   "visible": 1032,
+   "within110": 56,
+   "nearestM": 16.755839770819502,
+   "unlistedDrops": 0
+  },
+  {
+   "i": 90,
+   "active": 6,
+   "fadingOut": 2,
+   "fadingOutBeyondExit": 1,
+   "visible": 1033,
+   "within110": 54,
+   "nearestM": 17.558216230290096,
+   "unlistedDrops": 0
+  }
+ ]
+}

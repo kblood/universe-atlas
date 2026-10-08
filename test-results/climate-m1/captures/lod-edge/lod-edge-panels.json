@@ -1,0 +1,44 @@
+{
+ "layout": "row 1 main climate, row 2 branch climate; columns: parent L colour on the child tile (bilinear) | child L+1 colour | |parent-child| RGB x4",
+ "scale": 1,
+ "report": {
+  "Maithea-L6": {
+   "file": "test-results/climate-m1/captures/lod-edge/Maithea-L6-L6to7-snowline.png",
+   "kind": "snowline",
+   "d": [
+    -0.7953733760878859,
+    0.56325,
+    0.2238987050220665
+   ],
+   "main": {
+    "climate": "surface-climate-1.1-geo-g",
+    "p99": 11.8,
+    "max": 35.04
+   },
+   "branch": {
+    "climate": "surface-climate-2",
+    "p99": 49.91,
+    "max": 152.18
+   }
+  },
+  "Lethuris-L8": {
+   "file": "test-results/climate-m1/captures/lod-edge/Lethuris-L8-L8to9-snowline.png",
+   "kind": "snowline",
+   "d": [
+    0.9956585046847568,
+    0.029750000000000054,
+    0.08819909040865527
+   ],
+   "main": {
+    "climate": "surface-climate-1.1-geo-g",
+    "p99": 5.79,
+    "max": 13.98
+   },
+   "branch": {
+    "climate": "surface-climate-2",
+    "p99": 19.51,
+    "max": 64.59
+   }
+  }
+ }
+}

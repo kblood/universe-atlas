@@ -17,7 +17,8 @@ both STOPs without changing the physics. Resume state: steps 1-6 done (SITE_A mo
 section 4); step 7 first STOPPED: lod-consistency fails 20 rows at L6, L8 and L10 (snow, forest, name and colour),
 not only the L6 colour rows decision 2 allowed re-pinning (section 6b). That STOP was decided in climate-m1-decision-2
 (section 2b): SITE_A accepted as found; bisect per climate step, then re-pin with a ledger. Both are done (sections 6
-and 6b); the package continued from step 8.
+and 6b); the package continued from step 8 and **STOPPED at step 8** (section 6c): moving SITE_A breaks
+`life-continuity-scenario:117`, which is not on any grant.
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -469,6 +470,37 @@ forest edges follow height closely, so coarse and fine tiles disagree more where
 Options: carry the snow and forest edges across levels, or blend colour across levels. Recorded on the owner sheet
 under A4.
 
+## 6c. Step 8: STOP (test:affected, a SITE_A consumer outside the ledger)
+
+After the merge of main c6526d0 (2afa95a; tsc 0), the test:affected selection (92 files, including the unregistered
+`tests/climate-earth-reference.test.mjs`; list `test-results/climate-m1/step8/affected-list.txt`) was run through the
+shared slot (`--shared 4`, `--test-concurrency=4`): 752 tests, 736 pass, **2 fail**, 11 skipped, 3 todo
+(`step8/affected.log`).
+
+- `tests/acceptance/version-compat.test.mjs:335` (climate version pin): in the ledger, coordinator.
+- **`tests/life-continuity-scenario.test.mjs:117`** "receding exits fade past 95 m": `a rig keeps fading out past the
+  95 m exit` is false. Not in the ledger and not in any grant: **STOP**.
+
+Attribution (2x2 where it matters): main c6526d0 code at the old SITE_A passes; main c6526d0 code with only the new
+SITE_A literal fails (`step8/life-receding-main-newsite.log`). So the SITE_A move alone causes it, not the climate.
+Numbers from the test's own poses and probe (`step8/life-receding-diag.mjs`, 100 receding frames at 25 m/s from the
+'walk' start):
+
+| Quantity | main, old SITE_A | branch, new SITE_A |
+|---|---|---|
+| frames with a rig fading out past 95 m (test needs > 0) | 5 | **0** |
+| frames with any rig fading out | 22 | 19 |
+| max active near rigs | 6 | 6 |
+| max visible fauna / within 110 m | 1036 / 65 | 843 / 36 |
+| nearest fauna, first / last frame | 35.4 / 19.0 m | 6.9 / 37.6 m |
+| hard drops (unlistedDrops) at the end | 0 | 0 |
+
+No hard drop happens at the new site, so the feature is not broken; the fixed receding path simply never takes a rig
+past 95 m while it is still fading there. Making the test pass needs a change to the scenario (a herd-relative start or
+a longer recede), which is a test change no decision grants. Steps 8 (test:full), 10 (in-app captures) and 11 (Astra)
+were not run after this STOP. The LOD-edge panels of step 10 (CPU, no GPU) were made before the STOP was known:
+`test-results/climate-m1/captures/lod-edge/`.
+
 ## 7. Ledger: moved pins in files this package does not own
 
 First pass (d134a87): the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot
@@ -486,6 +518,7 @@ resume's targeted runs.
 | `tests/lod-carving-reduction.test.mjs:83,99` (mountains; first pass cited :69,79) | 31 tile-buffer and sampler-output digests, 4 worlds | moved pins (only `color`, `materials`, `meta` moved) | **re-pinned** with ledger (section 6b) |
 | `tests/lod-consistency.test.mjs` (mountains) | 20 rows at L6, L8, L10 plus L6 snow retention | decision-2 (b) | **re-pinned** at measured values rounded up to 0.1; retention 95.2 % (section 6b) |
 | `tests/terrain-mountains-assembly.test.mjs` HARD outsideBelt (:38) and HARD outsideMassif | bit-identity to main (heights, ocean, colour) | decision-2 (b): split | HARD heights+ocean unchanged and equal to main 290472d; colour split into a climate PIN, re-pinned |
+| `tests/life-continuity-scenario.test.mjs:117` | a rig fades out past 95 m on the receding path from SITE_A | SITE_A move (section 6c) | **STOP**, not re-pinned |
 | `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated | not blocking (decision 6) |
 
 Not run in this package (test:full or coordinator-owned): the `tests/golden/golden.json` sections climate, biomes,
