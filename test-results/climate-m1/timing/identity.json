@@ -1,6 +1,10 @@
 {
  "dirA": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/br-3ab2eab",
  "dirB": "C:/LLM/IWSDK/universe-atlas-wt/climate-m1",
+ "sourceSha256": {
+  "A": "f797aaf57507586d0c77f2896bc2d98b37acfe128bdc70a5d622bbe6d88704bb",
+  "B": "91c5b4aee60286060b1811450fa17fbc6e01ebdece70141a65a97467a8afbd38"
+ },
  "node": "v24.7.0",
  "fields": [
   "insolation01",

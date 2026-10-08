@@ -40,9 +40,10 @@ for(let w=0;w<5;w++)run();
 // (heapUsed after minus before the loop) is blind: a young-generation scavenge frees
 // short-lived garbage while the loop runs, so 3M calls that each box a double (~83 B
 // per call on climate-m1 3ab2eab, 118 scavenges) still end with < 1 MB of growth.
-// The bytes each GC inside the loop freed, plus the net growth, bound what the loop
-// allocated. The no-op control (same loop shape, its own function literal so each
-// call site stays monomorphic) proves the loop itself allocates nothing.
+// The bytes each GC inside the loop freed, plus the non-negative net growth, give a
+// conservative (upper) estimate of what the loop allocated; profiler bookkeeping is
+// included. The no-op control (same loop shape, its own function literal so each call
+// site stays monomorphic) checks that the loop overhead stays below 1 B per call.
 const allocCount=(fn,passes,times)=>{
   gc();gc();
   const heap0=process.memoryUsage().heapUsed,prof=new v8.GCProfiler();prof.start();

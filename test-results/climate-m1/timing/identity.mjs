@@ -11,9 +11,15 @@
 // node identity.mjs <dirA> <dirB> <out.json>
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
-import {writeFileSync} from 'node:fs';
+import {writeFileSync, readFileSync, realpathSync} from 'node:fs';
 const [dirA, dirB, outPath] = process.argv.slice(2);
 const u = (d, f) => pathToFileURL(`${d}/src/${f}`).href;
+// Guards (Astra review-3 SHOULD 2): two distinct trees, source hashes recorded, counts asserted, exit 1 on a difference.
+const pathA = realpathSync(`${dirA}/src/surface-climate.ts`), pathB = realpathSync(`${dirB}/src/surface-climate.ts`);
+if (pathA === pathB) throw new Error(`dirA and dirB resolve to the same module ${pathA}`);
+const srcSha = p => createHash('sha256').update(readFileSync(p)).digest('hex');
+const sourceSha256 = {A: srcSha(pathA), B: srcSha(pathB)};
+if (sourceSha256.A === sourceSha256.B) throw new Error('dirA and dirB have identical surface-climate.ts: the comparison would be vacuous');
 const A = await import(u(dirA, 'surface-climate.ts')), B = await import(u(dirB, 'surface-climate.ts'));
 const {galaxies, refByAddress, sector, system} = await import(u(dirB, 'catalog.ts'));
 const D = Math.PI / 180;
@@ -21,9 +27,10 @@ const EARTH = {anchorTempK: 288, obliquityRad: 23.44 * D, water: .7, surfaceGrav
 const g = galaxies('LETHRA-001')[0];
 const FIXTURE = {Maithea: ['G001/C2128,0,1/0', 1], Selawyn: ['G001/C2142,3,4/0', 0], Raiva: ['G001/C2143,4,3/0', 1], Lethuris: ['G001/C2142,6,1/1', 1]};
 const FIELDS = Object.keys(A.createClimateSample());
+if (JSON.stringify(FIELDS) !== JSON.stringify(Object.keys(B.createClimateSample())) || FIELDS.length !== 18) throw new Error(`ClimateSample fields differ or are not 18: ${FIELDS}`);
 const fib = (i, n) => { const y = 1 - 2 * (i + .5) / n, p = i * 2.399963229728653, r = Math.sqrt(1 - y * y); return [Math.cos(p) * r, y, Math.sin(p) * r]; };
 const hDiag = i => ((i * 7919) % 9000) - 500, hDigest = i => ((i * 7919) % 12000) - 1000;
-const res = {dirA, dirB, node: process.version, fields: FIELDS, sets: {}, totalSamples: 0, totalComparisons: 0, differences: 0, firstDifferences: []};
+const res = {dirA, dirB, sourceSha256, node: process.version, fields: FIELDS, sets: {}, totalSamples: 0, totalComparisons: 0, differences: 0, firstDifferences: []};
 // Branch reach of the inlined code, from B's outputs (all sets): proves the rare branches were exercised.
 const reach = {halfZero: 0, pdd0Zero: 0, growZero: 0, growOne: 0, growInterior: 0, snowZero: 0, snowOne: 0, snowInterior: 0, treelineZero: 0, treelineOne: 0, treelineInterior: 0, aridityZero: 0, aridityOne: 0, aridityInterior: 0, heatRampInterior: 0, forestPositive: 0, forestZero: 0};
 function tally(o) {
@@ -64,6 +71,8 @@ for (let sx = 266; systems < 2000; sx++) for (const ref of sector(g, [sx, 0, 0])
   for (const b of system(ref).planets) (B.temperateHabitat(b) ? corpus : other).push(b);
 }
 for (const b of corpus.slice(0, 50)) compare(`corpus:${b.id}`, () => A.surfaceClimate(A.climateForcingFor(b)), () => B.surfaceClimate(B.climateForcingFor(b)), 8000, [hDiag, hDigest]);
+const EXPECTED_PINNED_SAMPLES = 5 * 200000 + 50 * 8000 * 2;
+if (res.totalSamples !== EXPECTED_PINNED_SAMPLES) throw new Error(`pinned samples ${res.totalSamples}, expected ${EXPECTED_PINNED_SAMPLES}`);
 const pinned = {samples: res.totalSamples, comparisons: res.totalComparisons, differences: res.differences};
 // Extra branch coverage.
 const extras = {'earth-obliquity-0': {...EARTH, obliquityRad: 0}, 'earth-obliquity-70': {...EARTH, obliquityRad: 70 * D}, 'earth-water-0': {...EARTH, water: 0}, 'earth-cold-230K': {...EARTH, anchorTempK: 230}, 'earth-hot-330K': {...EARTH, anchorTempK: 330}};
@@ -72,5 +81,6 @@ for (const b of other.slice(0, 50)) compare(`extra-nontemperate:${b.id}`, () => 
 res.pinned = pinned; res.corpusSize = corpus.length; res.nonTemperateCount = other.length;
 res.branchReach = reach;
 res.pass = res.differences === 0;
+if (!res.pass) process.exitCode = 1;
 writeFileSync(outPath, JSON.stringify(res, null, 1));
 console.log(JSON.stringify({pass: res.pass, branchReach: reach, pinned, totalSamples: res.totalSamples, totalComparisons: res.totalComparisons, differences: res.differences, sets: Object.keys(res.sets).length, firstDifferences: res.firstDifferences.slice(0, 3)}));
