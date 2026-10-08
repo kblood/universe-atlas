@@ -1,5 +1,6 @@
 import {chromium} from 'playwright';
 import {browserArgs} from './browser-options.mjs';
+import {acquireGpuLock,assertCaptureOutsideSlot} from './helpers/gpu-lock.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {galaxies,refByAddress,system,bodyPosition} from '../src/catalog.ts';
@@ -69,9 +70,10 @@ function resolveLitLandingPoint(addr){
   return {point:best.d.map(v=>v*radiusOut),illum:best.illum,slopeDeg:best.slopeDeg,elevationM:best.elevationM,rockHeightM:best.rockHeightM};
 }
 await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,args:browserArgs});
-const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
-page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+assertCaptureOutsideSlot('surface');
+const lock=process.env.ATLAS_GPU_LOCK_HELD?null:await acquireGpuLock({owner:`surface ${base}`,capture:true});
+let browser,page;
+const errors=[];
 const address={seed:'LETHRA-001',g:'G001',system:'G001/C2128,0,1/0',body:'G001/C2128,0,1/0/planet/1'};
 const pixels=async(a,b)=>page.evaluate(async([aa,bb])=>{
   const load=async(src)=>{const img=new Image();img.src=src;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);return ctx.getImageData(0,0,c.width,c.height).data;};
@@ -80,6 +82,9 @@ const pixels=async(a,b)=>page.evaluate(async([aa,bb])=>{
   return {meanRGBDelta:delta/(x.length/4),changedFraction:changed/(x.length/4)};
 },[a,b].map(x=>'data:image/png;base64,'+x.toString('base64')));
 try{
+  browser=await chromium.launch({headless:true,args:browserArgs});
+  page=await browser.newPage({viewport:{width:1440,height:1000}});
+  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   // Resolved live (see resolveLitLandingPoint above) instead of a frozen
   // literal: must be BOTH walkable dry land (prior literal only satisfied
   // this — rockHeightM~78m — and was itself already broken once by a
@@ -149,5 +154,5 @@ try{
   console.log(JSON.stringify({sites,groundPixels,orbitPixels,siteMissM,errors}));
   await writeFile(out+'/report.json',JSON.stringify({ok:true,base,before,after,terrain,orbitTerrain,groundPixels,orbitPixels,siteMissM,landed,sites,errors},null,2));
   assert.deepEqual(errors,[]);
-}catch(error){await page.screenshot({path:out+'/failure.png'});console.log(JSON.stringify(await page.evaluate(()=>window.__atlas.travel)));throw error;}
-finally{await browser.close();}
+}catch(error){if(page){await page.screenshot({path:out+'/failure.png'}).catch(()=>{});console.log(JSON.stringify(await page.evaluate(()=>window.__atlas?.travel).catch(()=>null)));}throw error;}
+finally{await browser?.close().catch(()=>{});await lock?.release();}
