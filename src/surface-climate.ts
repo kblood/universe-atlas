@@ -63,6 +63,7 @@ export const CLIMATE_CALIBRATION=Object.freeze({
   DATUM_M:0,
   PDD_CRIT:250, PDD_RAMP:100, YEAR_D:365.25,
   WARM_COL_REF_K:288, WARM_COL_PER_K:0.005, WARM_COL_MIN:0.8, WARM_COL_MAX:1.1,
+  TW_CEILING_K:320, TW_CEILING_SCALE_K:40,
   T_TREE_WARMEST_K:283, TREE_RAMP_K:6,
   SEASON_K:40, MARITIME:0.5,
   BELT_LO:0.18, BELT_HI:0.52, BELT_EDGE:0.03, BELT_MOISTURE:0.0425,
@@ -185,6 +186,22 @@ export function temperateHabitat(body:Body):boolean {
 export function warmColumnLapseFactor(datumAnnualK:number):number {
   const f=1-C.WARM_COL_PER_K*(datumAnnualK-C.WARM_COL_REF_K);
   return f<C.WARM_COL_MIN?C.WARM_COL_MIN:f>C.WARM_COL_MAX?C.WARM_COL_MAX:f;
+}
+
+/**
+ * surface-climate-2 step 3, warmest-month ceiling (symmetric): above
+ * TW_CEILING_K the raw warmest month TwRaw = annual + half saturates,
+ *   Tw' = 320 + e/(1 + e/40), e = TwRaw - 320   (Tw' < 360 K always),
+ * and the half-range becomes half' = Tw' - annual, so the coldest month
+ * annual - half' rises by the same amount and the annual mean is unchanged.
+ * half' is never negative (the warmest month is never below the annual mean);
+ * that floor binds only where the annual mean itself exceeds the saturated
+ * warmest month (a hot, nearly seasonless column; not a habitat world).
+ * PDD, treeline, growing season and the tile colour all read half'.
+ */
+export function warmestMonthCeilingK(rawWarmestK:number):number {
+  const e=rawWarmestK-C.TW_CEILING_K;
+  return e>0?C.TW_CEILING_K+e/(1+e/C.TW_CEILING_SCALE_K):rawWarmestK;
 }
 
 /** Surface gravity from the catalogue body, g = G*M/R^2 (m/s^2). */
@@ -355,7 +372,11 @@ export function surfaceClimate(forcing:ClimateForcing):(d:V3|readonly [number,nu
     let fac=1-C.WARM_COL_PER_K*(datumAnnual-C.WARM_COL_REF_K);
     if(fac<C.WARM_COL_MIN)fac=C.WARM_COL_MIN;else if(fac>C.WARM_COL_MAX)fac=C.WARM_COL_MAX;
     const annual=datumAnnual-lapse*fac*(above>0?above:0);
-    const half=C.SEASON_K*qa*maritime;
+    const halfRaw=C.SEASON_K*qa*maritime;
+    // Step 3: warmest-month ceiling (warmestMonthCeilingK, inlined), symmetric half-range.
+    let half=halfRaw;
+    const excess=annual+halfRaw-C.TW_CEILING_K;
+    if(excess>0){half=C.TW_CEILING_K+excess/(1+excess/C.TW_CEILING_SCALE_K)-annual;if(half<0)half=0;}
     // Exactly the legacy classifier's moisture expression (surface-biomes.ts).
     const moisture=noise(d[0]*5+13,d[1]*5+37,d[2]*5+19,seed);
     const belt=smooth(x,beltLoA,beltLoB)*(1-smooth(x,beltHiA,beltHiB));

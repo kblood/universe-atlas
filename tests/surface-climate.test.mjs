@@ -13,7 +13,7 @@ import {
   CLIMATE_VERSION,CLIMATE_CALIBRATION,TABLE_ROWS,temperateHabitat,surfaceGravityMS2,lapseRateForGravity,
   effectiveObliquityRad,insolationTables,climateForcingFromParams,climateForcingFor,clearClimateForcingCache,
   climateForcingCacheSize,surfaceClimate,createClimateSample,decodeClimateCode,isothermHeightM,
-  KERNEL_STEPS,pddKernelH,pddKernelG,degreeDaysAbove,warmColumnLapseFactor,
+  KERNEL_STEPS,pddKernelH,pddKernelG,degreeDaysAbove,warmColumnLapseFactor,warmestMonthCeilingK,
 } from '../src/surface-climate.ts';
 import {planetGeophysics} from '../src/planet-geophysics.ts';
 
@@ -39,7 +39,7 @@ test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump
   assert.equal(CLIMATE_VERSION,'surface-climate-2');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
-  assert.equal(sha,'ee49652a50d425d09ba19f4444de7e0e256abfda58f5e04cea0690f9f4ea2959',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
+  assert.equal(sha,'07c0a7c57bf041d78eb3c542e775a35b660c0b0a105fa59034dd75bdbaaea00a',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
 });
 
 test('PDD kernel: tabulated H and G match the closed form; degree-days of a sinusoidal year',()=>{
@@ -132,7 +132,10 @@ test('obliquity: honour the drawn tilt 0..180 deg, folded, with correct high-til
   assert.ok(pole.annualMeanTempK>eq.annualMeanTempK,`60 deg: pole ${pole.annualMeanTempK} > equator ${eq.annualMeanTempK}`);
   assert.ok(pole.seasonalHalfRangeK>3*eq.seasonalHalfRangeK);
   const s90=surfaceClimate(t90)([0,1,0],0,createClimateSample());
-  assert.ok(s90.seasonalHalfRangeK>pole.seasonalHalfRangeK&&s90.warmestMonthK-s90.coldestMonthK===2*s90.seasonalHalfRangeK);
+  // surface-climate-2: the insolation half-range still grows with tilt; the temperature half-range
+  // is saturated by the warmest-month ceiling at both poles (old: s90.seasonalHalfRangeK > pole's).
+  assert.ok(s90.insolationHalfRange>pole.insolationHalfRange&&s90.warmestMonthK-s90.coldestMonthK===2*s90.seasonalHalfRangeK);
+  assert.ok(s90.warmestMonthK<360&&pole.warmestMonthK<360,'warmest month saturates below 360 K');
   // Tilt t and pi-t: bit-identical tables (folding snaps to a power-of-two grid).
   for(let i=0;i<2000;i++){const t=(i+.37)/2000*Math.PI;assert.equal(effectiveObliquityRad(t),effectiveObliquityRad(Math.PI-t),`t=${t}`);}
   for(const t of [.1,.7,1.2,1.5]){assert.ok(same(climateForcingFromParams({anchorTempK:280,obliquityRad:t,water:.4}),climateForcingFromParams({anchorTempK:280,obliquityRad:Math.PI-t,water:.4})));}
@@ -156,6 +159,28 @@ test('Earth reference forcing (288 K, 23.44 deg, water 0.7, 6.5 K/km) has the ri
   assert.ok(Math.abs(sum/n-288)<=.5,`area mean ${sum/n}`);
   // The gravity-derived lapse rate reproduces the same Earth value without an override.
   assert.ok(Math.abs(climateForcingFromParams({anchorTempK:288,obliquityRad:23.44*D,water:.7,surfaceGravityMS2:9.81}).lapseKPerM-.0065)<1e-6);
+});
+
+test('warmest-month ceiling: saturating, symmetric, annual mean unchanged (surface-climate-2 step 3)',()=>{
+  const Cc=CLIMATE_CALIBRATION;
+  assert.equal(warmestMonthCeilingK(300),300);assert.equal(warmestMonthCeilingK(320),320);
+  assert.equal(warmestMonthCeilingK(330),320+10/(1+10/40));
+  let prev=-Infinity;for(let k=0;k<4000;k++){const t=250+k*.1,c=warmestMonthCeilingK(t);assert.ok(c>prev&&c<=t&&c<360);prev=c;}
+  assert.ok(warmestMonthCeilingK(1e6)<360);
+  // Live: on a hot, high-tilt water world the warmest month is the saturated raw one, the coldest
+  // month moves by the same amount, and the annual mean is the uncapped one.
+  const hot=climateForcingFromParams({anchorTempK:320,obliquityRad:89.8*D,water:.4,moistureSeed:7}),s=surfaceClimate(hot),o=createClimateSample();
+  let capped=0;
+  for(let i=0;i<20000;i++){
+    const d=fib(i,20000),h=((i*7919)%3000);s(d,h,o);
+    const halfRaw=Cc.SEASON_K*o.insolationHalfRange*(1-Cc.MARITIME*hot.water);
+    const tw=Math.max(o.annualMeanTempK,warmestMonthCeilingK(o.annualMeanTempK+halfRaw));
+    assert.ok(Math.abs(o.warmestMonthK-tw)<1e-9,`warmest ${o.warmestMonthK} vs ${tw}`);
+    assert.ok(Math.abs((o.warmestMonthK-o.annualMeanTempK)-(o.annualMeanTempK-o.coldestMonthK))<1e-9);
+    assert.ok(o.seasonalHalfRangeK>=0&&o.warmestMonthK<360);
+    capped+=o.annualMeanTempK+halfRaw>Cc.TW_CEILING_K;
+  }
+  assert.ok(capped>5000,`the ceiling binds on this world (${capped}/20000)`);
 });
 
 test('per-planet lapse rate from surface gravity (owner amendment 1)',()=>{
