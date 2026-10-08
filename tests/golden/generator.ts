@@ -30,7 +30,7 @@ import { placeAt, depthAndPressureAt, PLACE_QUERY_VERSION } from "../../src/plac
 import { createForestCensus, FOREST_CENSUS_VERSION, type ForestCensus } from "../../src/forest-census.ts";
 import { rocksForCell, canonicalCellsWithin, rockCensusDigest, ROCK_TIERS, ROCK_FIELD_VERSION } from "../../src/rock-field.ts";
 import { generateBiosphere, profileFromPhysicalProperties } from "../../src/biosphere-model.ts";
-import { COMPOSER_PRESET_IDS, composerPreset, randomComposerRecipe, encodeComposerRecipe, normalizeComposerRecipe, composerConstraints, COMPOSER_RECIPE_VERSION, type ComposerRecipe } from "../../src/fauna-composer-recipe.ts";
+import { COMPOSER_PRESET_IDS, composerPreset, randomComposerRecipe, encodeComposerRecipe, decodeComposerRecipe, normalizeComposerRecipe, composerConstraints, COMPOSER_RECIPE_VERSION, type ComposerRecipe } from "../../src/fauna-composer-recipe.ts";
 import { deriveComposerIndividual } from "../../src/fauna-composer-individual.ts";
 import { buildComposerGraph, composerStructure, poseComposer, COMPOSER_GRAPH_VERSION } from "../../src/fauna-composer-rig.ts";
 import { buildComposerSkin, COMPOSER_SKIN_VERSION } from "../../src/fauna-composer-mesh.ts";
@@ -612,6 +612,13 @@ function rockLines(worlds: PlatformWorld[], f: Fmt): string[] {
 }
 
 const FAUNA_RANDOM_SEEDS = ["GOLDEN-FAUNA-1", "GOLDEN-FAUNA-2", "GOLDEN-FAUNA-3", "GOLDEN-FAUNA-4"];
+/** FAUNA-NUDGE-STABLE-2: the mouth's cap-apex/seam ties and the cephalopod's
+ * luminance-floor equality must stay deterministic in actual browser engines.
+ * Exact catalogue recipe texts make the regression independent of random draws. */
+const FAUNA_NUDGE_SPECIMENS: [string, string][] = [
+  ["odd-earlier-rules-worm", "v4*layout_limbless*legPairs_0*bodyLength_1.1*girth_1*posture_0*torso_annulated*neckLength_0*head_blunt*headSize_1*snoutLength_0.2*horns_none*legs_pillar*legLength_0.8*feet_pad*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_earth*colorSeed_401*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_horizontal*iris_auto*eyeRules_1"],
+  ["odd-cephalopod-horse", "v4*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_cephalopod*iris_blue*eyeRules_2"],
+];
 /** Every preset and random specimen is pinned in the one `fauna` key. The
  * separate faunaKnownUnstable key (2026-10-04 to 2026-10-08) held GOLDEN-FAUNA-2,
  * the midline insect ocellus on which WebKit 26.5 broke a same-t seam tie (fixed
@@ -623,6 +630,7 @@ function faunaLines(f: Fmt): string[] {
   const recipes: [string, ComposerRecipe][] = [
     ...COMPOSER_PRESET_IDS.map((id) => [id, composerPreset(id)] as [string, ComposerRecipe]),
     ...FAUNA_RANDOM_SEEDS.map((s) => [s, randomComposerRecipe(s)] as [string, ComposerRecipe]),
+    ...FAUNA_NUDGE_SPECIMENS.map(([name, text]) => [name, decodeComposerRecipe(text).recipe] as [string, ComposerRecipe]),
   ];
   for (const [name, input] of recipes) {
     const { recipe, issues } = normalizeComposerRecipe(input);
