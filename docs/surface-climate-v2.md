@@ -19,7 +19,8 @@ not only the L6 colour rows decision 2 allowed re-pinning (section 6b). That STO
 (section 2b): SITE_A accepted as found; bisect per climate step, then re-pin with a ledger. Both are done (sections 6
 and 6b); the package continued from step 8 and **STOPPED at step 8** (section 6c): moving SITE_A breaks
 `life-continuity-scenario:117`, which is not on any grant. climate-m1-decision-3 allowed a longer recede
-(ruling 1) and registered the Earth test (ruling 2, done); ruling 1 then **STOPPED** on its own gate (section 6d).
+(ruling 1) and registered the Earth test (ruling 2, done); ruling 1 then **STOPPED** on its own gate (section 6d). climate-m1-decision-4 shipped the 360-frame change with
+the deviation recorded, and logged the old-site in-exit drop as FAUNA-NEAR-DROP with a `todo` reproducer (section 6d).
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -533,6 +534,27 @@ is about. This is a finding for the fauna/presentation owner. Passing at 360 fra
 outside lines 118-122 (or a renderer fix), which ruling 1 does not allow. Order steps 2-7 (the real test:affected,
 test:full, captures, Astra) were not run after this STOP. The timing bench stays with the coordinator.
 
+### climate-m1-decision-4 (2026-10-08): ruling 1 shipped with a recorded deviation; FAUNA-NEAR-DROP
+
+All three rulings are **Opus-decided on Kasper's instruction, overrulable**.
+
+- **Ruling 1, shipped with a deviation.** `recede-360.patch` is committed unchanged (the test file differs from 9da8139
+  only by that patch). **Deviation, recorded rather than waived:** ruling 1 of decision-3 asked for a pass at both
+  sites; the change passes at the shipped (new) SITE_A (56 frames fading past 95 m, 0 hard drops; the former-cut
+  negative hard-drops 9 at 95.0-95.4 m) and fails at the old site only through the pre-existing in-exit drops below.
+  Decision-4 counts the gate as met in substance.
+- **Ruling 2, FAUNA-NEAR-DROP** (backlog item for the coordinator; owner: life presentation, the author of the D1 step-5
+  continuity test; priority medium). A camera-visible near rig is hard-dropped **inside** the 95 m exit: main c6526d0
+  at the old SITE_A, 360-frame recede, frames 150/155/156 at 89.6/91.1/86.6 m, **identical with and without the widened
+  cut** (so not the 95 m cut). Pre-existing on main and unrelated to the climate. Starting hypothesis (not
+  established): eviction without a fade when the 6-rig active cap is full and a nearer candidate enters; the task's
+  first step is to confirm or reject it before any code change. Reproducer: a `todo` test in
+  `tests/life-continuity-scenario.test.mjs` with the frozen `SITE_A_PRE_M1_M` literal (not in `harness-sites.mjs`), the
+  same 360-frame recede and `fadeProbe`, asserting no visible drop below `EXIT_M`. Two runs through the shared slot give
+  the same 3 drops to 0.1 m (`step8/near-drop-repro.json`, deterministic). File duration with the reproducer: 33.8 s and
+  31.5 s (tier-estimates: all 20.5 s, full 47.6 s; under 2.5x, not re-tiered).
+- **Ruling 3:** not a merge blocker.
+
 ## 7. Ledger: moved pins in files this package does not own
 
 First pass (d134a87): the 88-file affected set from `test-runner.mjs affected --dry-run`, run through the shared slot
@@ -550,7 +572,7 @@ resume's targeted runs.
 | `tests/lod-carving-reduction.test.mjs:83,99` (mountains; first pass cited :69,79) | 31 tile-buffer and sampler-output digests, 4 worlds | moved pins (only `color`, `materials`, `meta` moved) | **re-pinned** with ledger (section 6b) |
 | `tests/lod-consistency.test.mjs` (mountains) | 20 rows at L6, L8, L10 plus L6 snow retention | decision-2 (b) | **re-pinned** at measured values rounded up to 0.1; retention 95.2 % (section 6b) |
 | `tests/terrain-mountains-assembly.test.mjs` HARD outsideBelt (:38) and HARD outsideMassif | bit-identity to main (heights, ocean, colour) | decision-2 (b): split | HARD heights+ocean unchanged and equal to main 290472d; colour split into a climate PIN, re-pinned |
-| `tests/life-continuity-scenario.test.mjs:117` | a rig fades out past 95 m on the receding path from SITE_A | SITE_A move (section 6c); decision-3 ruling 1 (360 frames) | **STOP**: 360 frames fail at the old site (3 on-screen drops at 86.6-91.1 m), section 6d |
+| `tests/life-continuity-scenario.test.mjs:117` | a rig fades out past 95 m on the receding path from SITE_A | SITE_A move (section 6c); decision-3 ruling 1, decision-4 | **360 frames, shipped** (passes at the shipped site); old-site in-exit drops are FAUNA-NEAR-DROP, a `todo` reproducer (section 6d) |
 | `tests/planet-geophysics.test.mjs:162` | Spearman(g, R) | pre-existing, marked NOT MET; unrelated | not blocking (decision 6) |
 
 Not run in this package (test:full or coordinator-owned): the `tests/golden/golden.json` sections climate, biomes,

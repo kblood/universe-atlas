@@ -1,0 +1,51 @@
+# continuity slice: 179 frames, 80 mid-fade frames, 13 hidden, off-camera hard drops 10
+✔ presentation continuity: stepped-clock scenario is deterministic, cross-fades, never hard-drops an on-screen rig, hides (15272.0921ms)
+✔ presentation continuity: 340/365 m hover keeps the life gate open (350 in / 380 out); off toggles (771.7797ms)
+✔ presentation continuity: receding exits fade past 95 m; the former 95 m candidate cut hard-drops them (negative) (7024.5829ms)
+✖ presentation continuity: no camera-visible rig is hard-dropped inside the 95 m exit on a 360-frame recede from the pre-M1 site (10503.3971ms) # FAUNA-NEAR-DROP: visible rig hard-dropped inside the 95 m exit (pre-existing on main; see docs/surface-climate-v2.md §6d)
+ℹ near-drop [{"frame":150,"distanceM":89.6},{"frame":155,"distanceM":91.1},{"frame":156,"distanceM":86.6}]
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 1
+ℹ duration_ms 33844.1031
+
+✖ failing tests:
+
+test at tests\life-continuity-scenario.test.mjs:150:1
+✖ presentation continuity: no camera-visible rig is hard-dropped inside the 95 m exit on a 360-frame recede from the pre-M1 site (10503.3971ms) # FAUNA-NEAR-DROP: visible rig hard-dropped inside the 95 m exit (pre-existing on main; see docs/surface-climate-v2.md §6d)
+  AssertionError [ERR_ASSERTION]: camera-visible rigs hard-dropped inside 95 m
+  + actual - expected
+  
+  + [
+  +   {
+  +     distanceM: 89.55842186604993,
+  +     i: 150,
+  +     id: 'G001/C2128,0,1/0/planet/1:fauna:600af6a7'
+  +   },
+  +   {
+  +     distanceM: 91.1144033388849,
+  +     i: 155,
+  +     id: 'G001/C2128,0,1/0/planet/1:fauna:e2c36d69'
+  +   },
+  +   {
+  +     distanceM: 86.55790360146251,
+  +     i: 156,
+  +     id: 'G001/C2128,0,1/0/planet/1:fauna:3dd8ee'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/climate-m1/tests/life-continuity-scenario.test.mjs:164:12)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { i: 150, id: 'G001/C2128,0,1/0/planet/1:fauna:600af6a7', distanceM: 89.55842186604993 }, { i: 155, id: 'G001/C2128,0,1/0/planet/1:fauna:e2c36d69', distanceM: 91.1144033388849 }, { i: 156, id: 'G001/C2128,0,1/0/planet/1:fauna:3dd8ee', distanceM: 86.55790360146251 } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

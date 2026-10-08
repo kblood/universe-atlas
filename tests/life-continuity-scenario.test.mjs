@@ -137,3 +137,30 @@ test('presentation continuity: receding exits fade past 95 m; the former 95 m ca
   assert.equal(former.frames.some(f=>f.fadingOutBeyondExit>0),false,'former cut: nothing is listed past 95 m');
   assert.ok(former.frames.at(-1).unlistedDrops>0,`former cut: the receding exit is a hard drop (${former.frames.at(-1).unlistedDrops})`);
 });
+
+// FAUNA-NEAR-DROP reproducer (climate-m1-decision-4 ruling 2, 2026-10-08; Opus-decided on Kasper's instruction,
+// overrulable). The receding path above, 360 frames, but from the harness site as it was before surface-climate-2
+// moved SITE_A. Frozen here on purpose: tests/harness-sites.mjs SITE_A_M before R5-ATLAS-CLIMATE-M1 (main c6526d0;
+// kept there as SITE_A_CLIMATE1_M), not imported, so the reproducer cannot move with a future site change. On main
+// c6526d0 the option-on renderer hard-drops 3 camera-visible rigs INSIDE the 95 m exit (frames 150/155/156 at
+// 89.6/91.1/86.6 m), identically with and without the widened cut: a second drop path, not the 95 m cut.
+// Hypothesis (not established): eviction when the 6-rig active cap is full and a nearer candidate enters.
+// The owner removes `todo` in the fix. docs/surface-climate-v2.md section 6d.
+const SITE_A_PRE_M1_M=Object.freeze([4075043.7,-1510938.2,2845723.8]);
+test('presentation continuity: no camera-visible rig is hard-dropped inside the 95 m exit on a 360-frame recede from the pre-M1 site',
+  {todo:'FAUNA-NEAR-DROP: visible rig hard-dropped inside the 95 m exit (pre-existing on main; see docs/surface-climate-v2.md §6d)'},async t=>{
+  const l=Math.hypot(...SITE_A_PRE_M1_M),site=SITE_A_PRE_M1_M.map(x=>x/l);
+  // digestPoses()[SLICE[0]] is the first 'walk' pose: one 1.6/60 m step from the site at the walk yaw; only its
+  // direction depends on the site, so rebuild that step from the frozen site and keep everything else.
+  const walk=digestPoses()[SLICE[0]],start={...walk,direction:moveAlong(site,walk.yawDeg,1.6/60)},poses=[];
+  let direction=start.direction,dateNs=start.dateNs;
+  for(let i=0;i<360;i++){dateNs+=BigInt(Math.round(1e9/60));direction=moveAlong(direction,start.yawDeg+180,25/60);poses.push({...start,direction,dateNs,phase:'recede'});}
+  const fixture=await lifeRendererModule({prefix:'atlas-life-neardrop-'});
+  try{
+    const probe=fadeProbe();
+    await runLifeScenario(fixture.module,poses,{rendererOptions:ON,clockStepMs:CLOCK_STEP_MS,onFrame:(i,r)=>{probe.onFrame(i,r);return false;}});
+    const inside=probe.onScreenDrops.filter(d=>d.distanceM<EXIT_M);
+    t.diagnostic(`near-drop ${JSON.stringify(inside.map(d=>({frame:d.i,distanceM:+d.distanceM.toFixed(1)})))}`);
+    assert.deepEqual(inside,[],`camera-visible rigs hard-dropped inside ${EXIT_M} m`);
+  }finally{await fixture.cleanup();}
+});
