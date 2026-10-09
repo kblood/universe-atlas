@@ -3,11 +3,14 @@ import { sectorView, galaxyClouds, systemContext } from "./context.ts";
 import { starMap, starChunk } from "./star-map.ts";
 import { planetSurface } from "./terrain.ts";
 import {surfaceSurvey} from './surface-survey.ts';
+import {findAnimalWorlds} from './animal-world-finder.ts';
 self.onmessage = ({ data }) => {
   const { id, kind, args } = data;
   try {
     const result =
-      kind === 'surface-survey' ? surfaceSurvey(args.body) : kind === "space-chunk"
+      kind === 'animal-worlds' ? findAnimalWorlds({seed:args.seed,galaxy:args.galaxy,
+        refs:starMap(args.galaxy).refs,dateNs:BigInt(args.dateNs),versions:args.versions,startIndex:args.startIndex})
+      : kind === 'surface-survey' ? surfaceSurvey(args.body) : kind === "space-chunk"
         ? starChunk(args.galaxy, args.coords)
         : kind === "universe-view"
           ? { galaxyClouds: galaxyClouds(args.galaxies, 650) }
