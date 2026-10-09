@@ -57,7 +57,19 @@ grows from 2190912 to 2813504 bytes: +622592 bytes, less than 4% of the existing
 16 MiB life reserve. The existing allocatedBytes getter automatically counts
 the expanded buffers; no new geometry cache or skeleton storage is added.
 
-Visual review uses the harness's frozen 067084f BEFORE poses and this branch's
-AFTER dist, especially the arrival-at-80-m all-proxy view. AFTER captures remain
-pending at source handoff; near20/30 target animals already have skinned rigs,
-so those views mainly assess their overflow neighbours.
+Visual replay completed with no browser/runtime errors. Paired results are in
+`universe-atlas-wt/habitat-near/test-results/habitat-near-before/` and
+`habitat-near-body-after/` in the shared workspace. Near20/30 views have the
+same dates, animal IDs and population counts; camera-relative positions differ
+by less than 6.2 micrometres. Anitar20 has 15 camera-visible animals, six rigs
+and nine proxies, including three idle animals 25.66–31.74 m away. Anitar30
+has 25 visible animals, six rigs and 19 proxies. These scenes exercise the
+actual overflow case. Daunune20/30 has only five visible animals, all rigged,
+so it checks the unchanged detailed bodies.
+
+Arrival80 views have the same camera pose/date but different submitted resident
+counts (Daunune 484 to 424, Anitar 512 to 504), reflecting finder-arrival versus
+bookmark replay residency/streaming. They are same-view visual evidence with
+that limitation, not proof of whole-frame population parity. The paired near
+views provide the population parity check. Replay also shows a legacy-bookmark
+warning; the exact model date/IDs were checked independently in the captures.
