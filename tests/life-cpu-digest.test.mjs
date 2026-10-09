@@ -67,11 +67,13 @@ test('life layer output is identical to the reference for a fixed pose/date sequ
   assert.equal(poses.length,416,'retain every frame of the optimisation regression sequence');
   try{
     const a=await runLifeScenario(reference.module,poses);
-    const b=await runLifeScenario(current.module,poses);
+    // This remains an optimisation identity guard against the legacy proxy;
+    // the intentional body-volume presentation has its own anatomy/replay gates.
+    const b=await runLifeScenario(current.module,poses,{rendererOptions:{faunaBodyPlan:false}});
     const first=a.digests.findIndex((digest,i)=>digest!==b.digests[i]);
     if(first>=0){
       const detail=new Set([first]);
-      const [ra,rb]=[await runLifeScenario(reference.module,poses.slice(0,first+1),{detailFrames:detail}),await runLifeScenario(current.module,poses.slice(0,first+1),{detailFrames:detail})];
+      const [ra,rb]=[await runLifeScenario(reference.module,poses.slice(0,first+1),{detailFrames:detail}),await runLifeScenario(current.module,poses.slice(0,first+1),{detailFrames:detail,rendererOptions:{faunaBodyPlan:false}})];
       const sa=ra.details.get(first),sb=rb.details.get(first),diff=[];
       for(const field of Object.keys(sa))if(JSON.stringify(sa[field])!==JSON.stringify(sb[field]))diff.push({field,ref:JSON.stringify(sa[field]).slice(0,400),cur:JSON.stringify(sb[field]).slice(0,400)});
       assert.fail(`frame ${first} (${poses[first].phase}) of ${poses.length} differs: ${JSON.stringify(diff.slice(0,4))}`);

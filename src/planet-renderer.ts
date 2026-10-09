@@ -445,6 +445,8 @@ export interface PlanetRendererOptions{
    * with listed fade-outs, continuous proxy gait, the 350/380 m ground-life
    * hysteresis and the flora LOD band memory. Off keeps the former output bit for bit. */
   presentationContinuity?:boolean;
+  /** Full-bodied instanced fallback. Off is for the historic CPU identity scenario. */
+  faunaBodyPlan?:boolean;
 }
 export class PlanetRenderer {
   /** render-bounds-1 helpers for main.ts (its import of this class is its only seam). */
@@ -702,7 +704,7 @@ export class PlanetRenderer {
   private lifeSignatureWater = NaN;
   private floraRenderer!: FloraFieldRenderer;
   private classify!: ReturnType<typeof biomeClassifier>;
-  private readonly faunaRenderer=new FaunaFieldRenderer();
+  private readonly faunaRenderer:FaunaFieldRenderer;
   /** Bounded skinned bodies for the nearest animals; a child of the field
    * renderer's origin-relative group, with the instanced batch as fallback.
    * Built in the constructor: its cross-fade follows `presentationContinuity`. */
@@ -835,6 +837,7 @@ export class PlanetRenderer {
   private groundLifeOn=false;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
+    this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:options.faunaBodyPlan!==false});
     // Audit F4: shadows fade out toward the edge of the surface shadow window.
     if(this.continuity)installShadowWindowFade();
     this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
