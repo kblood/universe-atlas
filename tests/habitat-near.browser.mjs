@@ -49,7 +49,8 @@ const snapshot=()=>page.evaluate(()=>{
       }
     });
   }
-  return {body:a?.state?.body,date:a?.date,walking:t?.walking,landing:t?.landing,clearanceM:t?.surface?.terrainClearance,
+  return {status:document.getElementById('status')?.textContent,travel:t,camera:a?.camera,
+    body:a?.state?.body,date:a?.date,walking:t?.walking,landing:t?.landing,clearanceM:t?.surface?.terrainClearance,
     bodyRelativeM,heading:t?.heading,tiles:d,faunaTrace:ids.length?a.faunaTrace(ids):null,forestAssets:a?.forestAssets,meshCounts,floraRanges,floraKinds,
     cameraDraws:window.__habitatCameraDraws,
     frame:debug?{calls:debug.renderer.info.render.calls,triangles:debug.renderer.info.render.triangles}:null};
@@ -58,10 +59,15 @@ async function capture(label){phase=label;const state=await snapshot();await wri
   await page.screenshot({path:out+'/'+label+'.png'});console.log(JSON.stringify({phase,body:state.body?.name,clearanceM:state.clearanceM,
     flora:state.tiles?.floraSubmittedCount,fauna:state.tiles?.faunaDrawn?.length,forest:state.tiles?.forest?.visible,meshes:state.meshCounts}));return state;}
 const frameWindow=()=>page.evaluate(()=>new Promise(resolve=>{
-  const intervals=[],started=performance.now();let previous=null;
-  function frame(now){if(previous!==null)intervals.push(now-previous);previous=now;
-    if(now-started<2000){requestAnimationFrame(frame);return;}
-    intervals.sort((a,b)=>a-b);resolve({samples:intervals.length,p50Ms:intervals[Math.floor(intervals.length*.5)],p95Ms:intervals[Math.floor(intervals.length*.95)]});
+  const intervals=[],longFrames=[];let previous=null,started=null,drain=2;
+  function frame(){const now=performance.now();if(drain-->0){requestAnimationFrame(frame);return;}
+    if(started===null){started=now;window.__atlas.setProfiling(true);window.__atlas.resetProfile();}
+    if(previous!==null){const delta=now-previous;intervals.push(delta);if(delta>250)longFrames.push({deltaMs:delta,sample:window.__atlas.perfSample(),assets:window.__atlas.forestAssets});}previous=now;
+    if(now-started<4000){requestAnimationFrame(frame);return;}
+    intervals.sort((a,b)=>a-b);const profile=window.__atlas.renderProfile,sample=window.__atlas.perfSample(),assets=window.__atlas.forestAssets;
+    window.__atlas.setProfiling(false);
+    resolve({method:'2 drained frames then performance.now callback times; uncaptured 4s window',samples:intervals.length,
+      p50Ms:intervals[Math.floor(intervals.length*.5)],p95Ms:intervals[Math.floor(intervals.length*.95)],maxMs:intervals.at(-1),longFrames,profile,sample,assets});
   }requestAnimationFrame(frame);
 }));
 async function observeDraws(){await page.evaluate(()=>{
@@ -103,6 +109,10 @@ try{
     const requireForest=process.env.HABITAT_REQUIRE_FOREST==='1'&&index===1;
     if(process.env.HABITAT_REQUIRE_FOREST==='1')assert.match(finder.text,index===1?/forest-capable/:/open vegetation/);
     await page.locator(requireForest?'#find-forest':'#find-life').click();
+    if(process.env.HABITAT_TRIAGE==='1')for(let tick=1;tick<=3;tick++){
+      await page.waitForTimeout(5000);const state=await snapshot();await writeFile(out+`/route-${tick*5}s.json`,JSON.stringify(state,null,2));
+      console.log(JSON.stringify({phase:'route-triage',seconds:tick*5,status:state.status,travel:state.travel,camera:state.camera}));
+    }
     await wait(()=>{const a=window.__atlas,t=a?.travel;return !t?.walking&&!t?.landing&&!t?.surfaceJourney&&!t?.autopilot&&
       t?.terrainCruise!==null&&a?.terrain?.tiles?.surfaceReady&&t?.surface?.terrainClearance<=110;});
     }
@@ -154,4 +164,4 @@ try{
     arrival:{p:w.arrival.bodyRelativeM,q:w.arrival.heading,clearance:80},
     views:w.views.map(v=>({clearance:v.clearance,p:v.state.bodyRelativeM,q:v.state.heading}))}))},null,2));
 }catch(error){report.error=String(error);report.phase=phase;report.failure=page?await snapshot().catch(()=>null):null;await save();throw error;}
-finally{await browser?.close().catch(()=>{});await lock?.release();if(server)stopServer(server.child);}
+finally{await browser?.close().catch(()=>{});await lock?.release();if(server)await stopServer(server.child);}
