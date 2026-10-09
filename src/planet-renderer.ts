@@ -33,6 +33,7 @@ import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMembe
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
 import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fauna-near-rig.ts';
 import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M} from './fauna-ground.ts';
+import {floraFineDemand,floraFineCoverage} from './flora-streaming.ts';
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier} from './surface-biomes.ts';
 import {temperateHabitat} from './surface-climate.ts';
@@ -51,7 +52,7 @@ const LIFE_RESCATTER_THRESHOLD_M = 16;
 const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
 const LIFE_UP_Y = new THREE.Vector3(0, 1, 0);
-type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number};
+type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number;farRepresentative?:boolean};
 type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe;floraPose?:FloraPose;
   /** Continuity only: the flora LOD band last drawn (F7 band memory, `submitFloraCandidate`). */
   floraLod?:number};
@@ -447,6 +448,9 @@ export interface PlanetRendererOptions{
   presentationContinuity?:boolean;
   /** Full-bodied instanced fallback. Off is for the historic CPU identity scenario. */
   faunaBodyPlan?:boolean;
+  /** Bounded canonical ground-cover representatives out to120 m. Defaults
+   * to continuity mode; false preserves frozen legacy demand/presentation. */
+  extendedFlora?:boolean;
 }
 export class PlanetRenderer {
   /** render-bounds-1 helpers for main.ts (its import of this class is its only seam). */
@@ -833,11 +837,13 @@ export class PlanetRenderer {
   private waterBucket = 0;
   /** `PlanetRendererOptions.presentationContinuity`, fixed for the renderer's lifetime. */
   private readonly continuity:boolean;
+  private readonly extendedFlora:boolean;
   /** Continuity only: the ground-life altitude latch (`altitudeGate`, 350 m in / 380 m out). */
   private groundLifeOn=false;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
     this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:options.faunaBodyPlan!==false});
+    this.extendedFlora=options.extendedFlora??this.continuity;
     // Audit F4: shadows fade out toward the edge of the surface shadow window.
     if(this.continuity)installShadowWindowFade();
     this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
@@ -1849,7 +1855,7 @@ export class PlanetRenderer {
     if(signature!==this.lifeSignature){this.lifeSignature=signature;this.lifeScatterValid=false;this.lifeResidents.clear();this.faunaGenomes.clear();this.faunaNear.clear();this.faunaGroundQueue=[];this.faunaFrameKeyValid=false;}
     }
     const t0=performance.now();
-    if(!this.lifeScatterValid||contact.distanceTo(this.lifeScatterCenter)*this.body.radiusM>LIFE_RESCATTER_THRESHOLD_M){
+    if(!this.lifeScatterValid||contact.distanceTo(this.lifeScatterCenter)*this.body.radiusM>(this.extendedFlora?4:LIFE_RESCATTER_THRESHOLD_M)){
       this.rescatterLife(contact);this.lifeScatterCenter.copy(contact);this.lifeScatterValid=true;
     }
     this.processLifeQueue();this.rescatterMs=performance.now()-t0;systemTimer.add('lifeScatter',this.rescatterMs);
@@ -1867,17 +1873,25 @@ export class PlanetRenderer {
     };
     // Fine grass remains a bounded neighbourhood; shrubs have the full 120 m
     // draw range. Herd anchors cover visibility + motion + streaming margins.
-    add(34,2,'flora');add(120+LIFE_LOAD_MARGIN_M,24,'flora');add(FAUNA_FIELD_VISIBLE_M+LIFE_LOAD_MARGIN_M+16,32,'fauna');
+    if(this.extendedFlora)for(const c of floraFineDemand(d,r,120+LIFE_LOAD_MARGIN_M))cells.push({...c,id:`flora/2/${c.id}`,cellSizeM:2,layer:'flora'});
+    else add(34,2,'flora');
+    add(120+LIFE_LOAD_MARGIN_M,24,'flora');add(FAUNA_FIELD_VISIBLE_M+LIFE_LOAD_MARGIN_M+16,32,'fauna');
     cells.sort((a,b)=>Math.hypot(a.direction[0]-d[0],a.direction[1]-d[1],a.direction[2]-d[2])-Math.hypot(b.direction[0]-d[0],b.direction[1]-d[1],b.direction[2]-d[2])||a.id.localeCompare(b.id));
     this.lifeWanted=cells;this.lifeQueue=cells.filter(c=>!this.lifeResidents.has(c.id));this.lifeQueueIndex=0;
     // Habitat for visible herds must not wait behind thousands of grass cells.
-    this.lifeQueue.sort((a,b)=>(a.layer==='fauna'?0:1)-(b.layer==='fauna'?0:1));
+    const priority=(c:LifeCell)=>c.layer==='fauna'?0:this.extendedFlora&&(c.cellSizeM===24||c.farRepresentative)?1:2;
+    this.lifeQueue.sort((a,b)=>this.extendedFlora?priority(a)-priority(b):(a.layer==='fauna'?0:1)-(b.layer==='fauna'?0:1));
     const wanted=new Set(cells.map(c=>c.id));
     // Retain an extra band to absorb boundary oscillation, without growing a
     // journey-sized cache. Canonical keys survive removal and re-generation.
     for(const [id,record] of this.lifeResidents){
-      const range=record.cell.layer==='fauna'?FAUNA_FIELD_VISIBLE_M+140:record.cell.cellSizeM===2?70:210;
+      const range=record.cell.layer==='fauna'?FAUNA_FIELD_VISIBLE_M+140:record.cell.cellSizeM===2?(this.extendedFlora&&record.cell.farRepresentative?210:70):210;
       if(!wanted.has(id)&&Math.hypot(record.cell.direction[0]-d[0],record.cell.direction[1]-d[1],record.cell.direction[2]-d[2])*r>range)this.lifeResidents.delete(id);
+    }
+    // Fixed CPU retention cap as well as the existing6000 instance-slot cap.
+    if(this.extendedFlora&&this.lifeResidents.size>12000)for(const id of this.lifeResidents.keys()){
+      if(this.lifeResidents.size<=12000)break;
+      if(!wanted.has(id))this.lifeResidents.delete(id);
     }
   }
   private processLifeQueue():void {
@@ -1949,6 +1963,7 @@ export class PlanetRenderer {
     const tMyr = toMyr(life.tMyr);
     const radiusM = this.body.radiusM, relief = this.relief, b = this.floraBiomeScratch;
     this.floraPresentCount = 0;
+    const eyeLength=eye.length(),centerX=eye.x/eyeLength,centerY=eye.y/eyeLength,centerZ=eye.z/eyeLength;
     this.floraRecipeBuilds=0;
     const origin = this.lifeOrigin;
     for (let i = 0; i < this.floraSlotCount; i++) {
@@ -1968,12 +1983,14 @@ export class PlanetRenderer {
       if(!pose||pose.recipe!==resident.floraRecipe||!Object.is(pose.tMyr,tMyr)||!Object.is(pose.relief,relief)||!Object.is(pose.radiusM,radiusM)
         ||!Object.is(pose.heightM,heightM)||!Object.is(pose.dx,dx)||!Object.is(pose.dy,dy)||!Object.is(pose.dz,dz))pose=resident.floraPose=this.floraPoseOf(resident.floraRecipe,tMyr,relief,radiusM,heightM,dx,dy,dz,pose);
       if(pose.kind===null)continue; // Absent, or a tree: the continuous forest owns trees at every altitude.
+      const coverage=this.extendedFlora&&resident.cell.cellSizeM===2?floraFineCoverage(!!resident.cell.farRepresentative,Math.hypot(dx-centerX,dy-centerY,dz-centerZ)*radiusM):1;
+      if(coverage<=0)continue;
       this.floraPresentCount++;
       const px = pose.px - origin.x, py = pose.py - origin.y, pz = pose.pz - origin.z, lanes = pose.lanes;
       lanes[12] = px; lanes[13] = py; lanes[14] = pz;
       // Continuity: the resident owns its LOD band memory (F7 hysteresis).
-      if(this.continuity)this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes, resident);
-      else this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes);
+      if(this.continuity)this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes, resident,coverage);
+      else this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes,null,coverage);
     }
     // Inlined `drawFloraCandidates` (see the UNIT-MISMATCH FINDING above):
     // `cull()` stays in the local (radius-normalized) frame the frustum

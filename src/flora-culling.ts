@@ -397,6 +397,8 @@ export class FloraCandidateBuffer {
   readonly centerZ: Float32Array;
   readonly radius: Float32Array;
   readonly kindIndex: Uint8Array;
+  /** Additional presentation fade; canonical population presence stays unchanged. */
+  readonly coverage: Float32Array;
   /** `capacity * 16` floats, `THREE.Matrix4.elements` layout per candidate. */
   readonly matrices: Float32Array;
   /** Optional per-candidate owner carrying LOD memory (null: no memory). */
@@ -416,6 +418,7 @@ export class FloraCandidateBuffer {
     this.centerZ = new Float32Array(capacity);
     this.radius = new Float32Array(capacity);
     this.kindIndex = new Uint8Array(capacity);
+    this.coverage = new Float32Array(capacity);
     this.matrices = new Float32Array(capacity * 16);
     this.owners = new Array<FloraLodOwner | null>(capacity).fill(null);
     this.outIndices = new Uint32Array(capacity);
@@ -430,10 +433,11 @@ export class FloraCandidateBuffer {
 
   /** Returns false once `capacity` is reached (silently dropped, same
    * bounded-degradation contract as `FloraLodBucket.tryAdd`). */
-  push(kind: FloraKind, centerX: number, centerY: number, centerZ: number, radius: number, matrixElements: ArrayLike<number>, owner: FloraLodOwner | null = null): boolean {
+  push(kind: FloraKind, centerX: number, centerY: number, centerZ: number, radius: number, matrixElements: ArrayLike<number>, owner: FloraLodOwner | null = null, coverage = 1): boolean {
     if (this.count >= this.capacity) return false;
     const i = this.count;
     this.owners[i] = owner;
+    this.coverage[i] = coverage;
     this.centerX[i] = centerX; this.centerY[i] = centerY; this.centerZ[i] = centerZ; this.radius[i] = radius;
     const kindIdx = FLORA_KIND_NAMES.indexOf(kind);
     this.kindIndex[i] = kindIdx < 0 ? 0 : kindIdx;
@@ -473,7 +477,7 @@ export function submitFloraCandidate(renderer: FloraFieldRenderer, buffer: Flora
   const lod = pickFloraLodBandHysteretic(owner?.floraLod ?? -1, distanceM);
   if (lod === -1) { if (owner) owner.floraLod = -1; return false; }
   const kind = FLORA_KIND_NAMES[buffer.kindIndex[index]!]!;
-  const drawn = renderer.submit(kind, lod, buffer.matrices, index * 16, floraCoverage(distanceM));
+  const drawn = renderer.submit(kind, lod, buffer.matrices, index * 16, floraCoverage(distanceM) * buffer.coverage[index]!);
   if (owner) owner.floraLod = drawn ? lod : -1;
   return drawn;
 }
