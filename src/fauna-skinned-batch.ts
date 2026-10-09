@@ -43,7 +43,7 @@ export class FaunaBonePaletteWriter {
   }
 }
 export interface FaunaSkinnedBatchOptions {
-  capacity?:number;maxVerticesPerAnimal?:number;maxIndicesPerAnimal?:number;maxGeometryEntries?:number;
+  capacity?:number;maxVerticesPerAnimal?:number;maxIndicesPerAnimal?:number;maxGeometryEntries?:number;maxBufferBytes?:number;
 }
 type GeometryRecord={plan:QuadrupedPlan;positions:Float32Array;normals:Float32Array;colors:Uint8Array;
   skinIndex:Uint8Array;skinWeight:Uint8Array;index:Uint16Array|Uint32Array;bytes:number;uses:number};
@@ -74,21 +74,30 @@ export class FaunaSkinnedBatch {
   private readonly geometry=new THREE.BufferGeometry();
   private readonly cache=new Map<string,GeometryRecord>();private readonly members=new Map<string,number>();
   private readonly slots:(Slot|null)[];private readonly seen:Uint32Array;private frame=0;private highWater=0;
-  private readonly maxGeometryEntries:number;private boneDirty=false;private rootDirty=false;private disposed=false;
+  private readonly maxGeometryEntries:number;
+  readonly maxBufferBytes:number;readonly estimatedBufferBytes:number;readonly indexBytes:number;private boneDirty=false;private rootDirty=false;private disposed=false;
   private active=0;private actualTriangles=0;private geometryUploads=0;private rejected=0;private uploadBytes=0;
   constructor(options:FaunaSkinnedBatchOptions={}){
-    this.capacity=options.capacity??512;this.maxVerticesPerAnimal=options.maxVerticesPerAnimal??1500;
-    this.maxIndicesPerAnimal=options.maxIndicesPerAnimal??4500;this.maxGeometryEntries=options.maxGeometryEntries??512;
+    this.capacity=options.capacity??128;this.maxVerticesPerAnimal=options.maxVerticesPerAnimal??500;
+    this.maxIndicesPerAnimal=options.maxIndicesPerAnimal??1500;this.maxGeometryEntries=options.maxGeometryEntries??this.capacity;
     for(const [name,value,max] of [['capacity',this.capacity,512],['vertices',this.maxVerticesPerAnimal,4096],
       ['indices',this.maxIndicesPerAnimal,12288],['cache',this.maxGeometryEntries,512]] as const)
       if(!Number.isSafeInteger(value)||value<1||value>max)throw new Error(`Invalid fauna batch ${name}`);
     if(this.maxIndicesPerAnimal%3)throw new Error('Fauna indexbudget must contain whole triangles');
     const vertices=this.capacity*this.maxVerticesPerAnimal;
+    this.indexBytes=vertices<=65535?2:4;this.maxBufferBytes=options.maxBufferBytes??16*1024*1024;
+    const atlas=vertices*37+this.capacity*this.maxIndicesPerAnimal*this.indexBytes;
+    const palettes=this.capacity*(FAUNA_PALETTE_BONES*16+20)*4;
+    // BothCPU/GPU atlas+palettes, plus worst-case CPU geometrycache arrays.
+    // Plan/key objects, renderer/driver metadata and sourceworker assets are separate.
+    this.estimatedBufferBytes=2*(atlas+palettes)+this.maxGeometryEntries*(this.maxVerticesPerAnimal*35+this.maxIndicesPerAnimal*4);
+    if(!Number.isSafeInteger(this.maxBufferBytes)||this.maxBufferBytes<=0||this.estimatedBufferBytes>this.maxBufferBytes)
+      throw new Error(`Fauna batch typedbuffers exceedbudget: ${this.estimatedBufferBytes} > ${this.maxBufferBytes}`);
     const attrs={position:new THREE.BufferAttribute(new Float32Array(vertices*3),3),normal:new THREE.BufferAttribute(new Float32Array(vertices*3),3),
       color:new THREE.BufferAttribute(new Uint8Array(vertices*3),3,true),skinIndex:new THREE.BufferAttribute(new Uint8Array(vertices*4),4),
       skinWeight:new THREE.BufferAttribute(new Uint8Array(vertices*4),4,true),faunaActor:new THREE.BufferAttribute(new Uint16Array(vertices),1)};
     for(const [name,attr] of Object.entries(attrs))this.geometry.setAttribute(name,attr);
-    this.geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(this.capacity*this.maxIndicesPerAnimal),1));this.geometry.setDrawRange(0,0);
+    this.geometry.setIndex(new THREE.BufferAttribute(vertices<=65535?new Uint16Array(this.capacity*this.maxIndicesPerAnimal):new Uint32Array(this.capacity*this.maxIndicesPerAnimal),1));this.geometry.setDrawRange(0,0);
     this.slots=new Array(this.capacity).fill(null);this.seen=new Uint32Array(this.capacity);
     this.boneMatrices=new Float32Array(this.capacity*FAUNA_PALETTE_BONES*16);
     // Four rootmatrixtexels plus (active,roughness,coverage,unused).
@@ -168,7 +177,7 @@ export class FaunaSkinnedBatch {
     if(slot!==undefined&&this.slots[slot]?.key===key)return true;
     if(slot===undefined){slot=this.slots.findIndex(s=>s===null);if(slot<0){this.rejected++;return false;}this.members.set(memberId,slot);}
     const old=this.slots[slot];if(old)this.cache.get(old.key)!.uses--;
-    this.slots[slot]={id:memberId,key,roughness:data.plan.genome.appearance?.roughness??.86};data.uses++;
+    this.seen[slot]=0;this.slots[slot]={id:memberId,key,roughness:data.plan.genome.appearance?.roughness??.86};data.uses++;
     const base=slot*this.maxVerticesPerAnimal;
     for(const name of ['position','normal','color','skinIndex','skinWeight'] as const){
       const attr=this.geometry.getAttribute(name) as THREE.BufferAttribute,source=data[name==='position'?'positions':name==='normal'?'normals':name==='color'?'colors':name];
@@ -176,7 +185,7 @@ export class FaunaSkinnedBatch {
     }
     const actor=this.geometry.getAttribute('faunaActor') as THREE.BufferAttribute;
     (actor.array as Uint16Array).fill(slot,base,base+this.maxVerticesPerAnimal);actor.addUpdateRange(base,this.maxVerticesPerAnimal);actor.needsUpdate=true;
-    const index=this.geometry.index!,indices=index.array as Uint32Array,io=slot*this.maxIndicesPerAnimal;
+    const index=this.geometry.index!,indices=index.array as Uint16Array|Uint32Array,io=slot*this.maxIndicesPerAnimal;
     indices.fill(base,io,io+this.maxIndicesPerAnimal);for(let i=0;i<data.index.length;i++)indices[io+i]=base+data.index[i];
     index.addUpdateRange(io,this.maxIndicesPerAnimal);index.needsUpdate=true;
     this.highWater=Math.max(this.highWater,slot+1);this.geometry.setDrawRange(0,this.highWater*this.maxIndicesPerAnimal);this.geometryUploads++;return true;
@@ -187,7 +196,7 @@ export class FaunaSkinnedBatch {
     this.rootMatrices[slot*20+16]=0;this.rootDirty=true;
   }
   releaseGeometry(key:string):boolean{const data=this.cache.get(key);if(!data||data.uses)return false;return this.cache.delete(key);}
-  beginFrame(origin:THREE.Vector3):void{this.group.position.copy(origin);this.frame++;this.active=0;this.actualTriangles=0;this.uploadBytes=0;}
+  beginFrame(origin:THREE.Vector3):void{this.group.position.copy(origin);this.frame=(this.frame+1)>>>0;if(!this.frame){this.seen.fill(0);this.frame=1;}this.active=0;this.actualTriangles=0;this.uploadBytes=0;}
   submit(memberId:string,root:THREE.Matrix4,bones:Float32Array,options?:{roughness?:number;coverage?:number}):boolean{
     const slot=this.members.get(memberId);if(slot===undefined||this.disposed||bones.length!==FAUNA_PALETTE_BONES*16)return false;
     if(this.seen[slot]===this.frame)return false;
@@ -209,7 +218,7 @@ export class FaunaSkinnedBatch {
     let geometryBytes=this.geometry.index!.array.byteLength,cacheBytes=0;
     for(const a of Object.values(this.geometry.attributes))geometryBytes+=a.array.byteLength;
     for(const record of this.cache.values())cacheBytes+=record.bytes;
-    return {prototype:true,active:this.active,prepared:this.members.size,geometryEntries:this.cache.size,geometryUploads:this.geometryUploads,
+    return {prototype:true,estimatedBufferBytes:this.estimatedBufferBytes,maxBufferBytes:this.maxBufferBytes,indexBytes:this.indexBytes,active:this.active,prepared:this.members.size,geometryEntries:this.cache.size,geometryUploads:this.geometryUploads,
       triangles:this.actualTriangles,reservedTriangles:this.highWater*this.maxIndicesPerAnimal/3,drawsPerPass:this.active?1:0,
       geometryBytes,paletteBytes:this.boneMatrices.byteLength+this.rootMatrices.byteLength,cacheBytes,paletteUploadBytes:this.uploadBytes,rejected:this.rejected};
   }

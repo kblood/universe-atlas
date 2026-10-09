@@ -56,3 +56,11 @@ test('one merged geometry draws512 actors, preserves member slots and produces n
   assert.ok(shader.fragmentShader.includes('roughnessFactor=vFaunaMeta.x'));
  }finally{b.dispose();}
 });
+
+test('default buffers stay bounded and use16bit indices; larger measurements require explicit overbudget opt-in',()=>{
+ const batch=new FaunaSkinnedBatch();
+ try{assert.ok(batch.diagnostics().estimatedBufferBytes<=16*1024*1024);assert.equal(batch.diagnostics().indexBytes,2);assert.equal(batch.capacity,128);}finally{batch.dispose();}
+ assert.throws(()=>new FaunaSkinnedBatch({capacity:512,maxVerticesPerAnimal:500,maxIndicesPerAnimal:1500}),/exceedbudget/);
+ const large=new FaunaSkinnedBatch({capacity:512,maxVerticesPerAnimal:500,maxIndicesPerAnimal:1500,maxBufferBytes:64*1024*1024});
+ try{assert.equal(large.diagnostics().indexBytes,4);assert.ok(large.diagnostics().estimatedBufferBytes>16*1024*1024);}finally{large.dispose();}
+});
