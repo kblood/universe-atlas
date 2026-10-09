@@ -730,9 +730,13 @@ On a world with living vegetation, **Find living habitat** flies toward a
 vegetated dry region, then hovers 80 m above ground with a view of nearby life.
 Plants and animals stream during low flight; landing is optional. Use WASD
 to release the hover and explore. Herds are local and sparse.
+**Find forest habitat** searches for actual trees alongside nearby plants and
+animals on forest-capable worlds. Cold or hot worlds can have open vegetation
+and animal life without supporting forests.
 In a galaxy's explorer, **Find planets with animals** lists up to five planets
 with living animal species at the selected date, including their system and
-plant/animal counts. **Search more stars** continues the bounded search. Click
+plant/animal counts and whether forests are possible. **Search more stars**
+continues the bounded search. Click
 **Visit** to open a planet, then find its living habitat. Changing the
 date clears the results; the finder does not change the universe or its seed.
 

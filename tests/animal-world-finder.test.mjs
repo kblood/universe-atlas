@@ -7,6 +7,7 @@ import {starLifecycle, planetLifecycle, planetStateAt} from '../src/stellar-evol
 import {biosphereStateAt, planetEnvironmentAt} from '../src/world-surface.ts';
 import {CURRENT_VERSIONS} from '../src/time-nav.ts';
 import {CATALOGUE_EPOCH_NS, UNIVERSE_END_NS} from '../src/world-time.ts';
+import {forestBodyEligible} from '../src/surface-biomes.ts';
 
 const seed = 'LETHRA-001', galaxy = galaxies(seed)[0];
 const reference = refByAddress(galaxy, 'G001/C2128,0,1/0');
@@ -32,9 +33,19 @@ test('finds real animal-bearing planets at the exact catalogue date with resolva
     assert.equal(world.stage, 'complex'); assert.equal(dated.stage, 'complex');
     assert.equal(world.animalSpeciesCount, dated.species.filter(species => species.kind === 'animal' && species.creature).length);
     assert.equal(world.plantSpeciesCount, dated.species.filter(species => species.kind !== 'animal').length);
+    assert.equal(world.forestPossible, forestBodyEligible(body)&&dated.species.some(species=>species.kind==='tree'));
     assert.ok(world.animalSpeciesCount > 0);
     assert.ok(!sys.moons.some(moon => moon.id === world.id));
   }
+});
+
+test('cold Daunune offers open vegetation while temperate Maithea can offer forest habitat',()=>{
+  const coldRef=refByAddress(galaxy,'G001/C2456,274,-369/0');
+  const cold=findAnimalWorlds({...options,refs:[coldRef]}).worlds.find(world=>world.id===coldRef.id+'/planet/1');
+  assert.ok(cold&&cold.animalSpeciesCount>0&&cold.plantSpeciesCount>0);
+  assert.equal(cold.forestPossible,false);
+  const temperate=findAnimalWorlds(options).worlds.find(world=>world.id==='G001/C2128,0,1/0/planet/1');
+  assert.equal(temperate.forestPossible,true);
 });
 
 test('unformed and terminal future dates return no animals without changing the requested date', () => {

@@ -92,12 +92,16 @@ function forcingForBody(body:Body):ClimateForcing {
  * the lapse runs from the current shoreline; with no sea at all, see
  * climateDatumM, from 0 m). At sea level 0 (the catalogue epoch since
  * ocean-volume-1) every value is unchanged by this datum. */
+/** Broad existing forest gate; a local site still needs climate and slope checks. */
+export function forestBodyEligible(body:Body):boolean {
+  return !!body.water&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Volcanic world';
+}
 export function biomeClassifier(body:Body,waterLevelM:number=0){
   const seed=Number(hash64(body.seed+'/macro-v1')&0xffffffffn);
   // One climate closure and one scratch sample per classifier, never per call.
   const climate=surfaceClimate(forcingForBody(body)),s=createClimateSample();
   const frozen=body.type==='Ice world';
-  const forestBody=!!body.water&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Volcanic world';
+  const forestBody=forestBodyEligible(body);
   const datum=climateDatumM(waterLevelM);
   return (direction:V3,height:number,upDot=1)=>{
     const moisture=noise(direction[0]*5+13,direction[1]*5+37,direction[2]*5+19,seed+30);

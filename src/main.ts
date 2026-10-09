@@ -64,7 +64,7 @@ import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
 import { systemLayout, type SystemScale } from "./system-layout.ts";
 import { TERRAIN_VERSION, terrainSampler, type planetSurface } from "./terrain.ts";
-import {biomeClassifier} from './surface-biomes.ts';
+import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
 import {
   galaxies,
   overview,
@@ -711,7 +711,7 @@ function animalWorldFinderPanel(){
     'Find a few planets in this galaxy with living animal species at the current date.';
   return `<section id="animal-world-finder"><h3>Planets with animals</h3><p class="subtle" role="status">${esc(status)}</p>
     <button id="find-animal-worlds" class="explore" ${search?.busy?'disabled':''}>${search?.busy?'Searching…':'Find planets with animals'}</button>
-    ${result?.worlds.map(w=>`<button class="item" data-animal-world="${esc(w.id)}"><span><strong>${esc(w.name)}</strong><small>${esc(w.systemName)} · ${w.animalSpeciesCount} animal species · ${w.plantSpeciesCount} plant species</small></span><span class="arrow">Visit ↗</span></button>`).join('')??''}
+    ${result?.worlds.map(w=>`<button class="item" data-animal-world="${esc(w.id)}"><span><strong>${esc(w.name)}</strong><small>${esc(w.systemName)} · ${w.animalSpeciesCount} animal species · ${w.plantSpeciesCount} plant species · ${w.forestPossible?'forest-capable':'open vegetation'}</small></span><span class="arrow">Visit ↗</span></button>`).join('')??''}
     ${result&&!result.worlds.length?'<p class="subtle">No animal worlds found among the searched stars at this date.</p>':''}
     ${result&&!result.exhausted?'<button id="more-animal-worlds">Search more stars</button>':''}
     ${result?.worlds.length?'<p class="subtle">Visit a planet, then choose Find living habitat to view plants and wildlife during low flight. Herds are local and sparse.</p>':''}</section>`;
@@ -2546,7 +2546,7 @@ function approachPlanet(altitude: number) {
 }
 /** Starts a surface journey; true only when one was started, so a caller may
  * arm landAfterCruise. False = no site (announced), nothing to land on. */
-function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
+function exploreTerrain(preferred?:THREE.Vector3,preferLife=false,requireTrees=false):boolean {
   const body=state.body;
   if(!body || body.kind==='star' || body.type==='Gas giant' || renderer.xr.isPresenting) return false;
   clearWalking();
@@ -2580,6 +2580,7 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
     if(!s || !s.walkable || !landingHeightAllowed(s.groundHeightM,landSea,landCeiling,landSummit))continue;
     const habitat=biome?.(d.toArray() as V3,s.groundHeightM,1);
     if(!habitat||habitat.weights[1]<.35||habitat.moisture<.2||d.dot(sun)<.25)continue;
+    if(requireTrees&&!habitat.forestPotential)continue;
     const score=habitat.weights[1]*3+habitat.moisture+(habitat.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2;
     habitatCandidates.push({direction:d.toArray() as V3,score});
   }
@@ -2589,8 +2590,8 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
       sample:terrainSampler(body,undefined,undefined,undefined,landSea),classify:biome,
       faunaGate:{stage:life.faunaStage,availableArchetypes:life.faunaAvailableArchetypes,species:life.faunaSpecies},
       floraGate:{stage:life.floraStage,availableKinds:life.floraAvailableKinds},
-      seaLevelM:landSea,ceilingM:landCeiling,summitM:landSummit}):null;
-    if(!site){announce('No populated living habitat was found in this search at this date.');panel();return false;}
+      seaLevelM:landSea,ceilingM:landCeiling,summitM:landSummit,requireTrees}):null;
+    if(!site){announce(requireTrees?'No populated forest habitat was found in this search at this date.':'No populated living habitat was found in this search at this date.');panel();return false;}
     destination.set(...site.direction);
   }
   const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
@@ -4226,6 +4227,9 @@ function panel() {
     if(surfaceNav){
       const life=lifeGateContext(state.sys!,state.body!,epoch);
       if(life?.floraStage==='complex'&&life.floraAvailableKinds?.length)surfaceNav+='<button id="find-life" class="explore">Find living habitat</button>';
+      if(life?.floraStage==='complex'&&life.floraAvailableKinds?.includes('tree')){
+        surfaceNav+=forestBodyEligible(state.body!)?'<button id="find-forest" class="explore">Find forest habitat</button>':'<p class="subtle">This planet supports open vegetation rather than forests. Look for a forest-capable planet in the galaxy finder.</p>';
+      }
       const sites=surveys.get(surveyKey(state.body!));
       if(atmosphereHeightM(state.body!)>0)surfaceNav+=`<button id="horizon-assist">Atmospheric horizon assist: ${horizonAssist?'on':'off'}</button>`;
       surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><button id="render-quality" title="Presentation only: cloud and scene resolution">Render quality: ${qualityMode==='auto'?`Auto (${RENDER_QUALITY[effectiveQuality()].label})`:RENDER_QUALITY[qualityMode].label}</button><button id="forest-detail">Trees: ${detailedForestEnabled?(forestAssetAttachment.diagnostics().loading?'loading…':'detailed'):'basic'}</button>${detailedForestEnabled&&forestAssetAttachment.diagnostics().error?'<p class="subtle">Detailed trees could not load. Basic trees remain available.</p><button id="forest-retry">Retry detailed trees</button>':''}<details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. ${INLAND_RIVERS_UNAVAILABLE}</p></details>`;
@@ -4329,6 +4333,7 @@ function panel() {
   bind('descend', () => approachPlanet(10000));
   bind('terrain-flight', ()=>exploreTerrain());
   bind('find-life',()=>exploreTerrain(undefined,true));
+  bind('find-forest',()=>exploreTerrain(undefined,true,true));
   bind('survey-surface',()=>void surveySurface());
   bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
   bind('surface-lighting',()=>{surfaceLightingEnabled=!surfaceLightingEnabled;persist();panel();});

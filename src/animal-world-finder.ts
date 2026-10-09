@@ -7,12 +7,13 @@ import {parseAddress, type SystemAddress, type WorldVersions} from './address.ts
 import {starLifecycle, starStateAt} from './stellar-evolution.ts';
 import {biosphereStateAt} from './world-surface.ts';
 import {UNIVERSE_END_NS} from './world-time.ts';
+import {forestBodyEligible} from './surface-biomes.ts';
 
 export const ANIMAL_WORLD_MAX_SYSTEMS = 512;
 export const ANIMAL_WORLD_MAX_RESULTS = 5;
 export type AnimalWorld = {
   id: string; name: string; systemId: string; systemName: string;
-  animalSpeciesCount: number; plantSpeciesCount: number; stage: 'complex';
+  animalSpeciesCount: number; plantSpeciesCount: number; forestPossible:boolean; stage: 'complex';
 };
 export type AnimalWorldSearchOptions = {
   seed: string; galaxy: Galaxy; refs: readonly SystemRef[]; dateNs: bigint;
@@ -80,7 +81,8 @@ export function findAnimalWorlds(options: AnimalWorldSearchOptions): AnimalWorld
       }
       if (!animalSpeciesCount) continue;
       worlds.push({id: body.id, name: body.name, systemId: canonical.id, systemName: sys.name,
-        animalSpeciesCount, plantSpeciesCount, stage: 'complex'});
+        animalSpeciesCount, plantSpeciesCount,
+        forestPossible:forestBodyEligible(body)&&life.species.some(s=>s.kind==='tree'),stage: 'complex'});
       if (worlds.length >= maxResults) {hitResults = true; break;}
     }
   }
