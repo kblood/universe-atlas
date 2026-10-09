@@ -35,7 +35,7 @@ import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fau
 import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M} from './fauna-ground.ts';
 import {floraFineDemand,floraFineCoverage} from './flora-streaming.ts';
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
-import {biomeClassifier} from './surface-biomes.ts';
+import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
 import {temperateHabitat} from './surface-climate.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
@@ -1348,7 +1348,7 @@ export class PlanetRenderer {
     // own `worldNs` doc comment for the equivalent existing precedent) rather
     // than calling flora-culling.ts's `frustumPlanesFromCamera` again.
     const lifeFocus=contact??eye.clone().normalize().multiplyScalar(1+groundHeight/this.body.radiusM);
-    const forestEnabled=this.relief===1&&this.lifeContext?.floraStage==='complex'&&
+    const forestEnabled=this.relief===1&&forestBodyEligible(this.body)&&this.lifeContext?.floraStage==='complex'&&
       !!this.lifeContext.floraAvailableKinds?.includes('tree');
     const forestFocus=lifeFocus.clone().normalize();
     // Visible forest density is centred on the observer's ground position.

@@ -14,9 +14,13 @@ an added Float32 coverage buffer costs24,000bytes at that capacity. Extended
 CPU resident retention is capped at12,000 records, with nonrepresentative fine
 cells keeping their old70m retention window. Far/shrub demand is prioritized
 after fauna so it does not wait behind dense near grass.
+Combined demand is sorted by distance and capped at12,000 cells; corner tests
+retain all camera-range fauna cells. Cached unwanted resident IDs are evicted
+before each new queued admission, so movement cannot temporarily exceed the
+resident limit. Wanted IDs and eviction worklists rebuild only on rescatter.
 
-Nonrepresentative fine plants fade over26–34m horizontal distance. Far
-representatives keep existing108–120m render-distance fading. No geometry,
+Nonrepresentative fine plants fade over26-34m horizontal distance. Far
+representatives keep existing108-120m render-distance fading. No geometry,
 population grid/version, model seed, habitat or species rule changes.
 `PlanetRendererOptions.extendedFlora` follows continuity mode by default
 (enabled by the production app); explicitfalse retains legacy demand and

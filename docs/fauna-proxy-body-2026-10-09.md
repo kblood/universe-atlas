@@ -58,8 +58,8 @@ grows from 2190912 to 2813504 bytes: +622592 bytes, less than 4% of the existing
 the expanded buffers; no new geometry cache or skeleton storage is added.
 
 Visual replay completed with no browser/runtime errors. Paired results are in
-`universe-atlas-wt/habitat-near/test-results/habitat-near-before/` and
-`habitat-near-body-after/` in the shared workspace. Near20/30 views have the
+`Assets/_assetctl/life-presentation-20261009/baseline-flight/` and
+`body-after-flight/` in the shared workspace. Near20/30 views have the
 same dates, animal IDs and population counts; camera-relative positions differ
 by less than 6.2 micrometres. Anitar20 has 15 camera-visible animals, six rigs
 and nine proxies, including three idle animals 25.66–31.74 m away. Anitar30

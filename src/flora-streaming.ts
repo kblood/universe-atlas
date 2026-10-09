@@ -30,7 +30,7 @@ export function floraFineDemand(center: V3, radiusM: number, rangeM = 168): Flor
   return out.slice(0,FLORA_FINE_DEMAND_CAP);
 }
 /** Nonrepresentative fine plants fade before their dense demand ends.
- * Representatives retain ordinary 108–120 m renderer range fading. */
+ * Representatives retain ordinary 108-120 m renderer range fading. */
 export function floraFineCoverage(representative: boolean, distanceM: number) {
   if (representative || distanceM <= FLORA_FINE_FADE_START_M) return 1;
   if (distanceM >= FLORA_FINE_NEAR_M) return 0;

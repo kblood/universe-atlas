@@ -692,7 +692,9 @@ async function findAnimalPlanets(more=false){
   }catch(error){if(animalWorldSearch?.request===request)animalWorldSearch.error=String(error);}
   finally{if(animalWorldSearch?.request===request){animalWorldSearch.busy=false;if(state.level==='galaxy')panel();}}
 }
+let animalVisitBodyId:string|null=null;
 async function visitAnimalPlanet(id:string){
+  if(animalVisitBodyId)return;
   const search=currentAnimalWorldSearch(),world=search?.result?.worlds.find(w=>w.id===id),galaxy=state.galaxy;
   if(!world||!galaxy)return;
   const ref=refByAddress(galaxy,world.systemId);if(!ref)return;
@@ -701,17 +703,19 @@ async function visitAnimalPlanet(id:string){
   if(snapshot.state.stage!=='solid'||bio.stage!=='complex'||!bio.species.some(s=>s.kind==='animal'&&s.creature)){
     announce('This planet no longer has living animals at the current date. Search again.');return;
   }
-  await navigate('body',{galaxy,ref,coords:ref.cell.map(v=>Math.floor(v/8)) as V3,sys,body});
-  announce('Planet with living animals selected. Choose Find living habitat to view plants and wildlife during low flight.');
+  animalVisitBodyId=id;panel();
+  try{await navigate('body',{galaxy,ref,coords:ref.cell.map(v=>Math.floor(v/8)) as V3,sys,body});}
+  finally{animalVisitBodyId=null;panel();}
+  if(state.body?.id===id)announce('Planet with living animals selected. Choose Find living habitat to view plants and wildlife during low flight.');
 }
 function animalWorldFinderPanel(){
   const search=currentAnimalWorldSearch(),result=search?.result;
-  const status=search?.busy?'Searching for living animal species…':search?.error?'Search failed. You can try again.':
+  const status=animalVisitBodyId?'Preparing planet visit…':search?.busy?'Searching for living animal species…':search?.error?'Search failed. You can try again.':
     result?`${result.worlds.length} planet${result.worlds.length===1?'':'s'} found at ${readableYears(search!.dateNs)}.`:
     'Find a few planets in this galaxy with living animal species at the current date.';
   return `<section id="animal-world-finder"><h3>Planets with animals</h3><p class="subtle" role="status">${esc(status)}</p>
     <button id="find-animal-worlds" class="explore" ${search?.busy?'disabled':''}>${search?.busy?'Searching…':'Find planets with animals'}</button>
-    ${result?.worlds.map(w=>`<button class="item" data-animal-world="${esc(w.id)}"><span><strong>${esc(w.name)}</strong><small>${esc(w.systemName)} · ${w.animalSpeciesCount} animal species · ${w.plantSpeciesCount} plant species · ${w.forestPossible?'forest-capable':'open vegetation'}</small></span><span class="arrow">Visit ↗</span></button>`).join('')??''}
+    ${result?.worlds.map(w=>`<button class="item" data-animal-world="${esc(w.id)}" ${animalVisitBodyId?'disabled':''}><span><strong>${esc(w.name)}</strong><small>${esc(w.systemName)} · ${w.animalSpeciesCount} animal species · ${w.plantSpeciesCount} plant species · ${w.forestPossible?'forest-capable':'open vegetation'}</small></span><span class="arrow">Visit ↗</span></button>`).join('')??''}
     ${result&&!result.worlds.length?'<p class="subtle">No animal worlds found among the searched stars at this date.</p>':''}
     ${result&&!result.exhausted?'<button id="more-animal-worlds">Search more stars</button>':''}
     ${result?.worlds.length?'<p class="subtle">Visit a planet, then choose Find living habitat to view plants and wildlife during low flight. Herds are local and sparse.</p>':''}</section>`;
@@ -2789,7 +2793,9 @@ function updatePlanetTiles(dt: number) {
   // climbing, and release its GPU resources when leaving this planet or opting out.
   const forestAttached=forestAssetAttachment.diagnostics();
   const forestTarget=clearance.terrainClearance<6000||forestAttached.ready||forestAttached.loading?planetTiles:null;
-  forestAssetAttachment.update(forestTarget,detailedForestEnabled&&!renderer.xr.isPresenting);
+  const forestLife=lifeGateContext(state.sys!,state.body!,epoch);
+  forestAssetAttachment.update(forestTarget,detailedForestEnabled&&!renderer.xr.isPresenting&&
+    forestBodyEligible(state.body!)&&forestLife?.floraStage==='complex'&&!!forestLife.floraAvailableKinds?.includes('tree'));
   const shadowFrustum=surfaceLighting.update({planet:planetTiles.group,radiusM:state.body!.radiusM,
     eye,sun:worldSun,altitudeM:clearance.terrainClearance,atmosphere:state.body!.water>0,
     enabled:surfaceLightingEnabled&&reliefScale===1,immersive:renderer.xr.isPresenting});
@@ -2808,7 +2814,7 @@ function updatePlanetTiles(dt: number) {
   // planet/moon resolves it from the SAME lifecycle pair `prepareLanding`
   // already uses (`bodyEntry.lc`/`bodyEntry.starLc`), never a fresh query.
   const waterLevelM = waterLevelFor(state.body!);
-  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, lifeGateContext(state.sys!, state.body!, epoch), waterLevelM,shadowFrustum);
+  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, forestLife, waterLevelM,shadowFrustum);
   if (!renderer.xr.isPresenting && state.body) {
     // Keep metre-scale depth precision without clipping the distant system.
     const near = (walker||landing ? .03:Math.max(.03, Math.min(1000, clearance.terrainClearance * .005))) * systemUnit;
@@ -4226,9 +4232,10 @@ function panel() {
     let surfaceNav = activeBodySolid && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
     if(surfaceNav){
       const life=lifeGateContext(state.sys!,state.body!,epoch);
-      if(life?.floraStage==='complex'&&life.floraAvailableKinds?.length)surfaceNav+='<button id="find-life" class="explore">Find living habitat</button>';
+      const habitatPending=animalVisitBodyId===state.body!.id?'disabled':'';
+      if(life?.floraStage==='complex'&&life.floraAvailableKinds?.length)surfaceNav+=`<button id="find-life" class="explore" ${habitatPending}>Find living habitat</button>`;
       if(life?.floraStage==='complex'&&life.floraAvailableKinds?.includes('tree')){
-        surfaceNav+=forestBodyEligible(state.body!)?'<button id="find-forest" class="explore">Find forest habitat</button>':'<p class="subtle">This planet supports open vegetation rather than forests. Look for a forest-capable planet in the galaxy finder.</p>';
+        surfaceNav+=forestBodyEligible(state.body!)?`<button id="find-forest" class="explore" ${habitatPending}>Find forest habitat</button>`:'<p class="subtle">This planet supports open vegetation rather than forests. Look for a forest-capable planet in the galaxy finder.</p>';
       }
       const sites=surveys.get(surveyKey(state.body!));
       if(atmosphereHeightM(state.body!)>0)surfaceNav+=`<button id="horizon-assist">Atmospheric horizon assist: ${horizonAssist?'on':'off'}</button>`;
