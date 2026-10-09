@@ -65,3 +65,16 @@ test('steep or empty dated populations never fall back to an unchecked site; wor
  assert.equal(findLivingHabitat({...f,candidates,floraGate:{stage:'sterile',availableKinds:[]}}),null);
  assert.throws(()=>findLivingHabitat({...f,candidates,maxCells:201}),/bounds/);
 });
+
+test('forest visits require real frozen18m tree cells; cold animal worlds stay honestly treeless',()=>{
+ const cold=fixture(ids[0]);
+ assert.equal(findLivingHabitat({...cold,candidates:[{direction:[1,0,0],score:1}],requireTrees:true}),null);
+ const f=fixture(ids[1]),coarse=terrainSampler(f.body,undefined,undefined,false,0,undefined,false,{lodLevel:0}),candidates=[];
+ for(let i=0;i<1024;i++){
+  const direction=landingCandidate(i,1024),s=coarse(direction);if(s.wet||s.ocean)continue;
+  const b=f.classify(direction,s.groundHeightM,1);if(b.forestPotential)candidates.push({direction,score:b.forestSuitability01});
+ }
+ const site=findLivingHabitat({...f,candidates,requireTrees:true});
+ assert.ok(site);assert.ok(site.treeCount>0&&site.animalCount>0&&site.shrubCount>0);
+ assert.ok(site.checkedCells<=12*200);
+});

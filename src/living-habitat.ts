@@ -4,6 +4,11 @@ import type {Body, V3} from './catalog.ts';
 import {surfaceCellsWithin} from './surface-cell.ts';
 import {faunaHerdAt, toSeconds, type FaunaBiosphereGate} from './fauna-runtime.ts';
 import {prepareFlora, type FloraBiosphereGate, type FloraBiomeSample} from './flora-field.ts';
+import {populationCells, FOREST_CELL_M} from './planet-population.ts';
+import {temperateHabitat} from './surface-climate.ts';
+import {forestHabitat} from './forest-habitat.ts';
+import type {terrainSampler} from './terrain.ts';
+import type {biomeClassifier} from './surface-biomes.ts';
 import {landingHeightAllowed} from './landing-site.ts';
 export type LivingSurface = {groundHeightM: number; walkable?: boolean; wet?: boolean; ocean?: boolean};
 type HabitatBiome = Omit<FloraBiomeSample, 'weights'> & {weights: readonly number[]};
@@ -14,11 +19,11 @@ export type LivingHabitatInput = {
   classify: (direction: V3, heightM: number, upDot: number) => HabitatBiome;
   faunaGate: FaunaBiosphereGate; floraGate: FloraBiosphereGate;
   seaLevelM: number; ceilingM: number; summitM: number;
-  maxCandidates?: number; maxCells?: number;
+  maxCandidates?: number; maxCells?: number; requireTrees?: boolean;
 };
 export type LivingHabitatSite = {
   direction: V3; heightM: number; slopeDeg: number; herdId: string;
-  animalCount: number; floraCount: number; shrubCount: number;
+  animalCount: number; floraCount: number; shrubCount: number; treeCount: number;
   checkedCandidates: number; checkedFaunaCells: number; checkedCells: number;
 };
 /** Same tangent basis and +/-4 m gradient as runtime fauna/shrub cells.
@@ -46,6 +51,9 @@ export function findLivingHabitat(input: LivingHabitatInput): LivingHabitatSite 
     !Number.isInteger(maxCells) || maxCells < 1 || maxCells > 200) throw new Error('Invalid living habitat bounds');
   if (faunaGate.stage !== 'complex' || !faunaGate.species?.length || floraGate.stage !== 'complex' ||
     !floraGate.availableKinds?.some(kind => kind !== 'tree')) return null;
+  if (input.requireTrees && (!temperateHabitat(body) || !floraGate.availableKinds?.includes('tree'))) return null;
+  const trees = input.requireTrees ? forestHabitat(sample as ReturnType<typeof terrainSampler>,
+    classify as ReturnType<typeof biomeClassifier>,body.radiusM,true) : null;
   const ranked = input.candidates.map((candidate,index) => ({...candidate,index}))
     .sort((a,b) => b.score-a.score || a.index-b.index).slice(0,maxCandidates);
   let checkedCandidates = 0, checkedFaunaCells = 0, checkedCells = 0;
@@ -74,8 +82,17 @@ export function findLivingHabitat(input: LivingHabitatInput): LivingHabitatSite 
       // Shrubs have the 120 m range needed for an 80 m observation hover;
       // fine grass/flowers alone would still be invisible at that altitude.
       if (!shrubCount) continue;
+      let treeCount = 0;
+      if (trees) {
+        for (const treeCell of populationCells(body.seed,cell.direction,body.radiusM,64,FOREST_CELL_M)) {
+          if (spent >= maxCells) break;
+          spent++; checkedCells++;
+          if (trees(treeCell).present) {treeCount++; break;}
+        }
+        if (!treeCount) continue;
+      }
       return {direction: cell.direction, heightM: habitat.surface.groundHeightM, slopeDeg: habitat.biome.slopeDeg,
-        herdId: cell.id, animalCount: herd.members.length, floraCount, shrubCount, checkedCandidates, checkedFaunaCells, checkedCells};
+        herdId: cell.id, animalCount: herd.members.length, floraCount, shrubCount, treeCount, checkedCandidates, checkedFaunaCells, checkedCells};
     }
   }
   return null;
