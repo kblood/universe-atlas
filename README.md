@@ -727,12 +727,13 @@ points can be selected and visited; they have no resolved planetary systems.
 If a galaxy has no active dated star, **Go to next stellar birth** advances to
 one. Surviving galaxies remain selectable in the far future as dim map proxies.
 On a world with living vegetation, **Find living habitat** flies toward a
-vegetated dry region. Herds are sparse and may be absent from a particular
-walking area even when animal species exist on the planet.
+vegetated dry region, then hovers 80 m above ground with a view of nearby life.
+Plants and animals stream during low flight; landing is optional. Use WASD
+to release the hover and explore. Herds are local and sparse.
 In a galaxy's explorer, **Find planets with animals** lists up to five planets
 with living animal species at the selected date, including their system and
 plant/animal counts. **Search more stars** continues the bounded search. Click
-**Visit** to open a planet, then find its living habitat and land. Changing the
+**Visit** to open a planet, then find its living habitat. Changing the
 date clears the results; the finder does not change the universe or its seed.
 
 Ordinary exploration advances the authoritative date at one physical second

@@ -23,6 +23,7 @@ import {
 import { displayLuminosity, starPointDiameter, STAR_FRAGMENT } from './star-appearance.ts';
 import { PlanetRenderer, landPercentileM } from './planet-renderer.ts';
 import {landingHeightAllowed,landingCandidate,pickLandingSite,resolveGroundBookmark,LANDING_SUMMIT_PERCENTILE,NO_LANDING_SITE_MESSAGE} from './landing-site.ts';
+import {findLivingHabitat} from './living-habitat.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown, planetaryRenderUnit, LOCAL_RENDER_EXIT_M, LOCAL_ORIGIN_RADIUS_M } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
@@ -618,9 +619,10 @@ let walkingModule:typeof import('./ground-walker.ts')|null=null;
 let landing:{point:V3;launch?:boolean;contact?:boolean;heading?:THREE.Quaternion;clearanceM?:number}|null=null;
 let landAfterCruise=false,walkGeneration=0;
 function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
-let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
-let surfaceJourney: {bodyId:string; direction:THREE.Vector3; up:THREE.Vector3} | null = null;
+let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number; hover?:boolean} | null = null;
+let surfaceJourney: {bodyId:string; direction:THREE.Vector3; up:THREE.Vector3; habitat:boolean} | null = null;
 let startCruiseAfterLook = false;
+let habitatArrival = false;
 let approachClearance = 3000;
 let approachAltitude: number | null = null;
 let planetLook: {from: THREE.Quaternion; to: THREE.Quaternion; elapsed: number} | null = null;
@@ -700,7 +702,7 @@ async function visitAnimalPlanet(id:string){
     announce('This planet no longer has living animals at the current date. Search again.');return;
   }
   await navigate('body',{galaxy,ref,coords:ref.cell.map(v=>Math.floor(v/8)) as V3,sys,body});
-  announce('Planet with living animals selected. Choose Find living habitat, then Land and walk.');
+  announce('Planet with living animals selected. Choose Find living habitat to view plants and wildlife during low flight.');
 }
 function animalWorldFinderPanel(){
   const search=currentAnimalWorldSearch(),result=search?.result;
@@ -712,7 +714,7 @@ function animalWorldFinderPanel(){
     ${result?.worlds.map(w=>`<button class="item" data-animal-world="${esc(w.id)}"><span><strong>${esc(w.name)}</strong><small>${esc(w.systemName)} · ${w.animalSpeciesCount} animal species · ${w.plantSpeciesCount} plant species</small></span><span class="arrow">Visit ↗</span></button>`).join('')??''}
     ${result&&!result.worlds.length?'<p class="subtle">No animal worlds found among the searched stars at this date.</p>':''}
     ${result&&!result.exhausted?'<button id="more-animal-worlds">Search more stars</button>':''}
-    ${result?.worlds.length?'<p class="subtle">Visit a planet, choose Find living habitat, then Land and walk. Herds are local and sparse.</p>':''}</section>`;
+    ${result?.worlds.length?'<p class="subtle">Visit a planet, then choose Find living habitat to view plants and wildlife during low flight. Herds are local and sparse.</p>':''}</section>`;
 }
 async function surveySurface(){
   const body=state.body;if(!body||surveyPending.has(surveyKey(body)))return;
@@ -2172,7 +2174,8 @@ function updateFlight(dt: number) {
     camera.lookAt(center.clone().sub(systemOrigin).multiplyScalar(systemUnit));
     controls.target.copy(center.clone().sub(systemOrigin).multiplyScalar(systemUnit));
     if(arrived && radius>body.radiusM+30000) {
-      surfaceJourney=null; approachAltitude=0; approachClearance=480;
+      habitatArrival=surfaceJourney.habitat;
+      surfaceJourney=null; approachAltitude=0; approachClearance=habitatArrival?80:480;
       startCruiseAfterLook=true; autopilot={kind:'body',id:body.id};
     }
     return;
@@ -2191,7 +2194,7 @@ function updateFlight(dt: number) {
     const body = bodyById(orbitAssist.bodyId)!;
     const center = vec(bodyPosition(body, state.sys!, epoch));
     const relative = vec(localPose()).sub(center);
-    const angle = orbitAssist.clearanceM ? dt * 250 * flightThrottle / relative.length() : dt * .045 * flightThrottle;
+    const angle = orbitAssist.hover ? 0 : orbitAssist.clearanceM ? dt * 250 * flightThrottle / relative.length() : dt * .045 * flightThrottle;
     orbitStep(relative, camera.quaternion, orbitAssist.axis, angle);
     if (orbitAssist.clearanceM) {
       const ground=surfaceClearance(body,relative.toArray() as V3,snappedWaterLevelFor(body)).terrainElevation;
@@ -2242,7 +2245,7 @@ function updateFlight(dt: number) {
       if (Math.hypot(...relative) < stopDistance + 200) {
         if (approachAltitude !== null) {
           const up = vec(relative).normalize();
-          const forward = new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up).normalize().multiplyScalar(.99).addScaledVector(up,-.14).normalize();
+          const forward = new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up).normalize().multiplyScalar(.99).addScaledVector(up,startCruiseAfterLook&&habitatArrival?-.65:-.14).normalize();
           const to = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(), forward, up));
           planetLook = {from: camera.quaternion.clone(), to, elapsed: 0};
         }
@@ -2520,7 +2523,7 @@ function updateFlightHud() {
     const relative = localPose().map((v,i) => v - center[i]) as V3;
     const info = surfaceClearance(body, relative, snappedWaterLevelFor(body));
     const latitude = Math.asin(THREE.MathUtils.clamp(relative[1] / Math.hypot(...relative), -1, 1)) * 180 / Math.PI;
-    hud.textContent += ` · altitude ${fmt(info.altitude / 1000, 1)} km · clearance ${fmt(info.terrainClearance / 1000, 1)} km · latitude ${fmt(latitude, 1)}°${orbitAssist?.clearanceM ? ' · terrain following' : orbitAssist ? ' · orbit assist' : ''}`;
+    hud.textContent += ` · altitude ${fmt(info.altitude / 1000, 1)} km · clearance ${fmt(info.terrainClearance / 1000, 1)} km · latitude ${fmt(latitude, 1)}°${orbitAssist?.hover ? ' · habitat hover' : orbitAssist?.clearanceM ? ' · terrain following' : orbitAssist ? ' · orbit assist' : ''}`;
     if(flight && body.kind!=='star' && body.type!=='Gas giant') {
       const low=info.terrainClearance<PlanetRenderer.lowFlightClearanceM(body), label=walker?'06 / ON FOOT':landing?'06 / LANDING':low?'05 / TERRAIN FLIGHT':'05 / PLANETARY ORBIT';
       if($('view-kicker').textContent!==label){$('view-kicker').textContent=label;$('view-description').textContent=low?'Flying over this world. Drag to look, use WASD to steer, and the wheel to adjust speed.':'Your planet, moons and star system remain connected. Fly toward a destination or choose a terrain site.';}
@@ -2562,7 +2565,8 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
   // level-0 field (landingSurfaceFor), the representation of these percentiles.
   const landSea=body.water?snappedWaterLevelFor(body):0,landCeiling=PlanetRenderer.landingCeilingM(body),landRef=PlanetRenderer.landingReferenceM(body,landSea);
   const landSummit=landPercentileM(body,LANDING_SUMMIT_PERCENTILE,landSea);
-  let destination=eye.clone(), best=-Infinity;
+  let destination=eye.clone();
+  const habitatCandidates:{direction:V3;score:number}[]=[];
   if(preferred)destination.copy(preferred);
   else if(!preferLife){
     const site=pickLandingSite({height:d=>{const s=sample(d,epoch);return s&&s.walkable?s.groundHeightM:null;},eye:eye.toArray() as V3,sun:sun.toArray() as V3,seaLevelM:landSea,ceilingM:landCeiling,summitM:landSummit,referenceM:landRef});
@@ -2577,13 +2581,22 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
     const habitat=biome?.(d.toArray() as V3,s.groundHeightM,1);
     if(!habitat||habitat.weights[1]<.35||habitat.moisture<.2||d.dot(sun)<.25)continue;
     const score=habitat.weights[1]*3+habitat.moisture+(habitat.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2;
-    if(score>best){best=score;destination=d;}
+    habitatCandidates.push({direction:d.toArray() as V3,score});
   }
-  if(preferLife&&best===-Infinity){announce('No suitable living habitat was found on this world at this date.');return false;}
+  if(preferLife){
+    const life=lifeGateContext(state.sys!,body,epoch);
+    const site=life&&biome?findLivingHabitat({body,candidates:habitatCandidates,
+      sample:terrainSampler(body,undefined,undefined,undefined,landSea),classify:biome,
+      faunaGate:{stage:life.faunaStage,availableArchetypes:life.faunaAvailableArchetypes,species:life.faunaSpecies},
+      floraGate:{stage:life.floraStage,availableKinds:life.floraAvailableKinds},
+      seaLevelM:landSea,ceilingM:landCeiling,summitM:landSummit}):null;
+    if(!site){announce('No populated living habitat was found in this search at this date.');panel();return false;}
+    destination.set(...site.direction);
+  }
   const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   if(up.lengthSq()<.0001)up.set(1,0,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
-  surfaceJourney={bodyId:body.id,direction:destination,up:up.normalize()};
-  announce(preferLife?'Approaching a living habitat. Vegetation and wildlife stream during low flight.':'Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
+  surfaceJourney={bodyId:body.id,direction:destination,up:up.normalize(),habitat:preferLife};
+  announce(preferLife?'Approaching a living habitat, then hovering 80 m above the ground to view plants and wildlife. Movement keys release assistance.':'Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
   return true;
 }
 function startTerrainCruise() {
@@ -2591,7 +2604,8 @@ function startTerrainCruise() {
   const radial=vec(localPose()).sub(vec(bodyPosition(body,state.sys!,epoch))).normalize();
   const tangent=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(radial);
   if(tangent.lengthSq()<.0001)tangent.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(radial);
-  orbitAssist={bodyId:body.id,axis:new THREE.Vector3().crossVectors(radial,tangent.normalize()).normalize(),clearanceM:600};
+  orbitAssist={bodyId:body.id,axis:new THREE.Vector3().crossVectors(radial,tangent.normalize()).normalize(),clearanceM:habitatArrival?80:600,hover:habitatArrival};
+  if(habitatArrival)announce('Living habitat reached. Hovering above the ground; use WASD to explore.');
   if(landAfterCruise){landAfterCruise=false;void prepareLanding();}
   panel();
 }
