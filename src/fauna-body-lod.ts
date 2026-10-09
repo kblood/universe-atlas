@@ -28,8 +28,9 @@ export interface FaunaBodyLodChain {
 function optionsKey(options:FaunaBodyLodOptions):string {
   if(options===DEFAULT_OPTIONS)return DEFAULT_OPTIONS_KEY;
   const targets=options.targets??FAUNA_BODY_LOD_TARGETS;
-  if(!Array.isArray(targets)||!targets.length||targets.length>4||targets.some((t,i)=>!Number.isInteger(t)||t<64||t>3000||(i>0&&t>=targets[i-1]!)))throw new Error('fauna body lod: 1..4 decreasing triangle targets in 64..3000 required');
+  if(!Array.isArray(targets)||!targets.length||targets.length>4||[...targets].some((t,i)=>!Number.isInteger(t)||t<64||t>3000||(i>0&&t>=targets[i-1]!)))throw new Error('fauna body lod: 1..4 decreasing triangle targets in 64..3000 required');
   const o=options.reducer??{};
+  if(o.symmetry!==undefined&&typeof o.symmetry!=='boolean')throw new Error('fauna body lod: symmetry must be boolean');
   for(const value of [o.colour,o.gloss,o.skin,o.boundary])if(value!==undefined&&(!Number.isFinite(value)||value<0))throw new Error('fauna body lod: finite non-negative reducer weights required');
   if(o.minFaceCosine!==undefined&&(!Number.isFinite(o.minFaceCosine)||o.minFaceCosine<0||o.minFaceCosine>1))throw new Error('fauna body lod: minFaceCosine must be in 0..1');
   return JSON.stringify([targets,o.symmetry??true,o.colour??.02,o.gloss??.05,o.skin??.08,o.boundary??10,o.minFaceCosine??.3]);
@@ -68,7 +69,7 @@ function sourceParts(source:QuadrupedBodyData):ComposerLodPart[]{
   });
   if(source.structuralTriangleCount){parts.push({part:'structural',label:'structural',firstTriangle:cursor,triangles:source.structuralTriangleCount});cursor+=source.structuralTriangleCount;}
   for(const f of source.faceFeatures){
-    if(f.firstTriangle!==cursor)throw new Error('fauna body lod: unsupported face/source range layout');
+    if(f.firstTriangle!==cursor||!Number.isInteger(f.triangleCount)||f.triangleCount<0||!Number.isInteger(f.firstVertex)||f.firstVertex<source.bodyVertexCount||!Number.isInteger(f.vertexCount)||f.vertexCount<0||f.firstVertex+f.vertexCount>source.vertexCount)throw new Error('fauna body lod: unsupported face/source range layout');
     parts.push({part:f.kind,label:`${f.kind}/${f.side}`,firstTriangle:cursor,triangles:f.triangleCount});cursor+=f.triangleCount;
   }
   if(cursor!==source.triangleCount)throw new Error('fauna body lod: unsupported appendage/source range layout');

@@ -68,9 +68,10 @@ test('source-identity cache is bounded, immutable-source hits reuse results, rep
 });
 test('invalid budgets, malformed indices/weights and missing feature ranges fail closed',()=>{
   const body=fixtures[0].body;
-  for(const targets of [[],[3],[500,500],[500,1500],[3001],[1500,500,200,100,64]])assert.throws(()=>buildFaunaBodyLodChain(body,{targets}),/targets/);
+  for(const targets of [[],[3],[500,500],[500,1500],[3001],[1500,,200],[1500,500,200,100,64]])assert.throws(()=>buildFaunaBodyLodChain(body,{targets}),/targets/);
   assert.throws(()=>buildFaunaBodyLodChain(body,{reducer:{skin:NaN}}),/finite/);
   const index=body.index.slice();index[0]=body.vertexCount;assert.throws(()=>buildFaunaBodyLodChain({...body,index}),/index/);
   const skinWeight=body.skinWeight.slice();skinWeight[0]=0;skinWeight[1]=0;skinWeight[2]=0;skinWeight[3]=0;assert.throws(()=>buildFaunaBodyLodChain({...body,skinWeight}),/sum/);
   assert.throws(()=>buildFaunaBodyLodChain({...body,faceFeatures:[]}),/range layout/);
+  assert.throws(()=>buildFaunaBodyLodChain({...body,faceFeatures:body.faceFeatures.map((f,i)=>i?f:{...f,firstVertex:-1})}),/range layout/);
 });
