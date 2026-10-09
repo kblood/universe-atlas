@@ -128,10 +128,10 @@ try{
     const target=fixed?.target??start.tiles.faunaDrawn.filter(x=>visible.has(x.id)).sort((a,b)=>
       (b.genome.torsoLength*b.genome.torsoWidth)-(a.genome.torsoLength*a.genome.torsoWidth))[0];
     assert.ok(target,'camera-visible canonical animal available for fixed near view');
-    const world={index,finder,target,arrival:start,arrivalFrames:await frameWindow(),views:[]};report.worlds.push(world);await save();
+    const world={index,finder,target,arrival:start,arrivalFrames:process.env.HABITAT_ROUTE_ONLY==='1'?null:await frameWindow(),views:[]};report.worlds.push(world);await save();
     const at=new THREE.Vector3(...target.position).multiplyScalar(r),up=at.clone().normalize();
     const ref=Math.abs(up.y)>.92?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0),tangent=new THREE.Vector3().crossVectors(ref,up).normalize();
-    for(const clearance of [20,30]){
+    for(const clearance of process.env.HABITAT_ROUTE_ONLY==='1'?[]:[20,30]){
       const savedPose=fixed?.views.find(v=>v.clearance===clearance);
       const eye=savedPose?new THREE.Vector3(...savedPose.p):at.clone().addScaledVector(tangent,10).addScaledVector(up,clearance);
       const look=at.clone().addScaledVector(up,target.genome.legLength+target.genome.torsoHeight*.5);
@@ -150,7 +150,8 @@ try{
     const rangeHeading=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye,rangeLook,rangeUp));
     await page.evaluate(({p,q})=>window.__atlas.setPose(p,q,20),{p:eye.toArray(),q:rangeHeading.toArray()});
     await page.waitForTimeout(5000);await wait(()=>{const d=window.__atlas.terrain.tiles;return d.lifePending===0&&d.faunaTerrainPending===0;},undefined,120000);
-    world.vegetationRange=await capture(`world-${index}-vegetation-range20`);world.rangeFrames=await frameWindow();await save();
+    world.vegetationRange=await capture(`world-${index}-vegetation-range20`);
+    world.rangeFrames=process.env.HABITAT_ROUTE_ONLY==='1'&&index!==0?null:await frameWindow();await save();
     if(process.env.HABITAT_EXPECT_EXTENDED_FLORA==='1'){
       const kinds=world.vegetationRange.floraKinds,far=(kinds.grass?.from55to120??0)+(kinds.flower?.from55to120??0);
       assert.ok(far>0&&world.vegetationRange.cameraDraws.flora>0,'fine flora beyond 55 m reaches the camera frustum and main render pass');
