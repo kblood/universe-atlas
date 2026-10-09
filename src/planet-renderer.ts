@@ -48,6 +48,7 @@ import type {TreeAssetOptions} from './tree-asset.ts';
 // Canonical surface cells own organisms. Demand extends past visible range;
 // bounded habitat work retains old cells while new neighbours load.
 export const LIFE_SLOT_CAPACITY = 6000;
+export const LIFE_RESIDENT_CAPACITY = 12000;
 const LIFE_RESCATTER_THRESHOLD_M = 16;
 const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
@@ -717,6 +718,9 @@ export class PlanetRenderer {
   private readonly floraGroup=new THREE.Group();
   private readonly lifeResidents=new Map<string,LifeResident>();
   private lifeWanted:LifeCell[]=[];
+  private lifeWantedIds=new Set<string>();
+  private lifeRetainedEvictions:string[]=[];
+  private lifeRetainedEvictionIndex=0;
   private lifeQueue:LifeCell[]=[];
   private lifeQueueIndex=0;
   private lifePackingDirty=true;
@@ -1877,11 +1881,13 @@ export class PlanetRenderer {
     else add(34,2,'flora');
     add(120+LIFE_LOAD_MARGIN_M,24,'flora');add(FAUNA_FIELD_VISIBLE_M+LIFE_LOAD_MARGIN_M+16,32,'fauna');
     cells.sort((a,b)=>Math.hypot(a.direction[0]-d[0],a.direction[1]-d[1],a.direction[2]-d[2])-Math.hypot(b.direction[0]-d[0],b.direction[1]-d[1],b.direction[2]-d[2])||a.id.localeCompare(b.id));
+    if(this.extendedFlora&&cells.length>LIFE_RESIDENT_CAPACITY)cells.length=LIFE_RESIDENT_CAPACITY;
     this.lifeWanted=cells;this.lifeQueue=cells.filter(c=>!this.lifeResidents.has(c.id));this.lifeQueueIndex=0;
     // Habitat for visible herds must not wait behind thousands of grass cells.
     const priority=(c:LifeCell)=>c.layer==='fauna'?0:this.extendedFlora&&(c.cellSizeM===24||c.farRepresentative)?1:2;
     this.lifeQueue.sort((a,b)=>this.extendedFlora?priority(a)-priority(b):(a.layer==='fauna'?0:1)-(b.layer==='fauna'?0:1));
     const wanted=new Set(cells.map(c=>c.id));
+    this.lifeWantedIds=wanted;
     // Retain an extra band to absorb boundary oscillation, without growing a
     // journey-sized cache. Canonical keys survive removal and re-generation.
     for(const [id,record] of this.lifeResidents){
@@ -1889,16 +1895,26 @@ export class PlanetRenderer {
       if(!wanted.has(id)&&Math.hypot(record.cell.direction[0]-d[0],record.cell.direction[1]-d[1],record.cell.direction[2]-d[2])*r>range)this.lifeResidents.delete(id);
     }
     // Fixed CPU retention cap as well as the existing6000 instance-slot cap.
-    if(this.extendedFlora&&this.lifeResidents.size>12000)for(const id of this.lifeResidents.keys()){
-      if(this.lifeResidents.size<=12000)break;
+    if(this.extendedFlora&&this.lifeResidents.size>LIFE_RESIDENT_CAPACITY)for(const id of this.lifeResidents.keys()){
+      if(this.lifeResidents.size<=LIFE_RESIDENT_CAPACITY)break;
       if(!wanted.has(id))this.lifeResidents.delete(id);
     }
+    // Cache eviction candidates once per changed demand, never per frame.
+    this.lifeRetainedEvictions=this.extendedFlora?[...this.lifeResidents.keys()].filter(id=>!wanted.has(id)):[];
+    this.lifeRetainedEvictionIndex=0;
   }
   private processLifeQueue():void {
     const life=this.lifeContext!,start=performance.now(),r=this.body.radiusM;
     const gate=this.faunaGateScratch;gate.stage=life.faunaStage;gate.availableArchetypes=life.faunaAvailableArchetypes;gate.species=life.faunaSpecies;
     for(let count=0;this.lifeQueueIndex<this.lifeQueue.length&&count<32&&performance.now()-start<2;count++){
       const cell=this.lifeQueue[this.lifeQueueIndex++],d=cell.direction;
+      if(this.extendedFlora&&!this.lifeResidents.has(cell.id)&&this.lifeResidents.size>=LIFE_RESIDENT_CAPACITY){
+        while(this.lifeRetainedEvictionIndex<this.lifeRetainedEvictions.length){
+          const id=this.lifeRetainedEvictions[this.lifeRetainedEvictionIndex++];
+          if(!this.lifeWantedIds.has(id)&&this.lifeResidents.delete(id))break;
+        }
+        if(this.lifeResidents.size>=LIFE_RESIDENT_CAPACITY)continue;
+      }
       const sample=this.sample(d),up=this.lifeBasisUp.set(...d);
       const ref=Math.abs(up.y)>.92?this.lifeWorldUpScratch.set(1,0,0):this.lifeWorldUpScratch.set(0,1,0);
       const right=this.lifeBasisRight.crossVectors(ref,up).normalize(),forward=this.lifeBasisForward.crossVectors(up,right).normalize();
