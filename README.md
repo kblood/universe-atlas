@@ -729,6 +729,11 @@ one. Surviving galaxies remain selectable in the far future as dim map proxies.
 On a world with living vegetation, **Find living habitat** flies toward a
 vegetated dry region. Herds are sparse and may be absent from a particular
 walking area even when animal species exist on the planet.
+In a galaxy's explorer, **Find planets with animals** lists up to five planets
+with living animal species at the selected date, including their system and
+plant/animal counts. **Search more stars** continues the bounded search. Click
+**Visit** to open a planet, then find its living habitat and land. Changing the
+date clears the results; the finder does not change the universe or its seed.
 
 Ordinary exploration advances the authoritative date at one physical second
 per second. Pause time freezes wildlife and weather; seeking a date remains

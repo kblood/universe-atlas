@@ -56,6 +56,7 @@ import {
 } from './time-nav.ts';
 import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
 import {surfaceSiteReached} from './surface-navigation.ts';
+import type {AnimalWorldSearchResult} from './animal-world-finder.ts';
 import {INLAND_RIVERS_UNAVAILABLE} from './inland-rivers.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
@@ -672,6 +673,47 @@ const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
 // Surveys sample the baseline terrain only; inland rivers are withdrawn.
 const surveyKey=(body:Body)=>body.seed+'/'+TERRAIN_VERSION;
 let surveyOpen=false;
+type AnimalWorldSearch = {seed:string;galaxyId:string;dateNs:Ns;request:number;busy:boolean;result:AnimalWorldSearchResult|null;error:string|null};
+let animalWorldSearch:AnimalWorldSearch|null=null,animalWorldRequest=0;
+function currentAnimalWorldSearch(){
+  return animalWorldSearch?.seed===seed&&animalWorldSearch.galaxyId===state.galaxy?.id?animalWorldSearch:null;
+}
+async function findAnimalPlanets(more=false){
+  const galaxy=state.galaxy;if(!galaxy||currentAnimalWorldSearch()?.busy)return;
+  const previous=currentAnimalWorldSearch(),dateNs=more&&previous?previous.dateNs:epoch;
+  const startIndex=more?previous?.result?.nextIndex??0:0,request=++animalWorldRequest;
+  animalWorldSearch={seed,galaxyId:galaxy.id,dateNs,request,busy:true,result:null,error:null};panel();
+  try{
+    const result=await job('animal-worlds',{seed,galaxy,dateNs:dateNs.toString(),versions:CURRENT_VERSIONS,startIndex}) as AnimalWorldSearchResult;
+    if(animalWorldSearch?.request!==request||seed!==animalWorldSearch.seed||state.galaxy?.id!==galaxy.id)return;
+    animalWorldSearch.result=result;
+  }catch(error){if(animalWorldSearch?.request===request)animalWorldSearch.error=String(error);}
+  finally{if(animalWorldSearch?.request===request){animalWorldSearch.busy=false;if(state.level==='galaxy')panel();}}
+}
+async function visitAnimalPlanet(id:string){
+  const search=currentAnimalWorldSearch(),world=search?.result?.worlds.find(w=>w.id===id),galaxy=state.galaxy;
+  if(!world||!galaxy)return;
+  const ref=refByAddress(galaxy,world.systemId);if(!ref)return;
+  const sys=system(ref),body=sys.planets.find(b=>b.id===id);if(!body)return;
+  const snapshot=planetSnapshotFor(sys,body,epoch),bio=snapshot.biosphere();
+  if(snapshot.state.stage!=='solid'||bio.stage!=='complex'||!bio.species.some(s=>s.kind==='animal'&&s.creature)){
+    announce('This planet no longer has living animals at the current date. Search again.');return;
+  }
+  await navigate('body',{galaxy,ref,coords:ref.cell.map(v=>Math.floor(v/8)) as V3,sys,body});
+  announce('Planet with living animals selected. Choose Find living habitat, then Land and walk.');
+}
+function animalWorldFinderPanel(){
+  const search=currentAnimalWorldSearch(),result=search?.result;
+  const status=search?.busy?'Searching for living animal species…':search?.error?'Search failed. You can try again.':
+    result?`${result.worlds.length} planet${result.worlds.length===1?'':'s'} found at ${readableYears(search!.dateNs)}.`:
+    'Find a few planets in this galaxy with living animal species at the current date.';
+  return `<section id="animal-world-finder"><h3>Planets with animals</h3><p class="subtle" role="status">${esc(status)}</p>
+    <button id="find-animal-worlds" class="explore" ${search?.busy?'disabled':''}>${search?.busy?'Searching…':'Find planets with animals'}</button>
+    ${result?.worlds.map(w=>`<button class="item" data-animal-world="${esc(w.id)}"><span><strong>${esc(w.name)}</strong><small>${esc(w.systemName)} · ${w.animalSpeciesCount} animal species · ${w.plantSpeciesCount} plant species</small></span><span class="arrow">Visit ↗</span></button>`).join('')??''}
+    ${result&&!result.worlds.length?'<p class="subtle">No animal worlds found among the searched stars at this date.</p>':''}
+    ${result&&!result.exhausted?'<button id="more-animal-worlds">Search more stars</button>':''}
+    ${result?.worlds.length?'<p class="subtle">Visit a planet, choose Find living habitat, then Land and walk. Herds are local and sparse.</p>':''}</section>`;
+}
 async function surveySurface(){
   const body=state.body;if(!body||surveyPending.has(surveyKey(body)))return;
   const key=surveyKey(body);surveyOpen=true;surveyPending.add(key);panel();
@@ -941,6 +983,7 @@ function persist() {
   saveStored("atlas-seed", seed);
 }
 function seekDate(next:bigint){
+  animalWorldSearch=null;++animalWorldRequest;
   explorationPaused=true;
   const alternate=alternateFuture();
   if(alternate&&next>alternate.endDateNs){next=alternate.endDateNs;announce(`${alternate.name} reaches its illustrative timeline limit here.`);}
@@ -4013,6 +4056,7 @@ function panel() {
     const g = state.galaxy!;
     const lineage=galaxyLineageAt(seed,g,epoch,galaxyAddressFor(g));
     html = `<span class="kicker">${g.type.toUpperCase()}</span><h2>${esc(g.name)}</h2><p>Select a named star and approach it. Scroll over a star to zoom toward it, or switch to flight.</p>`;
+    html += animalWorldFinderPanel();
     if(lineage.transferred)html+=`<p class="subtle">This galaxy merged at ${esc(readableYears(lineage.transferNs!))}. Its surviving population IDs now belong to host ${esc(lineage.hostGalaxyId)}.</p>`;
     if(firstStarFocus&&firstStarById(firstStarFocus)?.descendantGalaxyId===g.id){
       html+=starTrackerPanel(firstStarById(firstStarFocus));
@@ -4209,6 +4253,9 @@ function panel() {
     };
   }
   bind("explore", () => void explore());
+  bind('find-animal-worlds',()=>void findAnimalPlanets());
+  bind('more-animal-worlds',()=>void findAnimalPlanets(true));
+  for(const button of content.querySelectorAll<HTMLButtonElement>('[data-animal-world]'))button.onclick=()=>void visitAnimalPlanet(button.dataset.animalWorld!);
   bind("toggle-flight", toggleFlight);
   bind("fly-target", beginTargetFlight);
   bind("fly-outward", flyOutward);
