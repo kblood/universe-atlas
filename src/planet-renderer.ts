@@ -36,6 +36,8 @@ import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M
 import {floraFineDemand,floraFineCoverage} from './flora-streaming.ts';
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
+import {FaunaLodController,faunaLodTierAt,type FaunaLodTier,type FaunaLodCandidate,type FaunaLodRuntimeAdapter,type FaunaLodControllerOptions,type FaunaLodContext} from './fauna-lod-controller.ts';
+import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
 import {temperateHabitat} from './surface-climate.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
@@ -443,6 +445,9 @@ export const LOW_FLIGHT_CLEARANCE_M=19500;
  * scenario leaves it off, and the change gets its own behavioural test
  * (tests/life-continuity-scenario.test.mjs; decision D1, 2026-10-07). */
 export interface PlanetRendererOptions{
+  /** Local research opt-in only. The accepted production constructor omits
+   * this adapter while packed appearance/CPU/GPU/memory gates are pending. */
+  faunaLodPrototype?:{adapter:FaunaLodRuntimeAdapter;sourceVersion:string;appearanceVersion:string;controller?:FaunaLodControllerOptions};
   /** Transition-continuity hooks (audit F3/F5/F7/F12/F13): near-rig cross-fade
    * with listed fade-outs, continuous proxy gait, the 350/380 m ground-life
    * hysteresis and the flora LOD band memory. Off keeps the former output bit for bit. */
@@ -714,6 +719,11 @@ export class PlanetRenderer {
    * renderer's origin-relative group, with the instanced batch as fallback.
    * Built in the constructor: its cross-fade follows `presentationContinuity`. */
   private readonly faunaNear:FaunaNearRigs;
+  private readonly faunaLod:FaunaLodController|null;
+  private readonly faunaLodContext:FaunaLodContext|null;
+  private readonly faunaLodPool:FaunaLodCandidate[]=[];
+  private readonly faunaLodList:FaunaLodCandidate[]=[];
+  private readonly faunaLodTiers=new Map<string,FaunaLodTier>();
   private readonly lifeOrigin=new THREE.Vector3();
   private readonly floraGroup=new THREE.Group();
   private readonly lifeResidents=new Map<string,LifeResident>();
@@ -846,7 +856,10 @@ export class PlanetRenderer {
   private groundLifeOn=false;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
-    this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:options.faunaBodyPlan!==false});
+    this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:options.faunaBodyPlan!==false,complementaryCoverage:!!options.faunaLodPrototype});
+    const lod=options.faunaLodPrototype;
+    this.faunaLod=lod?new FaunaLodController(lod.adapter,{...lod.controller,onReady:()=>{this.faunaFrameKeyValid=false;lod.controller?.onReady?.();}}):null;
+    this.faunaLodContext=lod?{planetId:body.id,lifeSignature:'',dateVersion:lod.sourceVersion,appearanceVersion:lod.appearanceVersion}:null;
     this.extendedFlora=options.extendedFlora??this.continuity;
     // Audit F4: shadows fade out toward the edge of the surface shadow window.
     if(this.continuity)installShadowWindowFade();
@@ -946,6 +959,7 @@ export class PlanetRenderer {
     );
     for (const mesh of this.floraRenderer.meshes) { mesh.name = 'Flora field'; mesh.frustumCulled = false; mesh.castShadow=true;mesh.receiveShadow=true; this.floraGroup.add(mesh); }
     this.faunaRenderer.group.add(this.faunaNear.group);
+    if(this.faunaLod)this.faunaRenderer.group.add(this.faunaLod.group);
     this.group.add(this.floraGroup,this.faunaRenderer.group);
     this.localAirUniform.value=this.atmosphere?1:0;
     for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
@@ -1848,6 +1862,7 @@ export class PlanetRenderer {
     this.faunaDrawnCount=0;this.faunaDrawnList=null;this.faunaFrameKeyValid=false;this.faunaVisibleList.length=0;this.faunaNearList.length=0;this.faunaRigged=new Set();
     this.floraRenderer.beginFrame();this.floraRenderer.endFrame();
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaRenderer.endFrame();this.faunaNear.hide();
+    if(this.faunaLod&&this.faunaLodContext){this.faunaLodTiers.clear();this.faunaLodContext.lifeSignature=this.lifeSignature+'/hidden';this.faunaLod.setContext(this.faunaLodContext);this.faunaLod.update([],this.lifeOrigin);}
   }
   private updateLife(eye: THREE.Vector3, contact: THREE.Vector3, frustum: THREE.Frustum | null, worldNs: bigint,shadowFrustum:THREE.Frustum|null): void {
     const life=this.lifeContext;if(!life){this.hideLife();return;}
@@ -2202,16 +2217,17 @@ export class PlanetRenderer {
    *   turns or moves re-evaluates no BigInt schedule or grounded transform;
    * - per-frame records, near-rig candidates and matrices are pooled. */
   private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
+    if(this.faunaLod&&this.faunaLodContext){if(this.faunaLodContext.lifeSignature!==this.lifeSignature)this.faunaLodTiers.clear();this.faunaLodContext.lifeSignature=this.lifeSignature;this.faunaLod.setContext(this.faunaLodContext);}
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
     this.faunaTraceEye.copy(eye);this.faunaTraceNs=worldNs;this.faunaTraceFrustum.copy(frustum);
     this.faunaTraceShadowValid=!!shadowFrustum;if(shadowFrustum)this.faunaTraceShadow.copy(shadowFrustum);
     if(this.faunaFrameUnchanged(eye,worldNs,frustum,shadowFrustum)){
       // Same candidates: only a near-rig build finishing can change the frame.
-      if(this.faunaNear.idle)return;
+      if(this.faunaNear.idle&&(!this.faunaLod||this.faunaLod.idle))return;
       const rigged=this.faunaNear.update(this.faunaNearList);
       const changed=rigged.size!==this.faunaRigged.size||[...rigged].some(id=>!this.faunaRigged.has(id));
       this.faunaRigged=rigged;
-      if(changed)this.submitFauna(rigTime);
+      if(changed||this.faunaLod)this.submitFauna(rigTime);
       return;
     }
     this.faunaCulledCount=0;
@@ -2269,6 +2285,27 @@ export class PlanetRenderer {
   /** Instanced submission of the retained sorted visible list; the rigged
    * animals count against the budget but draw as near rigs. */
   private submitFauna(rigTime:number):void {
+    if(this.faunaLod){
+      const list=this.faunaLodList,pool=this.faunaLodPool;list.length=0;
+      let close=0,middle=0;
+      for(const item of this.faunaVisibleList){
+        if(!item.cameraVisible||item.distance>200)break;
+        if(list.length>=128)break;
+        if(this.faunaRigged.has(item.member.id))continue;
+        let tier=faunaLodTierAt(item.distance,this.faunaLodTiers.get(item.member.id));
+        if(tier==='close'&&close>=16)tier='middle';
+        if(tier==='middle'&&middle>=112)continue;
+        if(tier==='close')close++;else middle++;
+        let candidate=pool[list.length];
+        if(!candidate)pool.push(candidate={id:item.member.id,genome:this.faunaGenomeOf(item.member),member:item.member,activity:item.activity,cameraVisible:true,distanceM:item.distance,matrix:new THREE.Matrix4(),rigSeconds:rigTime,nearCoverage:0});
+        candidate.id=item.member.id;candidate.genome=this.faunaGenomeOf(item.member);candidate.member=item.member;candidate.activity=item.activity;candidate.distanceM=item.distance;candidate.rigSeconds=rigTime;
+        candidate.nearCoverage=this.faunaRigged.has(candidate.id)?1:this.faunaNear.rigWeightOf(candidate.id);candidate.loadedSource=this.faunaNear.loadedSourceOf(candidate.id);
+        candidate.tier=tier;this.faunaLodTiers.set(candidate.id,tier);
+        candidate.matrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);list.push(candidate);
+      }
+      this.faunaLod.update(list,this.lifeOrigin);
+      if(this.faunaLodTiers.size>128)for(const id of this.faunaLodTiers.keys())if(!list.some(candidate=>candidate.id===id))this.faunaLodTiers.delete(id);
+    }
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaBudgetDrops=0;
     this.faunaDrawnCount=0;this.faunaDrawnList=null;
     const rigged=this.faunaRigged;
@@ -2277,10 +2314,12 @@ export class PlanetRenderer {
       const genome=this.faunaGenomeOf(item.member);
       this.faunaDrawnItems[this.faunaDrawnCount]=item;this.faunaDrawnGenomes[this.faunaDrawnCount++]=genome;
       if(rigged.has(item.member.id)){this.faunaVisibleCount++;continue;}
+      const coverage=this.faunaLod?.fallbackCoverage(item.member.id,this.faunaNear.rigWeightOf(item.member.id))??1;
+      if(coverage===0){this.faunaVisibleCount++;continue;}
       this.faunaProxyMatrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
       // Continuity (F12/F13): `stateS` selects the eased proxy gait and the eye/range fades.
-      const submitted=this.continuity?this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,item.activity.stateS)
-        :this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member);
+      const submitted=this.continuity?this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,item.activity.stateS,coverage)
+        :this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,undefined,coverage);
       if(submitted)this.faunaVisibleCount++;else this.faunaBudgetDrops++;
     }
     this.faunaRenderer.endFrame();
@@ -2339,8 +2378,17 @@ export class PlanetRenderer {
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
     const rocks=this.rocks.diagnostics();
+    const lod=this.faunaLod?.diagnostics(),faunaExtraBytes=lod?.currentCombinedEstimateBytes??0;
+    const lodResources=lod?(()=>{
+      const flora=forestMeshBufferFootprint(this.floraRenderer.meshes),floraBytes=flora.totalBytes+flora.geometryGpuEstimateBytes+flora.instanceGpuEstimateBytes;
+      const faunaBytes=this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes+faunaExtraBytes,forestBytes=this.forest.diagnostics().allocatedBytes;
+      return {faunaLod:lod,faunaLodMemory:{floraCombinedEstimateBytes:floraBytes,faunaCombinedEstimateBytes:faunaBytes,forestCombinedEstimateBytes:forestBytes,
+        lifeCombinedEstimateBytes:floraBytes+faunaBytes+forestBytes,lifeWithWorkerReserveBytes:floraBytes+faunaBytes+forestBytes-(lod.workerCurrentTypedBytes??0)+lod.workerReservedBytes,
+        lifeReserveBytes:LIFE_RESERVE_BYTES,withinLifeReserve:floraBytes+faunaBytes+forestBytes-(lod.workerCurrentTypedBytes??0)+lod.workerReservedBytes<=LIFE_RESERVE_BYTES,
+        basis:'CPU typed arrays + estimated GPU buffers/images; indices included; cold clone/build reserve separate; ordinary JS/driver overhead excluded'}};
+    })():{};
     const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:rocks.bytes.total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
-    return {projection: 'cube-sphere',localAerial,rocks,renderBounds:RENDER_BOUNDS_VERSION,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
+    return {...lodResources,projection: 'cube-sphere',localAerial,rocks,renderBounds:RENDER_BOUNDS_VERSION,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE
@@ -2359,7 +2407,7 @@ export class PlanetRenderer {
           terrainReservedBytes:this.residentBytes+this.pending.size*PENDING_TILE_BYTES,terrainPressure:this.terrainPressure,terrainPressureEntries:this.terrainPressureEntries,
           blockedRefreshes:this.blockedRefreshes,blockedAdmissions:this.blockedAdmissions,blockedRefreshesTotal:this.blockedRefreshesTotal,blockedAdmissionsTotal:this.blockedAdmissionsTotal,splitsBlockedByBytes:this.splitsBlockedByBytes};})(),
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus||this.lowFlightDetail?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:memory.accountedBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,rockOwnedBytes:rocks.bytes.total,rockPeakBytes:rocks.bytes.peak,rockReserveBytes:ROCK_RESERVE_BYTES,rockAccounting:'rock-owned (textures excluded) in accountedBytes; ROCK_RESERVE_BYTES in reservedCombinedBytes',cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:memory.reservedCombinedBytes,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once',oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear.diagnostics().active,faunaRepresentation:'individual-instanced-anatomy+near-skinned-body',faunaNear:this.faunaNear.diagnostics(),faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes,faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
+      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:memory.accountedBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,rockOwnedBytes:rocks.bytes.total,rockPeakBytes:rocks.bytes.peak,rockReserveBytes:ROCK_RESERVE_BYTES,rockAccounting:'rock-owned (textures excluded) in accountedBytes; ROCK_RESERVE_BYTES in reservedCombinedBytes',cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:memory.reservedCombinedBytes,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once',oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear.diagnostics().active,faunaRepresentation:'individual-instanced-anatomy+near-skinned-body',faunaNear:this.faunaNear.diagnostics(),faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes+faunaExtraBytes,faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
       faunaHerdCount:this.faunaHerdCount,faunaVisibleCount:this.faunaVisibleCount,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
         detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
@@ -2456,7 +2504,7 @@ export class PlanetRenderer {
     this.rocks.dispose();
     this.forest.dispose();
     for (const mesh of this.floraRenderer.meshes) { this.group.remove(mesh); mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }
-    this.faunaNear.dispose();this.faunaRenderer.dispose();this.lifeResidents.clear();this.faunaGenomes.clear();
+    this.faunaLod?.dispose();this.faunaNear.dispose();this.faunaRenderer.dispose();this.lifeResidents.clear();this.faunaGenomes.clear();
     this.materialVisible(true);
     for (const p of this.patches.values()) this.release(p);
     this.patches.clear(); this.pending.clear(); this.inbox = [];
