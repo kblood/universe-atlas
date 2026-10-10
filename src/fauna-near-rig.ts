@@ -64,7 +64,7 @@ export interface FaunaNearOptions {
   /** Shorthand for `fadeS: FAUNA_HANDOFF_FADE_S` (0.3 s) when `fadeS` is not given. */
   crossFade?: boolean;
 }
-type Cached = { geometry: THREE.BufferGeometry; plan: QuadrupedPlan; bytes: number; used: number };
+type Cached = { geometry: THREE.BufferGeometry; plan: QuadrupedPlan; source: QuadrupedBodyData; bytes: number; used: number };
 type Slot = { mesh: THREE.SkinnedMesh; material: THREE.MeshStandardMaterial; bones: THREE.Bone[]; skeleton: THREE.Skeleton; memberId: string | null; pose: QuadrupedPose | null;
   /** Cross-fade only: 1 while held, 0 while fading out; linear progress toward the rig. */
   target: 0 | 1; progress: number };
@@ -334,7 +334,7 @@ export class FaunaNearRigs {
         const next = build.steps.next();
         if (next.done) {
           const geometry = faunaBodyGeometry(next.value);
-          this.cache.set(build.id, { geometry, plan: next.value.plan, bytes: quadrupedBodyBytes(next.value), used: this.frame });
+          this.cache.set(build.id, { geometry, plan: next.value.plan, source: next.value, bytes: quadrupedBodyBytes(next.value), used: this.frame });
           this.stats.builds++; this.build = null; break;
         }
       } while (this.now() - start < this.budgetMs);
@@ -372,6 +372,14 @@ export class FaunaNearRigs {
   /** Current pose of a rigged member (diagnostics/tests). */
   poseOf(id: string): QuadrupedPose | null { return this.slots.find(s => s.memberId === id)?.pose ?? null; }
   meshOf(id: string): THREE.SkinnedMesh | null { return this.slots.find(s => s.memberId === id)?.mesh ?? null; }
+
+  /** The actual loaded body, also backing this member's render geometry.
+   * Borrowed immutable data: consumers must not edit its arrays or transfer
+   * their buffers. Worker jobs structured-clone the source without a transfer
+   * list. This does not build, touch LRU priority or allocate another copy;
+   * null means not loaded (or evicted/cleared). A consumer retaining the result
+   * after eviction owns that additional lifetime and must account for it. */
+  loadedSourceOf(id: string): Readonly<QuadrupedBodyData> | null { return this.cache.get(id)?.source ?? null; }
 
   /** CPU and GPU copies of cached bodies plus the bone palettes. */
   get allocatedBytes() {

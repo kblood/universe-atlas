@@ -32,6 +32,38 @@ function candidate(member, distanceM = 10, ns = NOW) {
 function steppedClock() { let t = 0; return () => t++; }
 function settle(near, candidates, frames = 400) { let drawn; for (let i = 0; i < frames; i++) drawn = near.update(candidates); return drawn; }
 
+test('loaded LOD source borrows the render arrays and follows the bounded cache lifetime', () => {
+  const near = new FaunaNearRigs({ capacity: 1, cacheSize: 1, now: steppedClock(), buildBudgetMs: 60 });
+  try {
+    const first = candidate(MEMBERS[0]), second = candidate(MEMBERS[1]);
+    assert.equal(near.loadedSourceOf(first.member.id), null, 'lookup cannot build an animal');
+    settle(near, [first]);
+    const source = near.loadedSourceOf(first.member.id), mesh = near.meshOf(first.member.id);
+    assert.ok(source && mesh);
+    assert.equal(near.loadedSourceOf(first.member.id), source, 'stable loaded identity');
+    for (const [attribute, key] of [['position', 'positions'], ['normal', 'normals'], ['color', 'colors'], ['skinIndex', 'skinIndex'], ['skinWeight', 'skinWeight']])
+      assert.equal(mesh.geometry.getAttribute(attribute).array, source[key], `${attribute}: no second CPU copy`);
+    assert.equal(mesh.geometry.getIndex().array, source.index);
+    const bytes = near.allocatedBytes, builds = near.diagnostics().builds;
+    const clone = structuredClone(source);
+    assert.notEqual(clone.positions.buffer, source.positions.buffer, 'worker input owns a clone');
+    structuredClone(clone, { transfer: [clone.positions.buffer] });
+    assert.equal(clone.positions.byteLength, 0);
+    assert.ok(source.positions.byteLength > 0, 'render source remains attached');
+    assert.equal(near.allocatedBytes, bytes);
+    assert.equal(near.diagnostics().builds, builds);
+    near.hide();
+    assert.equal(near.loadedSourceOf(first.member.id), source, 'hidden body remains cached');
+    settle(near, [second]);
+    assert.equal(near.loadedSourceOf(first.member.id), null, 'eviction releases cache ownership');
+    assert.ok(near.loadedSourceOf(second.member.id));
+    assert.equal(near.diagnostics().cached, 1);
+    near.clear();
+    assert.equal(near.loadedSourceOf(second.member.id), null);
+  } finally { near.dispose(); }
+  assert.equal(near.loadedSourceOf(MEMBERS[0].id), null, 'disposed pool exposes no loaded bodies');
+});
+
 test('instanced and skinned fauna retain the same opaque coat lighting at handoff', () => {
   const near = new FaunaNearRigs(), field = new FaunaFieldRenderer();
   try {
