@@ -16,6 +16,7 @@ import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {prepareKitPackage,applyKitUpdate,kitPackageDrift} from './creature-kit-package.mjs';
 
 export const VENDOR_SCHEMA = 'creature-kit-vendor-1';
 const REPO = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -72,6 +73,8 @@ export const VENDORED_PATHS = Object.freeze([
   'tests/fixtures/composer-v1-links.json',
   'tests/fixtures/creature-core-exports.json',
   'tests/helpers/composer-head-occlusion.mjs',
+  'tests/helpers/planet-core-corpus.mjs',
+  'tests/fixtures/planet-core-f96a8c1.json',
 ]);
 
 export const lfText = path => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
@@ -94,6 +97,7 @@ export function vendorDrift(repo = REPO, kitDir = null) {
       else if (lfSha256(kit) !== sha) rows.push(`${p}: the kit file differs from VENDOR.json (kit moved on: run --write)`);
     }
   }
+  rows.push(...kitPackageDrift(repo,kitDir));
   return rows;
 }
 
@@ -104,23 +108,30 @@ export function writeVendor(repo, kitDir) {
   if (dirty) throw new Error(`creature-kit has uncommitted changes in vendored paths; commit them first:\n${dirty}`);
   const commit = git(kitDir, 'rev-parse', 'HEAD');
   const pkg = JSON.parse(readFileSync(join(kitDir, 'package.json'), 'utf8'));
-  const files = [];
+  // Preflight every legacy source as well as the complete built package before
+  // changing Atlas. Missing inputs or dirty/failed builds preserve the old pin.
+  const prepared=[];
+  for(const p of VENDORED_PATHS){const src=join(kitDir,p);if(!existsSync(src))throw new Error(`${p}: missing in the kit at ${kitDir}`);prepared.push({path:p,text:lfText(src)});}
+  const packageUpdate=prepareKitPackage(repo,kitDir),builtPackage=packageUpdate.manifest;
+  if(commit!==builtPackage.kit.commit)throw new Error('kit commit changed during update');
+  const files = [],writes=[...packageUpdate.writes];
   for (const p of VENDORED_PATHS) {
     const src = join(kitDir, p), dst = join(repo, p);
     if (!existsSync(src)) throw new Error(`${p}: missing in the kit at ${kitDir}`);
-    let text = lfText(src);
+    let text = prepared.find(row=>row.path===p).text;
     if (existsSync(dst) && readFileSync(dst, 'utf8').includes('\r\n')) text = text.replace(/\n/g, '\r\n');
-    if (!existsSync(dst) || readFileSync(dst, 'utf8') !== text) { mkdirSync(dirname(dst), {recursive: true}); writeFileSync(dst, text); }
-    files.push({path: p, sha256: lfSha256(dst)});
+    writes.push({path:p,text});
+    files.push({path: p, sha256: createHash('sha256').update(text.replace(/\r\n/g,'\n')).digest('hex')});
   }
   const vendor = {
     schema: VENDOR_SCHEMA,
     kit: {name: pkg.name, version: pkg.version, commit, license: pkg.license},
     note: 'Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.',
     files,
+    builtPackage:{schema:builtPackage.schema,manifest:'vendor/creature-kit/PACKAGE.json',planetEntry:builtPackage.entrypoints.planet.default},
   };
-  mkdirSync(dirname(join(repo, VENDOR_JSON)), {recursive: true});
-  writeFileSync(join(repo, VENDOR_JSON), `${JSON.stringify(vendor, null, 2)}\n`);
+  writes.push({path:VENDOR_JSON,text:`${JSON.stringify(vendor, null, 2)}\n`});
+  applyKitUpdate(repo,writes,packageUpdate.removes);
   return vendor;
 }
 

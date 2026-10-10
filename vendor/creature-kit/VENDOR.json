@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.1.0",
-    "commit": "5e4265f0b36d024b2a0ab6925fde784fdaaeaf9f",
+    "version": "0.2.0",
+    "commit": "53afe4229d737a187034a9c04cbafbaf8d2a13cb",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -50,7 +50,7 @@
     },
     {
       "path": "src/fauna-composer-lod.ts",
-      "sha256": "3842242654f3090c725b9c283034a10997c1ba41b4ff239b044a8d3dbc5a1e53"
+      "sha256": "a1cf70b0ff1e1eb9d7a4713a46e184c87ddd15587b83641137759657637d806e"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -195,6 +195,19 @@
     {
       "path": "tests/helpers/composer-head-occlusion.mjs",
       "sha256": "2c87cf41bd90c02059da4c7a9f98da9644b0a33a6d576a0686d3a2c6d90637e8"
+    },
+    {
+      "path": "tests/helpers/planet-core-corpus.mjs",
+      "sha256": "007992e24f073932b1763a2a2472fec6d37fbc7a0753827e243592041784f6da"
+    },
+    {
+      "path": "tests/fixtures/planet-core-f96a8c1.json",
+      "sha256": "c37234e0c3dfdb62ce58e7f7d674121519ed586d8777cfadd8bed446d9be1a1d"
     }
-  ]
+  ],
+  "builtPackage": {
+    "schema": "creature-kit-built-package-1",
+    "manifest": "vendor/creature-kit/PACKAGE.json",
+    "planetEntry": "./dist/planet-v1/index.js"
+  }
 }

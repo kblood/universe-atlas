@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "update:creature-kit": "node scripts/sync-creature-kit.mjs --write",
+    "check:creature-kit": "node scripts/sync-creature-kit.mjs",
     "dev": "vite --host 127.0.0.1 --port 5186",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5186",
@@ -58,5 +60,11 @@
     "playwright": "1.61.1",
     "typescript": "5.9.3",
     "vite": "7.3.6"
+  },
+  "imports": {
+    "#creature-kit/planet": {
+      "types": "./vendor/creature-kit/package/dist/planet-v1/index.d.ts",
+      "default": "./vendor/creature-kit/package/dist/planet-v1/index.js"
+    }
   }
 }
