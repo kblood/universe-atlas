@@ -85,6 +85,8 @@ function tallyAllometry(tally:AllometryTally,dimensions:ForestTreeDimensions){
  * baked one after another. */
 export const FOREST_FAR_ATLAS_VIEWS_PER_FRAME=3;
 export interface PlanetForestOptions {
+  /** Candidate only: exact cross-family bark resources shared within this forest. */
+  shareBarkTextures?:boolean;
   /** Production-only allocation gate, captured once from the same physical
    * predicate as biomeClassifier. Dates never change body eligibility. */
   skipIneligibleResources?:boolean;
@@ -246,7 +248,7 @@ export class PlanetForest {
     this.allocationSkipped=!!options.skipIneligibleResources&&!forestBodyEligible(body);
     this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
     this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
-    this.assets=new ForestTreeFamilyLibrary(this.group,(a,b,options)=>this.treeLoader(a,b,options),resident=>resident.cell.id,[B.forestNearCapacity,B.forestCapacity]);
+    this.assets=new ForestTreeFamilyLibrary(this.group,(a,b,options)=>this.treeLoader(a,b,options),resident=>resident.cell.id,[B.forestNearCapacity,B.forestCapacity],{shareBarkTextures:options.shareBarkTextures});
     this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
     this.habitat=forestHabitat(this.sample,this.classify,body.radiusM);
     this.group.name='Continuous planetary forest';
@@ -1024,7 +1026,7 @@ export class PlanetForest {
     updateMs:this.updateMs,frameRepeats:this.repeated,frameRepeatable:this.repeatable,farOwnedSkipped:this.farOwnedSkipped,farWork:this.farWorkDiagnostics,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
     radiusM:B.forestRadiusM,canonicalHeightRangeM:[10,22],renderedHeightRangeM:this.nearAllometry.renderedHeightRangeM,cellSizeM:B.forestCellM,
-      allocatedBytes:memoryAccounting.currentCombinedEstimateBytes,memoryAccounting};
+      allocatedBytes:memoryAccounting.currentCombinedEstimateBytes,memoryAccounting,barkTextures:this.assets.barkTextureDiagnostics()};
   }
   /** Debug-only GPU attribution: objects of one presentation tier (see PlanetRenderer.profilingObjects). */
   profilingObjects(tier:'forestNear'|'forestMiddle'|'forestFar'):THREE.Object3D[]{

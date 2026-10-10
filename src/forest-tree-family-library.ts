@@ -1,4 +1,5 @@
 import type {Group} from 'three';
+import {TreeBarkTexturePool} from './tree-bark-texture-pool.ts';
 import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
 import {CompactInstanceSlots} from './compact-instance-slots.ts';
 import {forestStructuralVariants} from './tree-structural-variant.ts';
@@ -34,7 +35,11 @@ export class ForestTreeFamilyLibrary<T,S>{
   private request=0;private disposed=false;private date=0n;
   private parent:Group;private loader:ForestTreeLoader;private key:(item:T)=>string;
   private capacities:readonly[number,number];
-  constructor(parent:Group,loader:ForestTreeLoader,key:(item:T)=>string,capacities:readonly[number,number]){
+  private readonly sharedBarkTextures:TreeBarkTexturePool|undefined;
+  barkTextureDiagnostics(){return this.sharedBarkTextures?.diagnostics()??null;}
+  constructor(parent:Group,loader:ForestTreeLoader,key:(item:T)=>string,capacities:readonly[number,number],options:{shareBarkTextures?:boolean}={}){
+    if(options.shareBarkTextures!==undefined&&typeof options.shareBarkTextures!=='boolean')throw new Error('Invalid bark sharing option');
+    this.sharedBarkTextures=options.shareBarkTextures?new TreeBarkTexturePool():undefined;
     this.parent=parent;this.loader=loader;this.key=key;this.capacities=capacities;
   }
   setDate(date:bigint){this.date=date;for(const entry of this.entries.values())entry.family.setDate(date);}
@@ -57,7 +62,7 @@ export class ForestTreeFamilyLibrary<T,S>{
         // silhouette-matched reduced foliage LOD; standalone labs opt in explicitly.
         const sidecar=input.foliageMipSidecar??options.foliageMipSidecar;
         const family=await this.loader(input.lod0,input.lod1,{...options,
-          foliageMipSidecar:sidecar,forestCoverage:true,
+          foliageMipSidecar:sidecar,forestCoverage:true,sharedBarkTextures:this.sharedBarkTextures,
           // Mip-aware cutoff keeps LOD1 crowns (and the atlas they are captured
           // into) at base coverage; it needs the MASK sidecar chain.
           foliageLodCutoff:options.foliageLodCutoff??(!!sidecar&&options.foliageCoverage!=='hash'),

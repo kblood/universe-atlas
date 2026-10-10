@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {TreeBarkTexturePool,TreeBarkTextureLease} from './tree-bark-texture-pool.ts';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {phaseFromPeriod} from './world-time.ts';
 import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
@@ -73,7 +74,8 @@ export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
   const foliageTexture=a.json.materials[1].pbrMetallicRoughness?.baseColorTexture?.index;
   const foliageImage=a.json.textures?.[foliageTexture]?.source;
   if(!Number.isInteger(foliageImage)||foliageImage<0||foliageImage>=4)throw new Error('Expected embedded foliage base-color image');
-  return {lod1GeometryBuffer:buffer,embeddedTextureBytes,foliagePng:imageBytes(a,foliageImage)};
+  const bark=a.json.materials[0],baseIndex=a.json.textures?.[bark.pbrMetallicRoughness?.baseColorTexture?.index]?.source,normalIndex=a.json.textures?.[bark.normalTexture?.index]?.source;
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes,foliagePng:imageBytes(a,foliageImage),barkBasePng:Number.isInteger(baseIndex)?imageBytes(a,baseIndex):undefined,barkNormalPng:Number.isInteger(normalIndex)?imageBytes(a,normalIndex):undefined};
 }
 
 export type TreeInstanceAllometry={crownRatio:number;trunkRatio:number};
@@ -211,7 +213,7 @@ export type TreeCanopyPresentation={
   allometry:TreeAllometryReference|null;
 };
 export type TreeCardCompensation={targetPixels:number;maxScale:number};
-export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
+export type TreeAssetOptions={sharedBarkTextures?:TreeBarkTexturePool;foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
   localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}};
   /** Bounded structural pool for this family. Batches select a member per slot. */
   structuralVariants?:readonly ForestStructuralVariant[];
@@ -252,6 +254,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
   const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
   const loaded:THREE.Group[]=[];
   const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  const barkLeases:TreeBarkTextureLease[]=[],leasedTextures=new Set<THREE.Texture>();
   let foliageMipChain:InstalledTreeFoliageMipChain|null=null,foliageMipSetupMs=0,foliageMipPayloadBytes=0;
   function collect(group:THREE.Group){group.traverse(o=>{
     if(!(o instanceof THREE.Mesh))return;
@@ -260,7 +263,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
     }
   });}
-  function dispose(){foliageMipChain?.dispose();for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  function dispose(){foliageMipChain?.dispose();for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const lease of barkLeases.splice(0))lease.release();for(const t of textures){if(leasedTextures.has(t))continue;t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
   function texturePixels(texture:THREE.Texture):Uint8ClampedArray{
     const image=texture.image as CanvasImageSource&{width?:number;height?:number};
     const width=image?.width,height=image?.height;
@@ -304,6 +307,13 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
     });
     for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    if(options.sharedBarkTextures){
+      const bark=lods[0][0].material;
+      for(const [property,png,role] of [['map',prepared.barkBasePng,'bark-base-color'],['normalMap',prepared.barkNormalPng,'bark-normal']] as const){
+        const original=bark[property];if(!original||!png)throw new Error('Shared bark requires both authored maps');
+        const lease=await options.sharedBarkTextures.acquire(original,png,role);barkLeases.push(lease);textures.delete(original);bark[property]=lease.texture;textures.add(lease.texture);leasedTextures.add(lease.texture);
+      }
+    }
     if(options.foliageMipmaps||options.foliageMipSidecar){
       const foliage=lods[0][1].material;
       if(!foliage.map)throw new Error('Foliage coverage mips require a base-color map');
