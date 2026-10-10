@@ -16,6 +16,14 @@ try{
   page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
   await page.goto(`http://127.0.0.1:${server.port}/tests/fauna-body-lod-lab.html`);await page.waitForFunction(()=>window.__lodLab,undefined,{timeout:90000});
   report.renderer=await page.evaluate(()=>{const gl=window.__lodLab.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return gl.getParameter(e.UNMASKED_RENDERER_WEBGL);});
+  if(process.env.BODY_LOD_REST_GALLERY==='1'){
+    for(const [mode,target] of [['source',0],['derived',1500],['derived',500]])for(let sample=0;sample<6;sample++){
+      await page.evaluate(({mode,target,sample})=>{const l=window.__lodLab;l.setRestPose(true);l.choose(mode,target,6);l.closeup(sample);},{mode,target,sample});
+      await page.waitForTimeout(400);await page.screenshot({path:out+`/rest-${mode}-${target}-sample${sample}.png`});
+    }
+    assert.deepEqual(report.errors,[],'rest gallery shader errors');report.ok=true;report.restPalette='identity for source and every derived bone; original attributes';
+    await writeFile(out+'/report.json',JSON.stringify(report,null,2));
+  }else{
   for(const [mode,target] of JSON.parse(process.env.BODY_LOD_VARIANTS||'[["body2",500],["derived",1500],["derived",500],["derived",200]]')){
     for(const paused of [true,false]){
       await page.evaluate(({mode,target,paused,poseMode,count})=>{const l=window.__lodLab;l.choose(mode,target,count);l.setPoseMode(poseMode);l.field();l.setPaused(paused);},{mode,target,paused,poseMode:process.env.BODY_LOD_POSE_MODE||'canonical',count:Number(process.env.BODY_LOD_COUNT||512)});
@@ -40,5 +48,6 @@ try{
   }
   assert.deepEqual(report.errors,[],'no shader/page errors in measured variants');
   report.ok=true;await writeFile(out+'/report.json',JSON.stringify(report,null,2));
+  }
 }catch(error){report.failure=String(error);await writeFile(out+'/report.json',JSON.stringify(report,null,2));throw error;}
 finally{await browser?.close();await lock?.release();await stopServer(server.child);}

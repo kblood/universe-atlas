@@ -5,7 +5,8 @@ const source=JSON.parse(await readFile('test-results/fauna-body-lod-baseline/rep
 const rows=[];
 for(const s of source.samples){const body=buildQuadrupedBody(s.genome),start=performance.now();
   const chain=buildFaunaBodyLodChain(body,{targets:[1500,500,200]});
-  rows.push({name:s.name,genome:s.genome,buildLodMs:performance.now()-start,levels:chain.levels.map(l=>({
+  const pack=l=>({plan:l.plan,positions:Array.from(l.positions),normals:Array.from(l.normals),colors:Array.from(l.colors),skinIndex:Array.from(l.skinIndex),skinWeight:Array.from(l.skinWeight),index:Array.from(l.index)});
+  rows.push({name:s.name,genome:s.genome,source:pack(body),buildLodMs:performance.now()-start,levels:chain.levels.map(l=>({
     target:l.target,triangles:l.triangleCount,vertices:l.vertexCount,quality:faunaBodyLodQuality(body,l,{stride:32}),
     plan:l.plan,positions:Array.from(l.positions),normals:Array.from(l.normals),colors:Array.from(l.colors),
     skinIndex:Array.from(l.skinIndex),skinWeight:Array.from(l.skinWeight),index:Array.from(l.index)}))});
