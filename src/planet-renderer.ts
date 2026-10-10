@@ -980,7 +980,7 @@ export class PlanetRenderer {
   setLifeContext(context: LifeGateContext | null): void { this.lifeContext = context; }
   /** Async desktop module installation; the next update applies the XR gate.
    * Installing the factory itself allocates no experimental resources. */
-  setFaunaLodPrototypeFactory(factory:NonNullable<PlanetRendererOptions['faunaLodPrototype']>):void{this.faunaLodFactory=factory;this.faunaLodInitError=null;}
+  setFaunaLodPrototypeFactory(factory:NonNullable<PlanetRendererOptions['faunaLodPrototype']>):void{this.faunaLodFactory=factory;this.faunaLodInitError=null;this.faunaFrameKeyValid=false;}
   loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
     return this.loadForestTreeFamilies([{kind:'branching',lod0,lod1}],options);
   }
@@ -1269,9 +1269,9 @@ export class PlanetRenderer {
   // bucket are bit-identical at their shared edge by construction.
   update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = [], worldNs: bigint = CATALOGUE_EPOCH_NS, life: LifeGateContext | null = this.lifeContext, waterLevelM: number = 0,shadowFrustum:THREE.Frustum|null=null) {
     if (this.disposed) return;
-    if(this.faunaLodFactory)this.setFaunaLodImmersive(immersive);
     this.immersiveBudget=immersive;
     this.lifeContext = life;
+    if(this.faunaLodFactory)this.setFaunaLodImmersive(immersive,false,!this.faunaLodLifeEligible());
     const started=performance.now();
     this.frame++;
     const waterBucket=waterLevelBucket(waterLevelM), snappedWaterLevelM=waterBucket*WATER_LEVEL_BUCKET_M;
@@ -1864,9 +1864,12 @@ export class PlanetRenderer {
   /** Desktop research resources never remain retained by this renderer in an
    * unvalidated XR session. Only fauna presentation is replaced; terrain,
    * canonical population, date, body and camera are untouched. */
-  private setFaunaLodImmersive(immersive:boolean){
+  private faunaLodLifeEligible(){const life=this.lifeContext;return !!life&&life.faunaStage==='complex'&&
+    (!life.faunaSpecies||life.faunaSpecies.length>0)&&(!life.faunaAvailableArchetypes||life.faunaAvailableArchetypes.length>0);}
+  private syncFaunaLodContext(){if(this.faunaLod&&this.faunaLodContext){this.faunaLodContext.lifeSignature=this.lifeSignature;this.faunaLodTiers.setContext(this.faunaLodContext);this.faunaLod.setContext(this.faunaLodContext);}}
+  private setFaunaLodImmersive(immersive:boolean,allowCreate=false,suspend=false){
     if(immersive)this.faunaLodInitError=null;
-    const enabled=!!this.faunaLodFactory&&!immersive;if(enabled===!!this.faunaLod)return;
+    const enabled=!!this.faunaLodFactory&&!immersive&&!suspend&&this.faunaLodLifeEligible()&&(!!this.faunaLod||allowCreate);if(enabled===!!this.faunaLod)return;
     if(enabled){
       if(this.faunaLodInitError)return;
       let spec:ReturnType<NonNullable<PlanetRendererOptions['faunaLodPrototype']>>|null=null;
@@ -1884,6 +1887,7 @@ export class PlanetRenderer {
     this.faunaFrameKeyValid=false;this.faunaLodTransitions++;
   }
   private hideLife(): void {
+    if(this.faunaLod)this.setFaunaLodImmersive(this.immersiveBudget,false,true);
     this.floraRecipeBuilds=0;
     // Hidden life draws nothing: its per-frame counters must say so too. The
     // flora counters used to keep the last drawn frame's values, so a 15 km
@@ -1898,6 +1902,7 @@ export class PlanetRenderer {
   }
   private updateLife(eye: THREE.Vector3, contact: THREE.Vector3, frustum: THREE.Frustum | null, worldNs: bigint,shadowFrustum:THREE.Frustum|null): void {
     const life=this.lifeContext;if(!life){this.hideLife();return;}
+    if(this.faunaLod&&!this.faunaLodLifeEligible())this.setFaunaLodImmersive(this.immersiveBudget,false,true);
     // The context object is immutable and main.ts returns the same object while
     // nothing life-relevant changes, so the signature string is rebuilt only for
     // a new context or water bucket.
@@ -2261,7 +2266,7 @@ export class PlanetRenderer {
    *   turns or moves re-evaluates no BigInt schedule or grounded transform;
    * - per-frame records, near-rig candidates and matrices are pooled. */
   private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
-    if(this.faunaLod&&this.faunaLodContext){this.faunaLodContext.lifeSignature=this.lifeSignature;this.faunaLodTiers.setContext(this.faunaLodContext);this.faunaLod.setContext(this.faunaLodContext);}
+    this.syncFaunaLodContext();
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
     this.faunaTraceEye.copy(eye);this.faunaTraceNs=worldNs;this.faunaTraceFrustum.copy(frustum);
     this.faunaTraceShadowValid=!!shadowFrustum;if(shadowFrustum)this.faunaTraceShadow.copy(shadowFrustum);
@@ -2303,6 +2308,12 @@ export class PlanetRenderer {
     }
     visible.sort(compareFaunaVisibility);
     this.faunaCameraVisibleCount=0;for(const item of visible)if(item.cameraVisible)this.faunaCameraVisibleCount++;
+    // Instantiate only after real camera demand is known; a brief empty camera
+    // view retains established resources, while hidden/ineligible life disposes.
+    if(!this.faunaLod&&this.faunaLodFactory&&!this.immersiveBudget&&visible.some(item=>item.cameraVisible&&item.distance<=200)){
+      this.setFaunaLodImmersive(false,true);
+      this.syncFaunaLodContext();
+    }
     this.faunaProxyScale.setScalar(1/radiusM);
     // The nearest camera-visible animals may draw as skinned bodies posed on
     // their herd's ground stencil, with the same outer transform as below.

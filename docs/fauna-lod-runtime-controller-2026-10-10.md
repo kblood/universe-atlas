@@ -9,6 +9,13 @@ factory retains exact source and appearance versions; it does not select another
 animal generator. Initial XR creates no provider; desktop→XR disposes it and
 restores the proven legacy fauna path. Physical Quest performance is unverified.
 
+The factory is available by default, but allocates no fixed LOD pool until eligible
+living fauna actually appears in the camera within 200 m. Lifeless worlds, extinct
+fauna and shadow-only views do not create it. Hidden/ineligible life cancels work,
+disposes the pool and restores legacy buffers; returning visible animals creates
+fresh resources without changing terrain, date or population. A brief empty camera
+view on an established animal planet retains its pool to avoid allocation churn.
+
 Acceptance used identical 180×1 ms dates, camera, canonical poses/cohort/source
 and shared six-near palettes, with no workers during measured windows. CPU p95
 off/on was 9.665/10.480 ms and reverse 10.005/9.990; GPU p95 6.645/6.838 and
