@@ -111,3 +111,34 @@ raw scaled packed10,419,112 bytes. Near/flora/forest aggregate accounting remain
 a separate acceptance gate.32-bit shader seeds are split into exact low/high16
 Float32 lanes and reconstructed with uint shifts; tests cover values above2^24
 and UINT32_MAX. Eight focused tests plus ten base-batch tests pass.
+
+
+Serialized worker bridge (prototype only)
+----------------------------------------
+
+`createFaunaPackedWorkerAdapter(provider)` accepts the controller's exact
+individual/context/genome, optional borrowed loaded source, and 1500/750/500
+triangle target. It builds the actual provider genome when no source is loaded,
+yielding between the resumable Kit builder phases. Close results admit at most
+900 vertices; middle results at most 500. The default pending result ceiling is
+512 KiB. The returned payload owns only reduced geometry, packed basis, context
+and source plan; its transfer list excludes every borrowed dense-source buffer.
+It discards dense correspondence maps and temporary float coefficients before
+returning. The controller must serialize jobs and terminate the worker to cancel
+during a synchronous reducer phase; AbortSignal is checked between phases.
+
+This bridge does not declare a whole-worker memory ceiling. It reports actual
+source/result typed bytes and float basis bytes. The Kit scalar field and cell
+lookup grids are bounded to 200,000 points each (1.6 MB combined). Caller and
+worker source clones, reducer typed scratch, reducer JavaScript adjacency/heap
+objects, original builder JavaScript arrays, and plan metadata still require
+separate accounting. The current comparison helper also builds its baseline
+control; its temporary memory and cold cost must be counted. A controller's
+32 MiB cold reserve is an admission policy, not a measured heap bound.
+
+The Kit public shared shader export is proposed in d0b87bf, following the raw
+context API chain. Its string is byte-identical to the prior composer shader,
+SHA256 9c49a372ba3ad46e66496e5cd27d69bb93dee5287f0a62ba8c4d1b08ec060253.
+The prototype retains the legacy Atlas import until the accepted Kit package
+update provides this export; production consumption must use the Kit planet
+entry and preserve its inspector exports.

@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import {FaunaSkinnedBatch,FAUNA_PALETTE_BONES,type FaunaSkinnedBatchOptions} from './fauna-skinned-batch.ts';
 import {FAUNA_PLANET_CRISP_VERSION,FAUNA_PLANET_CRISP_RAW_VERSION,FAUNA_PLANET_CRISP_BATCH_GLSL,FAUNA_PLANET_CRISP_BATCH_VARYINGS,type buildFaunaPlanetCrispData} from './fauna-planet-crisp.ts';
 import {FAUNA_PLANET_CRISP_PACKED_VERSION,FAUNA_PLANET_CRISP_RAW_PACKED_VERSION,type FaunaPlanetCrispPackedData} from './fauna-planet-crisp-packed.ts';
-type Data=ReturnType<typeof buildFaunaPlanetCrispData>|FaunaPlanetCrispPackedData;
+import type {FaunaPackedRenderPayload} from './fauna-packed-worker-adapter.ts';
+type Data=ReturnType<typeof buildFaunaPlanetCrispData>|FaunaPlanetCrispPackedData|FaunaPackedRenderPayload;
 type BasisArray=Float32Array|Uint8Array|Int16Array;
 type Basis={c0:BasisArray|null;c1:BasisArray|null;c2:BasisArray|null;sample:Float32Array|null;descriptor:Data['descriptor'];packingScale:number;clip:Uint8Array|null;bytes:number;vertices:number;ownerSlot:number};
 export interface FaunaPlanetCrispBatchOptions extends FaunaSkinnedBatchOptions {cacheMode?:'retain-source'|'atlas-owned';basisStorage?:'float32'|'packed-delta16'|'packed-snorm16'}
@@ -52,7 +53,7 @@ export class FaunaPlanetCrispBatch {
     };
   }
   registerGeometry(key:string,data:Data):boolean{
-    if(this.disposed||!(this.basisStorage==='packed-snorm16'?[FAUNA_PLANET_CRISP_RAW_PACKED_VERSION]:this.basisStorage==='packed-delta16'?[FAUNA_PLANET_CRISP_PACKED_VERSION]:[FAUNA_PLANET_CRISP_VERSION,FAUNA_PLANET_CRISP_RAW_VERSION]).includes(data.version)||data.sourceGeometry.plan!==data.source.plan)return false;
+    if(this.disposed||!(this.basisStorage==='packed-snorm16'?[FAUNA_PLANET_CRISP_RAW_PACKED_VERSION]:this.basisStorage==='packed-delta16'?[FAUNA_PLANET_CRISP_PACKED_VERSION]:[FAUNA_PLANET_CRISP_VERSION,FAUNA_PLANET_CRISP_RAW_VERSION]).includes(data.version)||data.sourceGeometry.plan!==('source' in data?data.source.plan:data.sourcePlan))return false;
     const d=data.descriptor;if(d&&(!Number.isInteger(d.code)||d.code<1||d.code>7||!Number.isSafeInteger(d.seed)||d.seed<0||d.seed>4294967295||!Number.isFinite(d.cells)||d.cells<=0||![d.threshold,d.warp,d.bellyLine,d.footprint].every(Number.isFinite)||d.footprint<0))return false;
     const packingScale='packingScale' in data?data.packingScale:1;if(!Number.isFinite(packingScale)||packingScale<1)return false;
     const old=this.cache.get(key);
