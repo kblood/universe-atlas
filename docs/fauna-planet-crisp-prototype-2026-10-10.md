@@ -46,7 +46,8 @@ only a repeated-fixture prototype, not evidence for 128 unique planet animals.
 
 Composite admission counts base atlas/palettes, all basis buffers, appearance
 parameters, base row trackers and one pending geometry/basis before allocations.
-128 actors/500 vertices/1500 indices with atlas ownership reserves about 12.3MiB
+128 actors/500 vertices/1500 indices with atlas ownership reserves 12,599,516 bytes
+(12.02MiB)
 typed CPU/GPU storage. This is candidate-only: near rigs, flora, forest, worker
 input/output, borrowed source ownership, JS plan/key objects and driver/compiler
 resources must be measured and admitted at aggregate game level. A 128-definition
@@ -59,3 +60,19 @@ cancellation. Actual Daunune/Anitar and adult/juvenile rest/walk/feed images,
 30/60/100m filtering, GPU sample parity, compilation and 128 unique field timings
 remain acceptance gates. Quest acceptance is unavailable. Packed coefficient
 storage is a possible next control, subject to bounds and quantized-oracle parity.
+
+The optional packed control now uses `basisStorage:'packed-delta16'`: three
+normalized Uint8 base channels and two signed normalized Int16 delta triplets,
+plus unchanged Float32 coordinates. This is 31 bytes per vertex rather than52.
+`packFaunaPlanetCrispData` rejects base layers outside0..1 or deltas outside-1..1;
+it does not clamp data to force admission. The sum of coefficient quantization
+errors bounds every possible mask/patch and convex triangle interpolation by
+one channel byte. Float control remains available. The packed presentation
+version is `planet-coat-crisp-packed-delta16-1`.
+
+At the same 128/500/1500 atlas-owned configuration, packed composite typed
+reservation is 9,901,016 bytes (9.44MiB), including one pending input copy.
+Actual genotype coefficient-range checks, GPU pixel parity and near/flora/forest
+aggregate accounting remain required; this does not establish game-level life
+acceptance. Seven focused checks now cover both formats, including128 independent
+definition admissions and no duplicate retained basis/source arrays.

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {packFaunaPlanetCrispData,createFaunaPlanetCrispPackedGeometry,createFaunaPlanetCrispPackedMaterial} from '../src/fauna-planet-crisp-packed.ts';
 import {FaunaPlanetCrispBatch} from '../src/fauna-planet-crisp-batch.ts';
 import {generateCreatureGenome,realisticIndividualCreatureGenome} from '../src/creature-model.ts';
 import {buildQuadrupedBody} from '../src/fauna-body-plan.ts';
@@ -57,5 +58,29 @@ test('atlas-owned appearance prepares128 unique definitions without retained sou
   const changed={...datasets[0],c1:datasets[0].c1.slice()};changed.c1[0]+=.02;assert.equal(batch.registerGeometry('unique/0',changed),false);
   batch.releaseAnimal('alias');assert.equal(batch.geometryFor('unique/0'),null);
   assert.equal(batch.registerGeometry('pending',datasets[0]),true);assert.equal(batch.registerGeometry('blocked',datasets[1]),false);assert.equal(batch.releaseGeometry('pending'),true);assert.equal(batch.diagnostics().pendingAppearanceGeometry,false);
+ }finally{batch.dispose();}
+});
+
+test('packed coefficient control bounds everymask combination tooneRGBbyte and retains indexed geometry',()=>{
+ const {source,oracle}=fixture(),control=buildFaunaPlanetCrispData(source,source,oracle),packed=packFaunaPlanetCrispData(control),geometry=createFaunaPlanetCrispPackedGeometry(packed);
+ assert.equal(packed.resources.extraCpuBytes,4*31);assert.ok(packed.diagnostics.maxPackingErrorBound<=1/255);assert.equal(geometry.index.array,source.index);assert.equal(geometry.getAttribute('coatL0').normalized,true);assert.equal(geometry.getAttribute('coatL1').normalized,true);
+ for(let i=0;i<control.c0.length;i++)for(let m=0;m<=1;m+=.125)for(let patch=0;patch<=1;patch+=.125){
+  const expected=control.c0[i]+m*(control.c1[i]-control.c0[i])+m*patch*(control.c2[i]-control.c1[i]),actual=packed.c0[i]/255+m*packed.c1[i]/32767+m*patch*packed.c2[i]/32767;
+  assert.ok(Math.abs(expected-actual)<=1/255);assert.ok(Math.abs(Math.round(expected*255)-Math.round(actual*255))<=1);
+ }
+ const bad={...control,c0:control.c0.slice()};bad.c0[0]=1.1;assert.throws(()=>packFaunaPlanetCrispData(bad),/packing domain/);
+ const material=createFaunaPlanetCrispPackedMaterial(packed),shader={uniforms:{},vertexShader:'#include <common>\n#include <begin_vertex>',fragmentShader:'#include <common>\n#include <color_fragment>'};material.onBeforeCompile(shader);assert.match(shader.vertexShader,/vCoatL1=coatL0\+coatL1/);material.dispose();geometry.dispose();
+});
+
+test('packed atlas-owned128unique admission retains no duplicated basis and respectscompositebudget/typed storage',()=>{
+ const source=buildQuadrupedBody(realisticIndividualCreatureGenome(generateCreatureGenome('PACKED-OWNERSHIP','browser'),'packed',1,'adult','ungulate')),lod=buildFaunaBodyLodChain(source,{targets:[500]}).levels[0],mock=fixture().oracle,batch=new FaunaPlanetCrispBatch({cacheMode:'atlas-owned',basisStorage:'packed-delta16'});
+ try{
+  assert.ok(batch.estimatedBufferBytes<10*1024*1024);assert.equal(batch.diagnostics().basisAtlasCpuBytes,128*500*31);
+  for(let i=0;i<128;i++){
+   const plan={...source.plan,genome:{...source.plan.genome,color:`#${(0x443300+i).toString(16)}`}},s={...source,plan},geometry={...lod,plan},floating=buildFaunaPlanetCrispData(s,geometry,{...mock,source:s}),packed=packFaunaPlanetCrispData(floating);
+   assert.equal(batch.registerGeometry(`packed/${i}`,packed),true);assert.equal(batch.prepareAnimal(`actor/${i}`,`packed/${i}`),true);assert.equal(batch.diagnostics().basisCacheBytes,0);
+  }
+  assert.equal(batch.mesh.geometry.getAttribute('coatL1').normalized,true);assert.ok(batch.mesh.geometry.getAttribute('coatL1').array instanceof Int16Array);assert.equal(batch.diagnostics().geometryEntries,128);
+  const shader={uniforms:{},vertexShader:'#include <common>\nvoid main() {\n#include <begin_vertex>\n}',fragmentShader:'#include <common>\n#include <color_fragment>'};batch.mesh.material.onBeforeCompile(shader);assert.match(shader.vertexShader,/vCoatL1=coatL0\+coatL1/);
  }finally{batch.dispose();}
 });
