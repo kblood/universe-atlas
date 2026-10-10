@@ -129,6 +129,10 @@
       "sha256": "63c427b489348f7891586533e04f80e24405fd3862500245e0edd5fffe2a47e8"
     },
     {
+      "path": "tests/fauna-composer-lod-constraints.test.mjs",
+      "sha256": "30c1b42acb3420f002e94b757cef7c7ae8a5a60b29fabbc743c9cb2574ac89b1"
+    },
+    {
       "path": "tests/fauna-composer-mesh-stability.test.mjs",
       "sha256": "fcca0213413486ddcb2cf395fed67132fb6a0afb5c8e936d4e4a6883c61d8114"
     },
