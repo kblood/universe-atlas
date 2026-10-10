@@ -24,3 +24,16 @@ rows allocate; and sparse moving rows currently request full bone/root palette
 uploads. `fauna-lod-upload=rows` selects the existing adaptive-row upload mode for
 an independent comparison. It retains full initial/dense uploads and identical
 palette bytes. Its default remains `full`; no quality policy or population changes.
+
+The e8b9cea browser attribution measured controller mean 0.45–0.50 ms/frame,
+pose 0.35–0.39 ms (including ground 0.067 ms), and ownership 0.008–0.010 ms.
+Every moving window included workers, so it did not isolate steady rendering.
+Adaptive rows showed no median CPU/GPU win. Keep full uploads as the default.
+
+The followup removes report construction from admission ownership/prepared-count
+reads, preserving the exact existing byte accounting for current attributes,
+palette rings, pending copies and presentation parameters. Tests cover float/raw
+packed, retained/atlas-owned cache and all three palette-ring sizes through each
+ownership transition. This is allocation cleanup, not an explanation of the
+larger whole-app CPU delta. Source definitions, poses and submitted arrays remain
+unchanged. A settled-versus-streaming comparison is still required.

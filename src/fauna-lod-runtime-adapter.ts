@@ -36,7 +36,7 @@ export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}
   }
   const adapter:FaunaLodRuntimeAdapter&{trace():typeof rows;diagnostics():unknown}={group,
     ...(profile.enabled?{beginControllerProfile(){controllerStart=profile.start();},endControllerProfile(){profile.end('controller',controllerStart);}}:{}),
-    get ownedBytes(){const start=profile.start();let n=0;for(const [tier,pool] of Object.entries(pools)){const d=pool.diagnostics();n+=2*d.geometryBytes+d.paletteRetainedCpuBytes+d.paletteGpuEstimateBytes+d.cacheBytes+d.basisCacheBytes+d.appearanceMetaCpuBytes*2+(tier==='close'?17:113)*7;}
+    get ownedBytes(){const start=profile.start();let n=pools.close.ownedBytes+pools.middle.ownedBytes;
       for(const entry of bindings.values())n+=entry.palette.byteLength+(entry.workspace?.resources.outputTypedBytes??0);profile.end('ownership',start);return n;},
     transientBytes:0,workerReserveBytes:options.workerReserveBytes??32*1024*1024,
     build(job:FaunaLodBuildJob,signal:AbortSignal):Promise<FaunaLodBuildResult>{
@@ -65,7 +65,7 @@ export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}
       bindings.set(id,entry);jobs.delete(key);if(previous&&previous.tier!==tier)releaseBinding(previous);else if(previous)pool.releaseGeometry(previous.geometryKey);return true;
     },
     release(id,key){const entry=bindings.get(id);if(entry?.key!==key)return;releaseBinding(entry);bindings.delete(id);},
-    canAdopt(tier,id){return bindings.get(id)?.tier===tier||pools[tier].diagnostics().prepared<(tier==='close'?17:113);},
+    canAdopt(tier,id){return bindings.get(id)?.tier===tier||pools[tier].preparedCount<(tier==='close'?17:113);},
     discard(result){const payload=result?.payload as Payload|null;if(payload?.key)jobs.delete(payload.key);},
     // PlanetRenderer nests this group under faunaRenderer.group, which owns
     // lifeOrigin already. Actor matrices subtract that origin exactly once.

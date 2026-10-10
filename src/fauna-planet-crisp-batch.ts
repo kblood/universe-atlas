@@ -85,6 +85,8 @@ export class FaunaPlanetCrispBatch {
   beginFrame(origin:THREE.Vector3):void{this.base.beginFrame(origin);}
   submit(...args:Parameters<FaunaSkinnedBatch['submit']>):boolean{return this.base.submit(...args);}
   endFrame():void{this.base.endFrame();}
+  get preparedCount(){return this.members.size;}
+  get ownedBytes(){let basisCacheBytes=0;for(const data of this.cache.values())basisCacheBytes+=data.bytes;return this.base.ownedBytes+basisCacheBytes+this.params.byteLength*2;}
   diagnostics(){const appearanceVersions=[...new Set([...this.cache.values()].map(data=>data.version))].sort();let basisCacheBytes=0;for(const data of this.cache.values())basisCacheBytes+=data.bytes;return {...this.base.diagnostics(),appearanceVersion:this.basisStorage==='packed-snorm16'?FAUNA_PLANET_CRISP_RAW_PACKED_VERSION:this.basisStorage==='packed-delta16'?FAUNA_PLANET_CRISP_PACKED_VERSION:appearanceVersions.includes(FAUNA_PLANET_CRISP_RAW_VERSION)?FAUNA_PLANET_CRISP_RAW_VERSION:FAUNA_PLANET_CRISP_VERSION,appearanceVersions,basisStorage:this.basisStorage,appearanceCacheMode:this.cacheMode,pendingAppearanceGeometry:this.pendingKey!==null,estimatedCompositeBufferBytes:this.estimatedBufferBytes,maxCompositeBufferBytes:this.maxBufferBytes,basisAtlasCpuBytes:Object.values(this.attrs).reduce((n,a)=>n+a.array.byteLength,0),basisCacheBytes,appearanceMetaCpuBytes:this.params.byteLength};}
   dispose():void{if(this.disposed)return;this.disposed=true;this.base.dispose();this.paramsTexture.dispose();this.cache.clear();this.members.clear();}
 }

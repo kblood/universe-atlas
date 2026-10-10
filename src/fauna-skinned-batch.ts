@@ -288,6 +288,16 @@ export class FaunaSkinnedBatch {
     target.needsUpdate=true;return bytes;
   }
   geometryFor(key:string){return this.cache.get(key)?.plan??null;}
+  /** Typed CPU ownership + GPU estimate, without creating a diagnostic report.
+   * Read current attributes because presentation wrappers add their own arrays. */
+  get ownedBytes(){
+    let geometryBytes=this.geometry.index!.array.byteLength,cacheBytes=0;
+    for(const name in this.geometry.attributes)geometryBytes+=this.geometry.attributes[name].array.byteLength;
+    for(const record of this.cache.values())cacheBytes+=record.bytes;
+    const paletteBytes=this.boneMatrices.byteLength+this.rootMatrices.byteLength;
+    return 2*geometryBytes+cacheBytes+paletteBytes*(this.paletteRingSize===1?1:1+this.paletteRingSize)+paletteBytes*this.paletteRingSize+this.capacity*7;
+  }
+  get preparedCount(){return this.members.size;}
   diagnostics(){
     let geometryBytes=this.geometry.index!.array.byteLength,cacheBytes=0;
     for(const a of Object.values(this.geometry.attributes))geometryBytes+=a.array.byteLength;
