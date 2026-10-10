@@ -1,0 +1,83 @@
+{
+  "schema": "creature-kit-lab-1",
+  "kit": {
+    "name": "creature-kit",
+    "version": "0.3.0",
+    "commit": "8aecf223547ff00d56cfc902ac0acf2094d1f5a4",
+    "license": "UNLICENSED"
+  },
+  "vite": "7.3.6",
+  "entry": "planet-skin.html",
+  "sources": [
+    {
+      "path": "apps/creature-lab/PROVENANCE.md",
+      "sha256": "f1d1b102a287ab4c7cce11be0757345d54c03b36e6822252413404fa0e019db7"
+    },
+    {
+      "path": "apps/creature-lab/creature-lab.html",
+      "sha256": "7604dd1a3958c8ead36a47f8364db3d7468f0be15d3fcc4fa4f0f106dcc2fc4d"
+    },
+    {
+      "path": "apps/creature-lab/planet-skin.html",
+      "sha256": "18c69429718b059586c87b72e9803932cc3ff366b2ad3a6b5e8814a823a41da2"
+    },
+    {
+      "path": "apps/creature-lab/src/creature-lab-composer.ts",
+      "sha256": "10060e4c21f3de9d5f7e16b6f150a224026c2d8bc3f85161832f8075a7ce1d67"
+    },
+    {
+      "path": "apps/creature-lab/src/creature-lab-state.ts",
+      "sha256": "25c3e9a5e103f8ecc4e66dca54981b90d44078ee99ea82192f6542635f005dcc"
+    },
+    {
+      "path": "apps/creature-lab/src/creature-lab.css",
+      "sha256": "179be328da367433bebf78e66062225932ff405a9868da10e7063d56c4c7d48d"
+    },
+    {
+      "path": "apps/creature-lab/src/fauna-review-environment.ts",
+      "sha256": "f92e713ad2872421024b36262fef9d12072cf7c01fa189c9b6d115f246372d6f"
+    },
+    {
+      "path": "apps/creature-lab/src/fauna-review-lighting.ts",
+      "sha256": "90c7aec8447f9f0023495c037f151376d81d8c3bf043d79b799ddea8e934e4d0"
+    },
+    {
+      "path": "apps/creature-lab/src/main.ts",
+      "sha256": "577e2285e517c16fb51ad03a15dca94daf4ef2c1ba903aefa62c1a9fb66830ed"
+    },
+    {
+      "path": "apps/creature-lab/src/planet-main.ts",
+      "sha256": "2f972ce2741f48ef1d3b32d40094a595118bf2639dba0d92d3b11ba6d52765fe"
+    },
+    {
+      "path": "apps/creature-lab/vite.config.mjs",
+      "sha256": "22ddee01c933d790951a5f971179d00f4720e88f8636a9c2a3c43da1406c2ec8"
+    }
+  ],
+  "files": [
+    {
+      "path": "assets/composer-LyXvSx15.js",
+      "sha256": "38f8b714b8af8d88f5c311747e09a66b2dc64cfac12fc41e9d7c3539c78b92f6"
+    },
+    {
+      "path": "assets/creature-lab-BgL2EYsi.js",
+      "sha256": "94fda2e07934b11aec6fc0d375b9a46f5288a698e6f04e48415b38fc5ac2e72a"
+    },
+    {
+      "path": "assets/creature-lab-CN8EtKiP.css",
+      "sha256": "10aae7fa7b9e0823dd17ab8349668ba0b405462368591d5cf1abb4d90032fda7"
+    },
+    {
+      "path": "assets/planet-CE16oSdR.js",
+      "sha256": "bae06c5cae990a7b54dfb87d8062a289a72f1865ed45124fbbb070144dcaf42d"
+    },
+    {
+      "path": "creature-lab.html",
+      "sha256": "71c31c73e26bece0403fb127e4654206ae9114107a997175408575155ddde0b4"
+    },
+    {
+      "path": "planet-skin.html",
+      "sha256": "4d110c2b6d4d8b47e99ac07d84700d9b8086e271282d6c94321bb68829507658"
+    }
+  ]
+}

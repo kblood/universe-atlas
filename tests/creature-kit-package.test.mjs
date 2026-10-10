@@ -41,6 +41,37 @@ function fixture(){
   return {repo,kit,clean};
 }
 function snapshot(root){const h=createHash('sha256');for(const d of readdirSync(root,{recursive:true,withFileTypes:true}).filter(d=>d.isFile()).sort((a,b)=>join(a.parentPath,a.name).localeCompare(join(b.parentPath,b.name)))){const p=join(d.parentPath,d.name);h.update(p.slice(root.length));h.update(readFileSync(p));}return h.digest('hex');}
+function enableLab(f){
+  const pkg=JSON.parse(readFileSync(join(f.kit,'package.json'),'utf8'));pkg.version='0.3.0';pkg.devDependencies.vite='7.3.6';write(f.kit,'package.json',JSON.stringify(pkg));
+  for(const p of ['planet-skin.html','creature-lab.html','vite.config.mjs','src/planet-main.ts'])write(f.kit,`apps/creature-lab/${p}`,'export const fixtureVersion=1;\n');
+  write(f.kit,'node_modules/vite/package.json','{"version":"7.3.6"}');
+  write(f.kit,'node_modules/vite/bin/vite.js',`const fs=require('fs'),path=require('path'),mode=process.env.KIT_LAB_FIXTURE;
+    if(mode==='failed')process.exit(7);if(mode==='stale')process.exit(0);
+    const out=process.argv[process.argv.indexOf('--outDir')+1];fs.mkdirSync(path.join(out,'assets'),{recursive:true});
+    for(const p of ['planet-skin.html','creature-lab.html'])fs.writeFileSync(path.join(out,p),'<html>'+String.fromCharCode(13,13,10)+'<script type="module" src="./assets/lab.js"></script></html>');
+    if(mode!=='missingasset')fs.writeFileSync(path.join(out,'assets/lab.js'),mode==='malformed'?'const = ;':fs.readFileSync('apps/creature-lab/src/planet-main.ts'));
+  `);
+  commit(f.kit);
+}
+
+test('Kit 0.3 standalone Lab updates with the runtime release and fails closed on missing/dirty/failed/stale/malformed app input',()=>{
+  for(const failure of ['missing','dirty','failed','stale','missingasset','malformed']){
+    const f=fixture();try{
+      enableLab(f);writeVendor(f.repo,f.kit);assert.deepEqual(vendorDrift(f.repo,f.kit),[]);const before=snapshot(f.repo);
+      assert.equal(JSON.parse(readFileSync(join(f.repo,'vendor/creature-kit/LAB.json'))).kit.commit,git(f.kit,'rev-parse','HEAD'));
+      if(failure==='missing'){git(f.kit,'rm','apps/creature-lab/planet-skin.html');commit(f.kit);}
+      if(failure==='dirty')write(f.kit,'apps/creature-lab/src/planet-main.ts','export const dirty=1;\n');
+      process.env.KIT_LAB_FIXTURE=failure;
+      assert.throws(()=>writeVendor(f.repo,f.kit),undefined,failure);assert.equal(snapshot(f.repo),before,`${failure}: package/Lab update changed Atlas`);
+    }finally{delete process.env.KIT_LAB_FIXTURE;f.clean();}
+  }
+  const f=fixture();try{
+    enableLab(f);writeVendor(f.repo,f.kit);const before=readFileSync(join(f.repo,'public/animal-lab/assets/lab.js'),'utf8');
+    write(f.kit,'apps/creature-lab/src/planet-main.ts','export const fixtureVersion=2;\n');commit(f.kit);writeVendor(f.repo,f.kit);
+    assert.notEqual(readFileSync(join(f.repo,'public/animal-lab/assets/lab.js'),'utf8'),before);assert.deepEqual(vendorDrift(f.repo,f.kit),[]);
+    write(f.repo,'public/animal-lab/assets/lab.js','export const drift=1;');assert.ok(vendorDrift(f.repo).some(row=>row.includes('animal-lab/assets/lab.js: artifact hash drift')));
+  }finally{f.clean();}
+});
 test('one committed kit update changes the actual factory consumed through the built package seam',()=>{
   const f=fixture();try{
     writeVendor(f.repo,f.kit);assert.deepEqual(vendorDrift(f.repo,f.kit),[]);

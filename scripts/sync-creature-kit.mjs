@@ -17,6 +17,7 @@ import {dirname, join, resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {prepareKitPackage,applyKitUpdate,kitPackageDrift} from './creature-kit-package.mjs';
+import {prepareKitLab,kitLabDrift} from './creature-kit-lab.mjs';
 
 export const VENDOR_SCHEMA = 'creature-kit-vendor-1';
 const REPO = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -99,6 +100,7 @@ export function vendorDrift(repo = REPO, kitDir = null) {
     }
   }
   rows.push(...kitPackageDrift(repo,kitDir));
+  rows.push(...kitLabDrift(repo,kitDir));
   return rows;
 }
 
@@ -114,8 +116,9 @@ export function writeVendor(repo, kitDir) {
   const prepared=[];
   for(const p of VENDORED_PATHS){const src=join(kitDir,p);if(!existsSync(src))throw new Error(`${p}: missing in the kit at ${kitDir}`);prepared.push({path:p,text:lfText(src)});}
   const packageUpdate=prepareKitPackage(repo,kitDir),builtPackage=packageUpdate.manifest;
+  const labUpdate=prepareKitLab(repo,kitDir,builtPackage);
   if(commit!==builtPackage.kit.commit)throw new Error('kit commit changed during update');
-  const files = [],writes=[...packageUpdate.writes];
+  const files = [],writes=[...packageUpdate.writes,...labUpdate.writes];
   for (const p of VENDORED_PATHS) {
     const src = join(kitDir, p), dst = join(repo, p);
     if (!existsSync(src)) throw new Error(`${p}: missing in the kit at ${kitDir}`);
@@ -132,7 +135,7 @@ export function writeVendor(repo, kitDir) {
     builtPackage:{schema:builtPackage.schema,manifest:'vendor/creature-kit/PACKAGE.json',planetEntry:builtPackage.entrypoints.planet.default},
   };
   writes.push({path:VENDOR_JSON,text:`${JSON.stringify(vendor, null, 2)}\n`});
-  applyKitUpdate(repo,writes,packageUpdate.removes);
+  applyKitUpdate(repo,writes,[...packageUpdate.removes,...labUpdate.removes]);
   return vendor;
 }
 

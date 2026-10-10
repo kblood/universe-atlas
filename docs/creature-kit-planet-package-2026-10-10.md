@@ -33,10 +33,14 @@ accepts that record or a raw current genome without reseeding; incompatible
 genome versions require explicit migration. Standalone poses are deliberate
 inspection fixtures; the Kit page does not reinterpret world dates.
 
-Run Kit's `npm run lab:dev` for its independent page, or `npm run lab:build`
-for relative HTML/assets in `apps/creature-lab/dist/`, deployable under any
-subpath. Atlas's world-aware Lab continues to run inside the Atlas build.
-The Kit library package does not include the standalone app bundle.
+The **Independent Animal Lab** link opens `/animal-lab/planet-skin.html`.
+The same update command builds the committed Kit app into fresh staging and
+includes its self-contained HTML/assets in Atlas's `public/animal-lab/`.
+`vendor/creature-kit/LAB.json` pins app sources, artifact hashes, Vite version
+and the same exact Kit release/commit as the runtime package. Dirty, missing,
+failed, stale or malformed app inputs leave both package and app unchanged.
+Kit's `npm run lab:dev` and `npm run lab:build` remain independent workflows;
+the library package itself does not include the app bundle.
 
 Release 0.3.0 adds shared inspection/definition APIs and UI, with unchanged
 canonical genome/body versions. Kit's 65 focused core/inspector/Lab/boundary
