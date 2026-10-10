@@ -2,6 +2,7 @@
 export async function samplePlanetFrameWindow(page,{frames=180}={}){
  return page.evaluate(({frames})=>new Promise(resolve=>{
   const a=window.__atlas,renderer=a.renderDebug().renderer,gl=renderer.getContext(),ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');
+  const state=()=>{const t=a.travel,center=t.bodies.find(b=>b.id===a.state.body.id).positionM;return {date:a.date.offsetNs,bodyRelativeM:t.position.map((v,i)=>v-center[i]),cameraMatrix:[...a.renderDebug().camera.matrixWorld.elements]};},before=state();
   const original=renderer.render,queries=[],intervals=[],longFrames=[],gpu=new Map(),cpu=new Map(),expected=new Map(),received=new Map(),invalid=new Set();
   let frame=-3,previous=null,nested=false,disjoint=0,skippedQueries=0;
   renderer.render=function(...args){
@@ -17,7 +18,7 @@ export async function samplePlanetFrameWindow(page,{frames=180}={}){
   function finish(drains=0){collect();if(queries.length&&drains<30){requestAnimationFrame(()=>finish(drains+1));return;}
    for(const {q,frame} of queries){invalid.add(frame);gl.deleteQuery(q);}resolve({scope:'uncaptured desktop rAF intervals; GPU queries start/end synchronously around each outer renderer.render call and sum every measured render pass perframe; no interframe idle time inside queries',
     frameIntervalsMs:stats(intervals),renderCpuMs:stats([...cpu.values()]),gpuMs:stats([...gpu].filter(([f])=>!invalid.has(f)&&received.get(f)===expected.get(f)).map(([,ms])=>ms)),
-    disjoint,skippedQueries,invalidGpuFrames:invalid.size,longFrames,gpuTimerAvailable:!!ext});}
+    disjoint,skippedQueries,invalidGpuFrames:invalid.size,longFrames,gpuTimerAvailable:!!ext,before,after:state()});}
   function tick(now){collect();if(frame<0){frame++;previous=null;requestAnimationFrame(tick);return;}
    if(previous!==null){const delta=now-previous;intervals.push(delta);if(delta>250)longFrames.push({intervalMs:delta,backlog:a.perfSample().backlog});}previous=now;
    if(++frame>=frames){renderer.render=original;finish();return;}requestAnimationFrame(tick);
@@ -28,9 +29,10 @@ export async function samplePlanetFrameWindow(page,{frames=180}={}){
 /** Separate window: the app profiler owns GPU queries and full callback CPU. */
 export async function samplePlanetCpuWindow(page,{frames=180}={}){
  return page.evaluate(({frames})=>new Promise(resolve=>{const a=window.__atlas,renderer=a.renderDebug().renderer,autoReset=renderer.info.autoReset,wasEnabled=a.renderProfile.enabled,history=a.renderProfile.historyLimit;
+  const state=()=>{const t=a.travel,center=t.bodies.find(b=>b.id===a.state.body.id).positionM;return {date:a.date.offsetNs,bodyRelativeM:t.position.map((v,i)=>v-center[i]),cameraMatrix:[...a.renderDebug().camera.matrixWorld.elements]};},before=state();
   a.setProfiling(true);a.resetProfile();a.setProfileHistory(frames);let drain=3,count=0;
   function tick(){if(drain-->0){requestAnimationFrame(tick);return;}if(++count<frames){requestAnimationFrame(tick);return;}
-   const profile=a.renderProfile;const result={scope:'separate uncaptured window with native app profiler; cpu/frameWorkMs spans actual whole animation callback, GPU uses native non-overlapping pass queries',profile};
+   const profile=a.renderProfile;const result={scope:'separate uncaptured window with native app profiler; cpu/frameWorkMs spans actual whole animation callback, GPU uses native non-overlapping pass queries',profile,before,after:state()};
    a.setProfiling(wasEnabled);a.setProfileHistory(history);renderer.info.autoReset=autoReset;if(!wasEnabled)renderer.info.reset();resolve(result);
   }requestAnimationFrame(tick);
  }),{frames});

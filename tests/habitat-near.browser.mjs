@@ -14,12 +14,13 @@ const server=process.env.ATLAS_URL?null:await startDistPreview({dist:process.env
 const base=process.env.ATLAS_URL||server.base;
 const routeURL=params=>{const query=new URLSearchParams(params);for(const [key,value] of new URLSearchParams(process.env.HABITAT_QUERY||''))query.set(key,value);return base+'?'+query;};
 let lock,browser,page,phase='start';
-const report={ok:false,base,contention:process.env.HABITAT_GPU_WINDOW==='1'?'serialized desktop GPU window; no concurrent project CPU job by coordination, external host activity not excluded':'contended host; no performance acceptance',errors:[],worlds:[]};
+const report={ok:false,base,contention:['HABITAT_GPU_WINDOW','HABITAT_CPU_WINDOW','HABITAT_BOTH_WINDOWS'].some(key=>process.env[key]==='1')?'serialized desktop GPU window; no concurrent project CPU job by coordination, external host activity not excluded':'contended host; no performance acceptance',errors:[],worlds:[]};
 const replay=process.env.HABITAT_REPLAY?JSON.parse(await readFile(process.env.HABITAT_REPLAY,'utf8')):null;
 const nearReplay=process.env.HABITAT_NEAR_FIXTURE?JSON.parse(await readFile(process.env.HABITAT_NEAR_FIXTURE,'utf8')):null;
 const skipTiming=process.env.HABITAT_SKIP_TIMING==='1';
 const save=()=>writeFile(out+'/report.json',JSON.stringify(report,null,2));
 const wait=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout});
+const waitLodIdle=async()=>{if(process.env.HABITAT_REQUIRE_LOD_IDLE==='1')await wait(()=>{const p=window.__atlas.renderDebug().planet,d=p.faunaLod?.diagnostics();return d&&d.coldJobs===0&&d.pendingResults===0&&p.faunaLod.idle;},undefined,180000);};
 const snapshot=()=>page.evaluate(()=>{
   const a=window.__atlas,d=a?.terrain?.tiles,t=a?.travel,debug=a?.renderDebug(),p=debug?.planet;
   const center=t?.bodies?.find(b=>b.id===a.state.body?.id)?.positionM;
@@ -69,7 +70,7 @@ async function capture(label){phase=label;const state=await snapshot();await wri
   }
   await page.screenshot({path:out+'/'+label+'.png'});console.log(JSON.stringify({phase,body:state.body?.name,clearanceM:state.clearanceM,
     flora:state.tiles?.floraSubmittedCount,fauna:state.tiles?.faunaDrawn?.length,forest:state.tiles?.forest?.visible,meshes:state.meshCounts}));return state;}
-const frameWindow=()=>process.env.HABITAT_CPU_WINDOW==='1'?samplePlanetCpuWindow(page):process.env.HABITAT_GPU_WINDOW==='1'?samplePlanetFrameWindow(page):page.evaluate(()=>new Promise(resolve=>{
+const frameWindow=async()=>process.env.HABITAT_BOTH_WINDOWS==='1'?{externalGpu:await samplePlanetFrameWindow(page),native:await samplePlanetCpuWindow(page)}:process.env.HABITAT_CPU_WINDOW==='1'?samplePlanetCpuWindow(page):process.env.HABITAT_GPU_WINDOW==='1'?samplePlanetFrameWindow(page):page.evaluate(()=>new Promise(resolve=>{
   const intervals=[],longFrames=[];let previous=null,started=null,drain=2;
   function frame(){const now=performance.now();if(drain-->0){requestAnimationFrame(frame);return;}
     if(started===null){started=now;window.__atlas.setProfiling(true);window.__atlas.resetProfile();}
@@ -132,6 +133,7 @@ try{
     await wait(()=>{const d=window.__atlas.terrain?.tiles;return d?.surfaceReady&&d.lifePending===0&&d.faunaTerrainPending===0;},undefined,120000);
     await page.waitForTimeout(8000);
     await page.evaluate(()=>window.__atlas.setExplorationPaused(true));
+    await waitLodIdle();
     const start=await capture(`world-${index}-arrival80`),r=start.body.radiusM;
     if(process.env.HABITAT_REQUIRE_FOREST==='1'&&index===1&&!fixed){
       assert.ok(start.tiles.forest.visible>0&&start.cameraDraws.trees>0,'Find forest habitat shows actual main-camera trees without landing');
@@ -152,10 +154,12 @@ try{
       await page.evaluate(({p,q,h})=>window.__atlas.setPose(p,q,h),{p:eye.toArray(),q:heading.toArray(),h:clearance});
       await page.waitForTimeout(5000);
       await wait(()=>{const d=window.__atlas.terrain.tiles;return d.lifePending===0&&d.faunaTerrainPending===0;},undefined,120000);
+      await waitLodIdle();
       const state=await capture(`world-${index}-animal-flight${clearance}`);
       assert.ok(!state.walking&&!state.landing,'near view remains flight-only');
       world.views.push({clearance,state,frames:skipTiming?null:await frameWindow()});await save();
     }
+    if(process.env.HABITAT_SKIP_RANGE==='1')continue;
     const eye=new THREE.Vector3(...start.bodyRelativeM),rangeUp=eye.clone().normalize();
     const rangeRef=Math.abs(rangeUp.y)>.92?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
     const rangeTangent=new THREE.Vector3().crossVectors(rangeRef,rangeUp).normalize();

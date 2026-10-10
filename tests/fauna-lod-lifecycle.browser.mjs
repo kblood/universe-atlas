@@ -1,0 +1,26 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {startDistPreview,stopServer} from './helpers/free-port.mjs';
+import {acquireGpuLock} from './helpers/gpu-lock.mjs';
+import {auditFaunaCoverage} from './helpers/fauna-runtime-identity.mjs';
+import {CURRENT_VERSIONS,MODEL_MANIFEST_ID,encodeVersions} from '../src/time-nav.ts';
+const out=process.env.ATLAS_RESULTS||'test-results/fauna-lod-lifecycle';await mkdir(out,{recursive:true});const fixture=JSON.parse(await readFile('C:/LLM/IWSDK/Assets/_assetctl/life-presentation-20261009/baseline-flight/replay.json','utf8'));
+let server,lock,browser;const report={ok:false,errors:[],worlds:[],scope:'actual date pause/resume, reversed seek and UI disposal/revisit; no physical XR acceptance'};
+try{server=await startDistPreview({dist:process.env.ATLAS_DIST});report.build=server.build;lock=await acquireGpuLock({owner:'actual fauna LOD lifecycle acceptance',capture:true,retryMs:30000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
+ for(const world of fixture.worlds){const page=await browser.newPage({viewport:{width:1440,height:1000}});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
+  const pose=world.index===0?{...world.arrival,clearance:80}:world.views[0],params=new URLSearchParams({seed:'LETHRA-001',g:'G001',system:world.bodyId.split('/planet/')[0],body:world.bodyId,date:world.date,wv:encodeVersions(CURRENT_VERSIONS),mv:MODEL_MANIFEST_ID,'fauna-lod-prototype':'float'});
+  await page.goto(server.base+'?'+params);const waitReady=()=>page.waitForFunction(id=>window.__atlas?.ready&&window.__atlas.state.body?.id===id&&window.__atlas.terrain.tiles.ready,world.bodyId,{timeout:180000});await waitReady();
+  const settle=async()=>{await page.evaluate(({pose,date})=>{const a=window.__atlas;a.setExplorationPaused(true);a.seek(date);a.setPose(pose.p,pose.q,pose.clearance);},{pose,date:world.date});await page.waitForTimeout(5000);
+   await page.waitForFunction(()=>{const a=window.__atlas,p=a.renderDebug().planet,d=p.faunaLod?.diagnostics(),t=a.terrain.tiles;return d&&d.coldJobs===0&&d.pendingResults===0&&p.faunaLod.idle&&t.pending===0&&t.lifePending===0&&t.faunaTerrainPending===0;},undefined,{timeout:180000});};
+  const sample=()=>page.evaluate(()=>{const a=window.__atlas,p=a.renderDebug().planet,ids=a.terrain.tiles.faunaDrawn.map(x=>x.id);return {date:a.date.offsetNs,ids,trace:a.faunaTrace(ids),lod:a.faunaLodTrace(),pending:p.pending.size};});
+  await settle();const before=await sample();auditFaunaCoverage(before.lod.ownership,before.ids);assert(before.lod.ownership.some(x=>x.tier.startsWith('lod')&&x.high>x.low));
+  await page.waitForTimeout(1200);const paused=await sample();assert.deepEqual(paused.trace,before.trace,'paused canonical trace exact');assert.deepEqual(paused.lod.ownership,before.lod.ownership,'paused palette/pose-build ownership exact');
+  await page.evaluate(()=>window.__atlas.setExplorationPaused(false));await page.waitForTimeout(1200);await page.evaluate(()=>window.__atlas.setExplorationPaused(true));const resumed=await sample();assert.notEqual(resumed.date,before.date);auditFaunaCoverage(resumed.lod.ownership,resumed.ids);
+  await settle();const reversed=await sample();assert.deepEqual([...reversed.ids].sort(),[...before.ids].sort());assert.deepEqual(reversed.trace,before.trace,'reverse seek restores canonical positions/poses/census');auditFaunaCoverage(reversed.lod.ownership,reversed.ids);
+  await page.evaluate(()=>{const p=window.__atlas.renderDebug().planet;window.__heldLodPlanet=p;window.__heldLodController=p.faunaLod;});await page.locator('#back').click();await page.waitForFunction(()=>window.__atlas.state.level==='system'&&window.__heldLodPlanet.disposed,undefined,{timeout:90000});
+  const disposed=await page.evaluate(()=>({planet:window.__heldLodPlanet.disposed,attached:!!window.__heldLodPlanet.group.parent,adapter:window.__heldLodController.adapter.diagnostics()}));assert(disposed.planet&&!disposed.attached);assert(disposed.adapter.disposed);assert.equal(disposed.adapter.workerActive,false);assert.equal(disposed.adapter.bindings,0);assert.equal(disposed.adapter.pendingJobs,0);
+  await page.locator(`[data-select="${world.bodyId}"]`).first().click();await page.keyboard.press('f');await waitReady();await settle();const revisited=await sample();assert.deepEqual([...revisited.ids].sort(),[...before.ids].sort());assert.deepEqual(revisited.trace,before.trace,'revisit restores canonical positions/poses/census');auditFaunaCoverage(revisited.lod.ownership,revisited.ids);
+  report.worlds.push({world:world.bodyId,before,paused,resumed,reversed,disposed,revisited});await writeFile(out+'/report.json',JSON.stringify(report,null,2));await page.close();
+ }assert.deepEqual(report.errors,[]);report.ok=true;
+}finally{await browser?.close();await lock?.release();if(server)await stopServer(server.child);await writeFile(out+'/report.json',JSON.stringify(report,null,2));}
