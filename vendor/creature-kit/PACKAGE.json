@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.5.0",
-    "commit": "4a5630fab9b0027ea1825fae18f5afb2cb305928",
+    "version": "0.6.0",
+    "commit": "83af8ab7ce19da09d986a7e592e20aa8c40a124a",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "0470338c46915012b13580a2ad35022d99a5f0b20838dde12e08b3134d0a3165"
+      "sha256": "811b0ae89a63a56782e32d657c2d8cdbefa6ac1f9a32eda2813dce8c733f9c34"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -115,15 +115,19 @@
     },
     {
       "path": "src/planet-v1/fauna-body-plan.ts",
-      "sha256": "77accde0cd12f35a1526cb20634ddff51f77441f197bfa061c983126a6dd2bee"
+      "sha256": "05635ccdf0570308dd052b2fb476e383141acfbbe17851cf0cf9d8512f3146ea"
     },
     {
       "path": "src/planet-v1/fauna-face.ts",
-      "sha256": "b17cac85f5a8432382760ea06dc83a7a36792230c74ba737f95d51a498d65132"
+      "sha256": "ed80698192057d89af28613c1bd86d1d1062ed28cad2a766726ae38e52854a37"
     },
     {
       "path": "src/planet-v1/fauna-locomotion.ts",
       "sha256": "0f86b30c52a636960a17654184d60655dbede176e2d217516751cff59eeee7fe"
+    },
+    {
+      "path": "src/planet-v1/fauna-sculpted-plan.ts",
+      "sha256": "00b27210948cf98df4fe7a54e6d0adf6db38fcebf16155d51ee7811956a1cf01"
     },
     {
       "path": "src/planet-v1/fauna-structural-appendages.ts",
@@ -135,7 +139,7 @@
     },
     {
       "path": "src/planet-v1/inspector.ts",
-      "sha256": "7f3d90cef724442ad19b1edc3184e1c6a89907277888231fc2a636da17c06fa6"
+      "sha256": "6c4ccdb4aa9038e8861e25340edcf4f662d43cdcc061284598c99eef24d9e653"
     },
     {
       "path": "tsconfig.build.json",
@@ -313,11 +317,11 @@
     },
     {
       "path": "dist/planet-v1/fauna-body-plan.d.ts",
-      "sha256": "4bb940be8981df1ff18c3bf3aa569fac044138e4b175682fec495b3e210d926f"
+      "sha256": "ee6367f492a4cd81c1772909334f4ce3c3218f074ad6ee266b6a3f586150dac6"
     },
     {
       "path": "dist/planet-v1/fauna-body-plan.js",
-      "sha256": "d1619ed6c5ad192d48e56242e521adbd1ac6239d1ca049920feb7187d3ee57b7"
+      "sha256": "1e8025242b5e7b1c536e55679c980175a47d1e764fad51e2cd0273c3b358125a"
     },
     {
       "path": "dist/planet-v1/fauna-face.d.ts",
@@ -325,7 +329,7 @@
     },
     {
       "path": "dist/planet-v1/fauna-face.js",
-      "sha256": "c7b30c9894003530f644a63c8d4e1884cb003db1a527a6cdc7d4af1040144627"
+      "sha256": "749bc53d1f65bb16727f6ecf8dbe1b3235d696f0f088310ee361cc884fc25c02"
     },
     {
       "path": "dist/planet-v1/fauna-locomotion.d.ts",
@@ -334,6 +338,14 @@
     {
       "path": "dist/planet-v1/fauna-locomotion.js",
       "sha256": "fa14919ee30319e38f9a5e2b7837863aa2c5eb508c59f064fb7f3e231e600c94"
+    },
+    {
+      "path": "dist/planet-v1/fauna-sculpted-plan.d.ts",
+      "sha256": "c7c9fbb3643e7bfa1ceb436ee99ce824a64f19c9c0cc6f6684f5a4b184cae303"
+    },
+    {
+      "path": "dist/planet-v1/fauna-sculpted-plan.js",
+      "sha256": "f0b162a61b774f6e2055dca3234f4d34d7b61d513c1ba8a88cee5dc3c7dfb5b6"
     },
     {
       "path": "dist/planet-v1/fauna-structural-appendages.d.ts",
@@ -353,15 +365,15 @@
     },
     {
       "path": "dist/planet-v1/inspector.d.ts",
-      "sha256": "dcc99026038859359afc60494fc1c4893252a86cb9942f2d7850f23c2acd5aa0"
+      "sha256": "5c10b76572d2fbfd3852517e30d8a2cd7d4b2d6d53cd39e5b4d8508f0928f7b7"
     },
     {
       "path": "dist/planet-v1/inspector.js",
-      "sha256": "26e5558c9a4b478147c0952d8199442a949359f614d3849d9499153df6fbd803"
+      "sha256": "6fdf5c25e272985f1bc56a5997ab4406d42a2b1bde964dd9a02050cddfcd46c7"
     },
     {
       "path": "package.json",
-      "sha256": "0470338c46915012b13580a2ad35022d99a5f0b20838dde12e08b3134d0a3165"
+      "sha256": "811b0ae89a63a56782e32d657c2d8cdbefa6ac1f9a32eda2813dce8c733f9c34"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -445,15 +457,19 @@
     },
     {
       "path": "src/planet-v1/fauna-body-plan.ts",
-      "sha256": "77accde0cd12f35a1526cb20634ddff51f77441f197bfa061c983126a6dd2bee"
+      "sha256": "05635ccdf0570308dd052b2fb476e383141acfbbe17851cf0cf9d8512f3146ea"
     },
     {
       "path": "src/planet-v1/fauna-face.ts",
-      "sha256": "b17cac85f5a8432382760ea06dc83a7a36792230c74ba737f95d51a498d65132"
+      "sha256": "ed80698192057d89af28613c1bd86d1d1062ed28cad2a766726ae38e52854a37"
     },
     {
       "path": "src/planet-v1/fauna-locomotion.ts",
       "sha256": "0f86b30c52a636960a17654184d60655dbede176e2d217516751cff59eeee7fe"
+    },
+    {
+      "path": "src/planet-v1/fauna-sculpted-plan.ts",
+      "sha256": "00b27210948cf98df4fe7a54e6d0adf6db38fcebf16155d51ee7811956a1cf01"
     },
     {
       "path": "src/planet-v1/fauna-structural-appendages.ts",
@@ -465,7 +481,7 @@
     },
     {
       "path": "src/planet-v1/inspector.ts",
-      "sha256": "7f3d90cef724442ad19b1edc3184e1c6a89907277888231fc2a636da17c06fa6"
+      "sha256": "6c4ccdb4aa9038e8861e25340edcf4f662d43cdcc061284598c99eef24d9e653"
     }
   ]
 }

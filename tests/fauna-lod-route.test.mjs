@@ -2,6 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {lifeRendererModule,runLifeScenario,digestPoses,createRenderer,body} from './life-scenario.mjs';
 
+test('versioned body switches to legacy in XR and back without changing the planet, terrain or canonical animals',async()=>{
+  const fixture=await lifeRendererModule({prefix:'fauna-body-style-'}),pose={...digestPoses()[0],clearanceM:80,pitchDeg:-15};
+  try{await runLifeScenario(fixture.module,[pose],{rendererOptions:{faunaBodyPresentation:'sculpted-v1'},onFrame(_i,r){
+    assert.equal(r.faunaNear.presentation,'sculpted-v1');const terrain=r.patches,worldBody=r.body,group=r.group;
+    const canonical=r.faunaDrawn.map(x=>({id:x.id,genome:x.genome,position:x.position}));
+    r.setFaunaLodImmersive(true);assert.equal(r.faunaNear.presentation,'legacy-v4');assert.equal(r.faunaLod,null);
+    r.setFaunaLodImmersive(false);assert.equal(r.faunaNear.presentation,'sculpted-v1');
+    assert.equal(r.patches,terrain);assert.equal(r.body,worldBody);assert.equal(r.group,group);
+    assert.deepEqual(r.faunaDrawn.map(x=>({id:x.id,genome:x.genome,position:x.position})),canonical);return false;
+  }});}finally{await fixture.cleanup();}
+});
+
 test('production-route opt-in preserves canonical population/poses, wakes paused work, and keeps fallback on refused adoption',async()=>{
   const fixture=await lifeRendererModule({prefix:'fauna-lod-route-'}),m=fixture.module,jobs=[],traces=[];
   const prototype=m.PlanetRenderer.prototype,original=prototype.submitFauna;

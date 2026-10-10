@@ -2,6 +2,8 @@ import { quadrupedFaceBuildSteps } from "./fauna-face.js";
 import { FAUNA_APPEARANCE_VERSION, sampleFaunaCoat, sampleFaunaCoatWithPatternMask, sampleFaunaCoatWithRawPatternMask, faunaPreparedCoatContextInto } from "./fauna-appearance.js";
 import { coatPatternProbe } from "../fauna-coat-fields.js";
 import { appendFaunaStructuralFeatures } from "./fauna-structural-appendages.js";
+import { sculptQuadrupedPlan, removeTailSamplingDust, QUADRUPED_SCULPTED_BODY_VERSION } from "./fauna-sculpted-plan.js";
+export { QUADRUPED_SCULPTED_BODY_VERSION } from "./fauna-sculpted-plan.js";
 export const QUADRUPED_BODY_VERSION = 'quadruped-body-4';
 export const QUADRUPED_BONE_NAMES = [
     'root', 'pelvis', 'spine', 'chest', 'neck1', 'neck2', 'head', 'tail1', 'tail2', 'tail3',
@@ -43,7 +45,9 @@ export function ankleFromToe(toe, forward, up, length, angle) {
     const f = norm(sub(forward, scale(up, dot(forward, up))));
     return add(add(toe, scale(f, -length * Math.cos(angle))), scale(up, length * Math.sin(angle)));
 }
-export function createQuadrupedPlan(genome) {
+export function createQuadrupedPlan(genome, options = {}) {
+    if (options.presentation !== undefined && options.presentation !== 'legacy-v4' && options.presentation !== 'sculpted-v1')
+        throw new Error('Unsupported quadruped body presentation; migrate explicitly');
     const g = genome;
     for (const field of ['torsoLength', 'torsoHeight', 'torsoWidth', 'legLength', 'upperLegFraction', 'stanceWidth', 'neckLength', 'neckRise', 'headLength', 'headWidth', 'tailLength', 'footLength', 'footWidth', 'strideLength'])
         if (!Number.isFinite(g?.[field]) || g[field] < 0)
@@ -179,8 +183,9 @@ export function createQuadrupedPlan(genome) {
         }
     }
     const eyes = [-1, 1].map(side => [neckTip[0] + HL * .3, neckTip[1] + HW * .2, side * HW * .36]);
-    return { version: QUADRUPED_BODY_VERSION, genome: g, bones, legs, torsoY, neckBase, neckTip, headCentre, muzzleTip, eyes, tailBase, tailTip, primitives, appendages,
+    const plan = { version: QUADRUPED_BODY_VERSION, genome: g, bones, legs, torsoY, neckBase, neckTip, headCentre, muzzleTip, eyes, tailBase, tailTip, primitives, appendages,
         gait: { duty, liftM, strideM }, grazeClearanceM: HW * .5 + .02 };
+    return options.presentation === 'sculpted-v1' ? sculptQuadrupedPlan(plan) : plan;
 }
 // ---------------------------------------------------------------------------
 // Signed distance fields (negative inside).
@@ -410,8 +415,8 @@ export function createQuadrupedBodyPatternSampler(source, options = {}) {
 // ---------------------------------------------------------------------------
 /** Resumable build. Each `yield` is a bounded unit of work (one volume, a few
  * grid slices, or a vertex batch), so callers can respect a frame budget. */
-export function* quadrupedBodyBuildSteps(genome) {
-    const plan = createQuadrupedPlan(genome);
+export function* quadrupedBodyBuildSteps(genome, options = {}) {
+    const plan = createQuadrupedPlan(genome, options), sculpted = plan.version === QUADRUPED_SCULPTED_BODY_VERSION;
     const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
     let minFeature = Infinity;
     for (const p of plan.primitives) {
@@ -509,7 +514,43 @@ export function* quadrupedBodyBuildSteps(genome) {
         if (k % 8 === 7)
             yield;
     }
+    const surfaceCleanup = sculpted ? removeTailSamplingDust(positions, indices, plan, cell) : undefined;
     const bodyVertexCount = positions.length / 3, bodyTriangleCount = indices.length / 3;
+    const fieldAt = (x, y, z) => {
+        const gx = clamp((x - origin[0]) / cell, 0, nx - 1.00001), gy = clamp((y - origin[1]) / cell, 0, ny - 1.00001), gz = clamp((z - origin[2]) / cell, 0, nz - 1.00001);
+        const ix = Math.floor(gx), iy = Math.floor(gy), iz = Math.floor(gz), tx = gx - ix, ty = gy - iy, tz = gz - iz;
+        let value = 0;
+        for (let k = 0; k < 2; k++)
+            for (let j = 0; j < 2; j++)
+                for (let i = 0; i < 2; i++)
+                    value += field[ix + i + nx * (iy + j + ny * (iz + k))] * (i ? tx : 1 - tx) * (j ? ty : 1 - ty) * (k ? tz : 1 - tz);
+        return value;
+    };
+    // Thin distal tails are below a cell across in some inherited genomes.
+    // Their exact analytic field avoids interpolation stairs, while the torso
+    // and limbs reuse the already resident grid at constant sampling cost.
+    const surfaceAt = (x, y, z) => x < plan.tailBase[0] - genome.torsoLength * .09
+        ? quadrupedBodyDistance(plan, x, y, z) : fieldAt(x, y, z);
+    // Surface-net vertices are means of grid crossings and lie inside curved
+    // forms. Project the new presentation a bounded distance toward its actual
+    // smooth field. This retains connectivity/counts and avoids a denser grid.
+    if (sculpted)
+        for (let v = 0; v < bodyVertexCount; v++) {
+            const o = v * 3, e = cell * .5;
+            const x = positions[o], y = positions[o + 1], z = positions[o + 2];
+            const dx = surfaceAt(x + e, y, z) - surfaceAt(x - e, y, z);
+            const dy = surfaceAt(x, y + e, z) - surfaceAt(x, y - e, z);
+            const dz = surfaceAt(x, y, z + e) - surfaceAt(x, y, z - e);
+            const magnitude = Math.hypot(dx, dy, dz);
+            const move = clamp(surfaceAt(x, y, z), -cell * .35, cell * .35);
+            if (magnitude > 1e-10) {
+                positions[o] = x - move * dx / magnitude;
+                positions[o + 1] = y - move * dy / magnitude;
+                positions[o + 2] = z - move * dz / magnitude;
+            }
+            if (v % 1500 === 1499)
+                yield;
+        }
     // Appendages: rigid lathe cones rooted inside the skull, weighted to the head.
     const appendageStart = bodyVertexCount, appendageKinds = [], appendageAlong = [];
     for (const a of plan.appendages) {
@@ -527,7 +568,7 @@ export function* quadrupedBodyBuildSteps(genome) {
         for (const [t, r] of rings)
             for (let s = 0; s < segments; s++) {
                 const angle = s / segments * Math.PI * 2, rr = a.radius * r;
-                const cup = ear ? a.radius * .25 * Math.sin(Math.PI * t) * Math.cos(angle) ** 2 : 0;
+                const cup = ear ? a.radius * (sculpted ? .5 : .25) * Math.sin(Math.PI * t) * Math.cos(angle) ** 2 : 0;
                 positions.push(...add(lerp3(a.base, a.tip, t), add(scale(u, Math.cos(angle) * rr), scale(v, Math.sin(angle) * rr * flat + cup))));
                 appendageKinds[positions.length / 3 - 1 - appendageStart] = ear && Math.sin(angle) > .1 && t > 0 ? 'inner-ear' : a.kind;
                 appendageAlong[positions.length / 3 - 1 - appendageStart] = t;
@@ -569,10 +610,20 @@ export function* quadrupedBodyBuildSteps(genome) {
         }
     }
     for (let v = 0; v < vertexCount; v++) {
+        if (sculpted && v < bodyVertexCount) {
+            // Field-gradient normals remove lattice-shaped highlights on the
+            // shoulders/skull. The legacy accumulated normals remain byte exact.
+            const o = v * 3, e = cell * .7, x = positions[o], y = positions[o + 1], z = positions[o + 2];
+            normals[o] = surfaceAt(x + e, y, z) - surfaceAt(x - e, y, z);
+            normals[o + 1] = surfaceAt(x, y + e, z) - surfaceAt(x, y - e, z);
+            normals[o + 2] = surfaceAt(x, y, z + e) - surfaceAt(x, y, z - e);
+        }
         const l = Math.hypot(normals[v * 3], normals[v * 3 + 1], normals[v * 3 + 2]) || 1;
         normals[v * 3] /= l;
         normals[v * 3 + 1] /= l;
         normals[v * 3 + 2] /= l;
+        if (sculpted && v % 1500 === 1499)
+            yield;
     }
     yield;
     // Skin weights: each volume influences vertices within its blend band of
@@ -657,10 +708,10 @@ export function* quadrupedBodyBuildSteps(genome) {
             yield;
     }
     const index = vertexCount > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
-    return { plan, positions: positionArray, normals, colors, skinIndex, skinWeight, index, bodyVertexCount, bodyTriangleCount, vertexCount, triangleCount: indices.length / 3, cellM: cell, grid: [nx, ny, nz], faceFeatures, structuralVertexCount, structuralTriangleCount };
+    return { plan, positions: positionArray, normals, colors, skinIndex, skinWeight, index, bodyVertexCount, bodyTriangleCount, vertexCount, triangleCount: indices.length / 3, cellM: cell, grid: [nx, ny, nz], faceFeatures, structuralVertexCount, structuralTriangleCount, ...(surfaceCleanup ? { surfaceCleanup } : {}) };
 }
-export function buildQuadrupedBody(genome) {
-    const steps = quadrupedBodyBuildSteps(genome);
+export function buildQuadrupedBody(genome, options = {}) {
+    const steps = quadrupedBodyBuildSteps(genome, options);
     for (;;) {
         const next = steps.next();
         if (next.done)

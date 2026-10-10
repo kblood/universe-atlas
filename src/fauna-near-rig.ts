@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { CreatureGenome } from './creature-model.ts';
+import type {QuadrupedBodyPresentation} from '#creature-kit/planet';
 import { QUADRUPED_BONE_NAMES, QUADRUPED_BONE_PARENTS, quadrupedBodyBuildSteps, quadrupedBodyBytes, type QuadrupedBodyData, type QuadrupedPlan } from './fauna-body-plan.ts';
 import { quadrupedPoseAt, type FaunaGround, type FaunaPathMember, type QuadrupedPose } from './fauna-locomotion.ts';
 import type { FaunaMemberActivity } from './fauna-runtime.ts';
@@ -57,6 +58,7 @@ export interface FaunaNearCandidate {
   behaviour?: 'auto' | 'feed' | 'alert';
 }
 export interface FaunaNearOptions {
+  presentation?:QuadrupedBodyPresentation;
   capacity?: number; cacheSize?: number; buildBudgetMs?: number;
   enterM?: number; exitM?: number; now?: () => number;
   /** Rig <-> proxy cross-fade seconds; 0 (default) keeps the former hard swap. */
@@ -88,6 +90,7 @@ export function faunaBodyGeometry(data: QuadrupedBodyData): THREE.BufferGeometry
 }
 
 export class FaunaNearRigs {
+  readonly presentation:QuadrupedBodyPresentation;
   readonly group = new THREE.Group();
   readonly capacity: number;
   private readonly cacheSize: number;
@@ -122,6 +125,8 @@ export class FaunaNearRigs {
   private stats = { builds: 0, failures: 0, evictions: 0, abandoned: 0, fallbacks: 0, buildMs: 0 };
 
   constructor(options: FaunaNearOptions = {}) {
+    this.presentation=options.presentation??'legacy-v4';
+    if(this.presentation!=='legacy-v4'&&this.presentation!=='sculpted-v1')throw new Error('Unsupported near animal presentation');
     this.capacity = Math.max(0, Math.floor(options.capacity ?? FAUNA_NEAR_RIG_CAPACITY));
     this.cacheSize = Math.max(this.capacity, Math.floor(options.cacheSize ?? FAUNA_NEAR_GEOMETRY_CACHE));
     this.budgetMs = options.buildBudgetMs ?? FAUNA_NEAR_BUILD_BUDGET_MS;
@@ -325,7 +330,7 @@ export class FaunaNearRigs {
   private advanceBuild(wanted: FaunaNearCandidate | null) {
     // Abandon a build nobody currently wants; start the most important missing body.
     if (this.build && this.build.id !== wanted?.member.id) { this.build = null; this.stats.abandoned++; }
-    if (!this.build && wanted) this.build = { id: wanted.member.id, steps: quadrupedBodyBuildSteps(wanted.genome) };
+    if (!this.build && wanted) this.build = { id: wanted.member.id, steps: quadrupedBodyBuildSteps(wanted.genome,{presentation:this.presentation}) };
     const build = this.build;
     if (!build) return;
     const start = this.now();

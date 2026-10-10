@@ -2,6 +2,8 @@ import type { CreatureGenome } from './creature-model.ts';
 import { type FaunaFaceFeature } from './fauna-face.ts';
 import type { CoatRegion } from '../fauna-coat-vocab.ts';
 import { type CoatSample, type CoatGenome } from '../fauna-coat-fields.ts';
+import { type QuadrupedBodyOptions } from './fauna-sculpted-plan.ts';
+export { QUADRUPED_SCULPTED_BODY_VERSION, type QuadrupedBodyOptions, type QuadrupedBodyPresentation } from './fauna-sculpted-plan.ts';
 /**
  * One continuous, skinned quadruped body plan derived from an existing
  * creature genome. The anatomy is a smooth union of genome-sized volumes
@@ -131,6 +133,12 @@ export interface QuadrupedBodyData {
     faceFeatures: FaunaFaceFeature[];
     structuralVertexCount: number;
     structuralTriangleCount: number;
+    /** Sculpted presentation only: explicit bounded removal of sub-cell tail dust. */
+    surfaceCleanup?: {
+        removedTailIslands: number;
+        removedVertices: number;
+        removedTriangles: number;
+    };
 }
 /** Two-bone analytic IK. `pole` is the direction the middle joint bends toward.
  * `reachError` is the distance the target was clamped by to stay reachable. */
@@ -142,7 +150,7 @@ export declare function solveTwoBone(root: Vec3, target: Vec3, upper: number, lo
 /** Ankle position for a toe resting on a plane with normal `up`, the foot
  * segment pitched `angle` above the plane along the plane-projected `forward`. */
 export declare function ankleFromToe(toe: Vec3, forward: Vec3, up: Vec3, length: number, angle: number): Vec3;
-export declare function createQuadrupedPlan(genome: CreatureGenome): QuadrupedPlan;
+export declare function createQuadrupedPlan(genome: CreatureGenome, options?: QuadrupedBodyOptions): QuadrupedPlan;
 export declare function primitiveDistance(p: QuadrupedPrimitive, x: number, y: number, z: number): number;
 /** The complete body field, evaluated exactly as the grid accumulates it. */
 export declare function quadrupedBodyDistance(plan: QuadrupedPlan, x: number, y: number, z: number): number;
@@ -182,8 +190,7 @@ export declare function createQuadrupedBodyPatternSampler(source: Readonly<Quadr
 };
 /** Resumable build. Each `yield` is a bounded unit of work (one volume, a few
  * grid slices, or a vertex batch), so callers can respect a frame budget. */
-export declare function quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void, QuadrupedBodyData, void>;
-export declare function buildQuadrupedBody(genome: CreatureGenome): QuadrupedBodyData;
+export declare function quadrupedBodyBuildSteps(genome: CreatureGenome, options?: QuadrupedBodyOptions): Generator<void, QuadrupedBodyData, void>;
+export declare function buildQuadrupedBody(genome: CreatureGenome, options?: QuadrupedBodyOptions): QuadrupedBodyData;
 /** Resident bytes for one CPU copy of a body's attributes and index. */
 export declare function quadrupedBodyBytes(data: QuadrupedBodyData): number;
-export {};

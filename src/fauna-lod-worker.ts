@@ -2,11 +2,11 @@ import * as planet from '#creature-kit/planet';
 import {createFaunaPackedWorkerAdapter,faunaPackedPayloadTransfers} from './fauna-packed-worker-adapter.ts';
 import type {FaunaLodBuildJob} from './fauna-lod-controller.ts';
 const worker=self as unknown as DedicatedWorkerGlobalScope;
-worker.onmessage=async({data}:{data:{job:FaunaLodBuildJob;basisStorage:'float32'|'packed-snorm16';providerVersion:string}})=>{
+worker.onmessage=async({data}:{data:{job:FaunaLodBuildJob;basisStorage:'float32'|'packed-snorm16';presentation?:'legacy-v4'|'sculpted-v1';providerVersion:string}})=>{
   let source=data.job.loadedSource;
   try{
     const provider={version:data.providerVersion,
-      quadrupedBodyBuildSteps:planet.quadrupedBodyBuildSteps,
+      quadrupedBodyBuildSteps(genome:planet.CreatureGenome){return planet.quadrupedBodyBuildSteps(genome,{presentation:data.presentation??'legacy-v4'});},
       createQuadrupedBodyPatternSampler(body:Parameters<typeof planet.createQuadrupedBodyPatternSampler>[0],options:{rawLayers:true}){source=body as typeof source;return planet.createQuadrupedBodyPatternSampler(body,options);}};
     const adapter=createFaunaPackedWorkerAdapter(provider,{basisStorage:data.basisStorage});
     const result=await adapter.build(data.job,new AbortController().signal);

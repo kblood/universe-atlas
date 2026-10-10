@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { type QuadrupedBodyData } from './fauna-body-plan.ts';
+import { type QuadrupedBodyData, type QuadrupedBodyPresentation } from './fauna-body-plan.ts';
 import { type FaunaGround, type FaunaPoseOptions } from './fauna-locomotion.ts';
 import type { CreatureGenome } from './creature-model.ts';
 import type { PlanetFaunaPathMember, PlanetFaunaActivity } from './caller-contract.ts';
@@ -28,6 +28,8 @@ export interface PlanetInspectorOptions {
     ground?: FaunaGround;
     material?: THREE.MeshStandardMaterial;
     ownsMaterial?: boolean;
+    /** Explicit surface revision; omitted retains the frozen body-4 contract. */
+    presentation?: QuadrupedBodyPresentation;
     /** Presentation extension point; source position/colour/weight buffers stay
      * owned by this body. A rest-space coat can add separate attributes here. */
     prepareGeometry?: (geometry: THREE.BufferGeometry, body: QuadrupedBodyData) => void;

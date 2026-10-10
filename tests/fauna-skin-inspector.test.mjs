@@ -8,10 +8,10 @@ import {faunaMemberActivityAtWorldNs,faunaRigSecondsAt} from '../src/fauna-runti
 import {CATALOGUE_EPOCH_NS} from '../src/world-time.ts';
 
 test('shared Kit inspection matches production pool geometry, skinning matrices and feet for dated and explicit poses',()=>{
-  for(const archetype of ['runner','long-neck'])for(const mode of ['dated','idle','walk','feed']){
+  for(const presentation of ['legacy-v4','sculpted-v1'])for(const archetype of ['runner','long-neck'])for(const mode of ['dated','idle','walk','feed']){
     const id=`inspector-parity/${archetype}/${mode}`,genome=realisticIndividualCreatureGenome(generateCreatureGenome('INSPECTOR-PARITY',archetype),id,0,'adult');
     const radius=Math.max(6,genome.torsoLength*3),member={id,archetype,genomeSeed:id,variant:0,stage:'adult',anchorOffsetX:0,anchorOffsetZ:0,orbitRadiusM:radius,orbitAngularSpeed:genome.walkSpeed/radius,orbitPhase:0,gaitPeriodS:6};
-    const inspector=createFaunaSkinInspector(genome,id,{pose:mode}),pool=new FaunaNearRigs({capacity:1,cacheSize:1,now:()=>0});
+    const inspector=createFaunaSkinInspector(genome,id,{pose:mode,presentation}),pool=new FaunaNearRigs({presentation,capacity:1,cacheSize:1,now:()=>0});
     const candidate={member,genome,distanceM:0,matrix:new THREE.Matrix4(),ground:()=>0,activity:faunaMemberActivityAtWorldNs(member,CATALOGUE_EPOCH_NS),rigSeconds:0};
     try{
       pool.update([candidate]);pool.update([candidate]);const original=pool.meshOf(id),shared=inspector.group.children.find(o=>o.isSkinnedMesh);assert.ok(original&&shared);

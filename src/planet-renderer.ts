@@ -446,6 +446,8 @@ export const LOW_FLIGHT_CLEARANCE_M=19500;
  * scenario leaves it off, and the change gets its own behavioural test
  * (tests/life-continuity-scenario.test.mjs; decision D1, 2026-10-07). */
 export interface PlanetRendererOptions{
+  /** Versioned skin presentation; canonical genomes and locomotion stay unchanged. */
+  faunaBodyPresentation?:'legacy-v4'|'sculpted-v1';
   /** Scoped byte/state-exact bark texture sharing. Off until native pixel,
    * shadow, resource and lifetime acceptance passes. */
   forestBarkSharing?:boolean;
@@ -723,6 +725,8 @@ export class PlanetRenderer {
    * renderer's origin-relative group, with the instanced batch as fallback.
    * Built in the constructor: its cross-fade follows `presentationContinuity`. */
   private faunaNear:FaunaNearRigs;
+  private faunaBodyPresentation:'legacy-v4'|'sculpted-v1'='legacy-v4';
+  private faunaEffectiveBodyPresentation:'legacy-v4'|'sculpted-v1'='legacy-v4';
   private faunaLod:FaunaLodController|null=null;
   private faunaLodContext:FaunaLodContext|null=null;
   private faunaLodFactory:PlanetRendererOptions['faunaLodPrototype'];
@@ -865,6 +869,8 @@ export class PlanetRenderer {
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
     this.faunaBodyPlan=options.faunaBodyPlan!==false;this.faunaLodFactory=options.faunaLodPrototype;
+    this.faunaBodyPresentation=options.faunaBodyPresentation??'legacy-v4';
+    if(this.faunaBodyPresentation!=='legacy-v4'&&this.faunaBodyPresentation!=='sculpted-v1')throw new Error('Unsupported planetary animal presentation');
     this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:this.faunaBodyPlan});
     this.extendedFlora=options.extendedFlora??this.continuity;
     // Audit F4: shadows fade out toward the edge of the surface shadow window.
@@ -1271,7 +1277,7 @@ export class PlanetRenderer {
     if (this.disposed) return;
     this.immersiveBudget=immersive;
     this.lifeContext = life;
-    if(this.faunaLodFactory)this.setFaunaLodImmersive(immersive,false,!this.faunaLodLifeEligible());
+    if(this.faunaLodFactory||this.faunaBodyPresentation!=='legacy-v4')this.setFaunaLodImmersive(immersive,false,!this.faunaLodLifeEligible());
     const started=performance.now();
     this.frame++;
     const waterBucket=waterLevelBucket(waterLevelM), snappedWaterLevelM=waterBucket*WATER_LEVEL_BUCKET_M;
@@ -1869,18 +1875,21 @@ export class PlanetRenderer {
   private syncFaunaLodContext(){if(this.faunaLod&&this.faunaLodContext){this.faunaLodContext.lifeSignature=this.lifeSignature;this.faunaLodTiers.setContext(this.faunaLodContext);this.faunaLod.setContext(this.faunaLodContext);}}
   private setFaunaLodImmersive(immersive:boolean,allowCreate=false,suspend=false){
     if(immersive)this.faunaLodInitError=null;
-    const enabled=!!this.faunaLodFactory&&!immersive&&!suspend&&this.faunaLodLifeEligible()&&(!!this.faunaLod||allowCreate);if(enabled===!!this.faunaLod)return;
-    if(enabled){
+    const nextPresentation=immersive?'legacy-v4':this.faunaBodyPresentation;
+    const enabled=!!this.faunaLodFactory&&!immersive&&!suspend&&this.faunaLodLifeEligible()&&(!!this.faunaLod||allowCreate);
+    if(enabled===!!this.faunaLod&&nextPresentation===this.faunaEffectiveBodyPresentation)return;
+    if(enabled&&!this.faunaLod){
       if(this.faunaLodInitError)return;
       let spec:ReturnType<NonNullable<PlanetRendererOptions['faunaLodPrototype']>>|null=null;
       try{spec=this.faunaLodFactory!();const accepted=spec;
         this.faunaLod=new FaunaLodController(accepted.adapter,{...accepted.controller,onReady:()=>{this.faunaFrameKeyValid=false;accepted.controller?.onReady?.();}});
         this.faunaLodContext={planetId:this.body.id,lifeSignature:'',dateVersion:accepted.sourceVersion,appearanceVersion:accepted.appearanceVersion};
       }catch(error){spec?.adapter.dispose();this.faunaLod=null;this.faunaLodContext=null;this.faunaLodInitError=String(error);return;}
-    }else{this.faunaLod?.dispose();this.faunaLod=null;this.faunaLodContext=null;}
+    }else if(!enabled){this.faunaLod?.dispose();this.faunaLod=null;this.faunaLodContext=null;}
+    this.faunaEffectiveBodyPresentation=nextPresentation;
     this.faunaNear.dispose();this.faunaRenderer.dispose();
     this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:this.faunaBodyPlan,complementaryCoverage:enabled});
-    this.faunaNear=new FaunaNearRigs(enabled?{}:this.continuity?{crossFade:true}:{});
+    this.faunaNear=new FaunaNearRigs({presentation:nextPresentation,...(!enabled&&this.continuity?{crossFade:true}:{})});
     this.faunaRenderer.group.add(this.faunaNear.group);if(this.faunaLod)this.faunaRenderer.group.add(this.faunaLod.group);this.group.add(this.faunaRenderer.group);
     this.faunaRenderer.group.traverse(object=>{if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,this.body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform,object.userData.localAerialSurfaceHit);});
     this.faunaLodPool.length=0;this.faunaLodList.length=0;this.faunaLodTiers.clear();this.faunaNearList.length=0;this.faunaNearPool.length=0;this.faunaRigged=new Set();
@@ -2438,7 +2447,7 @@ export class PlanetRenderer {
         lifeReserveBytes:LIFE_RESERVE_BYTES,withinLifeReserve:floraBytes+faunaBytes+forestBytes-(lod.workerCurrentTypedBytes??0)+lod.workerReservedBytes<=LIFE_RESERVE_BYTES,
         basis:'CPU typed arrays + estimated GPU buffers/images; indices included; cold clone/build reserve separate; ordinary JS/driver overhead excluded'}};
     })():{};
-    const lodSession=this.faunaLodFactory?{faunaLodSession:{enabled:!!this.faunaLod,xrSuspended:this.immersiveBudget,transitions:this.faunaLodTransitions,providerLazy:true,initializationError:this.faunaLodInitError}}:{};
+    const lodSession={faunaBodyPresentation:this.faunaEffectiveBodyPresentation,...(this.faunaLodFactory?{faunaLodSession:{enabled:!!this.faunaLod,xrSuspended:this.immersiveBudget,transitions:this.faunaLodTransitions,providerLazy:true,initializationError:this.faunaLodInitError}}:{})};
     const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:rocks.bytes.total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
     return {...lodResources,...lodSession,projection: 'cube-sphere',localAerial,rocks,renderBounds:RENDER_BOUNDS_VERSION,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the

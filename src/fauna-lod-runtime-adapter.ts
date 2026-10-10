@@ -14,11 +14,15 @@ type Payload=FaunaPackedRenderPayload&{sourceDigest?:string|null};
 type Binding={id:string;key:string;geometryKey:string;tier:FaunaLodTier;plan:QuadrupedPlan;sourceDigest:string|null;
   palette:Float32Array;lastTime:number;lastActivity:unknown;lastGround:unknown;lastGroundRevision:number;lastBehaviour:unknown;poseBuilds:number;maxPenetration:number;maxReachError:number};
 type PoseBinding=Binding&{workspace:QuadrupedPoseWorkspace|null;memberPath:FaunaPathMember|null};
-export interface FaunaLodRuntimeOptions {basisStorage?:'float32'|'packed-snorm16';workerFactory?:()=>Worker;workerReserveBytes?:number;poseMode?:'into'|'canonical';profile?:boolean;paletteUploadMode?:'full'|'adaptive-rows'}
+export interface FaunaLodRuntimeOptions {presentation?:'legacy-v4'|'sculpted-v1';basisStorage?:'float32'|'packed-snorm16';workerFactory?:()=>Worker;workerReserveBytes?:number;poseMode?:'into'|'canonical';profile?:boolean;paletteUploadMode?:'full'|'adaptive-rows'}
 function samePath(a:FaunaPathMember,b:FaunaPathMember){return a.id===b.id&&Object.is(a.anchorOffsetX,b.anchorOffsetX)&&Object.is(a.anchorOffsetZ,b.anchorOffsetZ)&&Object.is(a.orbitRadiusM,b.orbitRadiusM)&&Object.is(a.orbitAngularSpeed,b.orbitAngularSpeed)&&Object.is(a.orbitPhase,b.orbitPhase)&&Object.is(a.gaitPeriodS,b.gaitPeriodS);}
 export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}){
   const storage=options.basisStorage??'float32',poseMode=options.poseMode??'into',appearanceVersion=storage==='float32'?FAUNA_PLANET_CRISP_RAW_VERSION:FAUNA_PLANET_CRISP_RAW_PACKED_VERSION;
-  const sourceVersion=`creature-kit/${receipt.kit.version}/${receipt.kit.commit}/quadruped-body4/joint-qem2`;
+  const presentation=options.presentation??'legacy-v4';
+  if(presentation!=='legacy-v4'&&presentation!=='sculpted-v1')throw new Error('Unsupported LOD animal presentation');
+  const bodyTag=presentation==='sculpted-v1'?'quadruped-body-sculpted-1':'quadruped-body4';
+  const planVersion=presentation==='sculpted-v1'?'quadruped-body-sculpted-1':'quadruped-body-4';
+  const sourceVersion=`creature-kit/${receipt.kit.version}/${receipt.kit.commit}/${bodyTag}/joint-qem2`;
   const profile=new FaunaRuntimeProfile(options.profile);
   let controllerStart=0;
   const poolOptions={paletteUploadMode:options.paletteUploadMode??'full'} as const;
@@ -41,6 +45,7 @@ export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}
     transientBytes:0,workerReserveBytes:options.workerReserveBytes??32*1024*1024,
     build(job:FaunaLodBuildJob,signal:AbortSignal):Promise<FaunaLodBuildResult>{
       if(disposed||activeWorker)return Promise.reject(new Error('Fauna worker unavailable or already active'));
+      if(job.loadedSource&&job.loadedSource.plan.version!==planVersion)return Promise.reject(new Error('Loaded animal body presentation does not match the LOD provider'));
       jobs.set(job.key,{tier:job.tier,genome:JSON.stringify(job.genome)});
       return new Promise((resolve,reject)=>{
         let worker:Worker;try{worker=workerFactory();}catch(error){jobs.delete(job.key);reject(error);return;}activeWorker=worker;activeReject=reject;
@@ -51,11 +56,11 @@ export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}
         worker.onerror=event=>{event.preventDefault();finish();jobs.delete(job.key);reject(new Error(event.message||'Fauna worker failed'));};
         worker.onmessageerror=()=>{finish();jobs.delete(job.key);reject(new Error('Fauna worker result decode failed'));};
         const buffers=job.loadedSource?[...new Set([job.loadedSource.positions,job.loadedSource.normals,job.loadedSource.colors,job.loadedSource.skinIndex,job.loadedSource.skinWeight,job.loadedSource.index].map(a=>a.buffer))] as ArrayBuffer[]:[];
-        const dispatchStart=profile.start();try{worker.postMessage({job,basisStorage:storage,providerVersion:sourceVersion},buffers);}catch(error){finish();jobs.delete(job.key);reject(error);}finally{profile.end('workerDispatch',dispatchStart);}
+        const dispatchStart=profile.start();try{worker.postMessage({job,basisStorage:storage,presentation,providerVersion:sourceVersion},buffers);}catch(error){finish();jobs.delete(job.key);reject(error);}finally{profile.end('workerDispatch',dispatchStart);}
       });
     },
     adopt(id,key,result){
-      const payload=result.payload as Payload,job=jobs.get(key);if(disposed||!payload||!job||payload.individualId!==id||payload.key!==key||payload.providerVersion!==sourceVersion||JSON.stringify(payload.sourcePlan.genome)!==job.genome)return false;
+      const payload=result.payload as Payload,job=jobs.get(key);if(disposed||!payload||!job||payload.individualId!==id||payload.key!==key||payload.providerVersion!==sourceVersion||payload.sourcePlan.version!==planVersion||JSON.stringify(payload.sourcePlan.genome)!==job.genome)return false;
       const tier=job.tier,pool=pools[tier],previous=bindings.get(id);
       const geometryKey=JSON.stringify([payload.context.planetId,payload.context.lifeSignature,id,faunaSkinnedGeometryKey(payload.sourcePlan.genome,sourceVersion+'/'+appearanceVersion,tier==='close'?1500:750)]);
       const palette=new Float32Array(22*16);

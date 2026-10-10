@@ -2754,7 +2754,7 @@ const faunaLodMode=faunaPresentation.lodMode;
 let faunaLodFactory:typeof import('./fauna-lod-runtime-adapter.ts')['createFaunaLodRuntimePrototype']|null=null;
 let faunaLodModuleError:string|null=null;
 if(faunaLodMode==='packed'||faunaLodMode==='float')void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;
-  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload}));}).catch(error=>{faunaLodModuleError=String(error);});
+  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({presentation:faunaPresentation.bodyPresentation,basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload}));}).catch(error=>{faunaLodModuleError=String(error);});
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
   if (!state.body || !surfaceMesh || state.body.type === 'Gas giant') return;
@@ -2769,7 +2769,8 @@ function restartPlanetTiles() {
   planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()),undefined,
     {presentationContinuity:new URLSearchParams(location.search).get('continuity')!=='0',
       forestBarkSharing,
-      ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload})}:{})});
+      faunaBodyPresentation:faunaPresentation.bodyPresentation,
+      ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({presentation:faunaPresentation.bodyPresentation,basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload})}:{})});
   planetTiles.setSurfaceDetail(surfaceDetail);
   planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
 }

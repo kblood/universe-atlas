@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.5.0",
-    "commit": "4a5630fab9b0027ea1825fae18f5afb2cb305928",
+    "version": "0.6.0",
+    "commit": "83af8ab7ce19da09d986a7e592e20aa8c40a124a",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -11,7 +11,7 @@
   "sources": [
     {
       "path": "apps/creature-lab/PROVENANCE.md",
-      "sha256": "f1d1b102a287ab4c7cce11be0757345d54c03b36e6822252413404fa0e019db7"
+      "sha256": "306105ddc6bb11470ce8ad8710086e7fd691b9ef687031b6560b1b91070d282a"
     },
     {
       "path": "apps/creature-lab/creature-lab.html",
@@ -19,7 +19,7 @@
     },
     {
       "path": "apps/creature-lab/planet-skin.html",
-      "sha256": "18c69429718b059586c87b72e9803932cc3ff366b2ad3a6b5e8814a823a41da2"
+      "sha256": "d39a53446a4a97bf8654f720a834a93aa39b1a38b80c55917c1eb2d23a16675b"
     },
     {
       "path": "apps/creature-lab/src/creature-lab-composer.ts",
@@ -46,8 +46,16 @@
       "sha256": "577e2285e517c16fb51ad03a15dca94daf4ef2c1ba903aefa62c1a9fb66830ed"
     },
     {
+      "path": "apps/creature-lab/src/planet-lab-state.ts",
+      "sha256": "fa602798be0f2c6e614d1ed4358b029f3b13fe102e658d0c7169e0558e1a7e96"
+    },
+    {
+      "path": "apps/creature-lab/src/planet-lab.css",
+      "sha256": "316cdead049df56a18bb4ee5e6a94f31dc93ce8addfaf527d1698fe51a19f704"
+    },
+    {
       "path": "apps/creature-lab/src/planet-main.ts",
-      "sha256": "2f972ce2741f48ef1d3b32d40094a595118bf2639dba0d92d3b11ba6d52765fe"
+      "sha256": "6ce6633c348520087fadc6b35ebc3ac2423f4fd1229a7c068bea46807b7151e4"
     },
     {
       "path": "apps/creature-lab/vite.config.mjs",
@@ -56,28 +64,32 @@
   ],
   "files": [
     {
-      "path": "assets/composer-CSOvnOOB.js",
-      "sha256": "765f3cf40431ddfb7ea669a31f78af96511e07b98aab669042bd850e228c7001"
+      "path": "assets/composer-BF8ifICA.js",
+      "sha256": "405d24c0de217df44d21cf9bb0260e19b2a0d6550ee61e88bbe1db3e8ec66207"
     },
     {
       "path": "assets/creature-lab-CN8EtKiP.css",
       "sha256": "10aae7fa7b9e0823dd17ab8349668ba0b405462368591d5cf1abb4d90032fda7"
     },
     {
-      "path": "assets/creature-lab-CpFp_zmU.js",
-      "sha256": "064ea542e857a4c96ed0d035a25cfe66989b2e2f496011c4fd7f7ec396392c57"
+      "path": "assets/creature-lab-_7YklhAr.js",
+      "sha256": "af4a59b70bfc8598f43419103aba2ebc596f926e270121d50b777dd60c06a04f"
     },
     {
-      "path": "assets/planet-BOOHYBAZ.js",
-      "sha256": "935d5c88871da051d2da26dd772ea8539e9a45fba5f23be6d0fa04bf0b8fa1ea"
+      "path": "assets/planet-CkJ_VWcs.js",
+      "sha256": "cb74c1d45bed8000cc1039da63a568209e632c9c6ae0db690b5aee737be158f7"
+    },
+    {
+      "path": "assets/planet-UYyQagjD.css",
+      "sha256": "5d8f265fa692ada7dddddf292d9d3420da28078e9eae9a0357f216f067401f5f"
     },
     {
       "path": "creature-lab.html",
-      "sha256": "9618a4e06e88daebfdf124308bd015f294b483b6b71cce32a4fab5d3a60c4e1a"
+      "sha256": "747f6ee61f4130055e229376afb7abcfdb167a49222993f07656a76f503e05ba"
     },
     {
       "path": "planet-skin.html",
-      "sha256": "52416c0c7037c51e2b3dec5c452c1a5a69a3a11d1f951c279c18bad3e9f85342"
+      "sha256": "c8b9e33496baeb962630a458e0b29ee4768e82c1bd3062b86799743bcf3589ee"
     }
   ]
 }

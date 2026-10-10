@@ -5,7 +5,7 @@ import { quadrupedPoseAt } from "./fauna-locomotion.js";
  * callback; a standalone Lab supplies explicit demo activity. No world lookup,
  * reseeding, alternate anatomy or new species is performed here. */
 export function createPlanetAnimalInspector(genome, options) {
-    const body = buildQuadrupedBody(genome), geometry = new THREE.BufferGeometry();
+    const body = buildQuadrupedBody(genome, { presentation: options.presentation }), geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(body.positions, 3));
     geometry.setAttribute('normal', new THREE.BufferAttribute(body.normals, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(body.colors, 3, true));

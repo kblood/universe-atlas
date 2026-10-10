@@ -10,7 +10,7 @@ class WorkerFixture{
   terminated=false;abort=new AbortController();constructor(){workers.push(this);}
   postMessage(data,transfer){
     const received=structuredClone(data,{transfer});this.received=received;
-    const provider={...planet,version:received.providerVersion},builder=createFaunaPackedWorkerAdapter(provider,{basisStorage:received.basisStorage,yieldWork:async()=>{}});
+    const provider={...planet,version:received.providerVersion,quadrupedBodyBuildSteps:g=>planet.quadrupedBodyBuildSteps(g,{presentation:received.presentation??'legacy-v4'})},builder=createFaunaPackedWorkerAdapter(provider,{basisStorage:received.basisStorage,yieldWork:async()=>{}});
     builder.build(received.job,this.abort.signal).then(result=>{if(!this.terminated)this.onmessage?.({data:{key:received.job.key,result:{...result,sourceDigest:'test-source-sha'}}});},error=>{if(!this.terminated)this.onmessage?.({data:{key:received.job.key,error:String(error)}});});
   }
   terminate(){this.terminated=true;this.abort.abort();}
@@ -19,6 +19,18 @@ function job(prototype,id,tier,genome,source=null){return {key:`job/${id}/${tier
   context:{planetId:'runtime-planet',lifeSignature:'exact-source',dateVersion:prototype.sourceVersion,appearanceVersion:prototype.appearanceVersion}};}
 function candidate(id,genome){return {id,genome,member:{id,anchorOffsetX:0,anchorOffsetZ:0,orbitRadiusM:6,orbitAngularSpeed:.2,orbitPhase:0,gaitPeriodS:12},activity:{pose:{x:0,z:0,yaw:0,gait:'walk'},travel:.03,revolutionS:100,stateS:2},
   cameraVisible:true,distanceM:140,matrix:new THREE.Matrix4(),rigSeconds:1,nearCoverage:0,ground:(x,z)=>x*.12-z*.08,groundRevision:1};}
+
+test('sculpted worker geometry carries its real version and rejects a borrowed legacy source before transfer',async()=>{
+  const p=createFaunaLodRuntimePrototype({presentation:'sculpted-v1',workerFactory:()=>new WorkerFixture()}),g=planet.generateCreatureGenome('SCULPTED-RUNTIME','runner'),legacy=planet.buildQuadrupedBody(g),before=legacy.positions.slice();
+  try{
+    await assert.rejects(p.adapter.build(job(p,'wrong-style','middle',g,legacy),new AbortController().signal),/presentation/);
+    assert.deepEqual(legacy.positions,before);assert.equal(p.adapter.diagnostics().workerActive,false);
+    const j=job(p,'sculpted','middle',g),result=await p.adapter.build(j,new AbortController().signal);
+    assert.ok(result.accepted);assert.equal(result.payload.sourcePlan.version,planet.QUADRUPED_SCULPTED_BODY_VERSION);
+    assert.match(p.sourceVersion,/quadruped-body-sculpted-1/);assert.deepEqual(result.payload.sourcePlan.genome,g);
+    assert.ok(p.adapter.adopt(j.individualId,j.key,result,2));
+  }finally{p.adapter.dispose();}
+});
 
 test('real Kit cold payload adopts unique body, canonical terrain-aware pose and Float32 interval; worker exits per job',async()=>{
   workers=[];const p=createFaunaLodRuntimePrototype({profile:true,workerFactory:()=>new WorkerFixture()}),g=planet.realisticIndividualCreatureGenome(planet.generateCreatureGenome('RUNTIME-POSE','browser'),'runtime-id',1,'adult','ungulate'),c=candidate('runtime-id',g),j=job(p,c.id,'middle',g);
