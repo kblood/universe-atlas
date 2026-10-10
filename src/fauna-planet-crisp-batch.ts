@@ -8,7 +8,7 @@ import {FAUNA_PLANET_CRISP_PACKED_VERSION,FAUNA_PLANET_CRISP_RAW_PACKED_VERSION,
 import type {FaunaPackedRenderPayload} from './fauna-packed-worker-adapter.ts';
 type Data=ReturnType<typeof buildFaunaPlanetCrispData>|FaunaPlanetCrispPackedData|FaunaPackedRenderPayload;
 type BasisArray=Float32Array|Uint8Array|Int16Array;
-type Basis={c0:BasisArray|null;c1:BasisArray|null;c2:BasisArray|null;sample:Float32Array|null;descriptor:Data['descriptor'];packingScale:number;clip:Uint8Array|null;bytes:number;vertices:number;ownerSlot:number};
+type Basis={version:string;c0:BasisArray|null;c1:BasisArray|null;c2:BasisArray|null;sample:Float32Array|null;descriptor:Data['descriptor'];packingScale:number;clip:Uint8Array|null;bytes:number;vertices:number;ownerSlot:number};
 export interface FaunaPlanetCrispBatchOptions extends FaunaSkinnedBatchOptions {cacheMode?:'retain-source'|'atlas-owned';basisStorage?:'float32'|'packed-delta16'|'packed-snorm16'}
 export class FaunaPlanetCrispBatch {
   private base:FaunaSkinnedBatch;readonly group:THREE.Group;readonly mesh:THREE.Mesh;
@@ -58,14 +58,14 @@ export class FaunaPlanetCrispBatch {
     const packingScale='packingScale' in data?data.packingScale:1;if(!Number.isFinite(packingScale)||packingScale<1)return false;
     const old=this.cache.get(key);
     if(old){
-      if(old.packingScale!==packingScale||JSON.stringify(old.descriptor)!==JSON.stringify(data.descriptor))return false;
+      if(old.version!==data.version||old.packingScale!==packingScale||JSON.stringify(old.descriptor)!==JSON.stringify(data.descriptor))return false;
       for(const [name,attrName,lanes] of [['c0','coatL0',3],['c1','coatL1',3],['c2','coatL2',3],['sample','coatSample',4],['clip','coatClip',1]] as const){const values=old[name],atlas=this.attrs[attrName].array as BasisArray;if(old.vertices*lanes!==data[name].length)return false;for(let i=0;i<data[name].length;i++)if(!Object.is(values?values[i]:atlas[old.ownerSlot*this.maxVertices*lanes+i],data[name][i]))return false;}
       return this.base.registerGeometry(key,data.sourceGeometry);
     }
     const n=data.sourceGeometry.vertexCount;if(this.cacheMode==='atlas-owned'&&this.pendingKey!==null)return false;
     if(this.cache.size>=this.maxEntries||data.c0.length!==n*3||data.c1.length!==n*3||data.c2.length!==n*3||data.sample.length!==n*4||[data.c0,data.c1,data.c2,data.sample,data.clip].some(a=>!a.every(Number.isFinite))||!(data.sample instanceof Float32Array)||!(data.clip instanceof Uint8Array)||data.clip.length!==n||(this.basisStorage==='float32'?!(data.c0 instanceof Float32Array&&data.c1 instanceof Float32Array&&data.c2 instanceof Float32Array):!((this.basisStorage==='packed-snorm16'?data.c0 instanceof Int16Array:data.c0 instanceof Uint8Array)&&data.c1 instanceof Int16Array&&data.c2 instanceof Int16Array)))return false;
     if(!this.base.registerGeometry(key,data.sourceGeometry))return false;
-    const basis={c0:data.c0.slice(),c1:data.c1.slice(),c2:data.c2.slice(),sample:data.sample.slice(),clip:data.clip.slice(),packingScale,descriptor:data.descriptor?{...data.descriptor}:undefined,bytes:data.c0.byteLength+data.c1.byteLength+data.c2.byteLength+data.sample.byteLength+data.clip.byteLength,vertices:n,ownerSlot:-1};this.cache.set(key,basis);if(this.cacheMode==='atlas-owned')this.pendingKey=key;return true;
+    const basis={version:data.version,c0:data.c0.slice(),c1:data.c1.slice(),c2:data.c2.slice(),sample:data.sample.slice(),clip:data.clip.slice(),packingScale,descriptor:data.descriptor?{...data.descriptor}:undefined,bytes:data.c0.byteLength+data.c1.byteLength+data.c2.byteLength+data.sample.byteLength+data.clip.byteLength,vertices:n,ownerSlot:-1};this.cache.set(key,basis);if(this.cacheMode==='atlas-owned')this.pendingKey=key;return true;
   }
   prepareAnimal(id:string,key:string):boolean{
     const data=this.cache.get(key);if(this.disposed||!data)return false;const existing=this.members.get(id);if(existing?.key===key)return true;
@@ -85,6 +85,6 @@ export class FaunaPlanetCrispBatch {
   beginFrame(origin:THREE.Vector3):void{this.base.beginFrame(origin);}
   submit(...args:Parameters<FaunaSkinnedBatch['submit']>):boolean{return this.base.submit(...args);}
   endFrame():void{this.base.endFrame();}
-  diagnostics(){let basisCacheBytes=0;for(const data of this.cache.values())basisCacheBytes+=data.bytes;return {...this.base.diagnostics(),appearanceVersion:this.basisStorage==='packed-snorm16'?FAUNA_PLANET_CRISP_RAW_PACKED_VERSION:this.basisStorage==='packed-delta16'?FAUNA_PLANET_CRISP_PACKED_VERSION:FAUNA_PLANET_CRISP_VERSION,basisStorage:this.basisStorage,appearanceCacheMode:this.cacheMode,pendingAppearanceGeometry:this.pendingKey!==null,estimatedCompositeBufferBytes:this.estimatedBufferBytes,maxCompositeBufferBytes:this.maxBufferBytes,basisAtlasCpuBytes:Object.values(this.attrs).reduce((n,a)=>n+a.array.byteLength,0),basisCacheBytes,appearanceMetaCpuBytes:this.params.byteLength};}
+  diagnostics(){const appearanceVersions=[...new Set([...this.cache.values()].map(data=>data.version))].sort();let basisCacheBytes=0;for(const data of this.cache.values())basisCacheBytes+=data.bytes;return {...this.base.diagnostics(),appearanceVersion:this.basisStorage==='packed-snorm16'?FAUNA_PLANET_CRISP_RAW_PACKED_VERSION:this.basisStorage==='packed-delta16'?FAUNA_PLANET_CRISP_PACKED_VERSION:appearanceVersions.includes(FAUNA_PLANET_CRISP_RAW_VERSION)?FAUNA_PLANET_CRISP_RAW_VERSION:FAUNA_PLANET_CRISP_VERSION,appearanceVersions,basisStorage:this.basisStorage,appearanceCacheMode:this.cacheMode,pendingAppearanceGeometry:this.pendingKey!==null,estimatedCompositeBufferBytes:this.estimatedBufferBytes,maxCompositeBufferBytes:this.maxBufferBytes,basisAtlasCpuBytes:Object.values(this.attrs).reduce((n,a)=>n+a.array.byteLength,0),basisCacheBytes,appearanceMetaCpuBytes:this.params.byteLength};}
   dispose():void{if(this.disposed)return;this.disposed=true;this.base.dispose();this.paramsTexture.dispose();this.cache.clear();this.members.clear();}
 }

@@ -2,7 +2,7 @@
  * participates in production rendering. Copied coat samples are not a promise
  * of matching interpolated coat appearance; paired images remain required. */
 import type {QuadrupedBodyData} from './fauna-body-plan.ts';
-import {buildFaunaBodyLodChain,faunaBodyLodSourceParts,type FaunaBodyLodLevel} from './fauna-body-lod.ts';
+import {buildFaunaBodyLodChain,faunaBodyLodValidateSource,faunaBodyLodSourceParts,type FaunaBodyLodLevel} from './fauna-body-lod.ts';
 import {COMPOSER_LOD_CONSTRAINTS_VERSION} from './fauna-composer-lod.ts';
 
 export const FAUNA_LOD_CANDIDATE_VERSION='fauna-lod-candidates-2';
@@ -132,4 +132,13 @@ export function buildFaunaBodyLodCandidates(source:QuadrupedBodyData,options:Fau
     provenance:{geometryChecksum:baseline.provenance.geometryChecksum,sourceVersion:source.plan.version,constraintVersion:COMPOSER_LOD_CONSTRAINTS_VERSION,options:optionsText,hashKind:'fnv1a-diagnostic'},
     levels:method==='joint-constrained-qem'?buildFaunaBodyLodChain(source,{targets,reducer:{protectedVertices:c.protectedVertices,vertexImportance:c.vertexImportance,colour:.03,skin:.1}}).levels:targets.map(t=>cluster(source,t,c.protectedVertices))}));
   return {source,version:FAUNA_LOD_CANDIDATE_VERSION,baseline,chains};
+}
+
+/** Runtime worker path: exact revision-2 constrained reducer without building
+ * the unrelated baseline comparison. Source and constraint arithmetic match the
+ * review API; the baseline remains available there for paired evidence. */
+export function buildFaunaJointConstrainedLodChain(source:QuadrupedBodyData,targets:readonly number[]=[1500,750]){
+  faunaBodyLodValidateSource(source);
+  const c=constraints(source);
+  return buildFaunaBodyLodChain(source,{targets,reducer:{protectedVertices:c.protectedVertices,vertexImportance:c.vertexImportance,colour:.03,skin:.1}});
 }

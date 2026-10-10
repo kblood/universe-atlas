@@ -161,3 +161,15 @@ copy in float mode, or 35 in raw packed mode. Pending transport, plans, source
 clones, builder/reducer scratch and existing scene life still require accounting.
 Packed's stable paused GPU cost regression remains unresolved; its smaller memory
 footprint is not proof of better runtime performance. Runtime rollout remains off.
+
+
+Runtime-only reduction
+----------------------
+
+The worker now calls the constrained reducer directly after the same source
+validation. Its geometry, attributes, correspondence, semantic ranges and stats
+byte-match the revision-2 review chain at1500/750/500. This omits the unused
+baseline comparison build; paired review generation retains that control. The
+162.56-second actual128 admission receipt predates this optimization and remains
+frozen. Its observed worker heap86.48MB and typed buffers13.04MB are not hard peak
+bounds; no whole-worker32MiB claim follows from the pool's typed reservation.

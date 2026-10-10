@@ -1,7 +1,7 @@
 /** Pure worker bridge. Kit factory injection keeps the provider/version
  * explicit and allows the accepted package update to select the real core. */
 import type {QuadrupedBodyData,QuadrupedPlan} from './fauna-body-plan.ts';
-import {buildFaunaBodyLodCandidates} from './fauna-body-lod-candidates.ts';
+import {buildFaunaJointConstrainedLodChain} from './fauna-body-lod-candidates.ts';
 import {buildFaunaPlanetCrispData,type FaunaPlanetPatternOracle,FAUNA_PLANET_CRISP_RAW_VERSION} from './fauna-planet-crisp.ts';
 import {packFaunaPlanetCrispData,type FaunaPlanetCrispPackedData,FAUNA_PLANET_CRISP_RAW_PACKED_VERSION} from './fauna-planet-crisp-packed.ts';
 export interface FaunaPackedBuildJob {
@@ -41,7 +41,7 @@ export function createFaunaPackedWorkerAdapter(provider:FaunaPackedKitProvider,o
     if(!source){const steps=provider.quadrupedBodyBuildSteps(job.genome);for(;;){check();const next=steps.next();if(next.done){source=next.value;break;}await yieldWork();}}
     check();if(!source||source.vertexCount>40000||source.triangleCount>60000)throw new Error('packed fauna worker: source exceeds reducer input bounds');
     const sourceTypedBytes=[...new Set(arraysOf(source).map(a=>a.buffer))].reduce((sum,b)=>sum+b.byteLength,0);
-    const control=buildFaunaBodyLodCandidates(source,{targets:[target],methods:['joint-constrained-qem']}),level=control.chains[0]!.levels[0]!;check();
+    const control=buildFaunaJointConstrainedLodChain(source,[target]),level=control.levels[0]!;check();
     if(!level.withinBudget||level.vertexCount>vertexLimit)return {accepted:false,byteLength:0,appearanceVersion,payload:null,reason:'geometry exceeds admitted target/vertex capacity',sourceTypedBytes};
     // Allow queued cancellation after the bounded synchronous reducer phase.
     await yieldWork();check();

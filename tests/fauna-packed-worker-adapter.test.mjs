@@ -33,8 +33,22 @@ test('fresh Kit package supplies real cold source and raw float/packed worker pa
   const result=await adapter.build(j,new AbortController().signal);assert.equal(result.accepted,true);assert.equal(result.payload.providerVersion,'creature-kit-0.4.0');
   assert.equal(result.appearanceVersion,basisStorage==='float32'?FAUNA_PLANET_CRISP_RAW_VERSION:FAUNA_PLANET_CRISP_RAW_PACKED_VERSION);
   assert.ok(result.payload.descriptor||result.payload.diagnostics.fallbackVertices>0);
-  const b=new FaunaPlanetCrispBatch({basisStorage,cacheMode:'atlas-owned',maxIndicesPerAnimal:2250});try{assert.equal(b.registerGeometry(j.key,result.payload),true);assert.equal(b.prepareAnimal(j.individualId,j.key),true);assert.equal(b.diagnostics().basisCacheBytes,0);}finally{b.dispose();}
+  const b=new FaunaPlanetCrispBatch({basisStorage,cacheMode:'atlas-owned',maxIndicesPerAnimal:2250});try{assert.equal(b.registerGeometry(j.key,result.payload),true);assert.equal(b.prepareAnimal(j.individualId,j.key),true);assert.equal(b.diagnostics().basisCacheBytes,0);assert.equal(b.diagnostics().appearanceVersion,adapter.appearanceVersion);assert.deepEqual(b.diagnostics().appearanceVersions,[adapter.appearanceVersion]);}finally{b.dispose();}
  }
  assert.equal(typeof planet.createPlanetAnimalInspector,'function');
  assert.equal(typeof planet.COAT_PATTERN_CRISP_GLSL,'string');
+});
+
+import {buildFaunaBodyLodCandidates,buildFaunaJointConstrainedLodChain} from '../src/fauna-body-lod-candidates.ts';
+test('runtime-only constrained chain byte-matches the frozen paired review control',()=>{
+ for(const archetype of ['browser','runner']){
+  const g=realisticIndividualCreatureGenome(generateCreatureGenome('SINGLE-REDUCER',archetype),'exact-runtime',1,'adult','ungulate'),source=buildQuadrupedBody(g);
+  const review=buildFaunaBodyLodCandidates(source,{targets:[1500,750,500],methods:['joint-constrained-qem']}).chains[0].levels;
+  const direct=buildFaunaJointConstrainedLodChain(source,[1500,750,500]).levels;
+  for(let i=0;i<review.length;i++){
+   for(const key of ['positions','normals','colors','skinIndex','skinWeight','index','sourceVertex','representative'])assert.deepEqual(direct[i][key],review[i][key],archetype+'/'+i+'/'+key);
+   assert.deepEqual(direct[i].stats,review[i].stats);assert.deepEqual(direct[i].parts,review[i].parts);
+  }
+ }
+ assert.throws(()=>buildFaunaJointConstrainedLodChain({vertexCount:40001}),/expected Float32|bounded/);
 });

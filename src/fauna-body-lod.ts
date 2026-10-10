@@ -35,7 +35,7 @@ function optionsKey(options:FaunaBodyLodOptions):string {
   if(o.minFaceCosine!==undefined&&(!Number.isFinite(o.minFaceCosine)||o.minFaceCosine<0||o.minFaceCosine>1))throw new Error('fauna body lod: minFaceCosine must be in 0..1');
   return JSON.stringify([targets,o.symmetry??true,o.colour??.02,o.gloss??.05,o.skin??.08,o.boundary??10,o.minFaceCosine??.3,o.protectedVertices?Array.from(o.protectedVertices):null,o.vertexImportance?Array.from(o.vertexImportance):null]);
 }
-function validate(source:QuadrupedBodyData):void {
+export function faunaBodyLodValidateSource(source:QuadrupedBodyData):void {
   const n=source.vertexCount,t=source.triangleCount;
   if(!(source.positions instanceof Float32Array)||!(source.normals instanceof Float32Array)||!(source.colors instanceof Uint8Array)||!(source.skinIndex instanceof Uint8Array)||!(source.skinWeight instanceof Uint8Array)||!(source.index instanceof Uint16Array||source.index instanceof Uint32Array))throw new Error('fauna body lod: expected Float32 geometry and Uint8 normalized attributes');
   if(!Number.isInteger(n)||n<4||n>FAUNA_BODY_LOD_SOURCE_VERTEX_LIMIT||!Number.isInteger(t)||t<4||t>FAUNA_BODY_LOD_SOURCE_TRIANGLE_LIMIT)throw new Error('fauna body lod: source exceeds bounded vertex/triangle limits');
@@ -82,7 +82,7 @@ const takeBytes=(source:Uint8Array,vertices:Uint32Array,lanes:number)=>{
   return out;
 };
 export function buildFaunaBodyLodChain(source:QuadrupedBodyData,options:FaunaBodyLodOptions=DEFAULT_OPTIONS):FaunaBodyLodChain{
-  optionsKey(options);validate(source);const parts=faunaBodyLodSourceParts(source);
+  optionsKey(options);faunaBodyLodValidateSource(source);const parts=faunaBodyLodSourceParts(source);
   // Only scoring data is normalized; output copies original Uint8 bytes.
   const chain=buildComposerLodChain({positions:source.positions,normals:source.normals,index:source.index,
     colors:Float32Array.from(source.colors,x=>x/255),skinIndex:Uint16Array.from(source.skinIndex),skinWeight:Float32Array.from(source.skinWeight,x=>x/255),parts},options.targets??FAUNA_BODY_LOD_TARGETS,options.reducer);
