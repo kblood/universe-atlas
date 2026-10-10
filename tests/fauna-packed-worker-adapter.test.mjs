@@ -21,3 +21,20 @@ test('cold Kit provider path yields/cancels and rejects identity, capacity and o
   const tiny=createFaunaPackedWorkerAdapter(provider,{maxVertices:1,yieldWork:async()=>{}});assert.equal((await tiny.build(job(source),new AbortController().signal)).accepted,false);
   const old=createFaunaPackedWorkerAdapter({...provider,createQuadrupedBodyPatternSampler(s){return {...provider.createQuadrupedBodyPatternSampler(s),version:'quadruped-body-pattern-sampler-1'};}},{yieldWork:async()=>{}});await assert.rejects(old.build(job(source),new AbortController().signal),/exact raw/);
 });
+
+// Public built package is the provider; no outside checkout or ComposerRecipe input.
+import * as planet from '#creature-kit/planet';
+import {FAUNA_PLANET_CRISP_RAW_VERSION} from '../src/fauna-planet-crisp.ts';
+test('fresh Kit package supplies real cold source and raw float/packed worker payloads',async()=>{
+ const kitProvider={...planet,version:'creature-kit-0.4.0'};
+ for(const basisStorage of ['float32','packed-snorm16']){
+  const adapter=createFaunaPackedWorkerAdapter(kitProvider,{basisStorage,yieldWork:async()=>{}});
+  const j=job(null);j.context.appearanceVersion=adapter.appearanceVersion;
+  const result=await adapter.build(j,new AbortController().signal);assert.equal(result.accepted,true);assert.equal(result.payload.providerVersion,'creature-kit-0.4.0');
+  assert.equal(result.appearanceVersion,basisStorage==='float32'?FAUNA_PLANET_CRISP_RAW_VERSION:FAUNA_PLANET_CRISP_RAW_PACKED_VERSION);
+  assert.ok(result.payload.descriptor||result.payload.diagnostics.fallbackVertices>0);
+  const b=new FaunaPlanetCrispBatch({basisStorage,cacheMode:'atlas-owned',maxIndicesPerAnimal:2250});try{assert.equal(b.registerGeometry(j.key,result.payload),true);assert.equal(b.prepareAnimal(j.individualId,j.key),true);assert.equal(b.diagnostics().basisCacheBytes,0);}finally{b.dispose();}
+ }
+ assert.equal(typeof planet.createPlanetAnimalInspector,'function');
+ assert.equal(typeof planet.COAT_PATTERN_CRISP_GLSL,'string');
+});

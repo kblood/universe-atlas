@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { composerConstraints, type ComposerConstraint, type ComposerRecipe } from './fauna-composer-recipe.ts';
 import { composerStructure, COMPOSER_BUDGET, type ComposerGraph, type ComposerMotion, type ComposerPose } from './fauna-composer-rig.ts';
 import { type ComposerCoatCrisp, type ComposerSkin } from './fauna-composer-mesh.ts';
+export { COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL } from './fauna-coat-crisp-glsl.ts';
 import { type ComposerIndividualTraits } from './fauna-composer-individual.ts';
 /** Experimental modular creature: one skinned mesh (one draw call) driven by
  * the composer's own variable skeleton, plus an optional skeleton overlay.
@@ -66,13 +67,6 @@ export declare function patchComposerGlossShader(shader: {
 }): void;
 /** The creature's coloured material: vertex colours, roughness 0.82, and the gloss channel. */
 export declare function createComposerColouredMaterial(): THREE.MeshStandardMaterial;
-/** GLSL ES 3.00 re-implementation of fauna-coat-1's patternMask for the crisp patterns (COMPOSER_COAT_CRISP_PATTERNS,
- * off the limbs), with the frozen lattice hash (pcg3 over uint, which wraps exactly like Math.imul), value noise,
- * fBm and Worley noise, and the same salts and constants (COAT_PATTERN_SALTS, COAT_WORLEY_JITTER). Floats are 32-bit
- * on the GPU, so the mask matches coatPatternProbe up to float rounding (cell boundaries may move by an ulp), not bit
- * for bit; the CPU twin of the crisp coat (tests/fauna-composer-coat-crisp.test.mjs) uses coatPatternProbe itself.
- * Selected by `#define COAT_PATTERN <code>` (COMPOSER_COAT_CRISP_PATTERNS index + 1). */
-export declare const COMPOSER_COAT_CRISP_GLSL: string;
 /** The crisp-coat shader edits, applied after COMPOSER_GLOSS_PATCH: [chunk anchor, replacement], each anchor exactly once. */
 export declare const COMPOSER_COAT_CRISP_PATCH: Readonly<{
     vertex: readonly (readonly [string, string])[];

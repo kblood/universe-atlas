@@ -142,3 +142,22 @@ SHA256 9c49a372ba3ad46e66496e5cd27d69bb93dee5287f0a62ba8c4d1b08ec060253.
 The prototype retains the legacy Atlas import until the accepted Kit package
 update provides this export; production consumption must use the Kit planet
 entry and preserve its inspector exports.
+
+
+Kit 0.4 integrated candidate
+---------------------------
+
+The isolated integration pins Kit 0.4.0 at 40dc4b31776b, preserves its canonical
+inspector exports, and consumes the shared mask through `#creature-kit/planet`.
+`basisStorage: 'float32' | 'packed-snorm16'` selects the serialized worker output;
+float uses the same raw-layer clamp appearance with unquantized coefficients.
+Both modes use the actual supplied planetary genome and the same reducer control.
+
+With one staging slot per tier, 17 close slots (900 vertices/4500 indices) plus
+113 middle slots (500 vertices/2250 indices) reserve 14,797,470 typed CPU/GPU
+bytes in float mode, or 12,187,470 in packed mode. These are pool-only ceilings.
+The matching full-source raw field material adds 53 bytes per vertex per CPU/GPU
+copy in float mode, or 35 in raw packed mode. Pending transport, plans, source
+clones, builder/reducer scratch and existing scene life still require accounting.
+Packed's stable paused GPU cost regression remains unresolved; its smaller memory
+footprint is not proof of better runtime performance. Runtime rollout remains off.

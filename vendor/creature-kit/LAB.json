@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.3.0",
-    "commit": "8aecf223547ff00d56cfc902ac0acf2094d1f5a4",
+    "version": "0.4.0",
+    "commit": "40dc4b31776b0fe9f021ed5c53ff89987d6ee21c",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -56,28 +56,28 @@
   ],
   "files": [
     {
-      "path": "assets/composer-LyXvSx15.js",
-      "sha256": "38f8b714b8af8d88f5c311747e09a66b2dc64cfac12fc41e9d7c3539c78b92f6"
-    },
-    {
-      "path": "assets/creature-lab-BgL2EYsi.js",
-      "sha256": "94fda2e07934b11aec6fc0d375b9a46f5288a698e6f04e48415b38fc5ac2e72a"
+      "path": "assets/composer-CSOvnOOB.js",
+      "sha256": "765f3cf40431ddfb7ea669a31f78af96511e07b98aab669042bd850e228c7001"
     },
     {
       "path": "assets/creature-lab-CN8EtKiP.css",
       "sha256": "10aae7fa7b9e0823dd17ab8349668ba0b405462368591d5cf1abb4d90032fda7"
     },
     {
-      "path": "assets/planet-CE16oSdR.js",
-      "sha256": "bae06c5cae990a7b54dfb87d8062a289a72f1865ed45124fbbb070144dcaf42d"
+      "path": "assets/creature-lab-CpFp_zmU.js",
+      "sha256": "064ea542e857a4c96ed0d035a25cfe66989b2e2f496011c4fd7f7ec396392c57"
+    },
+    {
+      "path": "assets/planet-Cz-MK3iL.js",
+      "sha256": "4d36fc63cf0c5f55cfffa6200d39a811bbaeb908ea95a181faab92ef25eb54ab"
     },
     {
       "path": "creature-lab.html",
-      "sha256": "71c31c73e26bece0403fb127e4654206ae9114107a997175408575155ddde0b4"
+      "sha256": "9618a4e06e88daebfdf124308bd015f294b483b6b71cce32a4fab5d3a60c4e1a"
     },
     {
       "path": "planet-skin.html",
-      "sha256": "4d110c2b6d4d8b47e99ac07d84700d9b8086e271282d6c94321bb68829507658"
+      "sha256": "3f7991a56ec92c12b78e938882f6546b4c250c33038f186ef9456e78ef585674"
     }
   ]
 }

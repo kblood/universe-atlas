@@ -30,6 +30,7 @@ export const VENDORED_PATHS = Object.freeze([
   'assets/briefs/creature-export-quest-3.json',
   'scripts/export-creature.mjs',
   'src/fauna-coat-fields.ts',
+  'src/fauna-coat-crisp-glsl.ts',
   'src/fauna-coat-vocab.ts',
   'src/fauna-composer-export.ts',
   'src/fauna-composer-eye-catalogue.ts',

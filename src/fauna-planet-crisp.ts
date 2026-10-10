@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import type {QuadrupedBodyData} from './fauna-body-plan.ts';
 import type {CoatGenome,CoatSample} from './fauna-coat-fields.ts';
 import {coatSeedMix,COAT_CELLS_PER_BODY} from './fauna-coat-fields.ts';
-import {COMPOSER_COAT_CRISP_GLSL} from './fauna-composer.ts';
+import {COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL} from '#creature-kit/planet';
 import {createFaunaMaterial} from './fauna-material.ts';
 export const FAUNA_PLANET_CRISP_VERSION='planet-coat-crisp-context-1';
 export const FAUNA_PLANET_CRISP_RAW_VERSION='planet-coat-crisp-raw-clamp-1';

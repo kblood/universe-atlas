@@ -1,5 +1,6 @@
 import { quadrupedFaceBuildSteps } from "./fauna-face.js";
-import { FAUNA_APPEARANCE_VERSION, sampleFaunaCoat } from "./fauna-appearance.js";
+import { FAUNA_APPEARANCE_VERSION, sampleFaunaCoat, sampleFaunaCoatWithPatternMask, sampleFaunaCoatWithRawPatternMask, faunaPreparedCoatContextInto } from "./fauna-appearance.js";
+import { coatPatternProbe } from "../fauna-coat-fields.js";
 import { appendFaunaStructuralFeatures } from "./fauna-structural-appendages.js";
 export const QUADRUPED_BODY_VERSION = 'quadruped-body-4';
 export const QUADRUPED_BONE_NAMES = [
@@ -300,6 +301,110 @@ function coatRegionAt(plan, prim, x, y, z, out) {
             return 'torso';
     }
 }
+/** Shared connected-body paint arithmetic. The generator supplies its existing
+ * nearest primitive so its geometry/weights and paint calculations stay identical. */
+function connectedBodyColour(plan, nearest, x, y, z, ny0, coatV2, surface, base, accent, hoof, forcedMask, forcedPatch = 0, rawMaskLayers = false) {
+    const region = plan.primitives[nearest].region;
+    let color;
+    if (coatV2) {
+        // Socks, countershading and armour plates come from the coat itself.
+        surface.dorsal = ny0;
+        const coatRegion = coatRegionAt(plan, plan.primitives[nearest], x, y, z, surface);
+        color = forcedMask === undefined ? sampleFaunaCoat(plan.genome, x, y, z, plan.torsoY, coatRegion, surface) : rawMaskLayers ? sampleFaunaCoatWithRawPatternMask(plan.genome, x, y, z, plan.torsoY, coatRegion, surface, forcedMask, forcedPatch) : sampleFaunaCoatWithPatternMask(plan.genome, x, y, z, plan.torsoY, coatRegion, surface, forcedMask, forcedPatch);
+    }
+    else {
+        const mark = region === 'torso' || region === 'neck' || region === 'upper' || region === 'tail' ? coatMark(plan, x, y) : 0;
+        color = sampleFaunaCoat(plan.genome, x, y, z, plan.torsoY) ?? lerp3(base, accent, mark * .6);
+        if (region === 'torso' || region === 'neck' || region === 'upper')
+            color = lerp3(color, lerp3(accent, [1, 1, 1], .15), Math.max(0, -ny0 - .15) * .45);
+        if (region === 'lower')
+            color = scale(color, .82);
+    }
+    if (region === 'foot') {
+        const footType = plan.genome.morphology?.footType;
+        const darkening = footType === 'paw' ? .3 : footType === 'broad-pad' ? .55 : .9;
+        color = lerp3(coatV2 ? color : scale(color, .7), hoof, clamp((plan.legs[0].ankle[1] - y) / Math.max(plan.legs[0].ankle[1], 1e-3) * 1.6, 0, darkening));
+    }
+    if (region === 'armor' && !coatV2)
+        color = scale(accent, .85);
+    return color;
+}
+export const QUADRUPED_BODY_COLOUR_SAMPLER_VERSION = 'quadruped-body-colour-sampler-1';
+/** Exact same colour/context as the connected-body builder. Uses source.cellM
+ * as the canonical sampling footprint; callers do not silently change pattern
+ * filtering. Scratch context is per sampler, and sampling must be sequential. */
+export function createQuadrupedBodyColourSampler(source) {
+    if (!source?.plan?.primitives?.length || !Number.isFinite(source.cellM) || source.cellM <= 0)
+        throw new Error('quadruped body colour sampler: valid loaded source required');
+    const plan = source.plan, base = linearHex(plan.genome.color), accent = linearHex(plan.genome.accentColor), hoof = [.035, .03, .026];
+    const coatV2 = plan.genome.appearance?.version === FAUNA_APPEARANCE_VERSION && !!plan.genome.appearance.coat;
+    const surface = { dorsal: 0, along: 0, cellM: source.cellM };
+    return { version: QUADRUPED_BODY_COLOUR_SAMPLER_VERSION, source, sampleInto(x, y, z, normalY, out) {
+            if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z) || !Number.isFinite(normalY) || !(out instanceof Float64Array) || out.length < 3)
+                throw new Error('quadruped body colour sampler: finite point/normal and Float64 RGB output required');
+            let nearest = 0, dMin = Infinity;
+            for (let p = 0; p < plan.primitives.length; p++) {
+                const d = primitiveDistance(plan.primitives[p], x, y, z);
+                if (d < dMin) {
+                    dMin = d;
+                    nearest = p;
+                }
+            }
+            const colour = connectedBodyColour(plan, nearest, x, y, z, normalY, coatV2, surface, base, accent, hoof);
+            for (let c = 0; c < 3; c++)
+                out[c] = colour[c];
+            return out;
+        } };
+}
+export const QUADRUPED_BODY_PATTERN_SAMPLER_VERSION = 'quadruped-body-pattern-sampler-1';
+/** Exact planetary context + forced-mask layers for a shared library mask.
+ * The returned error compares layer reconstruction against the original colour
+ * oracle and intermediate mask probes; nonlinear juvenile overlays are explicit.
+ * Source seed, scale clamp, signed flank coords and anatomical rules are kept. */
+export function createQuadrupedBodyPatternSampler(source, options = {}) {
+    const oracle = createQuadrupedBodyColourSampler(source), plan = source.plan, base = linearHex(plan.genome.color), accent = linearHex(plan.genome.accentColor), hoof = [.035, .03, .026], surface = { dorsal: 0, along: 0, cellM: source.cellM }, probe = new Float64Array(5);
+    return { version: options.rawLayers ? 'quadruped-body-pattern-sampler-raw-1' : QUADRUPED_BODY_PATTERN_SAMPLER_VERSION, source, oracle, sampleInto(x, y, z, normalY, layers, context) {
+            if (layers.length < 9)
+                throw new Error('quadruped body pattern sampler: nine layer lanes required');
+            let nearest = 0, dMin = Infinity;
+            for (let p = 0; p < plan.primitives.length; p++) {
+                const d = primitiveDistance(plan.primitives[p], x, y, z);
+                if (d < dMin) {
+                    dMin = d;
+                    nearest = p;
+                }
+            }
+            surface.dorsal = normalY;
+            const region = coatRegionAt(plan, plan.primitives[nearest], x, y, z, surface), coat = faunaPreparedCoatContextInto(plan.genome, x, y, z, plan.torsoY, region, surface, context);
+            if (!coat) {
+                const rgb = new Float64Array(3);
+                oracle.sampleInto(x, y, z, normalY, rgb);
+                for (let k = 0; k < 3; k++)
+                    for (let c = 0; c < 3; c++)
+                        layers[k * 3 + c] = rgb[c];
+                return { coat, region, affineError: 0, mask: 0, patch: 0 };
+            }
+            const rawLayers = !!options.rawLayers && region !== 'foot' && region !== 'armor';
+            for (let k = 0; k < 3; k++) {
+                const color = connectedBodyColour(plan, nearest, x, y, z, normalY, true, surface, base, accent, hoof, k === 0 ? 0 : 1, k === 2 ? 1 : 0, rawLayers);
+                for (let c = 0; c < 3; c++)
+                    layers[k * 3 + c] = color[c];
+            }
+            coatPatternProbe(coat, context, probe);
+            const mask = probe[0], patch = coat.pattern === 'reticulated' ? probe[4] : 0;
+            const reconstruct = (c, m, p) => { const value = layers[c] + m * (layers[3 + c] - layers[c]) + m * p * (layers[6 + c] - layers[3 + c]); return rawLayers ? Math.max(.002, Math.min(1, value)) : value; };
+            let affineError = 0;
+            const compare = (m, p) => { const exact = connectedBodyColour(plan, nearest, x, y, z, normalY, true, surface, base, accent, hoof, m, p); for (let c = 0; c < 3; c++)
+                affineError = Math.max(affineError, Math.abs(exact[c] - reconstruct(c, m, p))); };
+            const original = connectedBodyColour(plan, nearest, x, y, z, normalY, true, surface, base, accent, hoof);
+            for (let c = 0; c < 3; c++)
+                affineError = Math.max(affineError, Math.abs(original[c] - reconstruct(c, mask, patch)));
+            for (const m of [.25, .5, .75])
+                for (const p of [0, .5, 1])
+                    compare(m, p);
+            return { coat, region, affineError, mask, patch, rawLayers };
+        } };
+}
 // ---------------------------------------------------------------------------
 // Build.
 // ---------------------------------------------------------------------------
@@ -526,28 +631,7 @@ export function* quadrupedBodyBuildSteps(genome) {
                 if (w > boneWeight[prim.bone])
                     boneWeight[prim.bone] = w;
             }
-            const region = plan.primitives[nearest].region, ny0 = normals[v * 3 + 1];
-            if (coatV2) {
-                // Socks, countershading and armour plates come from the coat itself.
-                surface.dorsal = ny0;
-                const coatRegion = coatRegionAt(plan, plan.primitives[nearest], x, y, z, surface);
-                color = sampleFaunaCoat(plan.genome, x, y, z, plan.torsoY, coatRegion, surface);
-            }
-            else {
-                const mark = region === 'torso' || region === 'neck' || region === 'upper' || region === 'tail' ? coatMark(plan, x, y) : 0;
-                color = sampleFaunaCoat(plan.genome, x, y, z, plan.torsoY) ?? lerp3(base, accent, mark * .6);
-                if (region === 'torso' || region === 'neck' || region === 'upper')
-                    color = lerp3(color, lerp3(accent, [1, 1, 1], .15), Math.max(0, -ny0 - .15) * .45);
-                if (region === 'lower')
-                    color = scale(color, .82);
-            }
-            if (region === 'foot') {
-                const footType = plan.genome.morphology?.footType;
-                const darkening = footType === 'paw' ? .3 : footType === 'broad-pad' ? .55 : .9;
-                color = lerp3(coatV2 ? color : scale(color, .7), hoof, clamp((plan.legs[0].ankle[1] - y) / Math.max(plan.legs[0].ankle[1], 1e-3) * 1.6, 0, darkening));
-            }
-            if (region === 'armor' && !coatV2)
-                color = scale(accent, .85);
+            color = connectedBodyColour(plan, nearest, x, y, z, normals[v * 3 + 1], coatV2, surface, base, accent, hoof);
         }
         // Keep the four strongest bones, then quantize to an exact 255 sum.
         const top = [];

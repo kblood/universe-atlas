@@ -1,5 +1,7 @@
 import type { CreatureGenome } from './creature-model.ts';
 import { type FaunaFaceFeature } from './fauna-face.ts';
+import type { CoatRegion } from '../fauna-coat-vocab.ts';
+import { type CoatSample, type CoatGenome } from '../fauna-coat-fields.ts';
 /**
  * One continuous, skinned quadruped body plan derived from an existing
  * creature genome. The anatomy is a smooth union of genome-sized volumes
@@ -144,6 +146,40 @@ export declare function createQuadrupedPlan(genome: CreatureGenome): QuadrupedPl
 export declare function primitiveDistance(p: QuadrupedPrimitive, x: number, y: number, z: number): number;
 /** The complete body field, evaluated exactly as the grid accumulates it. */
 export declare function quadrupedBodyDistance(plan: QuadrupedPlan, x: number, y: number, z: number): number;
+export declare const QUADRUPED_BODY_COLOUR_SAMPLER_VERSION = "quadruped-body-colour-sampler-1";
+export interface QuadrupedBodyColourSampler {
+    readonly version: typeof QUADRUPED_BODY_COLOUR_SAMPLER_VERSION;
+    /** Borrowed immutable source; no regenerated specimen or copied genome. */
+    readonly source: Readonly<QuadrupedBodyData>;
+    /** Original connected-body colour field in linear RGB before quantization.
+     * Supplemental ears/horns/structural/face colours are outside this API. */
+    sampleInto(x: number, y: number, z: number, normalY: number, out: Float64Array): Float64Array;
+}
+/** Exact same colour/context as the connected-body builder. Uses source.cellM
+ * as the canonical sampling footprint; callers do not silently change pattern
+ * filtering. Scratch context is per sampler, and sampling must be sequential. */
+export declare function createQuadrupedBodyColourSampler(source: Readonly<QuadrupedBodyData>): QuadrupedBodyColourSampler;
+export declare const QUADRUPED_BODY_PATTERN_SAMPLER_VERSION = "quadruped-body-pattern-sampler-1";
+export interface QuadrupedBodyPatternSample {
+    coat: Readonly<CoatGenome> | undefined;
+    region: CoatRegion;
+    affineError: number;
+    mask: number;
+    patch: number;
+    rawLayers?: boolean;
+}
+/** Exact planetary context + forced-mask layers for a shared library mask.
+ * The returned error compares layer reconstruction against the original colour
+ * oracle and intermediate mask probes; nonlinear juvenile overlays are explicit.
+ * Source seed, scale clamp, signed flank coords and anatomical rules are kept. */
+export declare function createQuadrupedBodyPatternSampler(source: Readonly<QuadrupedBodyData>, options?: {
+    rawLayers?: boolean;
+}): {
+    version: string;
+    source: Readonly<QuadrupedBodyData>;
+    oracle: QuadrupedBodyColourSampler;
+    sampleInto(x: number, y: number, z: number, normalY: number, layers: Float64Array, context: CoatSample): QuadrupedBodyPatternSample;
+};
 /** Resumable build. Each `yield` is a bounded unit of work (one volume, a few
  * grid slices, or a vertex batch), so callers can respect a frame budget. */
 export declare function quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void, QuadrupedBodyData, void>;

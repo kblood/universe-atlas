@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.3.0",
-    "commit": "8aecf223547ff00d56cfc902ac0acf2094d1f5a4",
+    "version": "0.4.0",
+    "commit": "40dc4b31776b0fe9f021ed5c53ff89987d6ee21c",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -18,7 +18,11 @@
     },
     {
       "path": "src/fauna-coat-fields.ts",
-      "sha256": "7da8da25a82fc3f9436ff69c699a4edf28a99e262c838f4d846ee987833b5515"
+      "sha256": "9bf567f0e013f9b3fe44c9ffbea2e9cbce1e7c776918f8be30cf5a2c4ddc4ea7"
+    },
+    {
+      "path": "src/fauna-coat-crisp-glsl.ts",
+      "sha256": "52d625e244b34a9c5d7f20fe1a661b0e612dc0110eb5af34a76f295196300f64"
     },
     {
       "path": "src/fauna-coat-vocab.ts",
@@ -70,7 +74,7 @@
     },
     {
       "path": "src/fauna-composer.ts",
-      "sha256": "5c1eb0789878d66768a8419951d8fd5b0e2362f49dcba1b2f52bb189d3d60a07"
+      "sha256": "0a78e3bf82b3b47eb57a5ba4827b653479351d1d1c4971bc7339cc8f7e0936f5"
     },
     {
       "path": "tests/fauna-composer-coat.test.mjs",
@@ -194,7 +198,7 @@
     },
     {
       "path": "tests/fixtures/creature-core-exports.json",
-      "sha256": "04c916e154d25222a84ff8e933d0f7f97b1e5c681db8b747c0a1fc380ee82fb2"
+      "sha256": "b8062bef790476364b096433b4a924c5ff27b583c784df90189db60ceafa9447"
     },
     {
       "path": "tests/helpers/composer-head-occlusion.mjs",

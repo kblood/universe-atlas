@@ -197,3 +197,7 @@ export declare const COAT_PATTERN_SALTS: Readonly<{
     band: 1013904242;
 }>;
 export declare const COAT_WORLEY_JITTER = 0.9;
+/** Raw affine main-mask colour before the evaluator's final0.002..1 grain
+ * clamp. For rendering layers only: default evaluateCoat/WithMask stay frozen.
+ * A consumer must reproduce the original clamp and later anatomical overlays. */
+export declare function evaluateCoatWithMaskUnclamped(genome: CoatGenome, sample: CoatSample, out: number[] | Float32Array | Float64Array, offset: number, mask: number, patch: number): void;

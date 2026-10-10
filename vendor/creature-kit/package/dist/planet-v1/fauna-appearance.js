@@ -1,5 +1,5 @@
 import { COAT_MARK_BITS, COAT_ROLES, isCoatPattern, PIGMENT_FAMILIES, } from "../fauna-coat-vocab.js";
-import { applyCoatDrift, COAT_CELLS_PER_BODY, COAT_GENOME_RANGES, coatCanonicalSamples, coatIndividualDrift, coatMinFeature, coatPatternProbe, coatRandom, defaultCoatGenome, evaluateCoat, hash3u, linearToSrgb, } from "../fauna-coat-fields.js";
+import { applyCoatDrift, COAT_CELLS_PER_BODY, COAT_GENOME_RANGES, coatCanonicalSamples, coatIndividualDrift, coatMinFeature, coatPatternProbe, coatRandom, defaultCoatGenome, evaluateCoat, evaluateCoatWithMask, evaluateCoatWithMaskUnclamped, hash3u, linearToSrgb, } from "../fauna-coat-fields.js";
 /** An additive rendering contract. A genome without this block keeps its v1
  * evaluation; a stored 'fauna-appearance-1' block keeps the v1 coat. */
 export const FAUNA_APPEARANCE_VERSION = 'fauna-appearance-2';
@@ -624,6 +624,15 @@ function prepare(genome, x, y, z, torsoY, region, surface) {
     SAMPLE.footprint = coatFootprint(a.coat, cell);
     return cell > 0 ? clampedCoat(a.coat, cell) : a.coat;
 }
+/** Exact prepared planetary pattern coordinates and the source-density-clamped
+ * coat. Caller scratch receives a copy; no global sampler scratch is exposed. */
+export function faunaPreparedCoatContextInto(genome, x, y, z, torsoY, region, surface, out) {
+    if (genome.appearance?.version !== FAUNA_APPEARANCE_VERSION || !genome.appearance.coat)
+        return undefined;
+    const coat = prepare(genome, x, y, z, torsoY, region, surface);
+    Object.assign(out, SAMPLE);
+    return coat;
+}
 /** Fawn spots sized for the near mesh. The coat library's juvenile spots
  * (0.0085-0.0145 torso lengths) are finer than the 0.019-0.028 TL vertex
  * cells of a juvenile body and render as single-vertex triangles and bars, so
@@ -704,6 +713,22 @@ function fawnSpotMask(seed, x, dy, z, cell, halfH, halfW) {
  * differ. No maps, GPU resources, random state or added draw calls. The
  * undefined branch preserves legacy coats; a v1 appearance keeps its v1 coat. */
 export function sampleFaunaCoat(genome, x, y, z, torsoY, region, surface) {
+    return sampleFaunaCoatInternal(genome, x, y, z, torsoY, region, surface);
+}
+/** Existing planetary colour arithmetic with only the library's raw main
+ * pattern/patch mask overridden. Juvenile fawn/stocking and region rules remain.
+ * Used to test whether a source point is affine enough for a shared GLSL mask. */
+export function sampleFaunaCoatWithPatternMask(genome, x, y, z, torsoY, region, surface, mask, patch) {
+    if (!Number.isFinite(mask) || mask < 0 || mask > 1 || !Number.isFinite(patch) || patch < 0 || patch > 1)
+        throw new Error('planet coat mask: mask/patch0..1 required');
+    return sampleFaunaCoatInternal(genome, x, y, z, torsoY, region, surface, mask, patch);
+}
+export function sampleFaunaCoatWithRawPatternMask(genome, x, y, z, torsoY, region, surface, mask, patch) {
+    if (!Number.isFinite(mask) || mask < 0 || mask > 1 || !Number.isFinite(patch) || patch < 0 || patch > 1)
+        throw new Error('planet raw coat mask: mask/patch0..1 required');
+    return sampleFaunaCoatInternal(genome, x, y, z, torsoY, region, surface, mask, patch, true);
+}
+function sampleFaunaCoatInternal(genome, x, y, z, torsoY, region, surface, forcedMask, forcedPatch = 0, rawMaskLayers = false) {
     const a = genome.appearance;
     if (!a)
         return undefined;
@@ -712,15 +737,25 @@ export function sampleFaunaCoat(genome, x, y, z, torsoY, region, surface) {
     const coat = prepare(genome, x, y, z, torsoY, region, surface);
     const stockings = a.growth.stage === 'juvenile' && (coat.marks & COAT_MARK_BITS.socks) !== 0 && (SAMPLE.region === 'limb-lower' || SAMPLE.region === 'foot');
     if (!(coat.marks & COAT_MARK_BITS['juvenile-spots']) || !(coat.juvenileSpots > 0)) {
-        evaluateCoat(coat, SAMPLE, OUT, 0);
+        if (forcedMask === undefined)
+            evaluateCoat(coat, SAMPLE, OUT, 0);
+        else if (rawMaskLayers)
+            evaluateCoatWithMaskUnclamped(coat, SAMPLE, OUT, 0, forcedMask, forcedPatch);
+        else
+            evaluateCoatWithMask(coat, SAMPLE, OUT, 0, forcedMask, forcedPatch);
         if (stockings)
-            developingStockings(coat, a.growth.maturity);
+            developingStockings(coat, a.growth.maturity, forcedMask, forcedPatch);
         return [OUT[0], OUT[1], OUT[2]];
     }
     const unspotted = withoutLibrarySpots(coat);
-    evaluateCoat(unspotted, SAMPLE, OUT, 0);
+    if (forcedMask === undefined)
+        evaluateCoat(unspotted, SAMPLE, OUT, 0);
+    else if (rawMaskLayers)
+        evaluateCoatWithMaskUnclamped(unspotted, SAMPLE, OUT, 0, forcedMask, forcedPatch);
+    else
+        evaluateCoatWithMask(unspotted, SAMPLE, OUT, 0, forcedMask, forcedPatch);
     if (stockings)
-        developingStockings(unspotted, a.growth.maturity);
+        developingStockings(unspotted, a.growth.maturity, forcedMask, forcedPatch);
     // The thigh continues the flank, so spots cut by the torso/limb region seam
     // stay whole discs; the neck is excluded (its surface leaves the torso axis).
     if (SAMPLE.region === 'torso' || SAMPLE.region === 'limb-upper') {
@@ -750,7 +785,7 @@ let sockSource, sockResult;
 const SOCK_OUT = new Float64Array(3);
 /** Blends OUT (the stockinged lower leg) toward the same point without
  * stockings, by the juvenile's undeveloped share. */
-function developingStockings(coat, maturity) {
+function developingStockings(coat, maturity, forcedMask, forcedPatch = 0) {
     const k = faunaJuvenileStockingStrength(maturity);
     if (k >= 1)
         return;
@@ -758,7 +793,10 @@ function developingStockings(coat, maturity) {
         sockSource = coat;
         sockResult = { ...coat, marks: coat.marks & ~COAT_MARK_BITS.socks };
     }
-    evaluateCoat(sockResult, SAMPLE, SOCK_OUT, 0);
+    if (forcedMask === undefined)
+        evaluateCoat(sockResult, SAMPLE, SOCK_OUT, 0);
+    else
+        evaluateCoatWithMask(sockResult, SAMPLE, SOCK_OUT, 0, forcedMask, forcedPatch);
     for (let c = 0; c < 3; c++)
         OUT[c] = mix(SOCK_OUT[c], OUT[c], k);
 }

@@ -1,6 +1,6 @@
 import type { CreatureArchetype, CreatureGenome } from './creature-model.ts';
 import { type CoatMarkName, type CoatRegion, type PigmentFamily, type ResolvedCoatPattern } from '../fauna-coat-vocab.ts';
-import { type CoatGenome, type CoatRGB } from '../fauna-coat-fields.ts';
+import { type CoatGenome, type CoatRGB, type CoatSample } from '../fauna-coat-fields.ts';
 /** An additive rendering contract. A genome without this block keeps its v1
  * evaluation; a stored 'fauna-appearance-1' block keeps the v1 coat. */
 export declare const FAUNA_APPEARANCE_VERSION = "fauna-appearance-2";
@@ -183,6 +183,9 @@ export interface FaunaCoatSurface {
 }
 /** Largest pattern scale whose marks span 4 cells of `cell` torso lengths. */
 export declare function faunaCoatMaxScale(coat: CoatGenome, cell: number): number;
+/** Exact prepared planetary pattern coordinates and the source-density-clamped
+ * coat. Caller scratch receives a copy; no global sampler scratch is exposed. */
+export declare function faunaPreparedCoatContextInto(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: FaunaBodyRegion | CoatRegion, surface: FaunaCoatSurface, out: CoatSample): Readonly<CoatGenome> | undefined;
 export interface FaunaFawnSpotLayout {
     radius: number;
     spacing: number;
@@ -197,6 +200,11 @@ export declare function faunaFawnSpotLayout(cell: number): FaunaFawnSpotLayout;
  * differ. No maps, GPU resources, random state or added draw calls. The
  * undefined branch preserves legacy coats; a v1 appearance keeps its v1 coat. */
 export declare function sampleFaunaCoat(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region?: FaunaBodyRegion | CoatRegion, surface?: FaunaCoatSurface): CoatColor | undefined;
+/** Existing planetary colour arithmetic with only the library's raw main
+ * pattern/patch mask overridden. Juvenile fawn/stocking and region rules remain.
+ * Used to test whether a source point is affine enough for a shared GLSL mask. */
+export declare function sampleFaunaCoatWithPatternMask(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: FaunaBodyRegion | CoatRegion, surface: FaunaCoatSurface, mask: number, patch: number): CoatColor | undefined;
+export declare function sampleFaunaCoatWithRawPatternMask(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: FaunaBodyRegion | CoatRegion, surface: FaunaCoatSurface, mask: number, patch: number): CoatColor | undefined;
 /** Stocking strength of a juvenile (0.4 at maturity 0.2, 0.7 at 0.45, 1 by
  * 0.7). Leg stockings darken and sharpen with age: gaur and banteng calves
  * are near body-coloured below the knee, and bear cubs and young tapirs lack

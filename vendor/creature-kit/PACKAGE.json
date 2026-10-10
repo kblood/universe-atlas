@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.3.0",
-    "commit": "8aecf223547ff00d56cfc902ac0acf2094d1f5a4",
+    "version": "0.4.0",
+    "commit": "40dc4b31776b0fe9f021ed5c53ff89987d6ee21c",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -23,7 +23,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "f331b3f4b0acccda685aaeb1b9845064518b110cb25436d7aa77dcc556ec5e0d"
+      "sha256": "ef70a39fada6446145da309aa24d7f563cbda2984d92d031ef8abd7a4ec1dabb"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -31,15 +31,19 @@
     },
     {
       "path": "package.json",
-      "sha256": "48ad165c9a345d1f79cad9ad097e7a533be8cccfb506f5b346568b2c1da75f03"
+      "sha256": "d632732a7910203bf72e4ab97e5af0c9e22db4df382d13c87ffc873c306194f7"
     },
     {
       "path": "scripts/export-creature.mjs",
       "sha256": "a9ce00ed6c120b5c404ec8adbf736adbd905c2692d9332624b44e28af79f9415"
     },
     {
+      "path": "src/fauna-coat-crisp-glsl.ts",
+      "sha256": "52d625e244b34a9c5d7f20fe1a661b0e612dc0110eb5af34a76f295196300f64"
+    },
+    {
       "path": "src/fauna-coat-fields.ts",
-      "sha256": "7da8da25a82fc3f9436ff69c699a4edf28a99e262c838f4d846ee987833b5515"
+      "sha256": "9bf567f0e013f9b3fe44c9ffbea2e9cbce1e7c776918f8be30cf5a2c4ddc4ea7"
     },
     {
       "path": "src/fauna-coat-vocab.ts",
@@ -91,7 +95,7 @@
     },
     {
       "path": "src/fauna-composer.ts",
-      "sha256": "5c1eb0789878d66768a8419951d8fd5b0e2362f49dcba1b2f52bb189d3d60a07"
+      "sha256": "0a78e3bf82b3b47eb57a5ba4827b653479351d1d1c4971bc7339cc8f7e0936f5"
     },
     {
       "path": "src/planet-v1/caller-contract.ts",
@@ -107,11 +111,11 @@
     },
     {
       "path": "src/planet-v1/fauna-appearance.ts",
-      "sha256": "58510706c4473315e7010917d359fa3ffaef01cf7906195fa7b3640c889ab128"
+      "sha256": "505bd58ae9d7cb71a157a3632c051d729151c4091f774a2d7356242e3f254f2a"
     },
     {
       "path": "src/planet-v1/fauna-body-plan.ts",
-      "sha256": "cd8eeab086246c6f01d775ef815e52226855652cbcced530e4c13a8d93956895"
+      "sha256": "77accde0cd12f35a1526cb20634ddff51f77441f197bfa061c983126a6dd2bee"
     },
     {
       "path": "src/planet-v1/fauna-face.ts",
@@ -127,7 +131,7 @@
     },
     {
       "path": "src/planet-v1/index.ts",
-      "sha256": "cb0738fb6c48c7f51f62d731a9c4acf97ec0b79732906e0949ca75bafa276a10"
+      "sha256": "b145cdf823756efc498bbf1fa1623d3b48330c738fca311dc751907e6c13cdf0"
     },
     {
       "path": "src/planet-v1/inspector.ts",
@@ -149,19 +153,27 @@
     },
     {
       "path": "README.md",
-      "sha256": "f331b3f4b0acccda685aaeb1b9845064518b110cb25436d7aa77dcc556ec5e0d"
+      "sha256": "ef70a39fada6446145da309aa24d7f563cbda2984d92d031ef8abd7a4ec1dabb"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
       "sha256": "7a343548348bb8d28d2c91792625055ccc1dc706f896bba8c984e058c73dc321"
     },
     {
+      "path": "dist/fauna-coat-crisp-glsl.d.ts",
+      "sha256": "a17cde33ec5da29afad5679a87e79143a45daffbce949916191e31ac6e33b2b5"
+    },
+    {
+      "path": "dist/fauna-coat-crisp-glsl.js",
+      "sha256": "983c5833dbbf328fe378ff7b6d63ac18a79b388b685b5505fda83433834a027d"
+    },
+    {
       "path": "dist/fauna-coat-fields.d.ts",
-      "sha256": "03fa87f2678f47c1063be7954ac233b61f8370ee493ba1404f6277540be13f86"
+      "sha256": "d051cebe30d49339e257dae86e16ca6d8ac0bb6d6485bb2a9d735dfeb7ad4ebf"
     },
     {
       "path": "dist/fauna-coat-fields.js",
-      "sha256": "1f1afd32c0fc8e8c83003a057e30c6e3193fa083f1d2a42064dcba95c3a877e6"
+      "sha256": "ebe674f0973002e3de9e9bf9ebfa2d9e2a9fed93f62b2535847a94f23463bc89"
     },
     {
       "path": "dist/fauna-coat-vocab.d.ts",
@@ -261,11 +273,11 @@
     },
     {
       "path": "dist/fauna-composer.d.ts",
-      "sha256": "511f210843ef1f11a655a2b1da00bf84549c7f093fe72e7e1a3dbeb2b2f35aed"
+      "sha256": "4f1000fa46af28687aa4f7165eeb55bed51be3bcfe772a05846d282fb9ab0c65"
     },
     {
       "path": "dist/fauna-composer.js",
-      "sha256": "9fbc80e9720b95d6b62baec69821e19d6c1e7f224e3f3821d3c94543a906b353"
+      "sha256": "ce673640222c944dedb37f97484506eccdfd86011bdfe69e68af6c5f100e1fdc"
     },
     {
       "path": "dist/planet-v1/caller-contract.d.ts",
@@ -293,19 +305,19 @@
     },
     {
       "path": "dist/planet-v1/fauna-appearance.d.ts",
-      "sha256": "f3d95efcf9f3a69ddf285a4c419a1c4b571cfc97be06a53f7a243f234d4e9475"
+      "sha256": "1e86d22c3062692beb98419467994008a7b4b0c09d4d2f67d872daeea47c0bf4"
     },
     {
       "path": "dist/planet-v1/fauna-appearance.js",
-      "sha256": "d23fdb86a7b6a0faad22081e5a33c868b3eae931d7d654316911219df706e4e1"
+      "sha256": "792e1695c9b0e92de3d47aae38cc921184dc2b2caa2dc66ee1cf76dd9ebc46ef"
     },
     {
       "path": "dist/planet-v1/fauna-body-plan.d.ts",
-      "sha256": "6f95fbb6b954fe9a04a3cac6647656cf37cecd6bb2ef05970602aa2d8c6424b9"
+      "sha256": "4bb940be8981df1ff18c3bf3aa569fac044138e4b175682fec495b3e210d926f"
     },
     {
       "path": "dist/planet-v1/fauna-body-plan.js",
-      "sha256": "35815a315f715b0e29a246482033d7593538e460cbbbf288907c3192daea78cd"
+      "sha256": "d1619ed6c5ad192d48e56242e521adbd1ac6239d1ca049920feb7187d3ee57b7"
     },
     {
       "path": "dist/planet-v1/fauna-face.d.ts",
@@ -333,11 +345,11 @@
     },
     {
       "path": "dist/planet-v1/index.d.ts",
-      "sha256": "309e4935a83de580a4a225876d42fde65146e97a0bc012e979d5e341cc0520c3"
+      "sha256": "9e970ab79199795bb25acc2f9a39add4cb11cb59b80986769a0c3eade4582964"
     },
     {
       "path": "dist/planet-v1/index.js",
-      "sha256": "6d534e4bb2215ae81ef20b57ef6af272caa0cb5a7230b77c2ba924f4c933e06f"
+      "sha256": "feb7d422344dbf001ac025973546c97492106aa7153bb55b1f3b33e143065875"
     },
     {
       "path": "dist/planet-v1/inspector.d.ts",
@@ -349,15 +361,19 @@
     },
     {
       "path": "package.json",
-      "sha256": "48ad165c9a345d1f79cad9ad097e7a533be8cccfb506f5b346568b2c1da75f03"
+      "sha256": "d632732a7910203bf72e4ab97e5af0c9e22db4df382d13c87ffc873c306194f7"
     },
     {
       "path": "scripts/export-creature.mjs",
       "sha256": "a9ce00ed6c120b5c404ec8adbf736adbd905c2692d9332624b44e28af79f9415"
     },
     {
+      "path": "src/fauna-coat-crisp-glsl.ts",
+      "sha256": "52d625e244b34a9c5d7f20fe1a661b0e612dc0110eb5af34a76f295196300f64"
+    },
+    {
       "path": "src/fauna-coat-fields.ts",
-      "sha256": "7da8da25a82fc3f9436ff69c699a4edf28a99e262c838f4d846ee987833b5515"
+      "sha256": "9bf567f0e013f9b3fe44c9ffbea2e9cbce1e7c776918f8be30cf5a2c4ddc4ea7"
     },
     {
       "path": "src/fauna-coat-vocab.ts",
@@ -409,7 +425,7 @@
     },
     {
       "path": "src/fauna-composer.ts",
-      "sha256": "5c1eb0789878d66768a8419951d8fd5b0e2362f49dcba1b2f52bb189d3d60a07"
+      "sha256": "0a78e3bf82b3b47eb57a5ba4827b653479351d1d1c4971bc7339cc8f7e0936f5"
     },
     {
       "path": "src/planet-v1/caller-contract.ts",
@@ -425,11 +441,11 @@
     },
     {
       "path": "src/planet-v1/fauna-appearance.ts",
-      "sha256": "58510706c4473315e7010917d359fa3ffaef01cf7906195fa7b3640c889ab128"
+      "sha256": "505bd58ae9d7cb71a157a3632c051d729151c4091f774a2d7356242e3f254f2a"
     },
     {
       "path": "src/planet-v1/fauna-body-plan.ts",
-      "sha256": "cd8eeab086246c6f01d775ef815e52226855652cbcced530e4c13a8d93956895"
+      "sha256": "77accde0cd12f35a1526cb20634ddff51f77441f197bfa061c983126a6dd2bee"
     },
     {
       "path": "src/planet-v1/fauna-face.ts",
@@ -445,7 +461,7 @@
     },
     {
       "path": "src/planet-v1/index.ts",
-      "sha256": "cb0738fb6c48c7f51f62d731a9c4acf97ec0b79732906e0949ca75bafa276a10"
+      "sha256": "b145cdf823756efc498bbf1fa1623d3b48330c738fca311dc751907e6c13cdf0"
     },
     {
       "path": "src/planet-v1/inspector.ts",

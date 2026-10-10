@@ -9,3 +9,4 @@ export * from "./fauna-structural-appendages.js";
 export * from "./fauna-locomotion.js";
 export * from "./inspector.js";
 export * from "./definition.js";
+export { COAT_PATTERN_CRISP_GLSL, COAT_PATTERN_CRISP_GLSL_VERSION } from "../fauna-coat-crisp-glsl.js";
