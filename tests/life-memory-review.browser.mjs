@@ -7,9 +7,9 @@ import {CURRENT_VERSIONS,MODEL_MANIFEST_ID,encodeVersions} from '../src/time-nav
 const out=process.env.ATLAS_RESULTS||'test-results/life-memory-review';await mkdir(out,{recursive:true});
 const fixtures=JSON.parse(await readFile('C:/LLM/IWSDK/Assets/_assetctl/life-presentation-20261009/baseline-flight/replay.json','utf8'));
 const bundle=await build({entryPoints:['tests/helpers/life-memory-review.mjs'],bundle:true,format:'iife',globalName:'LifeMemoryReview',write:false});
-const report={fixtureBuild:fixtures.sourceBuild,runs:[]};let browser,lock,server;
+const report={poseFixtureBuild:fixtures.sourceBuild,runs:[]};let browser,lock,server;
 try{
-  server=await startDistPreview({dist:process.env.ATLAS_DIST||'dist'});report.build=server.build;
+  server=await startDistPreview({dist:process.env.ATLAS_DIST||'dist'});report.sampledAppBuild=server.build;
   lock=await acquireGpuLock({owner:'aggregate life memory review',capture:true,retryMs:30000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
   for(const world of fixtures.worlds){
     const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),run={world:world.bodyId,date:world.date,errors:[]};report.runs.push(run);
@@ -30,7 +30,7 @@ try{
       return LifeMemoryReview.lifeMemoryReview({floraMeshes:collect('flora'),faunaMeshes:collect('fauna'),
         faunaCachedGeometry:[...p.faunaNear.cache.values()].map(x=>x.geometry),hostArrays,skeletons:p.faunaNear.slots.map(s=>s.skeleton),
         forestAccounting:p.forest.diagnostics().memoryAccounting,reportedFaunaBytes:d.faunaAllocatedBytes,lifeReserveBytes:d.lifeReserveBytes,
-        coreAccountedBytes:d.accountedBytes,candidateTypedBytes});
+        coreAccountedBytes:d.accountedBytes,coreReservedCombinedBytes:d.reservedCombinedBytes,candidateTypedBytes});
     },Number(process.env.CANDIDATE_TYPED_BYTES||0));
     await context.close();await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({world:run.world,cpu:run.memory.lifeRetainedCpuBytes,gpu:run.memory.lifeGpuEstimateBytes}));
   }
