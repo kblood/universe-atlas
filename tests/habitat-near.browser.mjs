@@ -20,7 +20,7 @@ const nearReplay=process.env.HABITAT_NEAR_FIXTURE?JSON.parse(await readFile(proc
 const skipTiming=process.env.HABITAT_SKIP_TIMING==='1';
 const save=()=>writeFile(out+'/report.json',JSON.stringify(report,null,2));
 const wait=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout});
-const waitLodIdle=async()=>{if(process.env.HABITAT_REQUIRE_LOD_IDLE==='1')await wait(()=>{const p=window.__atlas.renderDebug().planet,d=p.faunaLod?.diagnostics();return d&&d.coldJobs===0&&d.pendingResults===0&&p.faunaLod.idle;},undefined,180000);};
+const waitLodIdle=async()=>{if(process.env.HABITAT_REQUIRE_LOD_IDLE==='1'||process.env.HABITAT_EXPECT_DEFAULT_PRESENTATION==='1')await wait(()=>{const p=window.__atlas.renderDebug().planet;return p?.faunaLod&&!p.faunaLod.running&&!p.faunaLod.pending&&p.faunaLod.idle;},undefined,180000);};
 const snapshot=()=>page.evaluate(()=>{
   const a=window.__atlas,d=a?.terrain?.tiles,t=a?.travel,debug=a?.renderDebug(),p=debug?.planet;
   const center=t?.bodies?.find(b=>b.id===a.state.body?.id)?.positionM;
@@ -56,7 +56,7 @@ const snapshot=()=>page.evaluate(()=>{
   }
   return {status:document.getElementById('status')?.textContent,travel:t,camera:a?.camera,
     body:a?.state?.body,date:a?.date,walking:t?.walking,landing:t?.landing,clearanceM:t?.surface?.terrainClearance,
-    bodyRelativeM,heading:t?.heading,tiles:d,faunaTrace:ids.length?a.faunaTrace(ids):null,faunaLod:a?.faunaLodTrace?.()??null,forestAssets:a?.forestAssets,meshCounts,floraRanges,floraKinds,
+    bodyRelativeM,heading:t?.heading,tiles:d,faunaTrace:ids.length?a.faunaTrace(ids):null,faunaLod:a?.faunaLodTrace?.()??null,faunaPresentation:a?.faunaPresentation??null,forestAssets:a?.forestAssets,meshCounts,floraRanges,floraKinds,
     cameraDraws:window.__habitatCameraDraws,
     frame:debug?{calls:debug.renderer.info.render.calls,triangles:debug.renderer.info.render.triangles}:null};
 });
@@ -100,6 +100,7 @@ try{
   page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
   page.on('pageerror',e=>report.errors.push(e.message));
   report.build=await fetch(new URL('build-info.json',base)).then(r=>r.json());
+  if(process.env.HABITAT_EXPECT_DEFAULT_PRESENTATION==='1'){await page.goto(base);await wait(()=>window.__atlas?.faunaPresentation?.moduleStatus==='ready');report.ordinaryEntry={inputURL:base,presentation:await page.evaluate(()=>window.__atlas.faunaPresentation)};assert.equal(report.ordinaryEntry.presentation.lodMode,'float');assert.equal(report.ordinaryEntry.presentation.forestBarkSharing,true);assert.equal(report.ordinaryEntry.presentation.moduleError,null);}
   for(const index of (process.env.HABITAT_WORLD_INDICES||'0,1').split(',').map(Number)){
     phase='finder-'+index;
     const fixed=replay?.worlds.find(w=>w.index===index);
@@ -130,11 +131,12 @@ try{
       t?.terrainCruise!==null&&a?.terrain?.tiles?.surfaceReady&&t?.surface?.terrainClearance<=110;});
     }
     await observeDraws();
-    await wait(()=>{const d=window.__atlas.terrain?.tiles;return d?.surfaceReady&&d.lifePending===0&&d.faunaTerrainPending===0;},undefined,120000);
+    await wait(()=>{const p=window.__atlas.renderDebug().planet,b=p?.backlog();return p?.surfaceReady&&b.lifePending===0&&b.faunaTerrainPending===0;},undefined,120000);
     await page.waitForTimeout(8000);
     await page.evaluate(()=>window.__atlas.setExplorationPaused(true));
     await waitLodIdle();
     const start=await capture(`world-${index}-arrival80`),r=start.body.radiusM;
+    if(process.env.HABITAT_EXPECT_DEFAULT_PRESENTATION==='1'){assert.equal(start.faunaPresentation.lodMode,'float');assert.equal(start.faunaPresentation.forestBarkSharing,true);assert.equal(start.faunaPresentation.moduleStatus,'ready');assert.equal(start.faunaPresentation.moduleError,null);assert(start.faunaLod?.ownership.some(x=>x.tier.startsWith('lod')&&x.high>x.low),'ordinary URL actually draws derived animal skins');assert(start.faunaLod.lod.adapter.bindings>0);if(index===0)assert.equal(start.tiles.forest.allocatedBytes,0);if(index===1){assert.equal(start.tiles.forest.memoryAccounting.familyTextureCount,6);assert.equal(start.tiles.forest.barkTextures.entries,2);assert.equal(start.tiles.forest.barkTextures.leases,4);}}
     if(process.env.HABITAT_REQUIRE_FOREST==='1'&&index===1&&!fixed){
       assert.ok(start.tiles.forest.visible>0&&start.cameraDraws.trees>0,'Find forest habitat shows actual main-camera trees without landing');
     }
