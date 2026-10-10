@@ -12,7 +12,9 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:1120}});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
   await page.goto(`http://127.0.0.1:${server.port}/tests/fauna-lod-review.html`);await page.waitForFunction(()=>window.__animalLodReview?.ready,undefined,{timeout:90000});
   const count=await page.evaluate(()=>window.__animalLodReview.count);
-  for(let row=0;row<count;row++)for(const pose of ['rest','walk','feed'])for(const view of ['side','front']){
+  const selectedRows=process.env.LOD_REVIEW_ROWS?JSON.parse(process.env.LOD_REVIEW_ROWS):Array.from({length:count},(_,i)=>i);
+  const views=process.env.LOD_REVIEW_VIEWS?JSON.parse(process.env.LOD_REVIEW_VIEWS):['side','front'];
+  for(const row of selectedRows)for(const pose of ['rest','walk','feed'])for(const view of views){
     const result=await page.evaluate(({row,pose,view})=>window.__animalLodReview.review(row,pose,view),{row,pose,view});report.reviews.push(result);
     await page.screenshot({path:`${out}/${row}-${pose}-${view}.png`});await writeFile(out+'/report.json',JSON.stringify(report,null,2));
     console.log(JSON.stringify({row,pose,view,worstSilhouette:Math.min(...result.panels.map(p=>p.silhouetteIoU)),worstFoot:Math.min(...result.panels.map(p=>p.footRegionIoU))}));

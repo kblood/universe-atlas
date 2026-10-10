@@ -1,7 +1,7 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {FaunaLodPoseWriter} from '../src/fauna-lod-pose.ts';
 const out=process.env.ATLAS_RESULTS||'test-results/body-lod-gpu',report=JSON.parse(await readFile(out+'/report.json','utf8'));
-const corpus=JSON.parse(await readFile('C:/LLM/IWSDK/Assets/_assetctl/animal-system-20261010/canonical-review-corpus/corpus.json','utf8'));
+const corpus=JSON.parse(await readFile(process.env.LOD_REVIEW_CORPUS||'C:/LLM/IWSDK/Assets/_assetctl/animal-system-20261010/canonical-review-corpus/corpus.json','utf8'));
 function poseTypedBytes(count){
   const writer=new FaunaLodPoseWriter(),handles=Array.from({length:count},(_,i)=>writer.prepare(corpus.rows[i%corpus.rows.length].plan,{id:'lab/'+i,orbitRadiusM:4}));
   const buffers=new Set();let bytes=0;
@@ -22,4 +22,7 @@ summary.candidate128={retainedCpuBytes:b.geometryBytes+b.paletteBytes+b.cacheByt
   gpuEstimateBytes:b.geometryBytes+b.paletteBytes,
   conservativeTypedPoolPlusPoseEstimateBytes:b.estimatedBufferBytes+128*4+intended128.approximatePoseCpuBytes+intended128.callerPaletteCpuBytes,
   additionalSeenCpuBytes:128*4,scope:'adding one candidate pool; existing representations not subtracted'};
+summary.candidateMethods128=report.rows.filter(r=>r.method&&r.paused).map(r=>{const b=r.info.backend;return {method:r.method,
+  retainedCpuBytes:b.geometryBytes+b.paletteBytes+b.cacheBytes+128*4+intended128.approximatePoseCpuBytes+intended128.callerPaletteCpuBytes,
+  gpuEstimateBytes:b.geometryBytes+b.paletteBytes,conservativeTypedPoolPlusPoseEstimateBytes:b.estimatedBufferBytes+128*4+intended128.approximatePoseCpuBytes+intended128.callerPaletteCpuBytes};});
 await writeFile(out+'/summary.json',JSON.stringify(summary,null,2));console.log(JSON.stringify(summary,null,2));

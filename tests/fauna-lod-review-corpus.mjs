@@ -13,8 +13,16 @@ const modules={};for(const file of ['creature-model.ts','fauna-body-plan.ts','fa
 const fields=['positions','normals','colors','skinIndex','skinWeight','index'];
 const writer=new FaunaBonePaletteWriter();
 const rows=[];
+const specimens=[];
 for(const [archetype,family]of [['browser','ungulate'],['runner','cursorial'],['low-slung','padded'],['long-neck','long-neck']])for(const stage of ['adult','juvenile']){
   const id=seed+'/'+archetype+'/'+stage,genome=realisticIndividualCreatureGenome(generateCreatureGenome(seed,archetype),id,0,stage,family);
+  specimens.push({id,genome,archetype,family,stage,seed});
+}
+const fixturePath='C:/LLM/IWSDK/Assets/_assetctl/life-presentation-20261009/baseline-flight/replay.json',fixture=JSON.parse(await readFile(fixturePath,'utf8'));
+for(const world of fixture.worlds)specimens.push({id:world.target.id,genome:world.target.genome,archetype:world.target.genome.archetype,family:world.target.genome.morphology?.family,
+  stage:'actual-planet-individual',seed:null,worldId:world.bodyId,date:world.date,fixturePath});
+for(const specimen of specimens){
+  const {id,genome}=specimen;
   const body=buildQuadrupedBody(genome),hash=createHash('sha256');for(const field of fields)hash.update(new Uint8Array(body[field].buffer,body[field].byteOffset,body[field].byteLength));
   const member={id,anchorOffsetX:0,anchorOffsetZ:0,orbitRadiusM:5,orbitAngularSpeed:.15,orbitPhase:0,gaitPeriodS:12};
   const poses=[];
@@ -24,9 +32,9 @@ for(const [archetype,family]of [['browser','ungulate'],['runner','cursorial'],['
     writer.write(body.plan,pose,palette);
     poses.push({name,phase,behaviour,member,activity,palette:Array.from(palette),pose});
   }
-  rows.push({id,seed,archetype,family,stage,genome,sourceDigest:hash.digest('hex'),plan:body.plan,vertexCount:body.vertexCount,triangleCount:body.triangleCount,
+  rows.push({...specimen,sourceDigest:hash.digest('hex'),plan:body.plan,vertexCount:body.vertexCount,triangleCount:body.triangleCount,
     bodyVertexCount:body.bodyVertexCount,bodyTriangleCount:body.bodyTriangleCount,structuralVertexCount:body.structuralVertexCount,
-    structuralTriangleCount:body.structuralTriangleCount,cellM:body.cellM,grid:body.grid,faceFeatures:body.faceFeatures,
+    structuralTriangleCount:body.structuralTriangleCount,cellM:body.cellM,grid:body.grid,sourceIndexType:body.index.constructor.name,faceFeatures:body.faceFeatures,
     source:Object.fromEntries(fields.map(f=>[f,Array.from(body[f])])),poses});
 }
 await writeFile(out+'/corpus.json',JSON.stringify({sourceCommit,modules,seed,versions:{genome:CREATURE_GENOME_VERSION,body:QUADRUPED_BODY_VERSION},

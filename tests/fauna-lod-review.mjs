@@ -4,7 +4,7 @@ import {createFaunaMaterial} from '../src/fauna-material.ts';
 const data=await fetch('/test-results/animal-lod-review/data.json').then(r=>r.json());
 const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setPixelRatio(1);renderer.setSize(1440,1080);renderer.autoClear=false;document.body.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#25313b');scene.add(new THREE.HemisphereLight(0xffffff,0x63564c,2.5));const light=new THREE.DirectionalLight(0xfff3df,3);light.position.set(5,8,9);scene.add(light);
-const camera=new THREE.OrthographicCamera(-2,2,2,-2,.01,100),maskMaterial=new THREE.MeshBasicMaterial({color:0xffffff});
+let camera=new THREE.OrthographicCamera(-2,2,2,-2,.01,100);const maskMaterial=new THREE.MeshBasicMaterial({color:0xffffff});
 const target=new THREE.WebGLRenderTarget(360,360,{depthBuffer:true}),rigs=new Map();let last;
 const decode=s=>({...s,positions:new Float32Array(s.positions),normals:new Float32Array(s.normals),colors:new Uint8Array(s.colors),skinIndex:new Uint8Array(s.skinIndex),skinWeight:new Uint8Array(s.skinWeight),index:new Uint32Array(s.index)});
 function rigFor(row,level,key){
@@ -34,7 +34,11 @@ async function review(rowIndex,poseName='rest',view='side'){
   const row=data.rows[rowIndex],pose=row.poses.find(p=>p.name===poseName),source=rigFor(row,row.source,rowIndex+'/source');poseRig(source,pose);
   source.mesh.computeBoundingBox();
   const box=new THREE.Box3().setFromObject(source.mesh),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()),span=Math.max(size.x,size.y,size.z)*.64;
-  camera.left=-span;camera.right=span;camera.top=span;camera.bottom=-span;camera.position.copy(center).add(view==='front'?new THREE.Vector3(12,0,0):new THREE.Vector3(0,0,12));camera.lookAt(center);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
+  const distance=view.startsWith('distance')?Number(view.slice(8)):null;
+  if(distance){camera=new THREE.PerspectiveCamera(THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(48)/2)*360/1000)),1,.01,1000);
+    camera.position.copy(center).add(new THREE.Vector3(0,.25,1).normalize().multiplyScalar(distance));}
+  else{camera=new THREE.OrthographicCamera(-span,span,span,-span,.01,100);camera.position.copy(center).add(view==='front'?new THREE.Vector3(12,0,0):new THREE.Vector3(0,0,12));}
+  camera.lookAt(center);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
   const sourceMask=pixels(source.mesh,true),sourceLit=pixels(source.mesh,false),panels=[];
   if(!sourceMask.some((v,i)=>i%4===0&&v>0))throw new Error('Empty source silhouette');
   for(let i=0;i<360;i++)if(sourceMask[i*4]>0||sourceMask[((359*360)+i)*4]>0||sourceMask[(i*360)*4]>0||sourceMask[(i*360+359)*4]>0)throw new Error('Source silhouette clips the review viewport');
@@ -46,7 +50,8 @@ async function review(rowIndex,poseName='rest',view='side'){
     panels.push({method:method.method,target:level.target,reached:level.reached,triangles:level.triangleCount??row.triangleCount,vertices:level.vertexCount??row.vertexCount,...metrics(sourceMask,mask,sourceLit,lit)});
     renderer.setRenderTarget(null);renderer.setViewport(column*360,(2-band)*360,360,360);renderer.setScissor(column*360,(2-band)*360,360,360);renderer.setScissorTest(true);scene.background.set('#25313b');scene.add(rig.mesh);renderer.clear();renderer.render(scene,camera);scene.remove(rig.mesh);
   }
-  renderer.setScissorTest(false);last={id:row.id,pose:poseName,view,sourceDigest:row.sourceDigest,panels};
+  renderer.setScissorTest(false);last={id:row.id,pose:poseName,view,sourceDigest:row.sourceDigest,panels,
+    ...(distance?{pixelScale:{distanceM:distance,runtimeFovDegrees:48,runtimeHeightPx:1000,panelCropPx:360,cropFovDegrees:camera.fov,scope:'central pixel-equivalent crop; standalone flat-ground body view, not actual planetary camera'}}:{})};
   document.getElementById('label').textContent=`${row.archetype} ${row.stage} | ${poseName} ${view} | columns: ${methods.map(m=>m.method).join(' / ')} | rows:1500 /750 /500 triangle targets`;return last;
 }
 window.__animalLodReview={ready:true,review,get last(){return last;},get count(){return data.rows.length;},renderer};await review(0);
