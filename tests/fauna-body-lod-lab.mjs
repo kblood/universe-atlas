@@ -41,7 +41,7 @@ function choose(next,nextTarget=500,n=512){active?.dispose();mode=next;target=ne
     data.rows.forEach((r,i)=>{const l=r.levels.find(l=>l.target===target);if(!active.registerGeometry('sample/'+i,decode(l)))throw new Error('LOD admission failed');});
     for(let i=0;i<count;i++)if(!active.prepareAnimal(members[i].id,'sample/'+(i%data.rows.length)))throw new Error('Actor admission failed');
     handles=members.map((m,i)=>cheap.prepare(data.rows[i%data.rows.length].levels.find(l=>l.target===target).plan,m));
-  }scene.add(active.group);document.getElementById('label').textContent=`Prototype only | ${mode} target${target} | ${count} animals`;
+  }scene.add(active.group);document.getElementById('label').textContent=`Prototype only | ${mode==='body2'?'current body2 four primitive batches':mode==='source'?'loaded full source':`derived target ${target}`} | ${count} animals`;
 }
 function update(){const start=performance.now(),seconds=restPose?0:paused?2:++frame/60;
   if(mode==='source'){for(const mesh of active.group.children)mesh.skeleton.update();lastCpu=performance.now()-start;return;}
