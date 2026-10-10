@@ -21,6 +21,7 @@ export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}
   const pools={close:new FaunaPlanetCrispBatch({capacity:17,maxVerticesPerAnimal:900,maxIndicesPerAnimal:4500,cacheMode:'atlas-owned',basisStorage:storage,maxBufferBytes:16*1024*1024}),
     middle:new FaunaPlanetCrispBatch({capacity:113,maxVerticesPerAnimal:500,maxIndicesPerAnimal:2250,cacheMode:'atlas-owned',basisStorage:storage,maxBufferBytes:16*1024*1024})};
   const group=new THREE.Group();group.name='Opt-in actual-genome LOD';group.add(pools.close.group,pools.middle.group);
+  const localZero=new THREE.Vector3();
   const bindings=new Map<string,PoseBinding>(),jobs=new Map<string,{tier:FaunaLodTier;genome:string}>(),writer=new FaunaBonePaletteWriter(),rows:{id:string;tier:string;genomeKey:string;sourceDigest:string|null;low:number;high:number;poseBuilds:number;maxPenetration:number;maxReachError:number}[]=[];
   let disposed=false,activeWorker:Worker|null=null,activeReject:((reason:unknown)=>void)|null=null,activeCleanup:(()=>void)|null=null;
   const workerFactory=options.workerFactory??(()=>new Worker(new URL('./fauna-lod-worker.ts',import.meta.url),{type:'module'}));
@@ -57,7 +58,9 @@ export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}
     release(id,key){const entry=bindings.get(id);if(entry?.key!==key)return;releaseBinding(entry);bindings.delete(id);},
     canAdopt(tier,id){return bindings.get(id)?.tier===tier||pools[tier].diagnostics().prepared<(tier==='close'?17:113);},
     discard(result){const payload=result?.payload as Payload|null;if(payload?.key)jobs.delete(payload.key);},
-    beginFrame(origin){rows.length=0;pools.close.beginFrame(origin);pools.middle.beginFrame(origin);},
+    // PlanetRenderer nests this group under faunaRenderer.group, which owns
+    // lifeOrigin already. Actor matrices subtract that origin exactly once.
+    beginFrame(_origin){rows.length=0;pools.close.beginFrame(localZero);pools.middle.beginFrame(localZero);},
     submit(candidate:FaunaLodCandidate,coverage,coverageStart){
       const entry=bindings.get(candidate.id);if(!entry)return false;
       if(!entry.memberPath||!samePath(entry.memberPath,candidate.member)){const m=candidate.member;

@@ -30,6 +30,16 @@ test('real Kit cold payload adopts unique body, canonical terrain-aware pose and
     const palette=new Float32Array(22*16);new FaunaBonePaletteWriter().write(sourcePlan,expected,palette);
     const material=p.adapter.group.children[1].children[0].material,template=THREE.ShaderLib.standard,shader={vertexShader:template.vertexShader,fragmentShader:template.fragmentShader,uniforms:{}};material.onBeforeCompile(shader,{});
     assert.deepEqual(shader.uniforms.faunaBones.value.image.data.slice(0,22*16),palette,'Into is written immediately and exactly matches independent canonical palette');
+    // Exercise the real parent/pool/actor transform contract with a nonzero
+    // floating origin, including a deformed vertex from the GPU source arrays.
+    const parent=new THREE.Group(),floatingOrigin=new THREE.Vector3(.4,.7,-.3),canonicalPosition=new THREE.Vector3(.41,.72,-.29);parent.position.copy(floatingOrigin);parent.add(p.adapter.group);
+    c.matrix.makeScale(.001,.001,.001);c.matrix.setPosition(canonicalPosition.clone().sub(floatingOrigin));
+    p.adapter.beginFrame(floatingOrigin);p.adapter.submit(c,1,0);p.adapter.endFrame();parent.updateMatrixWorld(true);
+    const mesh=p.adapter.group.children[1].children[0],roots=shader.uniforms.faunaRoots.value.image.data,actorRoot=new THREE.Matrix4().fromArray(roots),bones=shader.uniforms.faunaBones.value.image.data;
+    const vertex=new THREE.Vector3().fromBufferAttribute(mesh.geometry.getAttribute('position'),0),indices=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight'),skinned=new THREE.Vector3(),bone=new THREE.Matrix4();
+    for(let k=0;k<4;k++){bone.fromArray(bones,indices.array[k]*16);skinned.addScaledVector(vertex.clone().applyMatrix4(bone),weights.array[k]/255);}
+    const actual=skinned.clone().applyMatrix4(actorRoot).applyMatrix4(mesh.matrixWorld),expectedWorld=skinned.clone().multiplyScalar(.001).add(canonicalPosition);
+    assert.ok(actual.distanceTo(expectedWorld)<1e-7,'GPU actorRoot × mesh.matrixWorld adds floating origin exactly once');assert.deepEqual(mesh.parent.position.toArray(),[0,0,0]);
     p.adapter.beginFrame(new THREE.Vector3());p.adapter.submit(c,.37,0);p.adapter.endFrame();assert.equal(p.adapter.trace()[0].poseBuilds,1,'paused palette reused');
     c.groundRevision++;p.adapter.beginFrame(new THREE.Vector3());p.adapter.submit(c,.37,0);p.adapter.endFrame();assert.equal(p.adapter.trace()[0].poseBuilds,2,'stencil revision invalidates pose');
     assert.equal(p.adapter.diagnostics().poseWorkspaceTypedBytes,1760);assert.ok(p.adapter.diagnostics().poseWorkspaceJsObjects>0);
