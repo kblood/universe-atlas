@@ -1,0 +1,34 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {buildQuadrupedBody} from '../src/fauna-body-plan.ts';
+import {acquireGpuLock} from './helpers/gpu-lock.mjs';
+import {startDistPreview,stopServer} from './helpers/free-port.mjs';
+const out=process.env.ATLAS_RESULTS||'test-results/kit-animal-lab';await mkdir(out,{recursive:true});
+let server,lock,browser;const report={errors:[],scope:'same canonical genome transported between separately built Atlas and Kit Lab applications',ok:false};
+try{
+  server=await startDistPreview({dist:process.env.ATLAS_DIST||'dist'});report.build=server.build;
+  lock=await acquireGpuLock({owner:'shared canonical Animal Lab definition roundtrip',capture:true,retryMs:30000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
+  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
+  await page.addInitScript(()=>{window.__labDraws=0;for(const p of [WebGLRenderingContext.prototype,WebGL2RenderingContext.prototype])for(const key of ['drawElements','drawArrays']){const original=p[key];p[key]=function(...args){window.__labDraws++;return original.apply(this,args);};}});
+  await page.goto(server.base+'creature-lab.html');await page.waitForFunction(()=>window.__creatureLab?.ready,undefined,{timeout:90000});
+  report.atlas=await page.evaluate(()=>({mode:window.__creatureLab.mode,error:window.__creatureLab.error,individual:window.__creatureLab.individuals[0],details:window.__creatureLab.skinDetails,draws:window.__labDraws}));
+  assert.equal(report.atlas.mode,'skin');assert.equal(report.atlas.error,null);assert(report.atlas.draws>0);assert.equal(report.atlas.individual.source,'procedural');
+  const downloadPromise=page.waitForEvent('download');await page.locator('#export-definition').click();const download=await downloadPromise;await download.saveAs(out+'/atlas-definition.json');
+  const definition=JSON.parse(await readFile(out+'/atlas-definition.json','utf8'));assert.deepEqual(definition.genome,report.atlas.individual.genome);report.definition=definition;
+  await page.screenshot({path:out+'/atlas-primary-skin.png'});
+  await page.goto(server.base+'animal-lab/planet-skin.html');await page.waitForFunction(()=>window.__planetAnimalLab,undefined,{timeout:90000});
+  await page.locator('#definition').fill(JSON.stringify(definition));await page.locator('#load').click();
+  await page.waitForFunction(()=>document.getElementById('status').textContent==='Loaded canonical genome unchanged.');
+  report.standalone=await page.evaluate(()=>({details:window.__planetAnimalLab.details(),draws:window.__labDraws}));assert.deepEqual(report.standalone.details.definition,definition);assert(report.standalone.draws>0);
+  const body=buildQuadrupedBody(definition.genome);assert.equal(report.standalone.details.vertices,body.vertexCount);assert.equal(report.standalone.details.triangles,body.triangleCount);assert.equal(report.standalone.details.bones,22);
+  await page.locator('#pose').selectOption('walk');await page.locator('#time').fill('1.25').catch(async()=>{await page.locator('#time').evaluate(e=>{e.value='1.25';e.dispatchEvent(new Event('input',{bubbles:true}));});});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.screenshot({path:out+'/standalone-roundtrip-walk.png'});
+  const exported=page.waitForEvent('download');await page.locator('#export').click();await(await exported).saveAs(out+'/standalone-definition.json');assert.deepEqual(JSON.parse(await readFile(out+'/standalone-definition.json','utf8')),definition);
+  await page.locator('#definition').fill('{ invalid');await page.locator('#load').click();assert.deepEqual(await page.evaluate(()=>window.__planetAnimalLab.details().definition),definition,'invalid input preserves loaded canonical animal');
+  const actual=JSON.parse(await readFile('C:/LLM/IWSDK/Assets/_assetctl/animal-system-20261010/canonical-review-corpus-plus-worlds/corpus.json','utf8')).rows[8];
+  await page.locator('#definition').fill(JSON.stringify({individualId:actual.id,genome:actual.genome}));await page.locator('#load').click();
+  report.actualDaunune=await page.evaluate(()=>window.__planetAnimalLab.details());assert.deepEqual(report.actualDaunune.definition.genome,actual.genome);assert.equal(report.actualDaunune.triangles,actual.triangleCount);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.screenshot({path:out+'/standalone-actual-daunune.png'});
+  assert.deepEqual(report.errors,[]);report.ok=true;
+}finally{await browser?.close();await lock?.release();if(server)await stopServer(server.child);await writeFile(out+'/report.json',JSON.stringify(report,null,2));}

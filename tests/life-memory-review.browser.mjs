@@ -27,10 +27,15 @@ try{
       const typed=(value,depth=0)=>{if(!value||depth>6||seen.has(value))return;seen.add(value);if(ArrayBuffer.isView(value)){hostArrays.push(value);return;}if(Array.isArray(value)){for(const v of value)typed(v,depth+1);}else if(Object.getPrototypeOf(value)===Object.prototype)for(const v of Object.values(value))typed(v,depth+1);};
       for(const resident of p.lifeResidents.values()){typed(resident.ground);typed(resident.floraPose);typed(resident.floraRecipe);}
       for(const slot of p.faunaNear.slots)typed(slot.pose);
-      return LifeMemoryReview.lifeMemoryReview({floraMeshes:collect('flora'),faunaMeshes:collect('fauna'),
+      const memory=LifeMemoryReview.lifeMemoryReview({floraMeshes:collect('flora'),faunaMeshes:collect('fauna'),
         faunaCachedGeometry:[...p.faunaNear.cache.values()].map(x=>x.geometry),hostArrays,skeletons:p.faunaNear.slots.map(s=>s.skeleton),
         forestAccounting:p.forest.diagnostics().memoryAccounting,reportedFaunaBytes:d.faunaAllocatedBytes,lifeReserveBytes:d.lifeReserveBytes,
-        coreAccountedBytes:d.accountedBytes,coreReservedCombinedBytes:d.reservedCombinedBytes,candidateTypedBytes});
+        coreAccountedBytes:d.coreAccountedBytes??d.accountedBytes,coreReservedCombinedBytes:d.reservedCombinedBytes,candidateTypedBytes});
+      const forest=p.forest.diagnostics(),forestMeshes=new Set();for(const kind of ['forestNear','forestMiddle','forestFar'])for(const root of p.profilingObjects(kind))root.traverse(o=>{if(o.isMesh)forestMeshes.add(o);});
+      const ids=d.faunaDrawn.map(x=>x.id);
+      return {...memory,runtime:{forestResourceState:forest.resourceState??'allocated',forestAllocatedBytes:forest.allocatedBytes,
+        forestMeshCount:forestMeshes.size,forestWorker:!!p.forest.worker,canopyWorker:!!p.forest.fullCanopy?.worker,
+        trees:forest.visible,treeSamples:p.forest.detailedSamples(),faunaTrace:a.faunaTrace(ids),flora:d.floraSubmittedCount}};
     },Number(process.env.CANDIDATE_TYPED_BYTES||0));
     await context.close();await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({world:run.world,cpu:run.memory.lifeRetainedCpuBytes,gpu:run.memory.lifeGpuEstimateBytes}));
   }
