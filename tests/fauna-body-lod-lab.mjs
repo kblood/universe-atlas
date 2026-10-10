@@ -6,6 +6,7 @@ import {faunaMemberActivityAtWorldNs} from '../src/fauna-runtime.ts';
 import {createFaunaMaterial} from '../src/fauna-material.ts';
 import {faunaBodyGeometry} from '../src/fauna-near-rig.ts';
 const data=await fetch('/test-results/body-lod-assets/data.json').then(r=>r.json());
+const streaming=new URLSearchParams(location.search),paletteRingSize=Number(streaming.get('paletteRingSize')||1),paletteUploadMode=streaming.get('paletteUploadMode')||'full';
 const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(1440,1000);renderer.setPixelRatio(1);
 renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#242b34');
@@ -37,7 +38,7 @@ function choose(next,nextTarget=500,n=512){active?.dispose();mode=next;target=ne
     }
     active={group,dispose(){meshes.forEach(m=>{m.geometry.dispose();m.material.dispose();m.skeleton.dispose();});group.removeFromParent();}};
   }
-  else{active=new FaunaSkinnedBatch({capacity:count,maxVerticesPerAnimal:target===1500?900:target===500?500:200,maxIndicesPerAnimal:target*3,maxGeometryEntries:data.rows.length,maxBufferBytes:count>128?64*1024*1024:16*1024*1024});
+  else{active=new FaunaSkinnedBatch({capacity:count,maxVerticesPerAnimal:target===1500?900:target===500?500:200,maxIndicesPerAnimal:target*3,maxGeometryEntries:data.rows.length,maxBufferBytes:count>128?64*1024*1024:16*1024*1024,paletteRingSize,paletteUploadMode});
     data.rows.forEach((r,i)=>{const l=r.levels.find(l=>l.target===target);if(!active.registerGeometry('sample/'+i,decode(l)))throw new Error('LOD admission failed');});
     for(let i=0;i<count;i++)if(!active.prepareAnimal(members[i].id,'sample/'+(i%data.rows.length)))throw new Error('Actor admission failed');
     handles=members.map((m,i)=>cheap.prepare(data.rows[i%data.rows.length].levels.find(l=>l.target===target).plan,m));

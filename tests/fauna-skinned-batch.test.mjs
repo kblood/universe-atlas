@@ -64,3 +64,65 @@ test('default buffers stay bounded and use16bit indices; larger measurements req
  const large=new FaunaSkinnedBatch({capacity:512,maxVerticesPerAnimal:500,maxIndicesPerAnimal:1500,maxBufferBytes:64*1024*1024});
  try{assert.equal(large.diagnostics().indexBytes,4);assert.ok(large.diagnostics().estimatedBufferBytes>16*1024*1024);}finally{large.dispose();}
 });
+
+test('palette ring wrap keeps exact data and all colour/shadow uniforms on the same snapshot',()=>{
+ const b=new FaunaSkinnedBatch({capacity:8,maxVerticesPerAnimal:3,maxIndicesPerAnimal:3,paletteRingSize:3,paletteUploadMode:'adaptive-rows'});
+ try{
+  b.registerGeometry('body',tiny());b.prepareAnimal('a','body');b.prepareAnimal('b','body');
+  const shaders=[b.mesh.material,b.mesh.customDepthMaterial,b.mesh.customDistanceMaterial].map(material=>{
+   const shader={uniforms:{},vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader};
+   material.onBeforeCompile(shader,{});return shader;
+  });
+  const palette=identityPalette(),origin=new THREE.Vector3();
+  for(let frame=0;frame<8;frame++){
+   palette[12]=frame*.25;b.beginFrame(origin);b.submit('a',new THREE.Matrix4().makeTranslation(frame,0,0),palette);
+   if(frame<3)b.submit('b',new THREE.Matrix4().makeTranslation(0,frame,0),identityPalette());b.endFrame();
+   assert.deepEqual(b.boneTexture.image.data,b.boneMatrices,'rotated palette includes all current rows');
+   assert.deepEqual(b.rootTexture.image.data,b.rootMatrices,'omitted member cannot resurrect from an older ring');
+   for(const shader of shaders){assert.equal(shader.uniforms.faunaBones.value,b.boneTexture);assert.equal(shader.uniforms.faunaRoots.value,b.rootTexture);}
+   b.boneTexture.onUpdate(b.boneTexture);b.rootTexture.onUpdate(b.rootTexture);
+  }
+  const index=b.diagnostics().paletteIndex,versions=[b.boneTexture.version,b.rootTexture.version];
+  b.beginFrame(origin);b.submit('a',new THREE.Matrix4().makeTranslation(7,0,0),palette);b.endFrame();
+  assert.equal(b.diagnostics().paletteIndex,index);assert.deepEqual([b.boneTexture.version,b.rootTexture.version],versions);
+  assert.equal(b.diagnostics().paletteUploadBytes,0,'paused frame does not rotate or upload');
+  const textures=new Set(),disposed=[];
+  for(let frame=8;frame<14;frame++){
+   b.beginFrame(origin);b.submit('a',new THREE.Matrix4().makeTranslation(frame,0,0),palette);b.endFrame();
+   for(const texture of [b.boneTexture,b.rootTexture])if(!textures.has(texture)){textures.add(texture);texture.addEventListener('dispose',()=>disposed.push(texture));}
+  }
+  b.dispose();assert.equal(disposed.length,6,'all ring textures released');
+ }finally{b.dispose();}
+});
+
+test('sparse RGBA uploads stay within rows and preserve unconsumed full uploads',()=>{
+ const b=new FaunaSkinnedBatch({capacity:8,maxVerticesPerAnimal:3,maxIndicesPerAnimal:3,paletteUploadMode:'adaptive-rows'});
+ try{
+  b.registerGeometry('body',tiny());b.prepareAnimal('a','body');b.prepareAnimal('b','body');
+  const palette=identityPalette(),origin=new THREE.Vector3(),frame=(time,second=true)=>{
+   b.beginFrame(origin);b.submit('a',new THREE.Matrix4().makeTranslation(time,0,0),palette);
+   if(second)b.submit('b',new THREE.Matrix4(),palette);b.endFrame();
+  };
+  frame(0);frame(1);assert.deepEqual(b.rootTexture.updateRanges,[],'full upload still pending');
+  assert.equal(b.diagnostics().paletteUploadBytes,b.rootMatrices.byteLength);
+  b.boneTexture.onUpdate(b.boneTexture);b.rootTexture.onUpdate(b.rootTexture);
+  frame(2);assert.deepEqual(b.rootTexture.updateRanges,[{start:0,count:20}]);assert.equal(b.diagnostics().paletteUploadBytes,80);
+  frame(3,false);assert.ok(b.rootTexture.updateRanges.some(r=>r.start===20&&r.count===20),'omission joins pending uploads');
+  for(const range of b.rootTexture.updateRanges)assert.equal(Math.floor(range.start/20),Math.floor((range.start+range.count-1)/20));
+  b.rootTexture.clearUpdateRanges();b.rootTexture.onUpdate(b.rootTexture);
+  palette[12]=.5;frame(3,false);assert.deepEqual(b.boneTexture.updateRanges,[{start:0,count:FAUNA_PALETTE_BONES*16}]);
+  assert.equal(b.diagnostics().paletteUploadBytes,FAUNA_PALETTE_BONES*16*4);
+ }finally{b.dispose();}
+});
+
+test('ring allocation has explicit CPU/GPU headroom and rejects invalid streaming options',()=>{
+ const one=new FaunaSkinnedBatch(),three=new FaunaSkinnedBatch({paletteRingSize:3});
+ try{
+  const a=one.diagnostics(),b=three.diagnostics();
+  assert.equal(b.paletteRetainedCpuBytes,4*a.paletteBytes);assert.equal(b.paletteGpuEstimateBytes,3*a.paletteBytes);
+  assert.equal(b.estimatedBufferBytes-a.estimatedBufferBytes,5*a.paletteBytes);
+  assert.throws(()=>new FaunaSkinnedBatch({paletteRingSize:3,maxBufferBytes:a.estimatedBufferBytes}),/exceedbudget/);
+ }finally{one.dispose();three.dispose();}
+ assert.throws(()=>new FaunaSkinnedBatch({paletteRingSize:4}),/Invalid fauna palette/);
+ assert.throws(()=>new FaunaSkinnedBatch({paletteUploadMode:'invalid'}),/Invalid fauna palette/);
+});

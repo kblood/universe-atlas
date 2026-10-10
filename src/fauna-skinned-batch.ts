@@ -44,10 +44,13 @@ export class FaunaBonePaletteWriter {
 }
 export interface FaunaSkinnedBatchOptions {
   capacity?:number;maxVerticesPerAnimal?:number;maxIndicesPerAnimal?:number;maxGeometryEntries?:number;maxBufferBytes?:number;
+  /** Opt-in upload experiments; unchanged defaults are one texture/full upload. */
+  paletteRingSize?:1|2|3;paletteUploadMode?:'full'|'adaptive-rows';
 }
 type GeometryRecord={plan:QuadrupedPlan;positions:Float32Array;normals:Float32Array;colors:Uint8Array;
   skinIndex:Uint8Array;skinWeight:Uint8Array;index:Uint16Array|Uint32Array;bytes:number;uses:number};
 type Slot={id:string;key:string;roughness:number};
+type PalettePair={bones:THREE.DataTexture;roots:THREE.DataTexture;boneFullPending:boolean;rootFullPending:boolean};
 const HEADER=`
 attribute float faunaActor;
 attribute vec4 skinIndex;
@@ -70,7 +73,12 @@ export class FaunaSkinnedBatch {
   readonly group=new THREE.Group();readonly mesh:THREE.Mesh;
   readonly capacity:number;readonly maxVerticesPerAnimal:number;readonly maxIndicesPerAnimal:number;
   readonly boneMatrices:Float32Array;readonly rootMatrices:Float32Array;
-  readonly boneTexture:THREE.DataTexture;readonly rootTexture:THREE.DataTexture;
+  readonly paletteRingSize:1|2|3;readonly paletteUploadMode:'full'|'adaptive-rows';
+  private readonly paletteRing:PalettePair[]=[];private paletteIndex=0;
+  private readonly boneUniform:{value:THREE.DataTexture};private readonly rootUniform:{value:THREE.DataTexture};
+  private readonly boneDirtyRows:Uint8Array;private readonly rootDirtyRows:Uint8Array;private readonly changedRows:Uint8Array;
+  get boneTexture(){return this.paletteRing[this.paletteIndex].bones;}
+  get rootTexture(){return this.paletteRing[this.paletteIndex].roots;}
   private readonly geometry=new THREE.BufferGeometry();
   private readonly cache=new Map<string,GeometryRecord>();private readonly members=new Map<string,number>();
   private readonly slots:(Slot|null)[];private readonly seen:Uint32Array;private frame=0;private highWater=0;
@@ -80,6 +88,8 @@ export class FaunaSkinnedBatch {
   constructor(options:FaunaSkinnedBatchOptions={}){
     this.capacity=options.capacity??128;this.maxVerticesPerAnimal=options.maxVerticesPerAnimal??500;
     this.maxIndicesPerAnimal=options.maxIndicesPerAnimal??1500;this.maxGeometryEntries=options.maxGeometryEntries??this.capacity;
+    this.paletteRingSize=options.paletteRingSize??1;this.paletteUploadMode=options.paletteUploadMode??'full';
+    if(![1,2,3].includes(this.paletteRingSize)||!['full','adaptive-rows'].includes(this.paletteUploadMode))throw new Error('Invalid fauna palette streaming options');
     for(const [name,value,max] of [['capacity',this.capacity,512],['vertices',this.maxVerticesPerAnimal,4096],
       ['indices',this.maxIndicesPerAnimal,12288],['cache',this.maxGeometryEntries,512]] as const)
       if(!Number.isSafeInteger(value)||value<1||value>max)throw new Error(`Invalid fauna batch ${name}`);
@@ -90,7 +100,8 @@ export class FaunaSkinnedBatch {
     const palettes=this.capacity*(FAUNA_PALETTE_BONES*16+20)*4;
     // BothCPU/GPU atlas+palettes, plus worst-case CPU geometrycache arrays.
     // Plan/key objects, renderer/driver metadata and sourceworker assets are separate.
-    this.estimatedBufferBytes=2*(atlas+palettes)+this.maxGeometryEntries*(this.maxVerticesPerAnimal*35+this.maxIndicesPerAnimal*4);
+    const paletteCopies=this.paletteRingSize===1?2:1+2*this.paletteRingSize;
+    this.estimatedBufferBytes=2*atlas+paletteCopies*palettes+this.capacity*7+this.maxGeometryEntries*(this.maxVerticesPerAnimal*35+this.maxIndicesPerAnimal*4);
     if(!Number.isSafeInteger(this.maxBufferBytes)||this.maxBufferBytes<=0||this.estimatedBufferBytes>this.maxBufferBytes)
       throw new Error(`Fauna batch typedbuffers exceedbudget: ${this.estimatedBufferBytes} > ${this.maxBufferBytes}`);
     const attrs={position:new THREE.BufferAttribute(new Float32Array(vertices*3),3),normal:new THREE.BufferAttribute(new Float32Array(vertices*3),3),
@@ -102,8 +113,14 @@ export class FaunaSkinnedBatch {
     this.boneMatrices=new Float32Array(this.capacity*FAUNA_PALETTE_BONES*16);
     // Four rootmatrixtexels plus (active,roughness,coverage,unused).
     this.rootMatrices=new Float32Array(this.capacity*20);
-    this.boneTexture=texture(this.boneMatrices,FAUNA_PALETTE_BONES*4,this.capacity);
-    this.rootTexture=texture(this.rootMatrices,5,this.capacity);
+    this.boneDirtyRows=new Uint8Array(this.capacity);this.rootDirtyRows=new Uint8Array(this.capacity);this.changedRows=new Uint8Array(this.capacity);
+    for(let i=0;i<this.paletteRingSize;i++){
+      const bones=texture(this.paletteRingSize===1?this.boneMatrices:new Float32Array(this.boneMatrices.length),FAUNA_PALETTE_BONES*4,this.capacity);
+      const roots=texture(this.paletteRingSize===1?this.rootMatrices:new Float32Array(this.rootMatrices.length),5,this.capacity);
+      const pair:PalettePair={bones,roots,boneFullPending:true,rootFullPending:true};
+      bones.onUpdate=()=>{pair.boneFullPending=false;};roots.onUpdate=()=>{pair.rootFullPending=false;};this.paletteRing.push(pair);
+    }
+    this.boneUniform={value:this.boneTexture};this.rootUniform={value:this.rootTexture};
     const material=createFaunaMaterial(true);this.attach(material,true);
     const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});this.attach(depth,false);
     const distance=new THREE.MeshDistanceMaterial();this.attach(distance,false);
@@ -114,7 +131,7 @@ export class FaunaSkinnedBatch {
   private attach(material:THREE.Material,lit:boolean){
     material.customProgramCacheKey=()=>FAUNA_SKINNED_BATCH_VERSION+(lit?'/lit':'/shadow');
     material.onBeforeCompile=shader=>{
-      shader.uniforms.faunaBones={value:this.boneTexture};shader.uniforms.faunaRoots={value:this.rootTexture};
+      shader.uniforms.faunaBones=this.boneUniform;shader.uniforms.faunaRoots=this.rootUniform;
       shader.vertexShader=HEADER+shader.vertexShader;
       const setup=`
         vec4 actorMeta=texelFetch(faunaRoots,ivec2(4,int(faunaActor)),0);
@@ -193,7 +210,7 @@ export class FaunaSkinnedBatch {
   releaseAnimal(memberId:string):void{
     const slot=this.members.get(memberId);if(slot===undefined)return;
     this.cache.get(this.slots[slot]!.key)!.uses--;this.slots[slot]=null;this.members.delete(memberId);
-    this.rootMatrices[slot*20+16]=0;this.rootDirty=true;
+    this.rootMatrices[slot*20+16]=0;this.rootDirty=true;this.rootDirtyRows[slot]=1;
   }
   releaseGeometry(key:string):boolean{const data=this.cache.get(key);if(!data||data.uses)return false;return this.cache.delete(key);}
   beginFrame(origin:THREE.Vector3):void{this.group.position.copy(origin);this.frame=(this.frame+1)>>>0;if(!this.frame){this.seen.fill(0);this.frame=1;}this.active=0;this.actualTriangles=0;this.uploadBytes=0;}
@@ -201,17 +218,42 @@ export class FaunaSkinnedBatch {
     const slot=this.members.get(memberId);if(slot===undefined||this.disposed||bones.length!==FAUNA_PALETTE_BONES*16)return false;
     if(this.seen[slot]===this.frame)return false;
     const p=slot*20,b=slot*FAUNA_PALETTE_BONES*16;
-    for(let i=0;i<16;i++){const n=Math.fround(root.elements[i]);if(!Object.is(this.rootMatrices[p+i],n)){this.rootMatrices[p+i]=n;this.rootDirty=true;}}
-    for(let i=0;i<bones.length;i++)if(!Object.is(this.boneMatrices[b+i],bones[i])){this.boneMatrices[b+i]=bones[i];this.boneDirty=true;}
+    for(let i=0;i<16;i++){const n=Math.fround(root.elements[i]);if(!Object.is(this.rootMatrices[p+i],n)){this.rootMatrices[p+i]=n;this.rootDirty=true;this.rootDirtyRows[slot]=1;}}
+    for(let i=0;i<bones.length;i++)if(!Object.is(this.boneMatrices[b+i],bones[i])){this.boneMatrices[b+i]=bones[i];this.boneDirty=true;this.boneDirtyRows[slot]=1;}
     const roughness=options?.roughness??this.slots[slot]!.roughness,coverage=options?.coverage??1;
-    for(let i=0;i<4;i++){const n=Math.fround(i===0?1:i===1?roughness:i===2?coverage:0);if(!Object.is(this.rootMatrices[p+16+i],n)){this.rootMatrices[p+16+i]=n;this.rootDirty=true;}}
+    for(let i=0;i<4;i++){const n=Math.fround(i===0?1:i===1?roughness:i===2?coverage:0);if(!Object.is(this.rootMatrices[p+16+i],n)){this.rootMatrices[p+16+i]=n;this.rootDirty=true;this.rootDirtyRows[slot]=1;}}
     this.seen[slot]=this.frame;this.active++;this.actualTriangles+=this.cache.get(this.slots[slot]!.key)!.index.length/3;return true;
   }
   endFrame():void{
-    for(let i=0;i<this.highWater;i++)if(this.seen[i]!==this.frame&&this.rootMatrices[i*20+16]!==0){this.rootMatrices[i*20+16]=0;this.rootDirty=true;}
-    if(this.boneDirty){this.boneTexture.needsUpdate=true;this.uploadBytes+=this.boneMatrices.byteLength;}
-    if(this.rootDirty){this.rootTexture.needsUpdate=true;this.uploadBytes+=this.rootMatrices.byteLength;}
+    for(let i=0;i<this.highWater;i++)if(this.seen[i]!==this.frame&&this.rootMatrices[i*20+16]!==0){this.rootMatrices[i*20+16]=0;this.rootDirty=true;this.rootDirtyRows[i]=1;}
+    if(this.boneDirty||this.rootDirty){
+      if(this.paletteRingSize>1)this.paletteIndex=(this.paletteIndex+1)%this.paletteRingSize;
+      const pair=this.paletteRing[this.paletteIndex];
+      this.uploadBytes+=this.streamTexture(pair,'bone',this.boneMatrices,FAUNA_PALETTE_BONES*16,this.boneDirtyRows);
+      this.uploadBytes+=this.streamTexture(pair,'root',this.rootMatrices,20,this.rootDirtyRows);
+      this.boneUniform.value=pair.bones;this.rootUniform.value=pair.roots;
+    }
+    this.boneDirtyRows.fill(0);this.rootDirtyRows.fill(0);
     this.boneDirty=this.rootDirty=false;this.mesh.visible=this.active>0;
+  }
+  private streamTexture(pair:PalettePair,kind:'bone'|'root',source:Float32Array,width:number,dirty:Uint8Array):number{
+    const target=kind==='bone'?pair.bones:pair.roots,data=target.image.data as Float32Array;
+    const rows=this.changedRows;let count=0;
+    for(let row=0;row<this.capacity;row++){
+      let changed=data===source&&dirty[row]===1;
+      if(data!==source)for(let i=row*width,end=i+width;i<end;i++)if(!Object.is(data[i],source[i])){changed=true;break;}
+      rows[row]=changed?1:0;if(changed)count++;
+    }
+    if(!count)return 0;
+    if(data!==source)data.set(source);
+    const pending=kind==='bone'?pair.boneFullPending:pair.rootFullPending;
+    let bytes=0;
+    // Three's RGBA update ranges must fit a single row. Dense updates use one
+    // full upload; initial/unconsumed full uploads stay full until onUpdate.
+    if(this.paletteUploadMode==='full'||pending||count>this.capacity/4){
+      target.clearUpdateRanges();if(kind==='bone')pair.boneFullPending=true;else pair.rootFullPending=true;bytes=source.byteLength;
+    }else for(let row=0;row<this.capacity;row++)if(rows[row]){target.addUpdateRange(row*width,width);bytes+=width*4;}
+    target.needsUpdate=true;return bytes;
   }
   geometryFor(key:string){return this.cache.get(key)?.plan??null;}
   diagnostics(){
@@ -220,10 +262,14 @@ export class FaunaSkinnedBatch {
     for(const record of this.cache.values())cacheBytes+=record.bytes;
     return {prototype:true,estimatedBufferBytes:this.estimatedBufferBytes,maxBufferBytes:this.maxBufferBytes,indexBytes:this.indexBytes,active:this.active,prepared:this.members.size,geometryEntries:this.cache.size,geometryUploads:this.geometryUploads,
       triangles:this.actualTriangles,reservedTriangles:this.highWater*this.maxIndicesPerAnimal/3,drawsPerPass:this.active?1:0,
-      geometryBytes,paletteBytes:this.boneMatrices.byteLength+this.rootMatrices.byteLength,cacheBytes,paletteUploadBytes:this.uploadBytes,rejected:this.rejected};
+      geometryBytes,paletteBytes:this.boneMatrices.byteLength+this.rootMatrices.byteLength,
+      paletteRingSize:this.paletteRingSize,paletteUploadMode:this.paletteUploadMode,paletteIndex:this.paletteIndex,
+      paletteRetainedCpuBytes:(this.boneMatrices.byteLength+this.rootMatrices.byteLength)*(this.paletteRingSize===1?1:1+this.paletteRingSize),
+      paletteGpuEstimateBytes:(this.boneMatrices.byteLength+this.rootMatrices.byteLength)*this.paletteRingSize,
+      cacheBytes,paletteUploadBytes:this.uploadBytes,rejected:this.rejected};
   }
   dispose():void{
     if(this.disposed)return;this.disposed=true;this.geometry.dispose();(this.mesh.material as THREE.Material).dispose();
-    this.mesh.customDepthMaterial?.dispose();this.mesh.customDistanceMaterial?.dispose();this.boneTexture.dispose();this.rootTexture.dispose();this.group.clear();this.cache.clear();this.members.clear();
+    this.mesh.customDepthMaterial?.dispose();this.mesh.customDistanceMaterial?.dispose();for(const pair of this.paletteRing){pair.bones.dispose();pair.roots.dispose();}this.group.clear();this.cache.clear();this.members.clear();
   }
 }
