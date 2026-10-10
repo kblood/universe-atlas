@@ -76,3 +76,38 @@ Actual genotype coefficient-range checks, GPU pixel parity and near/flora/forest
 aggregate accounting remain required; this does not establish game-level life
 acceptance. Seven focused checks now cover both formats, including128 independent
 definition admissions and no duplicate retained basis/source arrays.
+
+Raw-basis correction
+--------------------
+
+The actual Daunune reticulated coat exposed a nonlinearity in the library's
+final channel clamp: already-clipped forced-mask endpoint colours cannot be
+linearly interpolated when contrast pushes an endpoint beyond the clamp.
+The additive kit raw sampler (`{rawLayers:true}`) exposes affine colour before
+that clamp and validates reconstruction against the original colour oracle.
+Default evaluator/generator outputs remain frozen. Daunune's500-triangle
+eligible count increases from130 to202 of216 body vertices; the remaining14
+foot vertices retain original colour. Reconstruction error is below2.3e-16.
+
+The raw presentation version is `planet-coat-crisp-raw-clamp-1`. A per-vertex
+clip flag applies the original0.002..1 clamp after mask mixing at raw body points,
+while supplemental/unsupported colours preserve their original0..1 range.
+Foot/armour and nonlinear overlays are explicit fallbacks. Both full source and
+LOD controls must use this identical clamp stage.
+
+`basisStorage:'packed-snorm16'` handles raw coefficients with a validated
+per-source Float32 scale, storing base and both deltas as normalized Int16.
+It never clamps coefficients to force a packing domain. Original Float32
+coordinates and the clip byte are retained;35 bytes/vertex replace53 float-control
+bytes. Scale is rounded upward to include true extremes, and an analytic error
+bound across every mask/patch/convex interpolation must remain<=1/255 before the
+source clamp. The packed version is `planet-coat-crisp-raw-scaled-snorm16-1`.
+The frozen ten-source500-triangle report accepts all sources, with maximum error
+bound0.0000435. This is CPU coefficient parity, not GPU/perceptual acceptance.
+
+Updated128/500/1500 owned-atlas reservations include clip buffers and a third
+appearance-parameter texel: float12,732,112 bytes; endpoint packed10,033,612 bytes;
+raw scaled packed10,419,112 bytes. Near/flora/forest aggregate accounting remains
+a separate acceptance gate.32-bit shader seeds are split into exact low/high16
+Float32 lanes and reconstructed with uint shifts; tests cover values above2^24
+and UINT32_MAX. Eight focused tests plus ten base-batch tests pass.
