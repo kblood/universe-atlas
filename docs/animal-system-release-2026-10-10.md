@@ -1,5 +1,8 @@
 # Shared animal system release, 2026-10-10
 
+Historical Kit 0.3 release. The current website release is documented in
+[Creature-kit 0.5 desktop release](animal-system-release-kit05-2026-10-10.md).
+
 The native website now serves clean build `e6fa29b6fe3583912fac48ea1d8770c5de4698bb`.
 It consumes the built creature-kit 0.3.0 package from committed Kit source
 `8aecf223547ff00d56cfc902ac0acf2094d1f5a4`, with runtime, source and standalone

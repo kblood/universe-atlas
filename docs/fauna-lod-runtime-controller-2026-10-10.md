@@ -23,9 +23,13 @@ reverse 6.215/6.783 ms. This accepts a visual quality tradeoff, not an FPS gain.
 Actual opt-in frame-interval p95 was 17.545–18.025 ms with diagnostic recording;
 separate CPU/GPU work below 16.67 ms does not establish strict 60 FPS. Natural
 streaming receipts remain relevant and are not replaced by the short diagnostic.
-Observed settled LOD ownership was 14,707,462 bytes; independent exact bark
-sharing recovered 19,573,416 bytes. The combined default still needs final smoke
-accounting; these independent receipts are not a combined measurement.
+Observed settled LOD ownership was 14,707,462 bytes. Final same-build Anitar30
+accounting compared the exact date, camera, census, poses and tree samples:
+default float LOD plus shared bark used 323,198,574 combined estimated CPU/GPU
+life bytes; explicit legacy fauna plus unshared bark used 327,769,616. The net
+saving was 4,571,042 bytes: bark recovered 19,573,416, LOD added 14,707,462 and
+complementary coverage attributes added 294,912. Cold typed worker reserve can
+add 33,554,432 bytes separately; ordinary worker JS heap remains unknown.
 
 The controller takes the existing stable camera-first distance/ID order. It
 can replace at most 128 unique camera-visible members through 200 m. Six full
@@ -147,6 +151,11 @@ checks the actual deformed vertex under a nonzero parent origin.
 Independent same-geometry lit/depth/distance interval probes and dated production
 source/body/pose checks passed. Moving quality remains a representation tradeoff;
 750 triangles do not retain every fine ridge or feature of the full body. Rejected
-targets remain represented by fallback. The final no-query defaults, combined
-resources and actual UI smoke remain release gates; mocked transport tests alone
-do not establish those rendering results.
+targets remain represented by fallback. Final no-query real UI visits passed on
+Daunune and Anitar at 80 m hover without landing, with actual visible LOD skins
+and six total Anitar family texture maps after bark sharing. Eighty actual owned genomes matched all six
+original f96 body buffers in the same Chromium engine. Actual GPU placement,
+pause/resume/date reversal, Back disposal and revisit passed. Barren and explicit
+opt-out scenes allocate no new LOD pool. Receipts are retained under
+`Assets/_assetctl/animal-system-20261010/production-f3-*`; these are desktop
+results and do not establish physical Quest performance.
