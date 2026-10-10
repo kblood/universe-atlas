@@ -19,6 +19,21 @@ function lateralThickness(field,point){
   if(!hits.length)return 0;
   const zs=hits.map(h=>h.point.z);return Math.max(...zs)-Math.min(...zs);
 }
+
+test('field memory includes indexed geometry and the colour buffers allocated on first submission',()=>{
+  const field=new FaunaFieldRenderer({bodyPlan:true});
+  try{
+    const attributeBytes=field.group.children.reduce((sum,m)=>sum+Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0)+m.instanceMatrix.array.byteLength,0);
+    const indexBytes=field.group.children.reduce((sum,m)=>sum+m.geometry.index.array.byteLength,0);
+    assert.ok(indexBytes>0,'all indexed primitive storage must be accounted');
+    assert.equal(field.allocatedBytes,2*(attributeBytes+indexBytes));
+    const before=field.allocatedBytes;
+    render(field,genomes[0]);
+    const colours=field.group.children.reduce((sum,m)=>sum+m.instanceColor.array.byteLength,0);
+    assert.ok(colours>0);
+    assert.equal(field.allocatedBytes,before+2*colours,'CPU and WebGL colour copies join the estimate');
+  }finally{field.dispose();}
+});
 test('fallback thighs have load-bearing volume from the near anatomy for all four body archetypes',()=>{
   for(const g of genomes){
     const current=new FaunaFieldRenderer({bodyPlan:true}),old=new FaunaFieldRenderer(),plan=createQuadrupedPlan(g);

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type {CreatureGenome,CreatureGait} from './fauna-runtime.ts';
 import {createFaunaMaterial} from './fauna-material.ts';
 import {eyeDetailWeight,gaitBlend,rangeWeight} from './fauna-handoff.ts';
+import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
 
 /** Animals drawn through the instanced anatomy per frame. Sized from the
  * measured ground-level population at LETHRA-001 G001/C2128,0,1/0/planet/1
@@ -270,6 +271,9 @@ export class FaunaFieldRenderer {
     if(this.records.size>FAUNA_FIELD_CAPACITY*2)for(const [key,record] of this.records)if(record.frame!==this.frame)this.records.delete(key);
   }
   get count(){return this.animalCount;}
-  get allocatedBytes(){return this.meshes.reduce((sum,m)=>sum+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2;}
+  /** Typed CPU allocations plus estimated WebGL buffers, including indices.
+   * Shared backing stores and upload identities are counted independently. */
+  bufferFootprint(){return forestMeshBufferFootprint(this.meshes);}
+  get allocatedBytes(){const buffers=this.bufferFootprint();return buffers.totalBytes+buffers.geometryGpuEstimateBytes+buffers.instanceGpuEstimateBytes;}
   dispose(){this.records.clear();for(const m of this.meshes){m.geometry.dispose();(m.material as THREE.Material).dispose();}this.group.removeFromParent();}
 }
