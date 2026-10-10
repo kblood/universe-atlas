@@ -1,6 +1,26 @@
 # Dyresystem: status og samling
 
-Status læst på Atlas `f96a8c1`, 10. oktober 2026. Dette er næste
+Aktuel implementering: Kit 0.3.0 (`8aecf22`) ejer planeternes genomer,
+udseende, kropsbygger og bevægelse. Atlas bruger det byggede, versionslåste
+bibliotek via `#creature-kit/planet`; en opdateringskommando opdaterer både
+bibliotek og den selvstændige Lab med hashes og rollback.
+
+Atlas Lab åbner nu den samme kanoniske kropsbygger og fælles Kit-inspector.
+En eksporteret dyredefinition kan åbnes i `animal-lab/planet-skin.html` uden
+at ændre genom eller identitet. Tidligere modes og hjorten er eksplicitte
+referencer; composer er fortsat eksperimentel. Dette er én fælles nuværende
+planet-/inspektionsvej, ikke en påstand om, at alle historiske generatorer er
+fjernet. [Pakke, opdatering og kontrol](creature-kit-planet-package-2026-10-10.md).
+
+Den faktiske browserkontrol bevarer 205/406 dyr på Daunune/Anitar, 18 byggede
+kropshashes og positurer. Lab-definitioner kan eksporteres og importeres
+uændret. LOD-forsøgene nedenfor er fortsat kandidater; flere nåede budgetterne,
+men mistede silhuet eller pelsdetaljer. Ingen af disse resultater alene
+godkender et skift af planeternes standardrenderer.
+
+## Oprindelig status og migrationskontrakt
+
+Status læst på Atlas `f96a8c1`, 10. oktober 2026. Dette var næste
 implementeringskontrakt til review; systemerne er **ikke allerede samlet**.
 Brugerens ønske er ét dyresystem, et selvstændigt kit og Lab, presets som
 data/reference frem for særskilte dyrefabrikker, og LOD fra det samme dyr.
