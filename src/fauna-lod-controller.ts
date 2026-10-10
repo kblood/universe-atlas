@@ -20,6 +20,7 @@ export interface FaunaLodCandidate {
   id:string;genome:CreatureGenome;member:FaunaHerdMember;activity:FaunaMemberActivity;
   cameraVisible:boolean;distanceM:number;matrix:Matrix4;rigSeconds:number;nearCoverage:number;
   tier?:FaunaLodTier;
+  tierReason?:'distance'|'rank';
   ground:FaunaGround;groundRevision:number;behaviour?:FaunaPoseOptions['behaviour'];
   /** Borrowed source. Only cloned job buffers may be transferred to a worker. */
   loadedSource?:Readonly<QuadrupedBodyData>|null;
@@ -77,6 +78,8 @@ export class FaunaLodController {
   private readonly cache=new Map<string,Entry>();private readonly desired=new Map<string,FaunaLodCandidate>();
   private readonly fallback=new Map<string,number>();private readonly submitted=new Set<string>();
   private readonly failed=new Map<string,number>();private running:Running|null=null;private pending:Pending|null=null;
+  private readonly priorContextIds=new Set<string>();private readonly recentJobIds=new Set<string>();
+  private readonly coldJobCauses={newId:0,context:0,distanceTier:0,rankTier:0,cacheRebuild:0};
   private disposed=false;private fading=false;private readyRevision=0;private adoptionMs=0;private rejected=0;private cancelled=0;
   private admissionBlocked:string|null=null;private cloneBudgetBytes=0;private cloneObjectEstimateBytes=0;
   private readonly maxActors:number;private readonly maxDistanceM:number;private readonly maxResultBytes:number;private readonly maxTotalBytes:number;
@@ -102,6 +105,7 @@ export class FaunaLodController {
   setContext(context:FaunaLodContext):void{
     const key=JSON.stringify([context.planetId,context.lifeSignature,context.dateVersion,context.appearanceVersion]);
     if(key===this.contextKey)return;
+    this.priorContextIds.clear();for(const id of this.cache.keys())this.priorContextIds.add(id);this.recentJobIds.clear();
     this.epoch++;this.contextKey=key;this.context={...context};this.desired.clear();this.fallback.clear();this.submitted.clear();this.failed.clear();
     if(this.running&&!this.running.abort.signal.aborted){this.running.abort.abort();this.cancelled++;}
     if(this.pending){this.adapter.discard(this.pending.result);this.pending=null;}
@@ -184,7 +188,10 @@ export class FaunaLodController {
       const cloned=structuredClone({genome:candidate.genome,loadedSource:loaded});
       const job:FaunaLodBuildJob={key,context:{...this.context},individualId:candidate.id,tier,targetTriangles:FAUNA_LOD_TIER_TARGETS[tier],genome:cloned.genome,loadedSource:cloned.loadedSource};
       this.running=running;
-      Promise.resolve().then(()=>{if(running.abort.signal.aborted)throw new Error('Cancelled fauna LOD job');return this.adapter.build(job,running.abort.signal);}).then(result=>{
+      const cause=entry?.genome===candidate.genome&&entry.tier!==tier?(candidate.tierReason==='rank'?'rankTier':'distanceTier'):this.priorContextIds.has(candidate.id)?'context':this.recentJobIds.has(candidate.id)?'cacheRebuild':'newId';
+      Promise.resolve().then(()=>{if(running.abort.signal.aborted)throw new Error('Cancelled fauna LOD job');this.coldJobCauses[cause]++;
+        this.priorContextIds.delete(running.id);this.recentJobIds.delete(running.id);this.recentJobIds.add(running.id);if(this.recentJobIds.size>128)this.recentJobIds.delete(this.recentJobIds.values().next().value!);
+        return this.adapter.build(job,running.abort.signal);}).then(result=>{
         if(this.disposed||running.abort.signal.aborted||running.epoch!==this.epoch){this.adapter.discard(result);return;}
         if(!result||!result.accepted||!bytes(result.byteLength)||result.byteLength>this.maxResultBytes||result.appearanceVersion!==this.context?.appearanceVersion){this.adapter.discard(result);this.rejected++;this.failed.set(running.id,this.now());return;}
         this.pending={running,result};
@@ -201,6 +208,7 @@ export class FaunaLodController {
   presentationTrace(){return this.adapter.trace?.()??[];}
   get idle(){return !this.pending&&!this.fading;}
   diagnostics(){return {version:FAUNA_LOD_CONTROLLER_VERSION,adapter:this.adapter.diagnostics?.(),context:this.context,desired:this.desired.size,prepared:this.cache.size,submitted:this.submitted.size,
+    coldJobCauses:{...this.coldJobCauses},coldReasonHistoryIds:this.recentJobIds.size,priorContextHistoryIds:this.priorContextIds.size,
     coldJobs:this.running?1:0,pendingResults:this.pending?1:0,pendingResultBytes:this.pending?.result.byteLength??0,readyRevision:this.readyRevision,rejected:this.rejected,cancelled:this.cancelled,
     adapterOwnedBytes:this.adapter.ownedBytes,adapterTransientBytes:this.adapter.transientBytes,workerReservedBytes:this.running?this.adapter.workerReserveBytes:0,
     currentCombinedEstimateBytes:this.adapter.ownedBytes+this.adapter.transientBytes+(this.pending?.result.byteLength??0)+(this.running?(this.adapter.workerTypedBytes??0):0),
@@ -210,5 +218,5 @@ export class FaunaLodController {
     maxResidentBytes:this.maxTotalBytes,maxWorkerBytes:this.maxWorkerBytes,maxIncrementalTypedBytes:this.maxTotalBytes+this.maxWorkerBytes,
     maxActors:this.maxActors,maxDistanceM:this.maxDistanceM,maxTotalBytes:this.maxTotalBytes,adoptionMs:this.adoptionMs,adoptionBudgetMs:this.adoptionBudgetMs,adoptionOverBudget:this.adoptionMs>this.adoptionBudgetMs};}
   dispose(){if(this.disposed)return;this.disposed=true;this.epoch++;this.running?.abort.abort();if(this.pending)this.adapter.discard(this.pending.result);this.pending=null;
-    this.cache.clear();this.desired.clear();this.fallback.clear();this.submitted.clear();this.failed.clear();this.adapter.dispose();}
+    this.cache.clear();this.desired.clear();this.fallback.clear();this.submitted.clear();this.failed.clear();this.recentJobIds.clear();this.priorContextIds.clear();this.adapter.dispose();}
 }

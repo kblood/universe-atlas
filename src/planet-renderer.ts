@@ -36,7 +36,8 @@ import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M
 import {floraFineDemand,floraFineCoverage} from './flora-streaming.ts';
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
-import {FaunaLodController,faunaLodTierAt,type FaunaLodTier,type FaunaLodCandidate,type FaunaLodRuntimeAdapter,type FaunaLodControllerOptions,type FaunaLodContext} from './fauna-lod-controller.ts';
+import {FaunaLodController,type FaunaLodCandidate,type FaunaLodRuntimeAdapter,type FaunaLodControllerOptions,type FaunaLodContext} from './fauna-lod-controller.ts';
+import {FaunaLodTierSelection} from './fauna-lod-tier-selection.ts';
 import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
 import {temperateHabitat} from './surface-climate.ts';
 import {PlanetForest} from './planet-forest.ts';
@@ -730,7 +731,7 @@ export class PlanetRenderer {
   private faunaLodInitError:string|null=null;
   private readonly faunaLodPool:FaunaLodCandidate[]=[];
   private readonly faunaLodList:FaunaLodCandidate[]=[];
-  private readonly faunaLodTiers=new Map<string,FaunaLodTier>();
+  private readonly faunaLodTiers=new FaunaLodTierSelection();
   private readonly lifeOrigin=new THREE.Vector3();
   private readonly floraGroup=new THREE.Group();
   private readonly lifeResidents=new Map<string,LifeResident>();
@@ -2260,7 +2261,7 @@ export class PlanetRenderer {
    *   turns or moves re-evaluates no BigInt schedule or grounded transform;
    * - per-frame records, near-rig candidates and matrices are pooled. */
   private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
-    if(this.faunaLod&&this.faunaLodContext){if(this.faunaLodContext.lifeSignature!==this.lifeSignature)this.faunaLodTiers.clear();this.faunaLodContext.lifeSignature=this.lifeSignature;this.faunaLod.setContext(this.faunaLodContext);}
+    if(this.faunaLod&&this.faunaLodContext){this.faunaLodContext.lifeSignature=this.lifeSignature;this.faunaLodTiers.setContext(this.faunaLodContext);this.faunaLod.setContext(this.faunaLodContext);}
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
     this.faunaTraceEye.copy(eye);this.faunaTraceNs=worldNs;this.faunaTraceFrustum.copy(frustum);
     this.faunaTraceShadowValid=!!shadowFrustum;if(shadowFrustum)this.faunaTraceShadow.copy(shadowFrustum);
@@ -2330,25 +2331,20 @@ export class PlanetRenderer {
   private submitFauna(rigTime:number):void {
     if(this.faunaLod){
       const list=this.faunaLodList,pool=this.faunaLodPool;list.length=0;
-      let close=0,middle=0;
       for(const item of this.faunaVisibleList){
         if(!item.cameraVisible||item.distance>200)break;
-        if(list.length>=128)break;
+        if(list.length>=128&&!this.faunaLodTiers.isCloseOwner(item.member.id))continue;
         if(this.faunaRigged.has(item.member.id))continue;
-        let tier=faunaLodTierAt(item.distance,this.faunaLodTiers.get(item.member.id));
-        if(tier==='close'&&close>=16)tier='middle';
-        if(tier==='middle'&&middle>=112)continue;
-        if(tier==='close')close++;else middle++;
         let candidate=pool[list.length];
         if(!candidate)pool.push(candidate={id:item.member.id,genome:this.faunaGenomeOf(item.member),member:item.member,activity:item.activity,cameraVisible:true,distanceM:item.distance,matrix:new THREE.Matrix4(),rigSeconds:rigTime,nearCoverage:0,ground:()=>0,groundRevision:0});
         candidate.id=item.member.id;candidate.genome=this.faunaGenomeOf(item.member);candidate.member=item.member;candidate.activity=item.activity;candidate.distanceM=item.distance;candidate.rigSeconds=rigTime;
         candidate.nearCoverage=this.faunaRigged.has(candidate.id)?1:this.faunaNear.rigWeightOf(candidate.id);candidate.loadedSource=this.faunaNear.loadedSourceOf(candidate.id);
-        candidate.tier=tier;this.faunaLodTiers.set(candidate.id,tier);
         candidate.ground=this.faunaPoseCache.get(this.faunaSurfaces[item.anchor])!.ground;candidate.groundRevision=this.lifePackBuilds;
         candidate.matrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);list.push(candidate);
       }
-      this.faunaLod.update(list,this.lifeOrigin);
-      if(this.faunaLodTiers.size>128)for(const id of this.faunaLodTiers.keys())if(!list.some(candidate=>candidate.id===id))this.faunaLodTiers.delete(id);
+      const tiers=this.faunaLodTiers.select(list);let represented=0;
+      for(const candidate of list){const tier=tiers.get(candidate.id);if(!tier)continue;candidate.tier=tier;candidate.tierReason=this.faunaLodTiers.reasonOf(candidate.id);list[represented++]=candidate;}
+      list.length=represented;this.faunaLod.update(list,this.lifeOrigin);
     }
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaBudgetDrops=0;
     this.faunaDrawnCount=0;this.faunaDrawnList=null;

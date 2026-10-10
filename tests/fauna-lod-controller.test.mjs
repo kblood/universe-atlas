@@ -75,11 +75,11 @@ test('camera churn evicts only unrequested cached members and caches remain capp
 });
 
 test('tier upgrades/downshifts retain the old draw until atomic success and use explicit target identity',async()=>{
-  const f=fixture(),a=candidate('tier');a.tier='middle';f.controller.update([a],origin);await flush();f.jobs[0].resolve(f.result());await flush();f.controller.update([a],origin);const old=f.resources.get(a.id);
-  a.tier='close';f.controller.update([a],origin);await flush();assert.equal(f.jobs[1].job.targetTriangles,1500);assert.equal(f.jobs[1].job.tier,'close');assert.equal(f.resources.get(a.id),old);assert.equal(f.controller.fallbackCoverage(a.id),0);
+  const f=fixture({fadeSeconds:.25}),a=candidate('tier');a.tier='middle';f.controller.update([a],origin);await flush();f.jobs[0].resolve(f.result());await flush();f.controller.update([a],origin);f.setTime(500);f.controller.update([a],origin);assert.equal(f.controller.fallbackCoverage(a.id),0);const old=f.resources.get(a.id);
+  a.tier='close';a.tierReason='rank';f.controller.update([a],origin);await flush();assert.equal(f.jobs[1].job.targetTriangles,1500);assert.equal(f.jobs[1].job.tier,'close');assert.equal(f.resources.get(a.id),old);assert.equal(f.controller.fallbackCoverage(a.id),0);
   f.jobs[1].resolve(f.result());await flush();f.controller.update([a],origin);assert.notEqual(f.resources.get(a.id),old);assert.equal(f.controller.fallbackCoverage(a.id),0);
   a.tier='middle';f.controller.update([a],origin);await flush();assert.equal(f.jobs[2].job.targetTriangles,750);assert.equal(f.controller.fallbackCoverage(a.id),0);
-  f.jobs[2].resolve(f.result({accepted:false}));await flush();f.controller.update([a],origin);assert.equal(f.controller.fallbackCoverage(a.id),0,'failed downshift keeps the old body');f.controller.dispose();
+  f.jobs[2].resolve(f.result({accepted:false}));await flush();f.controller.update([a],origin);assert.equal(f.controller.fallbackCoverage(a.id),0,'failed downshift keeps the old body');assert.equal(f.controller.diagnostics().coldJobCauses.newId,1);assert.equal(f.controller.diagnostics().coldJobCauses.rankTier,2);f.controller.dispose();
   assert.equal(faunaLodTierAt(80,'close'),'close');assert.equal(faunaLodTierAt(96,'close'),'middle');assert.equal(faunaLodTierAt(80,'middle'),'middle');assert.equal(faunaLodTierAt(64,'middle'),'close');
 });
 
@@ -95,4 +95,11 @@ test('turning camera reclaims inactive close-tier owners even below the128 globa
     assert.ok(f.resources.size<=16,'inactive near-tier cache cannot pin all staging slots');
   }
   assert.equal(f.resources.size,16);assert.ok(f.resources.has('turn/19'));f.controller.dispose();
+});
+
+test('cold cause counters distinguish context rebuilds from new IDs and distance/rank tier changes',async()=>{
+  const f=fixture(),a=candidate('existing');f.controller.update([a],origin);await flush();f.jobs[0].resolve(f.result());await flush();f.controller.update([a],origin);
+  f.controller.setContext({...context,dateVersion:'body4/reversed-date'});f.controller.update([a],origin);await flush();assert.equal(f.controller.diagnostics().coldJobCauses.context,1);
+  f.jobs[1].resolve(f.result());await flush();f.controller.update([a],origin);a.tier='close';a.tierReason='distance';f.controller.update([a],origin);await flush();assert.equal(f.controller.diagnostics().coldJobCauses.distanceTier,1);
+  assert.equal(f.controller.diagnostics().coldJobCauses.newId,1);f.controller.dispose();assert.equal(f.controller.diagnostics().coldReasonHistoryIds,0);assert.equal(f.controller.diagnostics().priorContextHistoryIds,0);
 });

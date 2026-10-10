@@ -37,3 +37,25 @@ packed, retained/atlas-owned cache and all three palette-ring sizes through each
 ownership transition. This is allocation cleanup, not an explanation of the
 larger whole-app CPU delta. Source definitions, poses and submitted arrays remain
 unchanged. A settled-versus-streaming comparison is still required.
+
+Close-slot selection now retains16 existing visible close owners through95m.
+A new owner must be strictly more than20% closer than the farthest retained owner;
+equal distances use deterministic ID order. Free slots follow the existing canonical
+camera-distance/ID order. Normal distance hysteresis remains75m initial,65m upgrade,
+95m downshift. Rank-constrained middle choices no longer overwrite the preferred
+distance tier. Up to128 candidates plus16 retained close owners are inspected in
+reused scratch storage; final ownership remains16close+112middle, in canonical
+submission order. Population, frustum tests and near skins remain unchanged.
+
+Context (planet/life/date-version/appearance), hidden and XR clears remove selection
+history. Atomic migration already retained initial appearance fade age; its regression
+now runs with the real0.25s arrival fade and requires full coverage through successful
+upgrade and refused downshift. Only first LOD arrival fades from fallback.
+
+`coldJobCauses` counts actual adapter build attempts: `newId` (first observed in
+bounded current-context history), `context` (cached ID from the previous context),
+`distanceTier`, `rankTier`, and `cacheRebuild`. Recent/previous-context ID histories
+are each capped128 and cleared on disposal. A forgotten historical ID is classified
+as `newId`; these counters do not claim an unbounded lifetime population ledger.
+Queued tier reasons persist across frames, so busy workers do not erase rank causes.
+Browser churn/performance improvement still requires a new measured receipt.
