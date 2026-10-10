@@ -153,7 +153,7 @@ const tileCache=globalThis.__atlasLifeTileCache??=new Map();
  * `rendererOptions` is PlanetRendererOptions (7th constructor argument);
  * undefined keeps the identity scenario's defaults (and older revisions
  * simply ignore it). */
-function createRenderer(module,body,{rendererOptions}={}){
+export function createRenderer(module,body,{rendererOptions}={}){
   const {THREE,buildTile,PlanetRenderer}=module;
   const respond=({data,worker})=>{
     if(worker.terminated)return;

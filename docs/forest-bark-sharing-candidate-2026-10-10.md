@@ -12,6 +12,17 @@ and the main-route `?forest-bark-sharing=1` opt-in, independent of the existing
 balanced on/off runs on the exact same build and quality settings. World
 population, IDs, dates, poses and sampler state are unchanged.
 
+The original `494d0cf` activation receipt failed: bookmark URL canonicalization
+removed the unknown query key before planet construction, leaving the pool
+disabled and saving zero bytes. The followup captures the requested option
+from the initial URL alongside the other view settings. The failed receipt is
+retained at `Assets/_assetctl/animal-system-20261010/bark-sharing-anitar-parity/`.
+An added wiring gate loads the actual verified packaged bundle through
+ForestAssetSource/Attachment, PlanetRenderer and the real forest/tree loader,
+checking two shared bark entries, four leases and six maps before GPU upload.
+Only Node image decoding/statistics are stubbed; native pixel/material/resource
+acceptance remains the independent browser gate.
+
 Sharing requires the encoded PNG SHA256, texture role, colour space, channel,
 mapping, format/type, filtering/wrapping/anisotropy, upload flags, automatic mip
 policy and complete UV transform to match. The decoded maps must be 1024px.

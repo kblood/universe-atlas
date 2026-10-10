@@ -667,6 +667,9 @@ function effectiveQuality():RenderQualityName{return qualityMode==='auto'?adapti
 // ordinary desktop forest; `trees=0` opts out. Immersive sessions still skip
 // them (see forestAssetAttachment.update) until a Quest profile is measured.
 let detailedForestEnabled=new URLSearchParams(location.search).get('trees')!=='0';
+// Bookmark canonicalization omits debug keys. Capture the requested option
+// before navigation rewrites location.search; every later planet keeps it.
+const forestBarkSharing=new URLSearchParams(location.search).get('forest-bark-sharing')==='1';
 const forestAssetSource=new ForestAssetSource(new URL('assets/forest/desktop-v1/forest-bundle-manifest.json',document.baseURI));
 const forestAssetAttachment=new ForestAssetAttachment(forestAssetSource,()=>panel());
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
@@ -2756,7 +2759,7 @@ function restartPlanetTiles() {
   // Transition-continuity hooks (decision D1/D3): on by default; `?continuity=0` restores the former hard switches for an A/B.
   planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()),undefined,
     {presentationContinuity:new URLSearchParams(location.search).get('continuity')!=='0',
-      forestBarkSharing:new URLSearchParams(location.search).get('forest-bark-sharing')==='1',
+      forestBarkSharing,
       ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16'})}:{})});
   planetTiles.setSurfaceDetail(surfaceDetail);
   planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
