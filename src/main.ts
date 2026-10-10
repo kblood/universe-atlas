@@ -2741,7 +2741,8 @@ function holdPlanetOrbit() {
 }
 const faunaLodMode=new URLSearchParams(location.search).get('fauna-lod-prototype');
 let faunaLodFactory:typeof import('./fauna-lod-runtime-adapter.ts')['createFaunaLodRuntimePrototype']|null=null;
-if(faunaLodMode==='packed'||faunaLodMode==='float')void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;restartPlanetTiles();});
+if(faunaLodMode==='packed'||faunaLodMode==='float')void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;
+  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16'}));});
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
   if (!state.body || !surfaceMesh || state.body.type === 'Gas giant') return;
@@ -2755,7 +2756,7 @@ function restartPlanetTiles() {
   // Transition-continuity hooks (decision D1/D3): on by default; `?continuity=0` restores the former hard switches for an A/B.
   planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()),undefined,
     {presentationContinuity:new URLSearchParams(location.search).get('continuity')!=='0',
-      ...(faunaLodFactory?{faunaLodPrototype:faunaLodFactory({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16'})}:{})});
+      ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16'})}:{})});
   planetTiles.setSurfaceDetail(surfaceDetail);
   planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
 }

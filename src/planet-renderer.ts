@@ -447,7 +447,7 @@ export const LOW_FLIGHT_CLEARANCE_M=19500;
 export interface PlanetRendererOptions{
   /** Local research opt-in only. The accepted production constructor omits
    * this adapter while packed appearance/CPU/GPU/memory gates are pending. */
-  faunaLodPrototype?:{adapter:FaunaLodRuntimeAdapter;sourceVersion:string;appearanceVersion:string;controller?:FaunaLodControllerOptions};
+  faunaLodPrototype?:()=>{adapter:FaunaLodRuntimeAdapter;sourceVersion:string;appearanceVersion:string;controller?:FaunaLodControllerOptions};
   /** Transition-continuity hooks (audit F3/F5/F7/F12/F13): near-rig cross-fade
    * with listed fade-outs, continuous proxy gait, the 350/380 m ground-life
    * hysteresis and the flora LOD band memory. Off keeps the former output bit for bit. */
@@ -714,13 +714,17 @@ export class PlanetRenderer {
   private lifeSignatureWater = NaN;
   private floraRenderer!: FloraFieldRenderer;
   private classify!: ReturnType<typeof biomeClassifier>;
-  private readonly faunaRenderer:FaunaFieldRenderer;
+  private faunaRenderer:FaunaFieldRenderer;
   /** Bounded skinned bodies for the nearest animals; a child of the field
    * renderer's origin-relative group, with the instanced batch as fallback.
    * Built in the constructor: its cross-fade follows `presentationContinuity`. */
-  private readonly faunaNear:FaunaNearRigs;
-  private readonly faunaLod:FaunaLodController|null;
-  private readonly faunaLodContext:FaunaLodContext|null;
+  private faunaNear:FaunaNearRigs;
+  private faunaLod:FaunaLodController|null=null;
+  private faunaLodContext:FaunaLodContext|null=null;
+  private faunaLodFactory:PlanetRendererOptions['faunaLodPrototype'];
+  private readonly faunaBodyPlan:boolean;
+  private faunaLodTransitions=0;
+  private faunaLodInitError:string|null=null;
   private readonly faunaLodPool:FaunaLodCandidate[]=[];
   private readonly faunaLodList:FaunaLodCandidate[]=[];
   private readonly faunaLodTiers=new Map<string,FaunaLodTier>();
@@ -856,16 +860,12 @@ export class PlanetRenderer {
   private groundLifeOn=false;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
-    this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:options.faunaBodyPlan!==false,complementaryCoverage:!!options.faunaLodPrototype});
-    const lod=options.faunaLodPrototype;
-    this.faunaLod=lod?new FaunaLodController(lod.adapter,{...lod.controller,onReady:()=>{this.faunaFrameKeyValid=false;lod.controller?.onReady?.();}}):null;
-    this.faunaLodContext=lod?{planetId:body.id,lifeSignature:'',dateVersion:lod.sourceVersion,appearanceVersion:lod.appearanceVersion}:null;
+    this.faunaBodyPlan=options.faunaBodyPlan!==false;this.faunaLodFactory=options.faunaLodPrototype;
+    this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:this.faunaBodyPlan});
     this.extendedFlora=options.extendedFlora??this.continuity;
     // Audit F4: shadows fade out toward the edge of the surface shadow window.
     if(this.continuity)installShadowWindowFade();
-    // Prototype uses authoritative hard full-near ownership. Its screen-space
-    // pool/fallback intervals must never mix with Three's object-space hash.
-    this.faunaNear=new FaunaNearRigs(this.continuity&&!lod?{crossFade:true}:{});
+    this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
     this.groundAtlas=detailTexture(anisotropy);
     this.groundPbrTextures=acquireGroundPbrTextures(anisotropy);
     this.sample=terrainSampler(body, undefined, surfaceAgeMyr);
@@ -974,6 +974,9 @@ export class PlanetRenderer {
    * `world-surface.ts`'s `biosphereStateAt`/`planetAgeMyr` -- see
    * `LifeGateContext`'s own doc comment. */
   setLifeContext(context: LifeGateContext | null): void { this.lifeContext = context; }
+  /** Async desktop module installation; the next update applies the XR gate.
+   * Installing the factory itself allocates no experimental resources. */
+  setFaunaLodPrototypeFactory(factory:NonNullable<PlanetRendererOptions['faunaLodPrototype']>):void{this.faunaLodFactory=factory;this.faunaLodInitError=null;}
   loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
     return this.loadForestTreeFamilies([{kind:'branching',lod0,lod1}],options);
   }
@@ -1262,6 +1265,7 @@ export class PlanetRenderer {
   // bucket are bit-identical at their shared edge by construction.
   update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = [], worldNs: bigint = CATALOGUE_EPOCH_NS, life: LifeGateContext | null = this.lifeContext, waterLevelM: number = 0,shadowFrustum:THREE.Frustum|null=null) {
     if (this.disposed) return;
+    if(this.faunaLodFactory)this.setFaunaLodImmersive(immersive);
     this.immersiveBudget=immersive;
     this.lifeContext = life;
     const started=performance.now();
@@ -1853,6 +1857,28 @@ export class PlanetRenderer {
     if(key.length!==i){same=false;key.length=i;}
     this.leafFrameKeyValid=true;return same;
   }
+  /** Desktop research resources never remain retained by this renderer in an
+   * unvalidated XR session. Only fauna presentation is replaced; terrain,
+   * canonical population, date, body and camera are untouched. */
+  private setFaunaLodImmersive(immersive:boolean){
+    if(immersive)this.faunaLodInitError=null;
+    const enabled=!!this.faunaLodFactory&&!immersive;if(enabled===!!this.faunaLod)return;
+    if(enabled){
+      if(this.faunaLodInitError)return;
+      let spec:ReturnType<NonNullable<PlanetRendererOptions['faunaLodPrototype']>>|null=null;
+      try{spec=this.faunaLodFactory!();const accepted=spec;
+        this.faunaLod=new FaunaLodController(accepted.adapter,{...accepted.controller,onReady:()=>{this.faunaFrameKeyValid=false;accepted.controller?.onReady?.();}});
+        this.faunaLodContext={planetId:this.body.id,lifeSignature:'',dateVersion:accepted.sourceVersion,appearanceVersion:accepted.appearanceVersion};
+      }catch(error){spec?.adapter.dispose();this.faunaLod=null;this.faunaLodContext=null;this.faunaLodInitError=String(error);return;}
+    }else{this.faunaLod?.dispose();this.faunaLod=null;this.faunaLodContext=null;}
+    this.faunaNear.dispose();this.faunaRenderer.dispose();
+    this.faunaRenderer=new FaunaFieldRenderer({bodyPlan:this.faunaBodyPlan,complementaryCoverage:enabled});
+    this.faunaNear=new FaunaNearRigs(enabled?{}:this.continuity?{crossFade:true}:{});
+    this.faunaRenderer.group.add(this.faunaNear.group);if(this.faunaLod)this.faunaRenderer.group.add(this.faunaLod.group);this.group.add(this.faunaRenderer.group);
+    this.faunaRenderer.group.traverse(object=>{if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,this.body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform,object.userData.localAerialSurfaceHit);});
+    this.faunaLodPool.length=0;this.faunaLodList.length=0;this.faunaLodTiers.clear();this.faunaNearList.length=0;this.faunaNearPool.length=0;this.faunaRigged=new Set();
+    this.faunaFrameKeyValid=false;this.faunaLodTransitions++;
+  }
   private hideLife(): void {
     this.floraRecipeBuilds=0;
     // Hidden life draws nothing: its per-frame counters must say so too. The
@@ -2402,8 +2428,9 @@ export class PlanetRenderer {
         lifeReserveBytes:LIFE_RESERVE_BYTES,withinLifeReserve:floraBytes+faunaBytes+forestBytes-(lod.workerCurrentTypedBytes??0)+lod.workerReservedBytes<=LIFE_RESERVE_BYTES,
         basis:'CPU typed arrays + estimated GPU buffers/images; indices included; cold clone/build reserve separate; ordinary JS/driver overhead excluded'}};
     })():{};
+    const lodSession=this.faunaLodFactory?{faunaLodSession:{enabled:!!this.faunaLod,xrSuspended:this.immersiveBudget,transitions:this.faunaLodTransitions,providerLazy:true,initializationError:this.faunaLodInitError}}:{};
     const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:rocks.bytes.total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
-    return {...lodResources,projection: 'cube-sphere',localAerial,rocks,renderBounds:RENDER_BOUNDS_VERSION,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
+    return {...lodResources,...lodSession,projection: 'cube-sphere',localAerial,rocks,renderBounds:RENDER_BOUNDS_VERSION,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE

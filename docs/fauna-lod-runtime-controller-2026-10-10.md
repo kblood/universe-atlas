@@ -1,8 +1,8 @@
 # Opt-in runtime LOD controller prototype
 
 Production remains unchanged: `PlanetRendererOptions.faunaLodPrototype` is
-absent from its normal construction. The new option supplies a structural
-worker/render adapter plus exact source and appearance versions. It does not
+absent from its normal construction. The new option supplies a lazy factory
+for a worker/render adapter plus exact source and appearance versions. It does not
 select another generator or enable an unreviewed material.
 
 The controller takes the existing stable camera-first distance/ID order. It
@@ -107,7 +107,20 @@ Inactive owners are reclaimed per tier before the 128 global cache fills. A
 full staging tier defers impossible cold requests while a migration can free
 it; old requested drawings remain until successful replacement.
 
-Sixteen focused control/fallback/real-provider/route tests and TypeScript pass.
+The provider is desktop-only. Initial XR frames create no provider. Desktop→XR
+cancels/disposes it, clears retained controller/candidate/trace references and
+replaces coverage fallback/hard-near presentation with the ordinary legacy
+buffers, materials and near continuity. Desktop return creates fresh resources
+through the factory. Terrain, camera, body, date and canonical population stay
+in the same renderer; no terrain rebuild is used. Initialization failure leaves
+legacy fauna active and is reported without repeated allocation attempts.
+Physical Quest rendering/performance remains unverified.
+
+Focused control/fallback/real-provider/route and XR lifecycle tests pass with
+TypeScript. GPU nonzero-origin placement and XR transition captures are also
+required: a prior candidate applied the floating origin twice; the adapter now
+keeps nested pool groups at zero and a shader-palette/model-transform regression
+checks the actual deformed vertex under a nonzero parent origin.
 Actual GPU interval/shader checks, per-specimen target/feature quality,
 whole-world CPU/GPU/memory, same-pose arrival/near/revisit captures and source/LOD
 coat coherence remain acceptance gates. Unit/mocked transport tests do not
