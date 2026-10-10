@@ -55,12 +55,13 @@ function enableLab(f){
 }
 
 test('Kit 0.3 standalone Lab updates with the runtime release and fails closed on missing/dirty/failed/stale/malformed app input',()=>{
-  for(const failure of ['missing','dirty','failed','stale','missingasset','malformed']){
+  for(const failure of ['missing','dirty','failed','stale','missingasset','malformed','outdated']){
     const f=fixture();try{
       enableLab(f);writeVendor(f.repo,f.kit);assert.deepEqual(vendorDrift(f.repo,f.kit),[]);const before=snapshot(f.repo);
       assert.equal(JSON.parse(readFileSync(join(f.repo,'vendor/creature-kit/LAB.json'))).kit.commit,git(f.kit,'rev-parse','HEAD'));
       if(failure==='missing'){git(f.kit,'rm','apps/creature-lab/planet-skin.html');commit(f.kit);}
       if(failure==='dirty')write(f.kit,'apps/creature-lab/src/planet-main.ts','export const dirty=1;\n');
+      if(failure==='outdated'){const pkg=JSON.parse(readFileSync(join(f.kit,'package.json')));pkg.version='0.2.9';write(f.kit,'package.json',JSON.stringify(pkg));commit(f.kit);}
       process.env.KIT_LAB_FIXTURE=failure;
       assert.throws(()=>writeVendor(f.repo,f.kit),undefined,failure);assert.equal(snapshot(f.repo),before,`${failure}: package/Lab update changed Atlas`);
     }finally{delete process.env.KIT_LAB_FIXTURE;f.clean();}

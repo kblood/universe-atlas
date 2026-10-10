@@ -21,7 +21,10 @@ function safePath(root,path){
 }
 export function prepareKitLab(repo,kit,packageManifest){
   // Earlier releases did not contain the standalone canonical page.
-  const [major,minor]=packageManifest.kit.version.split('.').map(Number);if(major===0&&minor<3)return {writes:[],removes:[]};
+  const [major,minor]=packageManifest.kit.version.split('.').map(Number);if(major===0&&minor<3){
+    if(existsSync(join(repo,KIT_LAB_RECEIPT)))throw new Error('Kit release predates installed standalone Lab; restore the prior Atlas version commit instead');
+    return {writes:[],removes:[]};
+  }
   const app='apps/creature-lab';
   if(git(kit,'status','--porcelain','--',app))throw new Error('Kit Lab sources must be committed before updating');
   const paths=git(kit,'ls-files','--',app).split('\n').filter(Boolean).sort();
