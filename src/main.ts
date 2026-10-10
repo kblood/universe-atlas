@@ -27,6 +27,7 @@ import {findLivingHabitat} from './living-habitat.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown, planetaryRenderUnit, LOCAL_RENDER_EXIT_M, LOCAL_ORIGIN_RADIUS_M } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
+import {ExplorationClockStep} from './exploration-clock-step.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
 import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt,type BiosphereQueryStage} from './world-surface.ts';
 import type {LifeGateContext} from './planet-renderer.ts';
@@ -743,6 +744,7 @@ let flightCruise=false;
 // Exploration uses the dated universe clock at one physical second per second.
 // Explicit pause and date seek remain paused until resumed by the user.
 let explorationPaused=false;
+const explorationClockStep=new ExplorationClockStep();
 let lastFlightSweep={distanceM:0,contact:false,samples:0};
 function timeRunning(){return playing||(flight&&!explorationPaused);}
 function toggleTime(){
@@ -2119,24 +2121,26 @@ function aimedDistance(
  * observer follows the body's orbital translation, as a grounded observer
  * already does, while retaining their exact body-relative pose and heading. */
 function updateExplorationClock(dt:number){
-  if(!ready||!flight||explorationPaused||playing||renderer.xr.isPresenting)return;
+  if(!ready||!flight||explorationPaused||playing||renderer.xr.isPresenting||explorationClockStep.held)return;
+  const priorEpoch=epoch;
   const body=state.body,sys=state.sys;
   const oldCenter=body&&sys?vec(bodyPosition(body,sys,epoch)):null;
   // A focused world defines the navigation reference frame through orbit,
   // clouds and landing; no orbital-velocity jump at an altitude threshold.
   const attached=!!oldCenter&&!!body&&!!residentSystem;
   const end=alternateFuture()?.endDateNs??UNIVERSE_END_NS;
-  const next=advanceDate(epoch,dt);
+  const next=explorationClockStep.enabled?explorationClockStep.next(epoch):advanceDate(epoch,dt);
   const targetDate=next<end?next:end;
   if(body&&sys){
     const entry=lifecycleFor(sys,body);
     if(entry.kind!=='star'&&planetStateAt(entry.lc,entry.starLc,epoch).stage!==planetStateAt(entry.lc,entry.starLc,targetDate).stage){
       // A normal physical tick can also cross a dated existence boundary.
       // Reuse the same explicit hover/fallback rules as timeline seeking.
-      seekDate(targetDate);return;
+      seekDate(targetDate);explorationClockStep.record(priorEpoch,epoch);return;
     }
   }
   epoch=targetDate;
+  explorationClockStep.record(priorEpoch,epoch);
   if(epoch===end)explorationPaused=true;
   if(attached&&body&&sys&&oldCenter){
     systemOrigin.add(vec(bodyPosition(body,sys,epoch)).sub(oldCenter));
@@ -5163,6 +5167,9 @@ async function boot() {
 // Diagnostics and an explicit rendering freeze used by browser acceptance tests.
 Object.defineProperty(window, "__atlas", {
   value: {
+    // Explicit diagnostic input only; no public seek/reset per benchmark frame.
+    setExplorationStepNs:(stepNs:string|null,maxTicks=180)=>explorationClockStep.configure(stepNs,maxTicks),
+    get explorationStep(){return explorationClockStep.snapshot();},
     async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
