@@ -37,6 +37,18 @@ geometric observations, not evidence that the constrained candidate is a univers
 visual improvement. Rest/walk/feed side/front/foot sheets and coat/silhouette
 measurements are required before selecting a winner. Quest acceptance is unavailable.
 
+The revision-2 desktop gallery contains 48 paired sheets, with identical canonical
+22-bone skinning, source viewport clipping checks and no WebGL errors. At 500
+triangles, median foot-region silhouette IoU improves from 0.8103 to 0.8484 and
+the worst case from 0.7047 to 0.7530. Overall silhouette median is nearly unchanged
+(0.9181 versus 0.9186). Median lit RGB error increases from 14.02 to 15.22 channel
+units; this combines normals, lighting and colour interpolation and cannot isolate
+coat loss. At 750 triangles the worst foot-region IoU regresses (0.8252 to 0.7947).
+Thus foot-anchor retention is a localized improvement, with no universal winning
+LOD or coat-preservation claim. The clustering control visibly disconnects legs
+and remains rejected. Review `visual-review-revision2/2-walk-side.png` and
+`visual-review-revision2/summary.json` under the artifact directory before rollout.
+
 `FaunaLodCandidateCache` bounds retained typed outputs to four sources/8MiB by
 default (configurable at most eight/16MiB), checks array/plan/genome identity and
 evicts least recently used entries before admission. It never transfers borrowed
