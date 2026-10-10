@@ -25,7 +25,8 @@ for(const [archetype,family]of [['browser','ungulate'],['runner','cursorial'],['
     poses.push({name,phase,behaviour,member,activity,palette:Array.from(palette),pose});
   }
   rows.push({id,seed,archetype,family,stage,genome,sourceDigest:hash.digest('hex'),plan:body.plan,vertexCount:body.vertexCount,triangleCount:body.triangleCount,
-    bodyVertexCount:body.bodyVertexCount,bodyTriangleCount:body.bodyTriangleCount,faceFeatures:body.faceFeatures,
+    bodyVertexCount:body.bodyVertexCount,bodyTriangleCount:body.bodyTriangleCount,structuralVertexCount:body.structuralVertexCount,
+    structuralTriangleCount:body.structuralTriangleCount,cellM:body.cellM,grid:body.grid,faceFeatures:body.faceFeatures,
     source:Object.fromEntries(fields.map(f=>[f,Array.from(body[f])])),poses});
 }
 await writeFile(out+'/corpus.json',JSON.stringify({sourceCommit,modules,seed,versions:{genome:CREATURE_GENOME_VERSION,body:QUADRUPED_BODY_VERSION},
