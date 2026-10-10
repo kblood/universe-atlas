@@ -5,10 +5,13 @@ import {FaunaLodPoseWriter} from '../src/fauna-lod-pose.ts';
 import {faunaMemberActivityAtWorldNs} from '../src/fauna-runtime.ts';
 import {createFaunaMaterial} from '../src/fauna-material.ts';
 import {faunaBodyGeometry} from '../src/fauna-near-rig.ts';
-const data=await fetch('/test-results/body-lod-assets/data.json').then(r=>r.json());
 const streaming=new URLSearchParams(location.search),paletteRingSize=Number(streaming.get('paletteRingSize')||1),paletteUploadMode=streaming.get('paletteUploadMode')||'full';
+const data=await fetch(streaming.get('data')||'/test-results/body-lod-assets/data.json').then(r=>r.json());
 const movingStride=Number(streaming.get('movingStride')||1);
 if(!Number.isInteger(movingStride)||movingStride<1||movingStride>128)throw new Error('Invalid moving stride');
+let method='existing-qem';
+function selectMethod(next){method=next;for(const row of data.rows)if(row.chains){const chain=row.chains.find(c=>c.method===method);if(!chain)throw new Error('Unknown frozen LOD method '+method);row.name=row.id;row.levels=chain.levels.map(l=>({...l,plan:row.plan}));}}
+selectMethod(method);
 const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(1440,1000);renderer.setPixelRatio(1);
 renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#242b34');
@@ -25,7 +28,7 @@ const members=Array.from({length:512},(_,i)=>({id:'lab/'+i,anchorOffsetX:0,ancho
 const keys=members.map(()=>({})),palettes=members.map(()=>new Float32Array(22*16));
 const decode=l=>({...l,positions:new Float32Array(l.positions),normals:new Float32Array(l.normals),colors:new Uint8Array(l.colors),
   skinIndex:new Uint8Array(l.skinIndex),skinWeight:new Uint8Array(l.skinWeight),index:new Uint16Array(l.index)});
-function choose(next,nextTarget=500,n=512){active?.dispose();mode=next;target=nextTarget;count=n;frame=0;
+function choose(next,nextTarget=500,n=512,nextMethod=method){selectMethod(nextMethod);active?.dispose();mode=next;target=nextTarget;count=n;frame=0;
   if(mode==='body2')active=new FaunaFieldRenderer({bodyPlan:true});
   else if(mode==='source'){
     if(count!==6)throw new Error('Full source is a six-specimen rest gallery, not a field renderer');
@@ -66,6 +69,6 @@ window.__lodLab={renderer,scene,camera,choose,setPaused(value){paused=value;},se
   setRestPose(value){restPose=value;handles.forEach(h=>cheap.invalidate(h));},
   closeup(sample=0){choose(mode,target,6);camera.position.set(sample*4+7,3.5,9);camera.lookAt(sample*4,1,0);},
   field(){const rows=Math.ceil(count/16),z=(rows-1)*2;camera.position.set(32,count>128?85:45,z+(count>128?103:75));camera.lookAt(32,0,z);},
-  info(){return {mode,poseMode,target,count,lastCpu,render:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles},
+  info(){return {mode,method,poseMode,target,count,lastCpu,sourceModuleDigest:data.moduleDigest,render:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles},
     batches:active.group.children.map(m=>({name:m.name,instances:m.count,triangles:(m.geometry.index?.count||m.geometry.attributes.position.count)/3})),
     backend:active.diagnostics?.(),rows:data.rows.map(r=>({name:r.name,genome:r.genome,level:r.levels.find(l=>l.target===target)?.quality}))};}};
