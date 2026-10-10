@@ -7,6 +7,8 @@ import {createFaunaMaterial} from '../src/fauna-material.ts';
 import {faunaBodyGeometry} from '../src/fauna-near-rig.ts';
 const data=await fetch('/test-results/body-lod-assets/data.json').then(r=>r.json());
 const streaming=new URLSearchParams(location.search),paletteRingSize=Number(streaming.get('paletteRingSize')||1),paletteUploadMode=streaming.get('paletteUploadMode')||'full';
+const movingStride=Number(streaming.get('movingStride')||1);
+if(!Number.isInteger(movingStride)||movingStride<1||movingStride>128)throw new Error('Invalid moving stride');
 const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(1440,1000);renderer.setPixelRatio(1);
 renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#242b34');
@@ -48,13 +50,14 @@ function update(){const start=performance.now(),seconds=restPose?0:paused?2:++fr
   if(mode==='source'){for(const mesh of active.group.children)mesh.skeleton.update();lastCpu=performance.now()-start;return;}
   active.beginFrame(origin);
   for(let i=0;i<count;i++){
-    const row=data.rows[i%data.rows.length],activity=faunaMemberActivityAtWorldNs(members[i],BigInt(Math.round(seconds*1e9)));
+    const row=data.rows[i%data.rows.length],memberSeconds=restPose?0:paused||i%movingStride?2:seconds,
+      activity=faunaMemberActivityAtWorldNs(members[i],BigInt(Math.round(memberSeconds*1e9)));
     root.makeTranslation((i%16)*4,0,Math.floor(i/16)*4);
-    if(mode==='body2')active.submit(row.genome,root,seconds,restPose?'idle':activity.pose.gait,30,keys[i],restPose?0:activity.stateS);
+    if(mode==='body2')active.submit(row.genome,root,memberSeconds,restPose?'idle':activity.pose.gait,30,keys[i],restPose?0:activity.stateS);
     else{const level=row.levels.find(l=>l.target===target),palette=palettes[i];
       if(restPose)for(let bone=0;bone<22;bone++)new THREE.Matrix4().toArray(palette,bone*16);
-      else if(poseMode==='approximate')cheap.write(handles[i],activity,seconds,palette);
-      else writer.pose({member:members[i],activity,ground:()=>0,rigSeconds:seconds},level.plan,palette);
+      else if(poseMode==='approximate')cheap.write(handles[i],activity,memberSeconds,palette);
+      else writer.pose({member:members[i],activity,ground:()=>0,rigSeconds:memberSeconds},level.plan,palette);
       active.submit(members[i].id,root,palette);}
   }active.endFrame();lastCpu=performance.now()-start;
 }

@@ -8,7 +8,7 @@ import {startOnFreePort,stopServer} from './helpers/free-port.mjs';
 const out=process.env.ATLAS_RESULTS||'test-results/body-lod-gpu';await mkdir(out,{recursive:true});
 const server=await startOnFreePort({url:p=>`http://127.0.0.1:${p}/tests/fauna-body-lod-lab.html`,spawnServer:p=>
   spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port',String(p),'--strictPort'],{stdio:'ignore'})});
-let browser,lock,page;const streaming=new URLSearchParams({paletteRingSize:process.env.BODY_LOD_RING_SIZE||'1',paletteUploadMode:process.env.BODY_LOD_UPLOAD_MODE||'full'});
+let browser,lock,page;const streaming=new URLSearchParams({paletteRingSize:process.env.BODY_LOD_RING_SIZE||'1',paletteUploadMode:process.env.BODY_LOD_UPLOAD_MODE||'full',movingStride:process.env.BODY_LOD_MOVING_STRIDE||'1'});
 const report={prototypeOnly:true,errors:[],rows:[],scope:'one desktop prototype; full update CPU includes activity+selectedpose+submission; no release gate',poseMode:process.env.BODY_LOD_POSE_MODE||'canonical',paletteStreaming:Object.fromEntries(streaming)};
 try{
   lock=await acquireGpuLock({owner:'body LOD GPU prototype',capture:true,retryMs:30000});
