@@ -26,8 +26,18 @@ Validation: 37 focused tests pass, including zero workers/assets/buffers across
 four ineligible physical variants, repeated dates and disposal/revisit; default
 fixture allocation; and eligible dated enable, near/far movement and replay
 digests against prechange Atlas `ca3a92b`. Existing family, census and resource
-accounting tests pass. TypeScript and production build pass. Browser two-world
-resource receipts are a separate harness handoff before integration.
+accounting tests pass. TypeScript and production build pass. Actual browser
+checks preserve 205/406 canonical individuals, poses, positions, visibility
+and tree census. UI Back disposes the renderer, detaches its group and stops
+workers; revisit preserves the same identities and eligible forest allocation.
+
+Daunune recovers 21,792,380 typed CPU bytes and 12,605,692 estimated GPU bytes
+(34,398,072 combined), with zero forest draw meshes/workers/resources. Its
+remaining measured life ownership is 4,515,799 CPU / 3,707,263 GPU-estimate
+bytes. Anitar remains 132,891,476 CPU / 196,124,772 GPU-estimate bytes with
+155 fixed-view trees. These are ownership estimates with the exclusions above,
+not physical driver VRAM measurements or a global 16 MiB life-budget proof.
+Receipt: `Assets/_assetctl/animal-system-20261010/life-memory-forest-ineligible/summary.json`.
 
 Logs: `Assets/_assetctl/planet-core-migration/forest-allocation-tests.log` and
 `forest-allocation-build.log` in the shared workspace.

@@ -82,8 +82,12 @@ roll back owned files. Previous manifest-owned stale files alone may be removed.
 - Update tests exercise an actual committed factory upgrade through the package
   seam and verify full preservation on missing/dirty/failed/stale/malformed
   inputs plus artifact/peer drift. Three checks pass.
-- TypeScript and root's fresh-checkout build pass. Browser inspection is a
-  separate handoff gate. No canonical world or geometry pin is re-generated.
+- TypeScript and root's fresh-checkout build pass. Actual two-world low-hover
+  routes preserve animal IDs, poses, positions and cached body hashes without
+  landing. The independent Lab exports/imports definitions unchanged and
+  renders the same genotype, geometry counts and 22 bones. Final clean release
+  verification remains required before publication. No canonical world or
+  geometry pin is re-generated.
 
 Kit `53afe42` includes optional LOD constraints, with unchanged default reducer
 output. The planetary extraction moves no composer generator source. CLI source
