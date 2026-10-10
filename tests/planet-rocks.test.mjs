@@ -194,7 +194,7 @@ test('renderer and app wiring gate rocks on the solid surface, not on life',()=>
   assert.match(main,/solid\s*=\s*st\.stage\s*===\s*'solid'/);assert.match(main,/const rocks\s*=\s*solid\s*\?/);assert.match(main,/rocks:\s*rocks\s*\?\s*\{\s*surfaceSolid:\s*true/);
   const renderer=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
   assert.match(renderer,/this\.rocks\.update\(\{/);assert.match(renderer,/this\.rocks\.dispose\(\)/);
-  assert.match(renderer,/const rocks=this\.rocks\.diagnostics\(\);/);assert.match(renderer,/\{projection: 'cube-sphere',localAerial,rocks,/);
+  assert.match(renderer,/const rocks=this\.rocks\.diagnostics\(\);/);assert.match(renderer,/\{(?:\.\.\.[A-Za-z_$][\w$]*,\s*)*projection: 'cube-sphere',localAerial,rocks,/);
   // The barren moon's rock-bearing biosphere has no species at all.
   assert.equal(generateBiosphere(SEED,'airless',moon.id).species.length,0);
 });
