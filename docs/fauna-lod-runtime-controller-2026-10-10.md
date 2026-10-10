@@ -28,9 +28,13 @@ an explicit measured over-budget diagnostic. The adapter must preflight and
 replace atomically: a false return preserves the old bound draw. Tier upgrades
 and downshifts retain that old draw until successful replacement; failed jobs
 keep it. Initial adoption fades over 0.25 s and the range fades over 175–200 m.
-Full-near, pool and fallback coverage sum to one. Opt-in fallback instance
-coverage reaches both colour and depth alpha-hash shaders; paused replay writes
-the current coverage. Async ready messages invalidate the paused frame cache.
+The concrete prototype uses **hard full-near ownership**: existing Three
+object-space alpha hashing is never mixed with the new pool transition. Pool
+and fallback share one screen-hash and nonoverlapping Float32 half-open
+intervals in lit, depth and distance passes. Interval conservation guarantees
+ownership where the two representations rasterize the same pixel; differing
+silhouettes still require moving visual review. Paused replay writes the
+current endpoints. Async ready messages invalidate the paused frame cache.
 
 ## Ownership and budgets
 
@@ -71,7 +75,31 @@ members beyond the old 95 m near window, preserving complete canonical IDs,
 genomes, positions, near membership and counts on refused adoption.
 The historical life CPU identity scenario also passes with the option off.
 
-The concrete packed worker adapter, per-specimen target/feature quality,
-actual colour/shadow shader compilation, whole-world CPU/GPU/memory, same-pose
-arrival/near/revisit captures and source/LOD coat coherence remain acceptance
-gates. Mock adapter tests are not a claim those rendering gates have passed.
+## Concrete runtime control
+
+`?fauna-lod-prototype=packed` or `float` opts the actual Atlas route into a
+self-contained Kit 0.4 provider. Without the flag it stays off. The runtime
+uses one dedicated worker per cold job and terminates it on completion,
+cancellation or failure. It transfers only cloned input/owned output buffers.
+The worker emits a SHA256 over the original six body arrays for the independent
+source identity corpus. The atlas-owned 17/113 pools include a staging slot
+per tier for atomic replacement; actual complete population is never reduced.
+The runtime retains plans, full individual/geometry keys and palettes, without
+keeping dense source or returned geometry/basis arrays after adoption.
+
+Poses use the pinned Kit's **canonical quadrupedPoseAt**, the existing herd
+terrain callback and behaviour; no flat-ground or approximate-gait substitute
+is hidden in this adapter. Per-member Float32 palette cache costs 1,408 CPU
+bytes (180,224 for 128) and is included in ownership. Paused poses reuse it;
+ground/activity/time revisions invalidate it. Pending Into optimization remains
+a separately reviewed Kit API/version, not an outside-clone import.
+
+`__atlas.faunaLodTrace()` exposes owner intervals with IDs, actual tier, full
+geometry key, source digest and the existing canonical camera/shadow/date/pose
+trace. This lets acceptance compare exact population and interval ownership.
+
+Fifteen focused control/fallback/real-provider/route tests and TypeScript pass.
+Actual GPU interval/shader checks, per-specimen target/feature quality,
+whole-world CPU/GPU/memory, same-pose arrival/near/revisit captures and source/LOD
+coat coherence remain acceptance gates. Unit/mocked transport tests do not
+claim those rendering gates have passed.

@@ -863,7 +863,9 @@ export class PlanetRenderer {
     this.extendedFlora=options.extendedFlora??this.continuity;
     // Audit F4: shadows fade out toward the edge of the surface shadow window.
     if(this.continuity)installShadowWindowFade();
-    this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
+    // Prototype uses authoritative hard full-near ownership. Its screen-space
+    // pool/fallback intervals must never mix with Three's object-space hash.
+    this.faunaNear=new FaunaNearRigs(this.continuity&&!lod?{crossFade:true}:{});
     this.groundAtlas=detailTexture(anisotropy);
     this.groundPbrTextures=acquireGroundPbrTextures(anisotropy);
     this.sample=terrainSampler(body, undefined, surfaceAgeMyr);
@@ -2128,6 +2130,18 @@ export class PlanetRenderer {
       // With continuity on, `near` (activeMembers) also lists members whose rig is still fading in or out.
       near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
   }
+  /** Local prototype receipt: one or two nonoverlapping owner intervals for
+   * every represented canonical ID, plus the existing visibility/pose trace. */
+  faunaLodTrace(){
+    if(!this.faunaLod)return null;
+    const pooled=this.faunaLod.presentationTrace(),byId=new Map(pooled.map(row=>[row.id,row])),rows=[];
+    for(const item of this.faunaDrawn){
+      if(this.faunaRigged.has(item.id)){rows.push({id:item.id,tier:'near',low:0,high:1,genomeKey:JSON.stringify(item.genome),sourceDigest:null});continue;}
+      const row=byId.get(item.id);if(row)rows.push({...row});const coverage=this.faunaLod.fallbackCoverage(item.id);
+      if(coverage>0)rows.push({id:item.id,tier:'fallback',low:Math.fround(1-coverage),high:1,genomeKey:JSON.stringify(item.genome),sourceDigest:null});
+    }
+    return {ownership:rows,canonical:this.faunaTrace(this.faunaDrawn.map(item=>item.id)),lod:this.faunaLod.diagnostics()};
+  }
   /** Dated poses of one resident herd at one instant, retained while the date,
    * relief and packing are unchanged, plus a conservative bound of every
    * member's position and draw sphere. Keyed by the resident (WeakMap), so it
@@ -2297,10 +2311,11 @@ export class PlanetRenderer {
         if(tier==='middle'&&middle>=112)continue;
         if(tier==='close')close++;else middle++;
         let candidate=pool[list.length];
-        if(!candidate)pool.push(candidate={id:item.member.id,genome:this.faunaGenomeOf(item.member),member:item.member,activity:item.activity,cameraVisible:true,distanceM:item.distance,matrix:new THREE.Matrix4(),rigSeconds:rigTime,nearCoverage:0});
+        if(!candidate)pool.push(candidate={id:item.member.id,genome:this.faunaGenomeOf(item.member),member:item.member,activity:item.activity,cameraVisible:true,distanceM:item.distance,matrix:new THREE.Matrix4(),rigSeconds:rigTime,nearCoverage:0,ground:()=>0,groundRevision:0});
         candidate.id=item.member.id;candidate.genome=this.faunaGenomeOf(item.member);candidate.member=item.member;candidate.activity=item.activity;candidate.distanceM=item.distance;candidate.rigSeconds=rigTime;
         candidate.nearCoverage=this.faunaRigged.has(candidate.id)?1:this.faunaNear.rigWeightOf(candidate.id);candidate.loadedSource=this.faunaNear.loadedSourceOf(candidate.id);
         candidate.tier=tier;this.faunaLodTiers.set(candidate.id,tier);
+        candidate.ground=this.faunaPoseCache.get(this.faunaSurfaces[item.anchor])!.ground;candidate.groundRevision=this.lifePackBuilds;
         candidate.matrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);list.push(candidate);
       }
       this.faunaLod.update(list,this.lifeOrigin);
@@ -2318,8 +2333,8 @@ export class PlanetRenderer {
       if(coverage===0){this.faunaVisibleCount++;continue;}
       this.faunaProxyMatrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
       // Continuity (F12/F13): `stateS` selects the eased proxy gait and the eye/range fades.
-      const submitted=this.continuity?this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,item.activity.stateS,coverage)
-        :this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,undefined,coverage);
+      const submitted=this.continuity?this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,item.activity.stateS,coverage,this.faunaLod?1-coverage:0)
+        :this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,undefined,coverage,this.faunaLod?1-coverage:0);
       if(submitted)this.faunaVisibleCount++;else this.faunaBudgetDrops++;
     }
     this.faunaRenderer.endFrame();

@@ -1,0 +1,74 @@
+/** Local research provider. Worker lifetime is one cold job; packed arrays are
+ * copied once into atlas-owned slots, then the transferable payload is dropped. */
+import * as THREE from 'three';
+import receipt from '../vendor/creature-kit/PACKAGE.json' with {type:'json'};
+import {FaunaPlanetCrispBatch} from './fauna-planet-crisp-batch.ts';
+import {FAUNA_PLANET_CRISP_RAW_VERSION} from './fauna-planet-crisp.ts';
+import {FAUNA_PLANET_CRISP_RAW_PACKED_VERSION} from './fauna-planet-crisp-packed.ts';
+import {FaunaBonePaletteWriter,faunaSkinnedGeometryKey} from './fauna-skinned-batch.ts';
+import {quadrupedPoseAt,type QuadrupedPlan} from '#creature-kit/planet';
+import type {FaunaPackedRenderPayload} from './fauna-packed-worker-adapter.ts';
+import type {FaunaLodRuntimeAdapter,FaunaLodBuildJob,FaunaLodBuildResult,FaunaLodCandidate,FaunaLodTier} from './fauna-lod-controller.ts';
+type Payload=FaunaPackedRenderPayload&{sourceDigest?:string|null};
+type Binding={id:string;key:string;geometryKey:string;tier:FaunaLodTier;plan:QuadrupedPlan;sourceDigest:string|null;
+  palette:Float32Array;lastTime:number;lastActivity:unknown;lastGround:unknown;lastGroundRevision:number;lastBehaviour:unknown;poseBuilds:number;maxPenetration:number;maxReachError:number};
+export interface FaunaLodRuntimeOptions {basisStorage?:'float32'|'packed-snorm16';workerFactory?:()=>Worker;workerReserveBytes?:number}
+export function createFaunaLodRuntimePrototype(options:FaunaLodRuntimeOptions={}){
+  const storage=options.basisStorage??'packed-snorm16',appearanceVersion=storage==='float32'?FAUNA_PLANET_CRISP_RAW_VERSION:FAUNA_PLANET_CRISP_RAW_PACKED_VERSION;
+  const sourceVersion=`creature-kit/${receipt.kit.version}/${receipt.kit.commit}/quadruped-body4/joint-qem2`;
+  const pools={close:new FaunaPlanetCrispBatch({capacity:17,maxVerticesPerAnimal:900,maxIndicesPerAnimal:4500,cacheMode:'atlas-owned',basisStorage:storage,maxBufferBytes:16*1024*1024}),
+    middle:new FaunaPlanetCrispBatch({capacity:113,maxVerticesPerAnimal:500,maxIndicesPerAnimal:2250,cacheMode:'atlas-owned',basisStorage:storage,maxBufferBytes:16*1024*1024})};
+  const group=new THREE.Group();group.name='Opt-in actual-genome LOD';group.add(pools.close.group,pools.middle.group);
+  const bindings=new Map<string,Binding>(),jobs=new Map<string,{tier:FaunaLodTier;genome:string}>(),writer=new FaunaBonePaletteWriter(),rows:{id:string;tier:string;genomeKey:string;sourceDigest:string|null;low:number;high:number;poseBuilds:number;maxPenetration:number;maxReachError:number}[]=[];
+  let disposed=false,activeWorker:Worker|null=null,activeReject:((reason:unknown)=>void)|null=null,activeCleanup:(()=>void)|null=null;
+  const workerFactory=options.workerFactory??(()=>new Worker(new URL('./fauna-lod-worker.ts',import.meta.url),{type:'module'}));
+  const releaseBinding=(binding:Binding)=>{const pool=pools[binding.tier];pool.releaseAnimal(binding.id);pool.releaseGeometry(binding.geometryKey);};
+  const adapter:FaunaLodRuntimeAdapter&{trace():typeof rows;diagnostics():unknown}={group,
+    get ownedBytes(){let n=0;for(const [tier,pool] of Object.entries(pools)){const d=pool.diagnostics();n+=2*d.geometryBytes+d.paletteRetainedCpuBytes+d.paletteGpuEstimateBytes+d.cacheBytes+d.basisCacheBytes+d.appearanceMetaCpuBytes*2+(tier==='close'?17:113)*7;}
+      for(const entry of bindings.values())n+=entry.palette.byteLength;return n;},
+    transientBytes:0,workerReserveBytes:options.workerReserveBytes??32*1024*1024,
+    build(job:FaunaLodBuildJob,signal:AbortSignal):Promise<FaunaLodBuildResult>{
+      if(disposed||activeWorker)return Promise.reject(new Error('Fauna worker unavailable or already active'));
+      jobs.set(job.key,{tier:job.tier,genome:JSON.stringify(job.genome)});
+      return new Promise((resolve,reject)=>{
+        let worker:Worker;try{worker=workerFactory();}catch(error){jobs.delete(job.key);reject(error);return;}activeWorker=worker;activeReject=reject;
+        const finish=()=>{worker.terminate();if(activeWorker===worker){activeWorker=null;activeReject=null;activeCleanup=null;}signal.removeEventListener('abort',abort);};activeCleanup=finish;
+        const abort=()=>{finish();jobs.delete(job.key);reject(new Error('Fauna worker cancelled'));};signal.addEventListener('abort',abort,{once:true});if(signal.aborted){abort();return;}
+        worker.onmessage=({data})=>{if(data?.key!==job.key){finish();jobs.delete(job.key);reject(new Error('Fauna worker returned wrong job key'));return;}finish();if(data.error){jobs.delete(job.key);reject(new Error(data.error));return;}
+          const result=data.result;if(result?.payload)result.payload.sourceDigest=result.sourceDigest??null;if(!result?.accepted)jobs.delete(job.key);resolve(result);};
+        worker.onerror=event=>{event.preventDefault();finish();jobs.delete(job.key);reject(new Error(event.message||'Fauna worker failed'));};
+        worker.onmessageerror=()=>{finish();jobs.delete(job.key);reject(new Error('Fauna worker result decode failed'));};
+        const buffers=job.loadedSource?[...new Set([job.loadedSource.positions,job.loadedSource.normals,job.loadedSource.colors,job.loadedSource.skinIndex,job.loadedSource.skinWeight,job.loadedSource.index].map(a=>a.buffer))] as ArrayBuffer[]:[];
+        try{worker.postMessage({job,basisStorage:storage,providerVersion:sourceVersion},buffers);}catch(error){finish();jobs.delete(job.key);reject(error);}
+      });
+    },
+    adopt(id,key,result){
+      const payload=result.payload as Payload,job=jobs.get(key);if(disposed||!payload||!job||payload.individualId!==id||payload.key!==key||payload.providerVersion!==sourceVersion||JSON.stringify(payload.sourcePlan.genome)!==job.genome)return false;
+      const tier=job.tier,pool=pools[tier],previous=bindings.get(id);
+      const geometryKey=JSON.stringify([payload.context.planetId,payload.context.lifeSignature,id,faunaSkinnedGeometryKey(payload.sourcePlan.genome,sourceVersion+'/'+appearanceVersion,tier==='close'?1500:750)]);
+      const palette=new Float32Array(22*16);
+      if(!pool.registerGeometry(geometryKey,payload))return false;
+      if(!pool.prepareAnimal(id,geometryKey)){pool.releaseGeometry(geometryKey);return false;}
+      const entry:Binding={id,key,geometryKey,tier,plan:payload.sourcePlan,sourceDigest:payload.sourceDigest??null,palette,lastTime:NaN,lastActivity:null,lastGround:null,lastGroundRevision:-1,lastBehaviour:null,poseBuilds:0,maxPenetration:0,maxReachError:0};
+      bindings.set(id,entry);jobs.delete(key);if(previous&&previous.tier!==tier)releaseBinding(previous);else if(previous)pool.releaseGeometry(previous.geometryKey);return true;
+    },
+    release(id,key){const entry=bindings.get(id);if(entry?.key!==key)return;releaseBinding(entry);bindings.delete(id);},
+    discard(result){const payload=result?.payload as Payload|null;if(payload?.key)jobs.delete(payload.key);},
+    beginFrame(origin){rows.length=0;pools.close.beginFrame(origin);pools.middle.beginFrame(origin);},
+    submit(candidate:FaunaLodCandidate,coverage,coverageStart){
+      const entry=bindings.get(candidate.id);if(!entry)return false;
+      if(!Object.is(entry.lastTime,candidate.rigSeconds)||entry.lastActivity!==candidate.activity||entry.lastGround!==candidate.ground||entry.lastGroundRevision!==candidate.groundRevision||entry.lastBehaviour!==candidate.behaviour){
+        const pose=quadrupedPoseAt(entry.plan,candidate.member,candidate.activity,candidate.ground,candidate.rigSeconds,{behaviour:candidate.behaviour});writer.write(entry.plan,pose,entry.palette);
+        entry.lastTime=candidate.rigSeconds;entry.lastActivity=candidate.activity;entry.lastGround=candidate.ground;entry.lastGroundRevision=candidate.groundRevision;entry.lastBehaviour=candidate.behaviour;entry.poseBuilds++;entry.maxPenetration=pose.maxPenetration;entry.maxReachError=pose.maxReachError;
+      }
+      const submitted=pools[entry.tier].submit(candidate.id,candidate.matrix,entry.palette,{roughness:candidate.genome.appearance?.roughness??.86,coverage,coverageStart});
+      if(submitted)rows.push({id:candidate.id,tier:entry.tier==='close'?'lod1500':'lod750',genomeKey:entry.geometryKey,sourceDigest:entry.sourceDigest,low:Math.fround(coverageStart),high:Math.fround(Math.min(1,coverageStart+coverage)),poseBuilds:entry.poseBuilds,maxPenetration:entry.maxPenetration,maxReachError:entry.maxReachError});return submitted;
+    },
+    endFrame(){pools.close.endFrame();pools.middle.endFrame();},
+    reset(){for(const entry of bindings.values())releaseBinding(entry);bindings.clear();jobs.clear();rows.length=0;group.visible=true;},
+    dispose(){if(disposed)return;disposed=true;const reject=activeReject;activeCleanup?.();activeWorker=null;activeReject=null;reject?.(new Error('Fauna runtime disposed'));pools.close.dispose();pools.middle.dispose();bindings.clear();jobs.clear();rows.length=0;group.removeFromParent();},
+    trace:()=>rows,
+    diagnostics:()=>({basisStorage:storage,sourceVersion,appearanceVersion,nearHandoff:'hard-authoritative',poseVersion:'canonical-quadrupedPoseAt',workerLifetime:'one-job-then-terminate',workerHeapBytes:null,
+      close:pools.close.diagnostics(),middle:pools.middle.diagnostics(),paletteCacheCpuBytes:[...bindings.values()].reduce((n,b)=>n+b.palette.byteLength,0),sourceArraysRetained:false})};
+  return {adapter,sourceVersion,appearanceVersion};
+}

@@ -13,7 +13,7 @@ function fixture(options={}){
   const adapter={group:new THREE.Group(),ownedBytes:100,transientBytes:0,workerReserveBytes:65536,disposed:false,
     build(job,signal){return new Promise((resolve,reject)=>jobs.push({job,signal,resolve,reject}));},
     adopt(id,key,result,budgetMs){assert.ok(budgetMs>0);resources.set(id,key);return true;},release(id,key){if(resources.get(id)===key)resources.delete(id);},discard(result){discarded.push(result);},
-    beginFrame(){draws.length=0;},submit(c,coverage){draws.push({id:c.id,coverage,matrix:c.matrix,genome:c.genome});return true;},endFrame(){},reset(){resources.clear();},dispose(){resources.clear();this.disposed=true;}};
+    beginFrame(){draws.length=0;},submit(c,coverage,start){draws.push({id:c.id,coverage,low:Math.fround(start),high:Math.fround(Math.min(1,start+coverage)),matrix:c.matrix,genome:c.genome});return true;},endFrame(){},reset(){resources.clear();},dispose(){resources.clear();this.disposed=true;}};
   const controller=new FaunaLodController(adapter,{maxResultBytes:500,maxTotalBytes:1024*1024,fadeSeconds:0,now:()=>time,onReady:()=>wakes++,...options});controller.setContext(context);
   const result=(overrides={})=>({accepted:true,byteLength:100,appearanceVersion:context.appearanceVersion,payload:{},...overrides});
   return {adapter,controller,jobs,draws,discarded,resources,result,setTime(n){time=n;},get wakes(){return wakes;}};
@@ -43,7 +43,7 @@ test('complementary near/pool/fallback coverage remains continuous through adopt
   f.controller.update([a],origin);await flush();f.jobs[0].resolve(f.result());await flush();f.controller.update([a],origin);
   assert.equal(f.controller.fallbackCoverage(a.id,a.nearCoverage),.8);assert.equal(f.controller.idle,false);
   f.setTime(125);f.controller.update([a],origin);const pool=f.draws[0].coverage,fallback=f.controller.fallbackCoverage(a.id,a.nearCoverage);
-  assert.ok(pool>0&&pool<.8);assert.ok(Math.abs(pool+fallback+a.nearCoverage-1)<1e-12);
+  assert.ok(pool>0&&pool<.8);assert.equal(f.draws[0].low,Math.fround(a.nearCoverage));assert.equal(f.draws[0].high+fallback,1,'shared Float32 endpoint is exactly complementary');
   f.setTime(250);a.distanceM=140;f.controller.update([a],origin);assert.equal(f.draws[0].coverage,.8);assert.equal(f.controller.fallbackCoverage(a.id,a.nearCoverage),0);
   a.distanceM=200;f.controller.update([a],origin);assert.equal(f.draws.length,0);assert.equal(f.controller.fallbackCoverage(a.id,a.nearCoverage),.8);f.controller.dispose();
 });

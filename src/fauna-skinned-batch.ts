@@ -8,6 +8,7 @@ import {quadrupedPoseAt,type QuadrupedPose} from './fauna-locomotion.ts';
 import type {FaunaNearCandidate} from './fauna-near-rig.ts';
 import type {CreatureGenome} from './fauna-runtime.ts';
 import {createFaunaMaterial} from './fauna-material.ts';
+import {FAUNA_SCREEN_HASH_GLSL,FAUNA_SCREEN_INTERVAL_GLSL,FAUNA_COVERAGE_VERSION,faunaCoverageEnd} from './fauna-coverage.ts';
 export const FAUNA_SKINNED_BATCH_VERSION='fauna-skinned-batch-prototype-1';
 export const FAUNA_PALETTE_BONES=QUADRUPED_BONE_PARENTS.length;
 export function faunaSkinnedGeometryKey(genome:CreatureGenome,lodVersion:string,level:number):string {
@@ -136,7 +137,7 @@ export class FaunaSkinnedBatch {
     this.mesh.name='Prototype pooled skinned fauna';this.group.add(this.mesh);this.group.userData.prototype=true;
   }
   private attach(material:THREE.Material,lit:boolean){
-    material.customProgramCacheKey=()=>FAUNA_SKINNED_BATCH_VERSION+(lit?'/lit':'/shadow');
+    material.customProgramCacheKey=()=>FAUNA_SKINNED_BATCH_VERSION+(lit?'/lit':'/shadow')+'/'+FAUNA_COVERAGE_VERSION;
     material.onBeforeCompile=shader=>{
       shader.uniforms.faunaBones=this.boneUniform;shader.uniforms.faunaRoots=this.rootUniform;
       shader.vertexShader=HEADER+shader.vertexShader;
@@ -160,10 +161,10 @@ export class FaunaSkinnedBatch {
         skinned+=b0*vertex*skinWeight.x;skinned+=b1*vertex*skinWeight.y;
         skinned+=b2*vertex*skinWeight.z;skinned+=b3*vertex*skinWeight.w;
         transformed=(actorRoot*skinned).xyz;`);
-      shader.fragmentShader='varying vec3 vFaunaMeta;\n'+shader.fragmentShader;
+      shader.fragmentShader=`varying vec3 vFaunaMeta;\n${FAUNA_SCREEN_HASH_GLSL}\n`+shader.fragmentShader;
       if(lit)shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=vFaunaMeta.x;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
-        if(vFaunaMeta.y<1.0&&fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))))>=vFaunaMeta.y)discard;`);
+        float faunaCoverageStart=vFaunaMeta.z,faunaCoverageEnd=vFaunaMeta.y;${FAUNA_SCREEN_INTERVAL_GLSL}`);
     };
   }
   /** Exact geometry key must contain fullgenome+LODversion. Only supplied
@@ -244,14 +245,15 @@ export class FaunaSkinnedBatch {
     }
   }
   beginFrame(origin:THREE.Vector3):void{this.group.position.copy(origin);this.frame=(this.frame+1)>>>0;if(!this.frame){this.seen.fill(0);this.frame=1;}this.active=0;this.actualTriangles=0;this.uploadBytes=0;}
-  submit(memberId:string,root:THREE.Matrix4,bones:Float32Array,options?:{roughness?:number;coverage?:number}):boolean{
+  submit(memberId:string,root:THREE.Matrix4,bones:Float32Array,options?:{roughness?:number;coverage?:number;coverageStart?:number}):boolean{
     const slot=this.members.get(memberId);if(slot===undefined||this.disposed||bones.length!==FAUNA_PALETTE_BONES*16)return false;
     if(this.seen[slot]===this.frame)return false;
     const p=slot*20,b=slot*FAUNA_PALETTE_BONES*16;
     for(let i=0;i<16;i++){const n=Math.fround(root.elements[i]);if(!Object.is(this.rootMatrices[p+i],n)){this.rootMatrices[p+i]=n;this.rootDirty=true;this.rootDirtyRows[slot]=1;}}
     for(let i=0;i<bones.length;i++)if(!Object.is(this.boneMatrices[b+i],bones[i])){this.boneMatrices[b+i]=bones[i];this.boneDirty=true;this.boneDirtyRows[slot]=1;}
-    const roughness=options?.roughness??this.slots[slot]!.roughness,coverage=options?.coverage??1;
-    for(let i=0;i<4;i++){const n=Math.fround(i===0?1:i===1?roughness:i===2?coverage:0);if(!Object.is(this.rootMatrices[p+16+i],n)){this.rootMatrices[p+16+i]=n;this.rootDirty=true;this.rootDirtyRows[slot]=1;}}
+    const roughness=options?.roughness??this.slots[slot]!.roughness,coverage=options?.coverage??1,coverageStart=options?.coverageStart??0;
+    if(!Number.isFinite(coverage)||coverage<0||coverage>1||!Number.isFinite(coverageStart)||coverageStart<0||coverage+coverageStart>1+1e-7)return false;
+    for(let i=0;i<4;i++){const n=Math.fround(i===0?1:i===1?roughness:i===2?faunaCoverageEnd(coverageStart,coverage):coverageStart);if(!Object.is(this.rootMatrices[p+16+i],n)){this.rootMatrices[p+16+i]=n;this.rootDirty=true;this.rootDirtyRows[slot]=1;}}
     this.seen[slot]=this.frame;this.active++;this.actualTriangles+=this.cache.get(this.slots[slot]!.key)!.indices/3;return true;
   }
   endFrame():void{

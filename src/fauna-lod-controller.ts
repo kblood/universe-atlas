@@ -5,6 +5,8 @@ import type {Object3D,Vector3,Matrix4} from 'three';
 import type {CreatureGenome} from './creature-model.ts';
 import type {QuadrupedBodyData} from './fauna-body-plan.ts';
 import type {FaunaHerdMember,FaunaMemberActivity} from './fauna-runtime.ts';
+import type {FaunaGround,FaunaPoseOptions} from './fauna-locomotion.ts';
+import {faunaCoverageEnd} from './fauna-coverage.ts';
 export const FAUNA_LOD_CONTROLLER_VERSION='fauna-lod-controller-prototype-1';
 export type FaunaLodTier='close'|'middle';
 export const FAUNA_LOD_TIER_TARGETS=Object.freeze({close:1500,middle:750});
@@ -18,6 +20,7 @@ export interface FaunaLodCandidate {
   id:string;genome:CreatureGenome;member:FaunaHerdMember;activity:FaunaMemberActivity;
   cameraVisible:boolean;distanceM:number;matrix:Matrix4;rigSeconds:number;nearCoverage:number;
   tier?:FaunaLodTier;
+  ground:FaunaGround;groundRevision:number;behaviour?:FaunaPoseOptions['behaviour'];
   /** Borrowed source. Only cloned job buffers may be transferred to a worker. */
   loadedSource?:Readonly<QuadrupedBodyData>|null;
 }
@@ -27,6 +30,7 @@ export interface FaunaLodBuildJob {
   loadedSource:QuadrupedBodyData|null;
 }
 export interface FaunaLodBuildResult {accepted:boolean;byteLength:number;appearanceVersion:string;payload:unknown}
+export interface FaunaLodPresentationRow {id:string;tier:string;genomeKey:string;sourceDigest:string|null;low:number;high:number}
 export interface FaunaLodRuntimeAdapter {
   readonly group:Object3D;
   /** CPU typed-array + estimated GPU ownership, including prepared caches. */
@@ -49,8 +53,9 @@ export interface FaunaLodRuntimeAdapter {
    * key for the same ID and must remain drawable. */
   release(id:string,key:string):void;
   discard(result:FaunaLodBuildResult):void;
-  beginFrame(origin:Vector3):void;submit(candidate:FaunaLodCandidate,coverage:number):boolean;endFrame():void;
+  beginFrame(origin:Vector3):void;submit(candidate:FaunaLodCandidate,coverage:number,coverageStart:number):boolean;endFrame():void;
   reset():void;dispose():void;
+  trace?():readonly FaunaLodPresentationRow[];diagnostics?():unknown;
 }
 export interface FaunaLodControllerOptions {
   maxActors?:number;maxDistanceM?:number;maxResultBytes?:number;maxTotalBytes?:number;
@@ -135,8 +140,8 @@ export class FaunaLodController {
       const age=this.fadeSeconds===0?1:smooth((now-entry.adoptedMs)/(this.fadeSeconds*1000));
       const range=1-smooth((candidate.distanceM-(this.maxDistanceM-25))/25),coverage=(1-candidate.nearCoverage)*age*range;
       if(age<1)this.fading=true;
-      let drawn=false;try{drawn=coverage>0&&this.adapter.submit(candidate,coverage);}catch{drawn=false;}
-      if(drawn){this.submitted.add(candidate.id);this.fallback.set(candidate.id,Math.max(0,1-candidate.nearCoverage-coverage));}
+      let drawn=false;try{drawn=coverage>0&&this.adapter.submit(candidate,coverage,candidate.nearCoverage);}catch{drawn=false;}
+      if(drawn){this.submitted.add(candidate.id);this.fallback.set(candidate.id,1-faunaCoverageEnd(candidate.nearCoverage,coverage));}
     }
     this.adapter.endFrame();
     this.startNext(now);return this.submitted;
@@ -182,8 +187,9 @@ export class FaunaLodController {
     for(const id of this.failed.keys())if(!this.desired.has(id))this.failed.delete(id);
   }
   fallbackCoverage(id:string,nearCoverage=0):number{return this.fallback.get(id)??Math.max(0,1-nearCoverage);}
+  presentationTrace(){return this.adapter.trace?.()??[];}
   get idle(){return !this.pending&&!this.fading;}
-  diagnostics(){return {version:FAUNA_LOD_CONTROLLER_VERSION,context:this.context,desired:this.desired.size,prepared:this.cache.size,submitted:this.submitted.size,
+  diagnostics(){return {version:FAUNA_LOD_CONTROLLER_VERSION,adapter:this.adapter.diagnostics?.(),context:this.context,desired:this.desired.size,prepared:this.cache.size,submitted:this.submitted.size,
     coldJobs:this.running?1:0,pendingResults:this.pending?1:0,pendingResultBytes:this.pending?.result.byteLength??0,readyRevision:this.readyRevision,rejected:this.rejected,cancelled:this.cancelled,
     adapterOwnedBytes:this.adapter.ownedBytes,adapterTransientBytes:this.adapter.transientBytes,workerReservedBytes:this.running?this.adapter.workerReserveBytes:0,
     currentCombinedEstimateBytes:this.adapter.ownedBytes+this.adapter.transientBytes+(this.pending?.result.byteLength??0)+(this.running?(this.adapter.workerTypedBytes??0):0),

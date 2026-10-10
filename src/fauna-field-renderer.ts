@@ -3,6 +3,7 @@ import type {CreatureGenome,CreatureGait} from './fauna-runtime.ts';
 import {createFaunaMaterial} from './fauna-material.ts';
 import {eyeDetailWeight,gaitBlend,rangeWeight} from './fauna-handoff.ts';
 import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
+import {FAUNA_SCREEN_HASH_GLSL,FAUNA_SCREEN_INTERVAL_GLSL,FAUNA_COVERAGE_VERSION,faunaCoverageEnd} from './fauna-coverage.ts';
 
 /** Animals drawn through the instanced anatomy per frame. Sized from the
  * measured ground-level population at LETHRA-001 G001/C2128,0,1/0/planet/1
@@ -66,11 +67,11 @@ export interface FaunaFieldOptions { bodyPlan?:boolean; complementaryCoverage?:b
 export const FAUNA_FIELD_COVERAGE_VERSION='fauna-field-complementary-coverage-1';
 function installCoverage(material:THREE.Material){
   const previous=material.onBeforeCompile,key=material.customProgramCacheKey;
-  material.customProgramCacheKey=()=>key.call(material)+`/${FAUNA_FIELD_COVERAGE_VERSION}`;
+  material.customProgramCacheKey=()=>key.call(material)+`/${FAUNA_FIELD_COVERAGE_VERSION}/${FAUNA_COVERAGE_VERSION}`;
   material.onBeforeCompile=(shader,renderer)=>{
     previous.call(material,shader,renderer);
-    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float instanceFaunaCoverage;varying float vFaunaCoverage;').replace('#include <begin_vertex>','#include <begin_vertex>\nvFaunaCoverage=instanceFaunaCoverage;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vFaunaCoverage;').replace('#include <alphahash_fragment>','diffuseColor.a *= vFaunaCoverage;\n#include <alphahash_fragment>');
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 instanceFaunaCoverage;varying vec2 vFaunaCoverage;').replace('#include <begin_vertex>','#include <begin_vertex>\nvFaunaCoverage=instanceFaunaCoverage;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying vec2 vFaunaCoverage;\n${FAUNA_SCREEN_HASH_GLSL}`).replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>\nfloat faunaCoverageStart=vFaunaCoverage.x,faunaCoverageEnd=vFaunaCoverage.y;${FAUNA_SCREEN_INTERVAL_GLSL}`);
   };
 }
 
@@ -107,6 +108,7 @@ export class FaunaFieldRenderer {
   private readonly bodyPlan:boolean;
   private coverage:THREE.InstancedBufferAttribute[]|null=null;
   private currentCoverage=1;
+  private currentCoverageStart=0;
   constructor(options:FaunaFieldOptions={}){
     this.bodyPlan=options.bodyPlan===true;
     if(options.complementaryCoverage)this.coverage=[];
@@ -118,10 +120,12 @@ export class FaunaFieldRenderer {
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);m.frustumCulled=false;m.count=0;
       m.castShadow=true;m.receiveShadow=true;
       if(this.coverage){
-        const attribute=new THREE.InstancedBufferAttribute(new Float32Array(m.instanceMatrix.count).fill(1),1).setUsage(THREE.DynamicDrawUsage);
+        const values=new Float32Array(m.instanceMatrix.count*2);for(let v=1;v<values.length;v+=2)values[v]=1;
+        const attribute=new THREE.InstancedBufferAttribute(values,2).setUsage(THREE.DynamicDrawUsage);
         g.setAttribute('instanceFaunaCoverage',attribute);this.coverage.push(attribute);
-        const material=m.material as THREE.MeshStandardMaterial;material.alphaHash=true;installCoverage(material);
-        const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaHash:true});installCoverage(depth);m.customDepthMaterial=depth;
+        const material=m.material as THREE.MeshStandardMaterial;installCoverage(material);
+        const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});installCoverage(depth);m.customDepthMaterial=depth;
+        const distance=new THREE.MeshDistanceMaterial();installCoverage(distance);m.customDistanceMaterial=distance;
       }
       m.name=['Fauna bodies and eyes','Fauna limbs necks tails','Fauna ears and horns','Fauna feet and armour'][i];
       this.group.add(m);return m;
@@ -154,7 +158,7 @@ export class FaunaFieldRenderer {
     const a11=ae[0],a12=ae[4],a13=ae[8],a14=ae[12],a21=ae[1],a22=ae[5],a23=ae[9],a24=ae[13];
     const a31=ae[2],a32=ae[6],a33=ae[10],a34=ae[14],a41=ae[3],a42=ae[7],a43=ae[11],a44=ae[15];
     const mesh=this.meshes[kind],index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16;
-    this.coverage?.[kind].setX(index,this.currentCoverage);
+    this.coverage?.[kind].setXY(index,this.currentCoverageStart,faunaCoverageEnd(this.currentCoverageStart,this.currentCoverage));
     te[o]=a11*b11+a12*b21+a13*b31+a14*0;te[o+4]=a11*b12+a12*b22+a13*b32+a14*0;te[o+8]=a11*b13+a12*b23+a13*b33+a14*0;te[o+12]=a11*x+a12*y+a13*z+a14*1;
     te[o+1]=a21*b11+a22*b21+a23*b31+a24*0;te[o+5]=a21*b12+a22*b22+a23*b32+a24*0;te[o+9]=a21*b13+a22*b23+a23*b33+a24*0;te[o+13]=a21*x+a22*y+a23*z+a24*1;
     te[o+2]=a31*b11+a32*b21+a33*b31+a34*0;te[o+6]=a31*b12+a32*b22+a33*b32+a34*0;te[o+10]=a31*b13+a32*b23+a33*b33+a34*0;te[o+14]=a31*x+a32*y+a33*z+a34*1;
@@ -181,8 +185,8 @@ export class FaunaFieldRenderer {
    * repeated for the animal, so realtime frames pay no copy cost. */
   /** `stateS` (seconds into the dated idle/walk window, `FaunaMemberActivity.stateS`)
    * opts this submission into the continuous presentation; see the class note. */
-  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0,key?:object,stateS?:number,coverage=1):boolean{
-    if(this.coverage){if(!Number.isFinite(coverage)||coverage<0||coverage>1)throw new Error('Fauna coverage must be finite within0..1');this.currentCoverage=coverage;if(coverage===0)return true;}
+  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0,key?:object,stateS?:number,coverage=1,coverageStart=0):boolean{
+    if(this.coverage){if(!Number.isFinite(coverage)||coverage<0||coverage>1||!Number.isFinite(coverageStart)||coverageStart<0||coverageStart+coverage>1+1e-7)throw new Error('Fauna coverage interval must be finite within0..1');this.currentCoverage=coverage;this.currentCoverageStart=coverageStart;if(coverage===0)return true;}
     if(this.animalCount>=FAUNA_FIELD_CAPACITY)return false;this.animalCount++;
     const continuous=stateS!==undefined,state=continuous?stateS:NaN;
     const eyes=continuous?eyeDetailWeight(distanceM):distanceM<=FAUNA_FIELD_EYE_DETAIL_M?1:0;
@@ -216,7 +220,7 @@ export class FaunaFieldRenderer {
     const tx=pe[12]!,ty=pe[13]!,tz=pe[14]!,sums=record.sums;
     for(let n=0;n<record.parts;n++){
       const kind=record.kinds[n]!,mesh=this.meshes[kind]!,index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16,m=n*16,s=n*3;
-      this.coverage?.[kind].setX(index,this.currentCoverage);
+      this.coverage?.[kind].setXY(index,this.currentCoverageStart,faunaCoverageEnd(this.currentCoverageStart,this.currentCoverage));
       for(let k=0;k<12;k++)te[o+k]=record.matrices[m+k]!;
       te[o+12]=sums[s]!+tx;te[o+13]=sums[s+1]!+ty;te[o+14]=sums[s+2]!+tz;te[o+15]=record.matrices[m+15]!;
       mesh.setColorAt(index,record.colors[n]!);
@@ -297,5 +301,5 @@ export class FaunaFieldRenderer {
    * Shared backing stores and upload identities are counted independently. */
   bufferFootprint(){return forestMeshBufferFootprint(this.meshes);}
   get allocatedBytes(){const buffers=this.bufferFootprint();return buffers.totalBytes+buffers.geometryGpuEstimateBytes+buffers.instanceGpuEstimateBytes;}
-  dispose(){this.records.clear();for(const m of this.meshes){m.geometry.dispose();(m.material as THREE.Material).dispose();m.customDepthMaterial?.dispose();}this.group.removeFromParent();}
+  dispose(){this.records.clear();for(const m of this.meshes){m.geometry.dispose();(m.material as THREE.Material).dispose();m.customDepthMaterial?.dispose();m.customDistanceMaterial?.dispose();}this.group.removeFromParent();}
 }
