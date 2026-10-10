@@ -29,13 +29,24 @@ All four fixed-rest PNG captures are byte-identical, SHA256
 `8a459e50f9aa5496a69371fded27cd4a01ecd928358c79025927e39452d705c6`.
 Browser/shader errors are absent; unchanged frames schedule zero palette bytes.
 Moving bones change all rows in this corpus, so adaptive mode correctly falls
-back to the full 180,224 B bone upload. Sparse workload benefits remain unmeasured.
+back to the full 180,224 B bone upload. These windows do not measure sparse updates.
 
 The three-pair ring adds 952,320 B and shows no convincing moving GPU p95
 improvement. It is **not selected for production**. Individual maximum-frame
 differences do not diagnose the previous GPU tail as an upload hazard. The
 single-pass order and short windows do not establish a universal performance
 ranking. No physical Quest acceptance is claimed.
+
+A separate controlled sparse workload (`bbc9793`, movingStride=16) holds 120
+actor pose clocks fixed and advances eight, with the same 128 actors, geometry
+and root matrices. One-pair adaptive upload schedules 11,264 B instead of
+180,224 B (16 times less). Moving GPU p95 is .111 ms versus .699 ms, but render
+CPU p95 increases from .170 to .370 ms because row uploads add GL calls. Three
+pairs retain the same .111 ms GPU p95 and increase render CPU p95 to .580 ms.
+These synthetic sparse results do not establish a production cadence policy;
+ordinary idle animals still breathe and may change their palettes every frame.
+The defaults remain unchanged, and total-frame/cadence acceptance is pending.
+Sparse raw results are the `sparse-ring*` folders beside the all-moving results.
 
 Raw reports and captures: `Assets/_assetctl/animal-system-20261010/palette-streaming/`.
 Input data SHA256 `70127c3347c68cfeef9f2b82c5527542709762707f75d4999cc2c5257319e69f`
