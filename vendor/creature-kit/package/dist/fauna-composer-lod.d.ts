@@ -28,6 +28,7 @@
 export declare const COMPOSER_LOD_VERSION = "fauna-composer-lod-1";
 /** Additive opt-in constraints; absent options preserve the original reducer. */
 export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-1";
+export declare const COMPOSER_FOOT_LOD_VERSION = "fauna-composer-foot-lod-1";
 /** Default attribute weights (dimensionless; multiplied by the body diagonal) and the largest allowed face turn. */
 export declare const COMPOSER_LOD_DEFAULTS: Readonly<{
     colour: 0.02;
@@ -67,6 +68,11 @@ export interface ComposerLodOptions {
     boundary?: number;
     minFaceCosine?: number;
 }
+/** Skin-6's joined ankles no longer have separate closed foot components to
+ * resist collapse. Preserve sole/ankle extrema and the supporting leg's joint
+ * regions, and spend more of the remaining error budget on these contours.
+ * Explicit opt-in: historical skin-5 reductions remain byte-identical. */
+export declare function composerFootLodConstraints(source: ComposerLodSource): Pick<ComposerLodOptions, 'protectedVertices' | 'vertexImportance'>;
 export interface ComposerLodLevel {
     /** Requested triangle target; null for the unreduced source. */
     target: number | null;

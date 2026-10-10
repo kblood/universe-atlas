@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { composerConstraints, type ComposerConstraint, type ComposerRecipe } from './fauna-composer-recipe.ts';
-import { composerStructure, COMPOSER_BUDGET, type ComposerGraph, type ComposerMotion, type ComposerPose } from './fauna-composer-rig.ts';
-import { type ComposerCoatCrisp, type ComposerSkin } from './fauna-composer-mesh.ts';
+import { composerStructure, COMPOSER_BUDGET, type ComposerGraph, type ComposerMotion, type ComposerPose, type ComposerPoseOptions } from './fauna-composer-rig.ts';
+import { type ComposerCoatCrisp, type ComposerSkin, type ComposerSkinPresentation } from './fauna-composer-mesh.ts';
 export { COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL } from './fauna-coat-crisp-glsl.ts';
 import { type ComposerIndividualTraits } from './fauna-composer-individual.ts';
 /** Experimental modular creature: one skinned mesh (one draw call) driven by
@@ -81,7 +81,9 @@ export declare function patchComposerCoatCrispShader(shader: {
 /** The coloured material with the crisp coat (skin-5): the gloss channel plus the per-fragment coat pattern of `crisp`
  * between the geometry's coatL0..coatL2 layers. One program per crisp pattern; the pattern parameters are uniforms. */
 export declare function createComposerCrispCoatMaterial(crisp: ComposerCoatCrisp): THREE.MeshStandardMaterial;
-export declare function createComposerCreature(input: ComposerRecipe): ComposerCreature;
+export declare function createComposerCreature(input: ComposerRecipe, options?: {
+    presentation?: ComposerSkinPresentation;
+} & ComposerPoseOptions): ComposerCreature;
 export { composerConstraints };
 /** Rest-pose bounds of every vertex referenced by a triangle of the face parts. */
 export declare function composerHeadBounds(skin: ComposerSkin): THREE.Box3;

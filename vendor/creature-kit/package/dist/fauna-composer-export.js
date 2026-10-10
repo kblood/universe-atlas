@@ -41,8 +41,8 @@
 import * as THREE from 'three';
 import { createComposerCreature } from "./fauna-composer.js";
 import { COMPOSER_RECIPE_VERSION, decodeComposerRecipe, encodeComposerRecipe, normalizeComposerRecipe } from "./fauna-composer-recipe.js";
-import { COMPOSER_BUDGET, COMPOSER_GRAPH_VERSION, COMPOSER_MOTIONS, poseComposer } from "./fauna-composer-rig.js";
-import { COMPOSER_SKIN_VERSION } from "./fauna-composer-mesh.js";
+import { COMPOSER_BUDGET, COMPOSER_GRAPH_VERSION, COMPOSER_MOTIONS, COMPOSER_TRUNK_MOTION_VERSION, poseComposer } from "./fauna-composer-rig.js";
+import { COMPOSER_SKIN_VERSION, COMPOSER_REALISM_SKIN_VERSION } from "./fauna-composer-mesh.js";
 import { COMPOSER_INDIVIDUAL_VERSION, composerSpeciesKey } from "./fauna-composer-individual.js";
 import { COMPOSER_FACE_VERSION } from "./fauna-composer-face.js";
 import { COMPOSER_FACE_GEOMETRY_VERSION } from "./fauna-composer-face-geometry.js";
@@ -50,7 +50,7 @@ import { COMPOSER_EYE_VERSION } from "./fauna-composer-eye.js";
 import { COMPOSER_EYE_CATALOGUE_VERSION } from "./fauna-composer-eye-catalogue.js";
 import { COMPOSER_SPECIES_GENERATOR_VERSION } from "./fauna-composer-species.js";
 import { FAUNA_COAT_FIELD_VERSION } from "./fauna-coat-fields.js";
-import { COMPOSER_LOD_VERSION, buildComposerLodChain } from "./fauna-composer-lod.js";
+import { COMPOSER_LOD_VERSION, COMPOSER_FOOT_LOD_VERSION, buildComposerLodChain, composerFootLodConstraints } from "./fauna-composer-lod.js";
 /** Historical: written by plain exports up to export v2 (kept exported for compatibility; no longer written). */
 export const COMPOSER_EXPORT_VERSION = 'fauna-composer-export-1';
 /** Historical: written by profiled exports (an LOD chain or a crossfaded loop) in export v2 (kept for compatibility). */
@@ -160,12 +160,12 @@ function assertFps(fps) {
 }
 /** The clip window for a motion: deterministic, chosen by measuring poseComposer (only the legged gait period is read
  * from the graph, and even that candidate is accepted only when its measured seam closes). */
-export function composerClipWindow(graph, motion, fps = COMPOSER_EXPORT_DEFAULT_FPS, duration) {
+export function composerClipWindow(graph, motion, fps = COMPOSER_EXPORT_DEFAULT_FPS, duration, poseOptions = {}) {
     assertFps(fps);
-    const start = poseComposer(graph, motion, 0);
+    const start = poseComposer(graph, motion, 0, poseOptions);
     const scored = new Map();
     const window = (d, method) => {
-        const seam = composerPoseDistance(start, poseComposer(graph, motion, d));
+        const seam = composerPoseDistance(start, poseComposer(graph, motion, d, poseOptions));
         const w = { duration: d, keys: Math.max(1, Math.round(d * fps)) + 1, seamPosition: seam.position, seamAngle: seam.angle, seamScale: seam.scale, seamless: isSeamless(seam), method };
         scored.set(w, seamScore(seam));
         return w;
@@ -176,7 +176,7 @@ export function composerClipWindow(graph, motion, fps = COMPOSER_EXPORT_DEFAULT_
         return window(duration, 'requested');
     }
     const same = (a, b) => ['positions', 'quaternions', 'radialScale', 'chordScale'].every(k => a[k].every((v, i) => v === b[k][i]));
-    if ([0.37, 1.13, 2.71].every(t => same(start, poseComposer(graph, motion, t))))
+    if ([0.37, 1.13, 2.71].every(t => same(start, poseComposer(graph, motion, t, poseOptions))))
         return { duration: 1, keys: 2, seamPosition: 0, seamAngle: 0, seamScale: 0, seamless: true, method: 'static' };
     const { minSeconds, maxSeconds, walkMinSeconds } = COMPOSER_EXPORT_CLIP_WINDOW;
     const tried = [];
@@ -223,7 +223,7 @@ export function composerClipWindow(graph, motion, fps = COMPOSER_EXPORT_DEFAULT_
 /** Samples poseComposer at `window.keys` evenly spaced times over [0, duration] (both ends included). Per bone:
  * keys x 3 translations, keys x 4 rotations, keys x 3 scales (null when the scale never leaves 1). Quaternions are
  * kept in one hemisphere from key to key so slerp playback never takes the long way round. */
-export function bakeComposerClip(graph, motion, window) {
+export function bakeComposerClip(graph, motion, window, poseOptions = {}) {
     const n = graph.bones.length, keys = window.keys;
     const times = new Float32Array(keys);
     const translation = Array.from({ length: n }, () => new Float32Array(keys * 3));
@@ -235,7 +235,7 @@ export function bakeComposerClip(graph, motion, window) {
     for (let k = 0; k < keys; k++) {
         const t = keys === 1 ? 0 : window.duration * k / (keys - 1);
         times[k] = t;
-        const pose = poseComposer(graph, motion, t);
+        const pose = poseComposer(graph, motion, t, poseOptions);
         if (k === keys - 1 && t > 0)
             travelSpeed = pose.travel / t;
         for (let i = 0; i < n; i++) {
@@ -269,7 +269,7 @@ export function bakeComposerClip(graph, motion, window) {
  * closes bit for bit. Inside the blend the clip is no longer poseComposer; everywhere else it is poseComposer(b + t).
  * Uses only + - * / and sqrt. Throws for a travelling motion (walk) and when the rotation path would close in the
  * opposite quaternion hemisphere (it never does for an idle sway; a throw beats a silent long-way slerp). */
-export function bakeComposerLoopClip(graph, motion, window, blend) {
+export function bakeComposerLoopClip(graph, motion, window, blend, poseOptions = {}) {
     const n = graph.bones.length, keys = window.keys, D = window.duration;
     if (keys < 3)
         throw new Error('composer export: a seamless loop needs at least 3 keys');
@@ -296,12 +296,12 @@ export function bakeComposerLoopClip(graph, motion, window, blend) {
             }
             break;
         }
-        const a = poseComposer(graph, motion, blend + t);
+        const a = poseComposer(graph, motion, blend + t, poseOptions);
         if (a.travel !== 0)
             throw new Error(`composer export: ${motion} travels; a crossfaded loop is only for in-place motions`);
         const u = t - (D - blend);
         const w = u > 0 ? smooth(Math.min(1, u / blend)) : 0;
-        const b = w > 0 ? poseComposer(graph, motion, u) : null;
+        const b = w > 0 ? poseComposer(graph, motion, u, poseOptions) : null;
         for (let i = 0; i < n; i++) {
             const tr = [a.positions[i * 3], a.positions[i * 3 + 1], a.positions[i * 3 + 2]];
             let x = a.quaternions[i * 4], y = a.quaternions[i * 4 + 1], z = a.quaternions[i * 4 + 2], qw = a.quaternions[i * 4 + 3];
@@ -737,7 +737,7 @@ export function exportCreatureGlb(input, options = {}) {
     if (new Set(requests.map(r => r.motion)).size !== requests.length)
         throw new Error('composer export: a motion is listed twice');
     const v2 = resolveV2(options);
-    const creature = createComposerCreature(recipe);
+    const creature = createComposerCreature(recipe, { presentation: options.presentation, trunkMotion: options.trunkMotion });
     try {
         const { graph, skin } = creature;
         const geometry = creature.mesh.geometry;
@@ -761,7 +761,7 @@ export function exportCreatureGlb(input, options = {}) {
         if (v2?.lods) {
             const numeric = v2.lods.filter((l) => l !== 'full');
             const chain = numeric.length ? buildComposerLodChain({ positions: skin.positions, normals: normalOut, colors: skin.colors, gloss: skin.gloss,
-                skinIndex: skin.skinIndex, skinWeight: skin.skinWeight, index: skin.index, parts: full.parts }, numeric) : null;
+                skinIndex: skin.skinIndex, skinWeight: skin.skinWeight, index: skin.index, parts: full.parts }, numeric, skin.version === COMPOSER_REALISM_SKIN_VERSION ? composerFootLodConstraints(skin) : undefined) : null;
             const reducedLevels = (chain?.levels ?? []).map(l => ({ positions: l.positions, normals: l.normals, colors: l.colors, gloss: l.gloss, skinIndex: l.skinIndex,
                 skinWeight: l.skinWeight, index: l.index, vertexCount: l.vertices, parts: l.parts, target: l.target, reduced: l }));
             levels = v2.lods[0] === 'full' ? [levels[0], ...reducedLevels] : reducedLevels;
@@ -792,6 +792,11 @@ export function exportCreatureGlb(input, options = {}) {
         const recipeText = encodeComposerRecipe(recipe);
         const effectiveRecipeText = encodeComposerRecipe(creature.individual.effectiveRecipe);
         const versions = v2 ? { ...composerExportVersions(), lod: COMPOSER_LOD_VERSION } : composerExportVersions();
+        versions.skin = skin.version;
+        if (options.trunkMotion === 'wave-1' && graph.chains.trunk.length && requests.some(r => r.motion !== 'neutral'))
+            versions.trunkMotion = COMPOSER_TRUNK_MOTION_VERSION;
+        if (v2?.lods && skin.version === COMPOSER_REALISM_SKIN_VERSION)
+            versions.lodFeet = COMPOSER_FOOT_LOD_VERSION;
         if (reduction)
             versions.skeleton = COMPOSER_SKELETON_VERSION;
         const exportVersion = COMPOSER_EXPORT_V3_VERSION;
@@ -834,19 +839,19 @@ export function exportCreatureGlb(input, options = {}) {
         const bakedClips = [];
         for (const request of requests) {
             const clipFps = request.fps ?? fps;
-            let window = composerClipWindow(graph, request.motion, clipFps, request.duration);
+            let window = composerClipWindow(graph, request.motion, clipFps, request.duration, options);
             let crossfade;
             let baked;
             if (v2?.seamless && (request.motion === 'idle' || request.motion === 'display') && window.method !== 'static') {
                 const blend = Math.min(v2.blend, window.duration / 2);
                 if (window.keys < 3)
                     window = { ...window, keys: 3 };
-                baked = bakeComposerLoopClip(graph, request.motion, window, blend);
+                baked = bakeComposerLoopClip(graph, request.motion, window, blend, options);
                 crossfade = { blendSeconds: blend, sourceStart: blend, rawSeamPosition: window.seamPosition, rawSeamAngle: window.seamAngle, rawSeamScale: window.seamScale };
                 window = { ...window, seamPosition: 0, seamAngle: 0, seamScale: 0, seamless: true, method: 'crossfade' };
             }
             else
-                baked = bakeComposerClip(graph, request.motion, window);
+                baked = bakeComposerClip(graph, request.motion, window, options);
             const input = b.data(baked.times, 'SCALAR', undefined, true);
             const samplers = [], channels = [];
             const counts = { translation: 0, rotation: 0, scale: 0 };

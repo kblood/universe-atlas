@@ -62,6 +62,7 @@ export const VENDORED_PATHS = Object.freeze([
   'tests/fauna-composer-mesh-stability.test.mjs',
   'tests/fauna-composer-recipe-independent.test.mjs',
   'tests/fauna-composer-realism.test.mjs',
+  'tests/fauna-composer-trunk-motion.test.mjs',
   'tests/fauna-composer-rig-independent.test.mjs',
   'tests/fauna-composer-skin-anatomy.test.mjs',
   'tests/fauna-composer-skin4-links.test.mjs',
@@ -78,6 +79,7 @@ export const VENDORED_PATHS = Object.freeze([
   'tests/fixtures/creature-core-exports.json',
   'tests/helpers/composer-head-occlusion.mjs',
   'tests/helpers/planet-core-corpus.mjs',
+  'tests/tools/measure-composer-trunk-motion.mjs',
   'tests/fixtures/planet-core-f96a8c1.json',
 ]);
 

@@ -51,7 +51,7 @@ export function prepareKitLab(repo,kit,packageManifest){
       const html=lf(join(stage,entry));
       for(const match of html.matchAll(/(?:src|href)="([^"]+)"/g)){
         const target=match[1].split(/[?#]/)[0];if(!target)continue;if(/^(?:https?:|\/\/)/.test(target))throw new Error('Kit Lab entry must be self-contained');
-        const path=target.replace(/^\.\//,'');if(!artifacts.includes(path))throw new Error(`Kit Lab entry references missing artifact ${target}`);
+        const path=target==='./'?'index.html':target.replace(/^\.\//,'');if(!artifacts.includes(path))throw new Error(`Kit Lab entry references missing artifact ${target}`);
       }
     }
     const receiptPath=join(repo,KIT_LAB_RECEIPT),previous=existsSync(receiptPath)?JSON.parse(lf(receiptPath)):null;

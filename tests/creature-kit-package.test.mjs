@@ -63,7 +63,7 @@ test('Kit 0.7 primary Composer entry is required and recorded without losing arc
     write(f.kit,'apps/creature-lab/index.html','export const fixturePrimary=1;\n');commit(f.kit);
     assert.throws(()=>writeVendor(f.repo,f.kit),/index.html/);assert.equal(snapshot(f.repo),before);
     const builder=join(f.kit,'node_modules/vite/bin/vite.js');
-    writeFileSync(builder,readFileSync(builder,'utf8').replace("['planet-skin.html','creature-lab.html']","['index.html','planet-skin.html','creature-lab.html']"));
+    writeFileSync(builder,readFileSync(builder,'utf8').replace("['planet-skin.html','creature-lab.html']","['index.html','planet-skin.html','creature-lab.html']").replace("'<html>'+","'<html><a href=\"./\">Animal Lab</a>'+"));
     writeVendor(f.repo,f.kit);
     const receipt=JSON.parse(readFileSync(join(f.repo,'vendor/creature-kit/LAB.json'),'utf8'));
     assert.equal(receipt.entry,'index.html');

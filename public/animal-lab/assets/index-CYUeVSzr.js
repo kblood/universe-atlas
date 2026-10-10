@@ -1,0 +1,1 @@
+import"./modulepreload-polyfill-B5Qt9EMX.js";function t(n){const e=new URL(n),a=new URL("./creature-lab.html",e);return a.search=e.search,e.searchParams.has("mode")||(a.search=`${e.search}${e.search?"&":"?"}mode=composer`),a.hash=e.hash,a.href}const r=t(location.href);document.getElementById("open-animal-lab").href=r;location.replace(r);

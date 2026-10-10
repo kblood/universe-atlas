@@ -15,6 +15,9 @@ import { type ComposerGraph, type Vec3 } from './fauna-composer-rig.ts';
  * mouth disc shaded as a mouth; the earlier eye rules (eyeRules 1) still build skin-3 byte for byte. */
 /** skin-5 (coat crisp v1, docs/fauna-coat-crisp-v1.md): crisp-coat layer colours per vertex for the per-fragment coat. */
 export declare const COMPOSER_SKIN_VERSION = "fauna-composer-skin-5";
+/** Additive presentation revision. Recipe/individual/graph identities are unchanged. */
+export declare const COMPOSER_REALISM_SKIN_VERSION = "fauna-composer-skin-6";
+export type ComposerSkinPresentation = 'skin-5' | 'realism-1';
 /** The per-fragment ("crisp") coat: the shader that evaluates the pattern per fragment (fauna-composer.ts) and the
  * layer colours the skin carries for it. */
 export declare const COMPOSER_COAT_CRISP_VERSION = "fauna-composer-coat-crisp-1";
@@ -153,7 +156,7 @@ export interface ComposerSkinEyeDebug {
     rimFallbacks: number;
 }
 export interface ComposerSkin {
-    version: typeof COMPOSER_SKIN_VERSION;
+    version: typeof COMPOSER_SKIN_VERSION | typeof COMPOSER_REALISM_SKIN_VERSION;
     positions: Float32Array;
     colors: Float32Array;
     skinIndex: Uint16Array;
@@ -192,6 +195,8 @@ export interface ComposerSkin {
     debug?: ComposerSkinDebug;
 }
 export interface ComposerSkinOptions {
+    /** Explicit surface revision; omitted retains the frozen skin-5 presentation. */
+    presentation?: ComposerSkinPresentation;
     /** Individual traits to build with (default composerIndividualTraits(graph.recipe)). */
     traits?: ComposerIndividualTraits;
     /** Report ring centrelines, spline fallbacks and coat scale in `debug`. */

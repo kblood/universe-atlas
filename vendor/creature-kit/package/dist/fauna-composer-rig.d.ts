@@ -8,6 +8,10 @@ import { type ComposerIndividualTraits } from './fauna-composer-individual.ts';
  * along the bone, +Y dorsal). Creature space: metres, +X forward, +Y up,
  * +Z to the animal's right, ground at y = 0. */
 export declare const COMPOSER_GRAPH_VERSION = "fauna-composer-graph-4";
+export declare const COMPOSER_TRUNK_MOTION_VERSION = "fauna-composer-trunk-motion-1";
+export interface ComposerPoseOptions {
+    trunkMotion?: 'legacy' | 'wave-1';
+}
 /** Desktop preview budget. Not a Quest qualification. */
 export declare const COMPOSER_BUDGET: Readonly<{
     maxBones: 160;
@@ -190,7 +194,7 @@ export declare const AXIAL_ARM_REST: readonly number[];
 /** Display arm raise from the rest target, in arm reaches: [forward, up, outward] (graph-3: [0.35, 0.55, 0]). */
 export declare const DISPLAY_ARM_RAISE: readonly number[];
 /** Deterministic pose for a motion at `time` seconds (bounded 0..120). */
-export declare function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time: number): ComposerPose;
+export declare function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time: number, options?: ComposerPoseOptions): ComposerPose;
 /** Parent-child joint list (bone origin pairs) for skeleton display and tests. */
 export declare function composerSkeletonSegments(graph: ComposerGraph): [number, number][];
 /** Plain summary of a graph's structure, useful in reports and UI. */

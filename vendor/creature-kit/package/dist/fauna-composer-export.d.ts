@@ -1,5 +1,6 @@
 import { type ComposerRecipe } from './fauna-composer-recipe.ts';
-import { type ComposerGraph, type ComposerMotion, type ComposerPose } from './fauna-composer-rig.ts';
+import { type ComposerGraph, type ComposerMotion, type ComposerPose, type ComposerPoseOptions } from './fauna-composer-rig.ts';
+import { type ComposerSkinPresentation } from './fauna-composer-mesh.ts';
 /** Historical: written by plain exports up to export v2 (kept exported for compatibility; no longer written). */
 export declare const COMPOSER_EXPORT_VERSION = "fauna-composer-export-1";
 /** Historical: written by profiled exports (an LOD chain or a crossfaded loop) in export v2 (kept for compatibility). */
@@ -98,7 +99,9 @@ export interface ComposerClipRequest {
     fps?: number;
     duration?: number;
 }
-export interface ComposerExportOptions {
+export interface ComposerExportOptions extends ComposerPoseOptions {
+    /** Surface revision, independent of recipe identity. Omitted exports skin-5. */
+    presentation?: ComposerSkinPresentation;
     /** Motions (or explicit clip windows) to bake; default every COMPOSER_MOTIONS entry. */
     clips?: readonly (ComposerMotion | ComposerClipRequest)[];
     fps?: number;
@@ -274,11 +277,11 @@ export declare function composerPoseDistance(a: ComposerPose, b: ComposerPose): 
 };
 /** The clip window for a motion: deterministic, chosen by measuring poseComposer (only the legged gait period is read
  * from the graph, and even that candidate is accepted only when its measured seam closes). */
-export declare function composerClipWindow(graph: ComposerGraph, motion: ComposerMotion, fps?: number, duration?: number): ComposerClipWindow;
+export declare function composerClipWindow(graph: ComposerGraph, motion: ComposerMotion, fps?: number, duration?: number, poseOptions?: ComposerPoseOptions): ComposerClipWindow;
 /** Samples poseComposer at `window.keys` evenly spaced times over [0, duration] (both ends included). Per bone:
  * keys x 3 translations, keys x 4 rotations, keys x 3 scales (null when the scale never leaves 1). Quaternions are
  * kept in one hemisphere from key to key so slerp playback never takes the long way round. */
-export declare function bakeComposerClip(graph: ComposerGraph, motion: ComposerMotion, window: Pick<ComposerClipWindow, 'duration' | 'keys'>): {
+export declare function bakeComposerClip(graph: ComposerGraph, motion: ComposerMotion, window: Pick<ComposerClipWindow, 'duration' | 'keys'>, poseOptions?: ComposerPoseOptions): {
     times: Float32Array;
     translation: Float32Array[];
     rotation: Float32Array[];
@@ -292,7 +295,7 @@ export declare function bakeComposerClip(graph: ComposerGraph, motion: ComposerM
  * closes bit for bit. Inside the blend the clip is no longer poseComposer; everywhere else it is poseComposer(b + t).
  * Uses only + - * / and sqrt. Throws for a travelling motion (walk) and when the rotation path would close in the
  * opposite quaternion hemisphere (it never does for an idle sway; a throw beats a silent long-way slerp). */
-export declare function bakeComposerLoopClip(graph: ComposerGraph, motion: ComposerMotion, window: Pick<ComposerClipWindow, 'duration' | 'keys'>, blend: number): {
+export declare function bakeComposerLoopClip(graph: ComposerGraph, motion: ComposerMotion, window: Pick<ComposerClipWindow, 'duration' | 'keys'>, blend: number, poseOptions?: ComposerPoseOptions): {
     times: Float32Array;
     translation: Float32Array[];
     rotation: Float32Array[];

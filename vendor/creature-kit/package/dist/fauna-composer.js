@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { composerConstraints, normalizeComposerRecipe } from "./fauna-composer-recipe.js";
-import { buildComposerGraph, composerSkeletonSegments, composerStructure, poseComposer, COMPOSER_BUDGET } from "./fauna-composer-rig.js";
+import { buildComposerGraph, composerSkeletonSegments, composerStructure, poseComposer, COMPOSER_BUDGET, COMPOSER_TRUNK_MOTION_VERSION } from "./fauna-composer-rig.js";
 import { COMPOSER_COAT_CRISP_VERSION, buildComposerSkin } from "./fauna-composer-mesh.js";
 import { COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL } from "./fauna-coat-crisp-glsl.js";
 export { COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL } from "./fauna-coat-crisp-glsl.js";
@@ -85,13 +85,16 @@ export function createComposerCrispCoatMaterial(crisp) {
     material.userData.composerCoatCrisp = { version: crisp.version, pattern: crisp.pattern };
     return material;
 }
-export function createComposerCreature(input) {
+export function createComposerCreature(input, options = {}) {
+    // Capture the chosen motion once; mutating the caller's options cannot change
+    // an already built creature without updating its version metadata.
+    const poseOptions = { trunkMotion: options.trunkMotion ?? 'legacy' };
     const started = performance.now();
     const recipe = normalizeComposerRecipe(input).recipe;
     // The only caller of deriveComposerIndividual: the rig and skin receive the effective recipe.
     const derived = deriveComposerIndividual(recipe);
     const graph = buildComposerGraph(derived.recipe);
-    const skin = buildComposerSkin(graph);
+    const skin = buildComposerSkin(graph, options);
     if (skin.vertexCount > COMPOSER_BUDGET.maxVertices || skin.triangleCount > COMPOSER_BUDGET.maxTriangles)
         throw new Error(`Composer skin exceeds the desktop preview budget (${skin.vertexCount} vertices, ${skin.triangleCount} triangles).`);
     const geometry = new THREE.BufferGeometry();
@@ -111,6 +114,8 @@ export function createComposerCreature(input) {
     // skin-5: the skin's shading normals (three's vertex normals with welded seams sharing one normal)
     geometry.setAttribute('normal', new THREE.BufferAttribute(skin.normals, 3));
     geometry.userData.composer = { graph: graph.version, skin: skin.version, coatCrisp: skin.coatCrisp?.version ?? null };
+    if (poseOptions.trunkMotion === 'wave-1' && graph.chains.trunk.length)
+        geometry.userData.composer.trunkMotion = COMPOSER_TRUNK_MOTION_VERSION;
     const coloured = skin.coatCrisp && skin.coatLayers ? createComposerCrispCoatMaterial(skin.coatCrisp) : createComposerColouredMaterial();
     const neutralMaterial = new THREE.MeshStandardMaterial({ color: '#a9aba6', roughness: 0.9, metalness: 0 });
     const mesh = new THREE.SkinnedMesh(geometry, coloured);
@@ -165,7 +170,7 @@ export function createComposerCreature(input) {
         update(motion, time) {
             if (disposed)
                 throw new Error('Composer creature was disposed');
-            const pose = poseComposer(graph, motion, time);
+            const pose = poseComposer(graph, motion, time, poseOptions);
             for (let i = 0; i < bones.length; i++) {
                 const bone = bones[i];
                 bone.position.fromArray(pose.positions, i * 3);
