@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.6.0",
-    "commit": "83af8ab7ce19da09d986a7e592e20aa8c40a124a",
+    "commit": "38215a7eff3d31c637b3e6534fce5672a3693cb1",
     "license": "UNLICENSED"
   },
   "entrypoints": {
