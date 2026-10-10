@@ -54,6 +54,24 @@ function enableLab(f){
   commit(f.kit);
 }
 
+test('Kit 0.7 primary Composer entry is required and recorded without losing archived entries',()=>{
+  const f=fixture();try{
+    enableLab(f);
+    const pkg=JSON.parse(readFileSync(join(f.kit,'package.json'),'utf8'));pkg.version='0.7.0';write(f.kit,'package.json',JSON.stringify(pkg));commit(f.kit);
+    const before=snapshot(f.repo);
+    assert.throws(()=>writeVendor(f.repo,f.kit),/primary entry/);assert.equal(snapshot(f.repo),before);
+    write(f.kit,'apps/creature-lab/index.html','export const fixturePrimary=1;\n');commit(f.kit);
+    assert.throws(()=>writeVendor(f.repo,f.kit),/index.html/);assert.equal(snapshot(f.repo),before);
+    const builder=join(f.kit,'node_modules/vite/bin/vite.js');
+    writeFileSync(builder,readFileSync(builder,'utf8').replace("['planet-skin.html','creature-lab.html']","['index.html','planet-skin.html','creature-lab.html']"));
+    writeVendor(f.repo,f.kit);
+    const receipt=JSON.parse(readFileSync(join(f.repo,'vendor/creature-kit/LAB.json'),'utf8'));
+    assert.equal(receipt.entry,'index.html');
+    for(const p of ['index.html','planet-skin.html','creature-lab.html'])assert.ok(receipt.files.some(row=>row.path===p));
+    assert.deepEqual(vendorDrift(f.repo,f.kit),[]);
+  }finally{f.clean();}
+});
+
 test('Kit 0.3 standalone Lab updates with the runtime release and fails closed on missing/dirty/failed/stale/malformed app input',()=>{
   for(const failure of ['missing','dirty','failed','stale','missingasset','malformed','outdated']){
     const f=fixture();try{

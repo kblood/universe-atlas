@@ -61,6 +61,7 @@ export const VENDORED_PATHS = Object.freeze([
   'tests/fauna-composer-lod-constraints.test.mjs',
   'tests/fauna-composer-mesh-stability.test.mjs',
   'tests/fauna-composer-recipe-independent.test.mjs',
+  'tests/fauna-composer-realism.test.mjs',
   'tests/fauna-composer-rig-independent.test.mjs',
   'tests/fauna-composer-skin-anatomy.test.mjs',
   'tests/fauna-composer-skin4-links.test.mjs',

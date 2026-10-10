@@ -29,6 +29,7 @@ export function prepareKitLab(repo,kit,packageManifest){
   if(git(kit,'status','--porcelain','--',app))throw new Error('Kit Lab sources must be committed before updating');
   const paths=git(kit,'ls-files','--',app).split('\n').filter(Boolean).sort();
   for(const p of [app+'/planet-skin.html',app+'/creature-lab.html',app+'/vite.config.mjs',app+'/src/planet-main.ts'])if(!paths.includes(p))throw new Error(`missing committed Kit Lab source ${p}`);
+  if((major>0||minor>=7)&&!paths.includes(app+'/index.html'))throw new Error('missing committed Kit Animal Lab primary entry');
   const sources=paths.map(path=>{
     const text=lf(safePath(kit,path)),committed=normalize(execFileSync('git',['-C',kit,'show',`HEAD:${path}`],{encoding:'utf8'}));
     if(text!==committed)throw new Error(`Kit Lab source differs from pinned commit: ${path}`);
@@ -40,12 +41,13 @@ export function prepareKitLab(repo,kit,packageManifest){
   try{
     execFileSync(process.execPath,[join(kit,'node_modules/vite/bin/vite.js'),'build','--config',join(kit,app,'vite.config.mjs'),'--outDir',stage,'--emptyOutDir'],{cwd:kit,stdio:'inherit'});
     if(git(kit,'rev-parse','HEAD')!==packageManifest.kit.commit||[...sources,...packageManifest.sources].some(row=>digest(lf(safePath(kit,row.path)))!==row.sha256))throw new Error('Kit source changed during Lab build; retry from committed source');
-    const artifacts=files(stage);for(const entry of ['planet-skin.html','creature-lab.html'])if(!artifacts.includes(entry))throw new Error(`missing fresh Kit Lab entry ${entry}`);
+    const entries=['planet-skin.html','creature-lab.html'];if(major>0||minor>=7)entries.push('index.html');
+    const artifacts=files(stage);for(const entry of entries)if(!artifacts.includes(entry))throw new Error(`missing fresh Kit Lab entry ${entry}`);
     if(!artifacts.some(p=>p.endsWith('.js')))throw new Error('missing fresh Kit Lab JavaScript');
     const ts=createRequire(join(kit,'package.json'))(join(kit,'node_modules/typescript/lib/typescript.js'));
     for(const path of artifacts.filter(p=>p.endsWith('.js')))if(ts.createSourceFile(path,lf(join(stage,path)),ts.ScriptTarget.Latest,true,ts.ScriptKind.JS).parseDiagnostics.length)throw new Error(`malformed Kit Lab JavaScript ${path}`);
     const writes=artifacts.map(path=>{safePath(stage,path);if(!/\.(?:html|js|css)$/.test(path))throw new Error(`unsupported Kit Lab artifact ${path}`);return {path:`${KIT_LAB_ROOT}/${path}`,text:lf(join(stage,path))};});
-    for(const entry of ['planet-skin.html','creature-lab.html']){
+    for(const entry of entries){
       const html=lf(join(stage,entry));
       for(const match of html.matchAll(/(?:src|href)="([^"]+)"/g)){
         const target=match[1].split(/[?#]/)[0];if(!target)continue;if(/^(?:https?:|\/\/)/.test(target))throw new Error('Kit Lab entry must be self-contained');
@@ -54,7 +56,7 @@ export function prepareKitLab(repo,kit,packageManifest){
     }
     const receiptPath=join(repo,KIT_LAB_RECEIPT),previous=existsSync(receiptPath)?JSON.parse(lf(receiptPath)):null;
     for(const row of previous?.files??[])safePath(join(repo,KIT_LAB_ROOT),row.path);
-    const receipt={schema:'creature-kit-lab-1',kit:packageManifest.kit,vite:vitePkg.version,entry:'planet-skin.html',sources,files:writes.map(row=>({path:row.path.slice(KIT_LAB_ROOT.length+1),sha256:digest(row.text)}))};
+    const receipt={schema:'creature-kit-lab-1',kit:packageManifest.kit,vite:vitePkg.version,entry:entries.includes('index.html')?'index.html':'planet-skin.html',sources,files:writes.map(row=>({path:row.path.slice(KIT_LAB_ROOT.length+1),sha256:digest(row.text)}))};
     writes.push({path:KIT_LAB_RECEIPT,text:JSON.stringify(receipt,null,2)+'\n'});
     return {writes,removes:(previous?.files??[]).filter(row=>!artifacts.includes(row.path)).map(row=>`${KIT_LAB_ROOT}/${row.path}`)};
   }finally{
