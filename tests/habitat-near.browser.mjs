@@ -5,14 +5,16 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {acquireGpuLock} from './helpers/gpu-lock.mjs';
 import {startDistPreview,stopServer} from './helpers/free-port.mjs';
+import {samplePlanetFrameWindow,samplePlanetCpuWindow} from './helpers/planet-frame-window.mjs';
 import * as THREE from 'three';
 import {CURRENT_VERSIONS,MODEL_MANIFEST_ID,encodeVersions} from '../src/time-nav.ts';
 const out=process.env.ATLAS_RESULTS||'test-results/habitat-near';
 await mkdir(out,{recursive:true});
 const server=process.env.ATLAS_URL?null:await startDistPreview({dist:process.env.ATLAS_DIST||'dist'});
 const base=process.env.ATLAS_URL||server.base;
+const routeURL=params=>{const query=new URLSearchParams(params);for(const [key,value] of new URLSearchParams(process.env.HABITAT_QUERY||''))query.set(key,value);return base+'?'+query;};
 let lock,browser,page,phase='start';
-const report={ok:false,base,contention:'contended host; no performance acceptance',errors:[],worlds:[]};
+const report={ok:false,base,contention:process.env.HABITAT_GPU_WINDOW==='1'?'serialized desktop GPU window; no concurrent project CPU job by coordination, external host activity not excluded':'contended host; no performance acceptance',errors:[],worlds:[]};
 const replay=process.env.HABITAT_REPLAY?JSON.parse(await readFile(process.env.HABITAT_REPLAY,'utf8')):null;
 const nearReplay=process.env.HABITAT_NEAR_FIXTURE?JSON.parse(await readFile(process.env.HABITAT_NEAR_FIXTURE,'utf8')):null;
 const skipTiming=process.env.HABITAT_SKIP_TIMING==='1';
@@ -53,7 +55,7 @@ const snapshot=()=>page.evaluate(()=>{
   }
   return {status:document.getElementById('status')?.textContent,travel:t,camera:a?.camera,
     body:a?.state?.body,date:a?.date,walking:t?.walking,landing:t?.landing,clearanceM:t?.surface?.terrainClearance,
-    bodyRelativeM,heading:t?.heading,tiles:d,faunaTrace:ids.length?a.faunaTrace(ids):null,forestAssets:a?.forestAssets,meshCounts,floraRanges,floraKinds,
+    bodyRelativeM,heading:t?.heading,tiles:d,faunaTrace:ids.length?a.faunaTrace(ids):null,faunaLod:a?.faunaLodTrace?.()??null,forestAssets:a?.forestAssets,meshCounts,floraRanges,floraKinds,
     cameraDraws:window.__habitatCameraDraws,
     frame:debug?{calls:debug.renderer.info.render.calls,triangles:debug.renderer.info.render.triangles}:null};
 });
@@ -67,7 +69,7 @@ async function capture(label){phase=label;const state=await snapshot();await wri
   }
   await page.screenshot({path:out+'/'+label+'.png'});console.log(JSON.stringify({phase,body:state.body?.name,clearanceM:state.clearanceM,
     flora:state.tiles?.floraSubmittedCount,fauna:state.tiles?.faunaDrawn?.length,forest:state.tiles?.forest?.visible,meshes:state.meshCounts}));return state;}
-const frameWindow=()=>page.evaluate(()=>new Promise(resolve=>{
+const frameWindow=()=>process.env.HABITAT_CPU_WINDOW==='1'?samplePlanetCpuWindow(page):process.env.HABITAT_GPU_WINDOW==='1'?samplePlanetFrameWindow(page):page.evaluate(()=>new Promise(resolve=>{
   const intervals=[],longFrames=[];let previous=null,started=null,drain=2;
   function frame(){const now=performance.now();if(drain-->0){requestAnimationFrame(frame);return;}
     if(started===null){started=now;window.__atlas.setProfiling(true);window.__atlas.resetProfile();}
@@ -104,11 +106,11 @@ try{
     let finder;
     if(fixed){
       finder=fixed.finder;
-      await page.goto(base+'?'+new URLSearchParams({seed:'LETHRA-001',g:'G001',system:fixed.bodyId.split('/planet/')[0],body:fixed.bodyId,date:fixed.date,wv:encodeVersions(CURRENT_VERSIONS),mv:MODEL_MANIFEST_ID}));
+      await page.goto(routeURL({seed:'LETHRA-001',g:'G001',system:fixed.bodyId.split('/planet/')[0],body:fixed.bodyId,date:fixed.date,wv:encodeVersions(CURRENT_VERSIONS),mv:MODEL_MANIFEST_ID}));
       await wait(id=>window.__atlas?.ready&&window.__atlas.state.body?.id===id&&window.__atlas.terrain?.tiles?.ready,fixed.bodyId);
       await page.evaluate(({pose,date})=>{const a=window.__atlas;a.setExplorationPaused(true);if(a.date.offsetNs!==date)a.seek(date);a.setPose(pose.p,pose.q,pose.clearance);},{pose:fixed.arrival,date:fixed.date});
     }else{
-    await page.goto(base+'?seed=LETHRA-001&g=G001');
+    await page.goto(routeURL({seed:'LETHRA-001',g:'G001'}));
     await wait(()=>window.__atlas?.ready&&window.__atlas.state.level==='galaxy');
     await page.locator('#find-animal-worlds').click();
     await wait(()=>document.querySelectorAll('[data-animal-world]').length===5);
