@@ -57,7 +57,11 @@ off-frame in a worker, serialize cold jobs and cache results. Worker input must
 clone the loaded source; never transfer/neuter its original buffers. Return
 derived level buffers plus provenance, retaining the original main-thread
 source for cache identity. Worker/backend integration belongs to the
-coordinator; no production module imports this prototype.
+coordinator. The shared worker exposes an opt-in `fauna-derived-lods` request
+that returns levels and provenance without returning/transferring the source
+buffers. The production animal renderer never requests or enables this path.
+Before live use, isolate costly LOD jobs from time-critical terrain work or
+give them a cancellable priority queue; this dispatch alone is not a scheduler.
 
 ## Evidence
 

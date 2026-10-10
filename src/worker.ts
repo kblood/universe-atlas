@@ -4,11 +4,18 @@ import { starMap, starChunk } from "./star-map.ts";
 import { planetSurface } from "./terrain.ts";
 import {surfaceSurvey} from './surface-survey.ts';
 import {findAnimalWorlds} from './animal-world-finder.ts';
+import {buildFaunaBodyLodChain} from './fauna-body-lod.ts';
+/** Derive from a cloned loaded body. Never return/transfer the source buffers. */
+function animalLods(args:any){
+  const chain=buildFaunaBodyLodChain(args.source,args.options);
+  return {version:chain.version,provenance:chain.provenance,levels:chain.levels};
+}
 self.onmessage = ({ data }) => {
   const { id, kind, args } = data;
   try {
     const result =
-      kind === 'animal-worlds' ? findAnimalWorlds({seed:args.seed,galaxy:args.galaxy,
+      kind === 'fauna-derived-lods' ? animalLods(args)
+      : kind === 'animal-worlds' ? findAnimalWorlds({seed:args.seed,galaxy:args.galaxy,
         refs:starMap(args.galaxy).refs,dateNs:BigInt(args.dateNs),versions:args.versions,startIndex:args.startIndex})
       : kind === 'surface-survey' ? surfaceSurvey(args.body) : kind === "space-chunk"
         ? starChunk(args.galaxy, args.coords)
@@ -57,15 +64,18 @@ self.onmessage = ({ data }) => {
                     : kind === "sector"
                       ? sector(args.galaxy, args.coords)
                       : surfaceTexture(args.body, args.width);
-    const transfers: Transferable[] = [];
+    const transfers = new Set<Transferable>();
+    const visited = new Set<object>();
     const collect = (value: unknown) => {
-      if (ArrayBuffer.isView(value))
-        transfers.push(value.buffer as ArrayBuffer);
-      else if (value && typeof value === "object")
+      if (ArrayBuffer.isView(value)) {
+        if(value.buffer instanceof ArrayBuffer)transfers.add(value.buffer);
+      } else if (value && typeof value === "object" && !visited.has(value)) {
+        visited.add(value);
         Object.values(value).forEach(collect);
+      }
     };
     collect(result);
-    self.postMessage({ id, result }, transfers);
+    self.postMessage({ id, result }, [...transfers]);
   } catch (error) {
     self.postMessage({ id, error: String(error) });
   }
