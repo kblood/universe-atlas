@@ -195,7 +195,7 @@ test('main.ts: a null site ends the landing request (message, no journey, no lan
   const start=src.indexOf('function exploreTerrain('),end=src.indexOf('function startTerrainCruise(');
   assert.ok(start>0&&end>start);
   const body=src.slice(start,end);
-  assert.ok(body.startsWith('function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {'));
+  assert.ok(body.startsWith('function exploreTerrain(preferred?:THREE.Vector3,preferLife=false,requireTrees=false):boolean {'));
   const nullBranch=body.indexOf('if(!site){announce(NO_LANDING_SITE_MESSAGE);panel();return false;}'),journey=body.indexOf('surfaceJourney={');
   assert.ok(nullBranch>0&&journey>nullBranch,'the null branch returns before any surfaceJourney is created');
   assert.ok(!/if\(site\)destination=/.test(body),'no fallback to the eye direction on a null site');

@@ -24,6 +24,7 @@ import {mkdtempSync,mkdirSync,readdirSync,readFileSync,rmSync,symlinkSync,writeF
 import {tmpdir} from 'node:os';
 import {dirname,join,relative,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {kitLabDrift,KIT_LAB_RECEIPT,KIT_LAB_ROOT} from '../scripts/creature-kit-lab.mjs';
 
 const REPO=fileURLToPath(new URL('../',import.meta.url));
 // sidecarUp lets a directory of runtime files be bound by a sidecar that sits that many directories above it.
@@ -98,8 +99,19 @@ function licenseExpressions(value,out=[]){
   return out;
 }
 
-export function scanProvenance(root,{today,allowlist=[],roots=SCAN_ROOTS}={}){
+export function scanProvenance(root,{today,allowlist=[],roots=SCAN_ROOTS,codeFiles=[]}={}){
   const violations=[],checked=[],used=new Set();
+  // Executable Lab delivery is compiled project code, whose own update gate
+  // checks its committed sources, licence, package identity and complete file
+  // receipt. Only exact HTML/JS/CSS entries pinned with the updater's LF
+  // normalization can use this category (Git may check text out as CRLF);
+  // generated/imported model, image and audio assets still need sidecars.
+  const code=new Map();
+  for(const row of codeFiles){
+    if(typeof row.path!=='string'||!/^public\/animal-lab\/(?:[\w.-]+\/)*[\w.-]+\.(?:html|js|css)$/.test(row.path)||!/^[0-9a-f]{64}$/.test(row.sha256??'')||code.has(row.path))throw new Error('invalid or duplicate Lab code receipt');
+    code.set(row.path,row.sha256);
+  }
+  const seenCode=new Set();
   const byPath=new Map(allowlist.map(entry=>[entry.path,entry]));
   const push=(path,rules,extra={})=>violations.push({path,rules,...extra});
   for(const scan of roots){
@@ -111,6 +123,11 @@ export function scanProvenance(root,{today,allowlist=[],roots=SCAN_ROOTS}={}){
     for(const file of files){
       const e=ext(file),rel=posix(root,file);
       if(NON_ASSET_EXT.has(e))continue;
+      if(code.has(rel)){
+        seenCode.add(rel);
+        if(sha256Of(readFileSync(file,'utf8').replace(/\r+\n/g,'\n'))!==code.get(rel))push(rel,['code-hash-drift']);
+        continue;
+      }
       if(!ASSET_EXT.has(e)){push(rel,['unclassified-extension']);continue;}
       const hash=sha256Of(readFileSync(file));
       checked.push(rel);
@@ -131,6 +148,7 @@ export function scanProvenance(root,{today,allowlist=[],roots=SCAN_ROOTS}={}){
       push(rel,found,{sidecars:sidecars.map(p=>posix(root,p)),...(changed?{message:'allowlisted bytes changed: re-review and re-pin'}:{})});
     }
   }
+  for(const path of code.keys())if(!seenCode.has(path))push(path,['missing-code-artifact']);
   for(const entry of allowlist){
     const bad=[];
     if(!realDate(entry.since)||!realDate(entry.reviewBy))bad.push('allowlist entry needs real ISO since and reviewBy dates');
@@ -153,7 +171,9 @@ export function scanProvenance(root,{today,allowlist=[],roots=SCAN_ROOTS}={}){
 const todayIso=()=>new Date().toISOString().slice(0,10);
 
 test('every shipped asset has a hash-bound sidecar and a real licence, or a live dated, byte-pinned allowlist entry',()=>{
-  const result=scanProvenance(REPO,{today:todayIso(),allowlist:ALLOWLIST});
+  assert.deepEqual(kitLabDrift(REPO),[],'compiled Lab must match its source/package and complete artifact receipt');
+  const lab=JSON.parse(readFileSync(join(REPO,KIT_LAB_RECEIPT),'utf8'));
+  const result=scanProvenance(REPO,{today:todayIso(),allowlist:ALLOWLIST,codeFiles:lab.files.map(row=>({...row,path:KIT_LAB_ROOT+'/'+row.path}))});
   assert.ok(result.checked.length>=13,'scan found the shipped assets (a vacuous scan must not pass)');
   assert.ok(result.checked.some(p=>p.startsWith('assets/ground-materials-v1/runtime/')),'ground runtime textures are scanned');
   assert.deepEqual(result.violations,[]);
@@ -239,6 +259,21 @@ test('negative: unclassified extensions, symlinks and a missing scan root fail i
   assert.ok(rules.includes('public/u/model.xyz:unclassified-extension'));
   if(linked)assert.ok(rules.includes('public/u/link.txt:symlink'));
   assert.throws(()=>scanProvenance(root,{today:'2026-10-05',roots:[{dir:'public/nope',sidecarUp:0}]}),/ENOENT/);
+}));
+
+test('compiled Lab code requires an exact receipt; changed, missing and unlisted code fails',()=>fixture(root=>{
+  const bytes=Buffer.from('export const animal=1;'),path='public/animal-lab/assets/planet.js';
+  const target=put(root,path,bytes),codeFiles=[{path,sha256:sha256Of(bytes)}];
+  assert.deepEqual(scan(root,{codeFiles}).violations,[]);
+  writeFileSync(target,'export const animal=1;\r\n');
+  assert.deepEqual(scan(root,{codeFiles:[{path,sha256:sha256Of('export const animal=1;\n')}]}).violations,[],'same LF normalization as the Kit Lab updater');
+  writeFileSync(target,bytes);
+  assert.equal(scan(root).violations[0].rules[0],'unclassified-extension');
+  writeFileSync(target,'changed');
+  assert.equal(scan(root,{codeFiles}).violations[0].rules[0],'code-hash-drift');
+  assert.ok(scan(root,{codeFiles:[{path:'public/animal-lab/gone.html',sha256:sha256Of(bytes)}]}).violations.some(v=>v.rules.includes('missing-code-artifact')));
+  assert.throws(()=>scan(root,{codeFiles:[{path:'public/animal-lab/model.glb',sha256:sha256Of(bytes)}]}),/invalid/);
+  assert.throws(()=>scan(root,{codeFiles:[...codeFiles,...codeFiles]}),/duplicate/);
 }));
 
 test('negative: an ancestor sidecar binds only when sidecarUp allows it',()=>fixture(root=>{
