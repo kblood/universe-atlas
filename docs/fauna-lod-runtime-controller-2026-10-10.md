@@ -78,7 +78,7 @@ The historical life CPU identity scenario also passes with the option off.
 ## Concrete runtime control
 
 `?fauna-lod-prototype=packed` or `float` opts the actual Atlas route into a
-self-contained Kit 0.4 provider. Without the flag it stays off. The runtime
+self-contained Kit 0.5 provider. Without the flag it stays off. The runtime
 uses one dedicated worker per cold job and terminates it on completion,
 cancellation or failure. It transfers only cloned input/owned output buffers.
 The worker emits a SHA256 over the original six body arrays for the independent
@@ -87,18 +87,27 @@ per tier for atomic replacement; actual complete population is never reduced.
 The runtime retains plans, full individual/geometry keys and palettes, without
 keeping dense source or returned geometry/basis arrays after adoption.
 
-Poses use the pinned Kit's **canonical quadrupedPoseAt**, the existing herd
+Poses use the pinned Kit's **canonical quadrupedPoseAtInto**, the existing herd
 terrain callback and behaviour; no flat-ground or approximate-gait substitute
 is hidden in this adapter. Per-member Float32 palette cache costs 1,408 CPU
 bytes (180,224 for 128) and is included in ownership. Paused poses reuse it;
-ground/activity/time revisions invalidate it. Pending Into optimization remains
-a separately reviewed Kit API/version, not an outside-clone import.
+ground/activity/time revisions invalidate it. The workspace adds exactly 1,760
+retained CPU typed bytes per member (225,280 for 128), also counted. Its 66
+Vector3, 44 quaternion, one Euler, four foot records and eight foot tuple arrays
+per member are reported as JS object counts, not a byte-exact heap size. Bound
+path scalars are compared; path changes replace the workspace. Borrowed pose
+output is written immediately to the private palette. `poseMode: canonical`
+retains the independent default-solver control for matched tests.
 
 `__atlas.faunaLodTrace()` exposes owner intervals with IDs, actual tier, full
 geometry key, source digest and the existing canonical camera/shadow/date/pose
 trace. This lets acceptance compare exact population and interval ownership.
 
-Fifteen focused control/fallback/real-provider/route tests and TypeScript pass.
+Inactive owners are reclaimed per tier before the 128 global cache fills. A
+full staging tier defers impossible cold requests while a migration can free
+it; old requested drawings remain until successful replacement.
+
+Sixteen focused control/fallback/real-provider/route tests and TypeScript pass.
 Actual GPU interval/shader checks, per-specimen target/feature quality,
 whole-world CPU/GPU/memory, same-pose arrival/near/revisit captures and source/LOD
 coat coherence remain acceptance gates. Unit/mocked transport tests do not

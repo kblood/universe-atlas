@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import * as planet from '#creature-kit/planet';
 import {createFaunaLodRuntimePrototype} from '../src/fauna-lod-runtime-adapter.ts';
 import {createFaunaPackedWorkerAdapter} from '../src/fauna-packed-worker-adapter.ts';
+import {FaunaBonePaletteWriter} from '../src/fauna-skinned-batch.ts';
 let workers=[];
 class WorkerFixture{
   terminated=false;abort=new AbortController();constructor(){workers.push(this);}
@@ -26,9 +27,15 @@ test('real Kit cold payload adopts unique body, canonical terrain-aware pose and
     const sourcePlan=result.payload.sourcePlan;assert.deepEqual(sourcePlan.genome,g);assert.equal(p.adapter.adopt(c.id,j.key,result,2),true);assert.ok(p.adapter.ownedBytes>before);
     p.adapter.beginFrame(new THREE.Vector3());assert.equal(p.adapter.submit(c,.37,0),true);p.adapter.endFrame();const row=p.adapter.trace()[0];assert.equal(row.id,c.id);assert.equal(row.high,Math.fround(.37));assert.equal(row.sourceDigest,'test-source-sha');assert.deepEqual(JSON.parse(JSON.parse(row.genomeKey)[3])[3],g);
     const expected=planet.quadrupedPoseAt(sourcePlan,c.member,c.activity,c.ground,c.rigSeconds);assert.equal(row.maxPenetration,expected.maxPenetration);assert.equal(row.maxReachError,expected.maxReachError);
+    const palette=new Float32Array(22*16);new FaunaBonePaletteWriter().write(sourcePlan,expected,palette);
+    const material=p.adapter.group.children[1].children[0].material,template=THREE.ShaderLib.standard,shader={vertexShader:template.vertexShader,fragmentShader:template.fragmentShader,uniforms:{}};material.onBeforeCompile(shader,{});
+    assert.deepEqual(shader.uniforms.faunaBones.value.image.data.slice(0,22*16),palette,'Into is written immediately and exactly matches independent canonical palette');
     p.adapter.beginFrame(new THREE.Vector3());p.adapter.submit(c,.37,0);p.adapter.endFrame();assert.equal(p.adapter.trace()[0].poseBuilds,1,'paused palette reused');
     c.groundRevision++;p.adapter.beginFrame(new THREE.Vector3());p.adapter.submit(c,.37,0);p.adapter.endFrame();assert.equal(p.adapter.trace()[0].poseBuilds,2,'stencil revision invalidates pose');
+    assert.equal(p.adapter.diagnostics().poseWorkspaceTypedBytes,1760);assert.ok(p.adapter.diagnostics().poseWorkspaceJsObjects>0);
+    c.member={...c.member,orbitPhase:.35};p.adapter.beginFrame(new THREE.Vector3());p.adapter.submit(c,.37,0);p.adapter.endFrame();assert.equal(p.adapter.trace()[0].poseBuilds,3,'changed immutable path gets a fresh workspace');
     p.adapter.release(c.id,j.key);assert.equal(p.adapter.diagnostics().middle.prepared,0);
+    assert.equal(p.adapter.diagnostics().poseWorkspaceTypedBytes,0);
   }finally{p.adapter.dispose();}
 });
 
@@ -48,5 +55,6 @@ test('abort terminates a pending concrete worker, and each transport detaches on
   try{
     const request=job(p,'transport','middle',clone.plan.genome,clone),pending=p.adapter.build(request,signal.signal);assert.equal(clone.positions.byteLength,0);assert.deepEqual(source.positions,before);
     signal.abort();await assert.rejects(pending,/cancelled/);assert.equal(workers.at(-1).terminated,true);
+    assert.equal(p.adapter.diagnostics().workerActive,false);assert.equal(p.adapter.diagnostics().pendingJobs,0);
   }finally{p.adapter.dispose();}
 });

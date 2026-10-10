@@ -87,3 +87,12 @@ test('impossible worker/clone reserve rejects before cloning or cold work and re
   const f=fixture();assert.throws(()=>new FaunaLodController(f.adapter,{maxResultBytes:500,maxWorkerBytes:65500}),/worker reserve/);
   const a=candidate('small-reserve');a.loadedSource=buildQuadrupedBody(genome);f.adapter.workerReserveBytes=1;f.controller.update([a],origin);await flush();assert.equal(f.jobs.length,0);assert.equal(f.controller.diagnostics().admissionBlocked,'worker-reserve-smaller-than-cloned-input');f.controller.dispose();
 });
+
+test('turning camera reclaims inactive close-tier owners even below the128 global cache ceiling',async()=>{
+  const f=fixture();
+  for(let i=0;i<20;i++){
+    const a=candidate(`turn/${i}`,40);a.tier='close';f.controller.update([a],origin);await flush();f.jobs.at(-1).resolve(f.result());await flush();f.controller.update([a],origin);
+    assert.ok(f.resources.size<=16,'inactive near-tier cache cannot pin all staging slots');
+  }
+  assert.equal(f.resources.size,16);assert.ok(f.resources.has('turn/19'));f.controller.dispose();
+});

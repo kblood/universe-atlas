@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.4.0",
-    "commit": "40dc4b31776b0fe9f021ed5c53ff89987d6ee21c",
+    "version": "0.5.0",
+    "commit": "4a5630fab9b0027ea1825fae18f5afb2cb305928",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -23,7 +23,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "ef70a39fada6446145da309aa24d7f563cbda2984d92d031ef8abd7a4ec1dabb"
+      "sha256": "471c5214962eb2c063ea373a457cabbb72632465f32049f6428ede0a8df4d823"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "d632732a7910203bf72e4ab97e5af0c9e22db4df382d13c87ffc873c306194f7"
+      "sha256": "0470338c46915012b13580a2ad35022d99a5f0b20838dde12e08b3134d0a3165"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/planet-v1/fauna-locomotion.ts",
-      "sha256": "0fd0af2813f6aa1e3be8049b8395abfdada04a98cb2ab17146f71510f9a48ec3"
+      "sha256": "0f86b30c52a636960a17654184d60655dbede176e2d217516751cff59eeee7fe"
     },
     {
       "path": "src/planet-v1/fauna-structural-appendages.ts",
@@ -153,7 +153,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "ef70a39fada6446145da309aa24d7f563cbda2984d92d031ef8abd7a4ec1dabb"
+      "sha256": "471c5214962eb2c063ea373a457cabbb72632465f32049f6428ede0a8df4d823"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -329,11 +329,11 @@
     },
     {
       "path": "dist/planet-v1/fauna-locomotion.d.ts",
-      "sha256": "f395b9ed93147f92a271e787c374b5f4491323606e03fec964775771391ca44c"
+      "sha256": "ea331950a6635fde956875d1c4acd59f854b73228264c0463aec5c178b4e2261"
     },
     {
       "path": "dist/planet-v1/fauna-locomotion.js",
-      "sha256": "e652319721dcb6186f6c24fbeec8f537b46ef0c24e015a487477f6716da214f5"
+      "sha256": "fa14919ee30319e38f9a5e2b7837863aa2c5eb508c59f064fb7f3e231e600c94"
     },
     {
       "path": "dist/planet-v1/fauna-structural-appendages.d.ts",
@@ -361,7 +361,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "d632732a7910203bf72e4ab97e5af0c9e22db4df382d13c87ffc873c306194f7"
+      "sha256": "0470338c46915012b13580a2ad35022d99a5f0b20838dde12e08b3134d0a3165"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -453,7 +453,7 @@
     },
     {
       "path": "src/planet-v1/fauna-locomotion.ts",
-      "sha256": "0fd0af2813f6aa1e3be8049b8395abfdada04a98cb2ab17146f71510f9a48ec3"
+      "sha256": "0f86b30c52a636960a17654184d60655dbede176e2d217516751cff59eeee7fe"
     },
     {
       "path": "src/planet-v1/fauna-structural-appendages.ts",

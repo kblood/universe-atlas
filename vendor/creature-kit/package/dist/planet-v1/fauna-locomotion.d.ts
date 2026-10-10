@@ -75,6 +75,24 @@ export declare function faunaMotionTraits(plan: QuadrupedPlan, memberId: string)
 export interface FaunaPoseOptions {
     behaviour?: 'auto' | 'feed' | 'alert';
 }
+/** Opt-in exact solver workspace. Plan/rest data and member identity must remain
+ * immutable. pose and its arrays/foot records are borrowed until the next call
+ * with this workspace; callers must not modify or retain them as snapshots. */
+export interface QuadrupedPoseWorkspace {
+    readonly plan: QuadrupedPlan;
+    readonly member: FaunaPathMember;
+    readonly pose: QuadrupedPose;
+    readonly resources: {
+        outputTypedBytes: number;
+        vector3Objects: number;
+        quaternionObjects: number;
+        eulerObjects: number;
+        footRecords: number;
+        footTupleArrays: number;
+    };
+}
+export declare function createQuadrupedPoseWorkspace(plan: QuadrupedPlan, member: FaunaPathMember): QuadrupedPoseWorkspace;
+export declare function quadrupedPoseAtInto(workspace: QuadrupedPoseWorkspace, activity: FaunaMemberActivity, ground: FaunaGround, rigSeconds: number, options?: FaunaPoseOptions): QuadrupedPose;
 /**
  * Pose at one exact date. Pure: identical inputs give identical output
  * regardless of which dates were evaluated before.

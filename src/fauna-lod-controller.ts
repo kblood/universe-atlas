@@ -52,6 +52,7 @@ export interface FaunaLodRuntimeAdapter {
   /** Release that key only; a successful replacement may already bind a newer
    * key for the same ID and must remain drawable. */
   release(id:string,key:string):void;
+  canAdopt?(tier:FaunaLodTier,id:string):boolean;
   discard(result:FaunaLodBuildResult):void;
   beginFrame(origin:Vector3):void;submit(candidate:FaunaLodCandidate,coverage:number,coverageStart:number):boolean;endFrame():void;
   reset():void;dispose():void;
@@ -125,6 +126,7 @@ export class FaunaLodController {
         result.appearanceVersion===this.context.appearanceVersion&&this.adapter.ownedBytes+this.adapter.transientBytes+result.byteLength<=this.maxTotalBytes;
       if(valid){
         const prior=this.cache.get(running.id);
+        this.evictTier(running.tier);
         if(!prior&&this.cache.size>=this.maxActors)this.evict();
         const start=this.now();let adopted=false;
         try{adopted=(!!prior||this.cache.size<this.maxActors)&&this.adapter.adopt(running.id,running.key,result,this.adoptionBudgetMs);}catch{adopted=false;}
@@ -151,6 +153,11 @@ export class FaunaLodController {
     for(const entry of this.cache.values())if(!this.desired.has(entry.id)&&(!victim||entry.seen<victim.seen||(entry.seen===victim.seen&&entry.id<victim.id)))victim=entry;
     if(victim){this.adapter.release(victim.id,victim.key);this.cache.delete(victim.id);}
   }
+  private evictTier(tier:FaunaLodTier){
+    const cap=tier==='close'?16:112;let count=0;for(const entry of this.cache.values())if(entry.tier===tier)count++;
+    while(count>=cap){let victim:Entry|undefined;for(const entry of this.cache.values())if(entry.tier===tier&&!this.desired.has(entry.id)&&(!victim||entry.seen<victim.seen||(entry.seen===victim.seen&&entry.id<victim.id)))victim=entry;
+      if(!victim)break;this.adapter.release(victim.id,victim.key);this.cache.delete(victim.id);count--;}
+  }
   private startNext(now:number){
     if(this.running||this.pending||!this.context||this.adoptionMs>this.adoptionBudgetMs)return;
     this.admissionBlocked=null;
@@ -159,6 +166,8 @@ export class FaunaLodController {
     for(const candidate of this.desired.values()){
       const entry=this.cache.get(candidate.id),tier=candidate.tier??'middle';
       if(entry?.genome===candidate.genome&&entry.tier===tier||(this.failed.get(candidate.id)??-Infinity)+2000>now)continue;
+      this.evictTier(tier);
+      if(this.adapter.canAdopt&&!this.adapter.canAdopt(tier,candidate.id)){this.admissionBlocked='tier-staging-full-waiting-for-migration';continue;}
       const loaded=candidate.loadedSource??null;
       if(loaded&&(loaded.plan.genome!==candidate.genome||loaded.vertexCount>40000||loaded.triangleCount>60000)){this.failed.set(candidate.id,now);this.rejected++;continue;}
       const stores=new Set<ArrayBufferLike>();if(loaded)for(const array of [loaded.positions,loaded.normals,loaded.colors,loaded.skinIndex,loaded.skinWeight,loaded.index])stores.add(array.buffer);
