@@ -1,5 +1,8 @@
 # Creature-kit 0.5 desktop release
 
+Historical release. The current editor and anatomy update is documented in
+[Canonical Animal Lab editor and anatomy release](animal-lab-editor-and-quality-2026-10-10.md).
+
 The native website serves clean Atlas build
 `f3f18a8dcc068b04d4ce7514c0882b5643b7be3f`, consuming creature-kit 0.5.0 from
 `4a5630fab9b0027ea1825fae18f5afb2cb305928`. The independent canonical Animal Lab

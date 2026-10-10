@@ -1,9 +1,11 @@
 # How Atlas consumes creature-kit
 
-Current status, 2026-10-10: Atlas consumes the built, self-contained Kit 0.5 public
+Current status, 2026-10-10: Atlas consumes the built, self-contained Kit 0.6 public
 planet entry through `#creature-kit/planet`, pinned in `vendor/creature-kit/PACKAGE.json`.
-The actual canonical planet body/appearance/rig core is Kit-owned; genomes, body4
-arithmetic and source identity are preserved. Kit also owns the shared planet
+The actual canonical planet body/appearance/rig core is Kit-owned; genomes and
+legacy body4 arithmetic are preserved. Desktop selects the explicit sculpted-v1
+presentation for its near bodies, worker LODs and Lab, retaining the same rig and
+genomes; XR selects legacy bodies. Kit also owns the shared planet
 inspector and independent Lab, published at `/animal-lab/planet-skin.html`.
 `npm run update:creature-kit -- --kit C:/LLM/IWSDK/creature-kit` atomically preflights
 and updates committed sources, built package and Lab bundle; `npm run check:creature-kit`
