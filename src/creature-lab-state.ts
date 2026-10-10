@@ -29,7 +29,7 @@ export interface CreatureLabState {
   light: FaunaReviewPresetId;
 }
 export const DEFAULT_LAB_STATE: Readonly<CreatureLabState> = Object.freeze({
-  seed: 'LETHRA-BIOSPHERE-01', profile: 'temperate', species: '', mode: 'gallery',
+  seed: 'LETHRA-BIOSPHERE-01', profile: 'temperate', species: '', mode: 'skin',
   variant: 0, growth: 'adult', frame: 'body', family: 'inherited', view: 'three-quarter', pose: 'dated', time: 0, date: 0,
   compare: false, compareVariant: 1, compareGrowth: 'adult', neutral: false, skeleton: false, source: 'procedural', assetHash: '', sidecarHash: '', replayVersion: 1,
   templateRecipe: 'manual', morphLocks: '',
@@ -57,7 +57,7 @@ export function parseCreatureLabState(search: string | URLSearchParams): Creatur
     seed: clean('seed', DEFAULT_LAB_STATE.seed, 160),
     profile: choice('profile', ['temperate', 'arid', 'cold', 'airless'], 'temperate'),
     species: clean('species', '', 240),
-    mode: choice('mode', ['gallery', 'anatomy', 'arena', 'ancestry', 'skin', 'composer'], 'gallery'),
+    mode: choice('mode', ['gallery', 'anatomy', 'arena', 'ancestry', 'skin', 'composer'], 'skin'),
     variant: number('variant', 0, 0, 3, true), growth: choice('growth', ['adult', 'juvenile'], 'adult'),
     frame: choice('frame', ['body', 'head'], 'body'),
     family: choice('family', ['inherited', ...MORPHOLOGY_FAMILIES], 'inherited'),

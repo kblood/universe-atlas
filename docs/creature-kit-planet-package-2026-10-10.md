@@ -17,6 +17,34 @@ import, npm link or dependency installation. The experimental composer and
 authored deer reference still exist; this does not claim their formats have
 already become one biological generator.
 
+## Shared inspection in Kit 0.3.0
+
+Atlas's Lab now opens planetary animal inspection when `mode` is omitted. The
+explicit gallery/anatomy/arena/ancestry URLs remain available as legacy rig
+references; composer remains experimental and the authored deer remains a
+reference. `createFaunaSkinInspector` delegates body/skeleton/inspection to
+Kit's public `createPlanetAnimalInspector`, supplying Atlas's exact date and
+activity callbacks plus its material. No population ID or genome is regenerated.
+
+The canonical skin view offers **Export canonical animal for Kit Lab**. Its
+`planet-animal-definition-1` record carries individual ID, species ID and the
+exact inspected genome. Kit's independent `apps/creature-lab/planet-skin.html`
+accepts that record or a raw current genome without reseeding; incompatible
+genome versions require explicit migration. Standalone poses are deliberate
+inspection fixtures; the Kit page does not reinterpret world dates.
+
+Run Kit's `npm run lab:dev` for its independent page, or `npm run lab:build`
+for relative HTML/assets in `apps/creature-lab/dist/`, deployable under any
+subpath. Atlas's world-aware Lab continues to run inside the Atlas build.
+The Kit library package does not include the standalone app bundle.
+
+Release 0.3.0 adds shared inspection/definition APIs and UI, with unchanged
+canonical genome/body versions. Kit's 65 focused core/inspector/Lab/boundary
+checks pass without skips. Atlas's 23 focused checks compare production pooled
+and shared-inspector body arrays, skinning matrices and foot diagnostics across
+dated/idle/walk/feed poses; legacy URL round trips also pass. Both app builds
+and Atlas TypeScript pass. Canonical output pins remain unchanged.
+
 ## Update/check
 
 ```powershell
@@ -50,8 +78,8 @@ roll back owned files. Previous manifest-owned stale files alone may be removed.
 - Update tests exercise an actual committed factory upgrade through the package
   seam and verify full preservation on missing/dirty/failed/stale/malformed
   inputs plus artifact/peer drift. Three checks pass.
-- TypeScript clean; fresh-clone/build and browser handoff checks follow this
-  checkpoint. No canonical world or geometry pin is re-generated.
+- TypeScript and root's fresh-checkout build pass. Browser inspection is a
+  separate handoff gate. No canonical world or geometry pin is re-generated.
 
 Kit `53afe42` includes optional LOD constraints, with unchanged default reducer
 output. The planetary extraction moves no composer generator source. CLI source

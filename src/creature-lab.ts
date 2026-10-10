@@ -5,6 +5,7 @@ import {createCreatureRig, creatureTerrainHeight, type CreatureGait, type Creatu
 import {individualCreatureGenome, realisticIndividualCreatureGenome, type CreatureGenome} from "./creature-model.ts";
 import {type FaunaMorphologyFamily} from "./fauna-appearance.ts";
 import {createFaunaSkinInspector} from "./fauna-skin-inspector.ts";
+import {planetAnimalDefinition} from "#creature-kit/planet";
 import {parseCreatureLabState, creatureLabUrl, creatureLabReplayInputError, creatureLabComposerInputError, creatureLabTemplateMismatch, creatureLabInputNotices, creatureLabLightInputError, type CreatureLabState, type SkinPose} from "./creature-lab-state.ts";
 import {createComposerLab, type ComposerEyeFrame} from "./creature-lab-composer.ts";
 import {loadFaunaTemplate, FAUNA_TEMPLATE_CONTROLS, type FaunaTemplateValues} from "./fauna-template.ts";
@@ -163,8 +164,15 @@ function buildActors(){disposeActors();key.castShadow=mode==="skin"||mode==="com
  else if(isExtant(s)){const n=actorCount;displayedSpeciesIds=Array.from({length:n},()=>s.id);for(let i=0;i<n;i++){const off=new THREE.Vector3(0,0,(i-(n-1)/2)*2.25);off.y=linkHeight(0,off.z);addActor(s,`${s.id}/arena/${i}`,off,i%4,"adult");}}
  buildTerrain();updateRigs();arrangeSkinComparison();fitCamera();}
 function labelFor(s:AnimalSpecies){const state=isExtant(s)?"EXTANT":"ARCHIVE";return `<div class="ancestor" data-creature-id="${esc(s.id)}"><button data-creature-id="${esc(s.id)}">${esc(s.name)}</button><span>${s.birthMyr} Myr · ${state}</span><span>${esc(s.creature.mutationLog.join(" · ")||"founder morphology")}</span></div>`;}
+function exportDefinition(){
+ const specimen=mode==="skin"?rigs.find(r=>r.source==="procedural"):undefined;if(!specimen)return;
+ const definition=planetAnimalDefinition({individualId:specimen.id,speciesId:specimen.species.id,genome:specimen.genome});
+ const url=URL.createObjectURL(new Blob([JSON.stringify(definition,null,2)],{type:"application/json"})),link=document.createElement("a");
+ link.href=url;link.download="planet-animal-definition.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function applyComposerText(){
  const on=mode==="composer";composer.setActive(on);
+ const definitionButton=$<HTMLButtonElement>("export-definition");definitionButton.hidden=mode!=="skin";definitionButton.disabled=!rigs.some(r=>r.source==="procedural");definitionButton.onclick=exportDefinition;
  for(const el of [date,speciesSelect,normalize,variant,growth])el.closest("label")!.hidden=on;
  document.querySelector<HTMLElement>(".header-controls")!.style.display=on?"none":"";
  document.querySelector<HTMLElement>(".side-panel .eyebrow")!.textContent=on?"MODULAR CREATURE EXPERIMENT":"RIGGED QUADRUPED EXPERIMENT";

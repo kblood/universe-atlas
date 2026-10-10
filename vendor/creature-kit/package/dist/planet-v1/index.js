@@ -7,3 +7,5 @@ export * from "./fauna-body-plan.js";
 export * from "./fauna-face.js";
 export * from "./fauna-structural-appendages.js";
 export * from "./fauna-locomotion.js";
+export * from "./inspector.js";
+export * from "./definition.js";

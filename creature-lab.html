@@ -22,7 +22,7 @@
     <aside class="side-panel">
       <span class="eyebrow">RIGGED QUADRUPED EXPERIMENT</span><h1 id="title">Creature gallery</h1><p id="description"></p>
       <div class="controls">
-        <label>Mode <select id="mode"><option value="composer">Modular composer (experimental)</option><option value="gallery">Gallery</option><option value="skin">Planet skin</option><option value="anatomy">Anatomy</option><option value="arena">Arena</option><option value="ancestry">Ancestry</option></select></label>
+        <label>Mode <select id="mode"><option value="skin">Planet animal inspection</option><option value="composer">Modular composer (experimental)</option><option value="gallery">Gallery (legacy rig reference)</option><option value="anatomy">Anatomy (legacy rig reference)</option><option value="arena">Arena (legacy rig reference)</option><option value="ancestry">Ancestry (legacy rig reference)</option></select></label>
         <div id="composer-controls" hidden>
           <p id="composer-limitations" class="composer-limitations">Experimental procedural creatures: simple smooth shapes without fur, scales or feather detail. Motion stays on the ground; wings fold and spread but flight is not simulated. Checked on desktop browsers only.</p>
           <label>Starting animal <select id="composer-preset"></select></label>
@@ -82,6 +82,7 @@
       <section id="ancestry-panel" hidden><h2>Actual parent chain</h2><div id="ancestry-list"></div></section>
       <section><h2>Live diagnostics</h2><div id="metrics" class="metrics"></div></section>
       <button id="share-specimen" class="wide">Copy specimen link</button><p id="share-status" role="status"></p><label id="share-fallback" hidden>Specimen link <input id="share-link" readonly aria-label="Specimen link"></label>
+      <button id="export-definition" class="wide">Export canonical animal for Kit Lab</button>
       <button id="export-json" class="wide">Export complete lab JSON</button>
     </aside>
     <section class="caption"><span id="caption-eyebrow" class="eyebrow">COMMON METRE SCALE</span><h2 id="caption-title">Twelve procedural specimens</h2><p id="caption-copy">Rigid body parts are articulated by an inspectable quadruped rig. Smooth skin deformation is later work.</p></section>
