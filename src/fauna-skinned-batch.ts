@@ -43,12 +43,15 @@ export class FaunaBonePaletteWriter {
   }
 }
 export interface FaunaSkinnedBatchOptions {
+  /** Prepared geometry can release duplicate CPU copies after atlas admission. */
+  cacheMode?:'retain-source'|'atlas-owned';
   capacity?:number;maxVerticesPerAnimal?:number;maxIndicesPerAnimal?:number;maxGeometryEntries?:number;maxBufferBytes?:number;
   /** Opt-in upload experiments; unchanged defaults are one texture/full upload. */
   paletteRingSize?:1|2|3;paletteUploadMode?:'full'|'adaptive-rows';
 }
-type GeometryRecord={plan:QuadrupedPlan;positions:Float32Array;normals:Float32Array;colors:Uint8Array;
-  skinIndex:Uint8Array;skinWeight:Uint8Array;index:Uint16Array|Uint32Array;bytes:number;uses:number};
+type GeometryArrays={positions:Float32Array;normals:Float32Array;colors:Uint8Array;
+  skinIndex:Uint8Array;skinWeight:Uint8Array;index:Uint16Array|Uint32Array};
+type GeometryRecord={plan:QuadrupedPlan;data:GeometryArrays|null;vertices:number;indices:number;bytes:number;uses:number;ownerSlot:number|null};
 type Slot={id:string;key:string;roughness:number};
 type PalettePair={bones:THREE.DataTexture;roots:THREE.DataTexture;boneFullPending:boolean;rootFullPending:boolean};
 const HEADER=`
@@ -72,6 +75,7 @@ function texture(data:Float32Array,width:number,height:number){
 export class FaunaSkinnedBatch {
   readonly group=new THREE.Group();readonly mesh:THREE.Mesh;
   readonly capacity:number;readonly maxVerticesPerAnimal:number;readonly maxIndicesPerAnimal:number;
+  readonly cacheMode:'retain-source'|'atlas-owned';
   readonly boneMatrices:Float32Array;readonly rootMatrices:Float32Array;
   readonly paletteRingSize:1|2|3;readonly paletteUploadMode:'full'|'adaptive-rows';
   private readonly paletteRing:PalettePair[]=[];private paletteIndex=0;
@@ -87,6 +91,8 @@ export class FaunaSkinnedBatch {
   private active=0;private actualTriangles=0;private geometryUploads=0;private rejected=0;private uploadBytes=0;
   constructor(options:FaunaSkinnedBatchOptions={}){
     this.capacity=options.capacity??128;this.maxVerticesPerAnimal=options.maxVerticesPerAnimal??500;
+    this.cacheMode=options.cacheMode??'retain-source';
+    if(!['retain-source','atlas-owned'].includes(this.cacheMode))throw new Error('Invalid fauna cache mode');
     this.maxIndicesPerAnimal=options.maxIndicesPerAnimal??1500;this.maxGeometryEntries=options.maxGeometryEntries??this.capacity;
     this.paletteRingSize=options.paletteRingSize??1;this.paletteUploadMode=options.paletteUploadMode??'full';
     if(![1,2,3].includes(this.paletteRingSize)||!['full','adaptive-rows'].includes(this.paletteUploadMode))throw new Error('Invalid fauna palette streaming options');
@@ -101,7 +107,8 @@ export class FaunaSkinnedBatch {
     // BothCPU/GPU atlas+palettes, plus worst-case CPU geometrycache arrays.
     // Plan/key objects, renderer/driver metadata and sourceworker assets are separate.
     const paletteCopies=this.paletteRingSize===1?2:1+2*this.paletteRingSize;
-    this.estimatedBufferBytes=2*atlas+paletteCopies*palettes+this.capacity*7+this.maxGeometryEntries*(this.maxVerticesPerAnimal*35+this.maxIndicesPerAnimal*4);
+    const retainedGeometry=this.cacheMode==='atlas-owned'?1:this.maxGeometryEntries;
+    this.estimatedBufferBytes=2*atlas+paletteCopies*palettes+this.capacity*7+retainedGeometry*(this.maxVerticesPerAnimal*35+this.maxIndicesPerAnimal*4);
     if(!Number.isSafeInteger(this.maxBufferBytes)||this.maxBufferBytes<=0||this.estimatedBufferBytes>this.maxBufferBytes)
       throw new Error(`Fauna batch typedbuffers exceedbudget: ${this.estimatedBufferBytes} > ${this.maxBufferBytes}`);
     const attrs={position:new THREE.BufferAttribute(new Float32Array(vertices*3),3),normal:new THREE.BufferAttribute(new Float32Array(vertices*3),3),
@@ -166,13 +173,21 @@ export class FaunaSkinnedBatch {
     const existing=this.cache.get(key);
     if(existing){
       if(JSON.stringify(existing.plan)!==JSON.stringify(data.plan)){this.rejected++;return false;}
-      for(const name of ['positions','normals','colors','skinIndex','skinWeight','index'] as const){
-        const a=existing[name],b=data[name];if(a.length!==b.length){this.rejected++;return false;}
-        for(let i=0;i<a.length;i++)if(!Object.is(a[i],b[i])){this.rejected++;return false;}
+      if(existing.vertices*3!==data.positions.length||existing.indices!==data.index.length){this.rejected++;return false;}
+      for(const [name,attribute] of [['positions','position'],['normals','normal'],['colors','color'],['skinIndex','skinIndex'],['skinWeight','skinWeight']] as const){
+        const b=data[name],a=existing.data?.[name]??this.geometry.getAttribute(attribute).array;
+        const first=existing.data?0:existing.ownerSlot!*this.maxVerticesPerAnimal*this.geometry.getAttribute(attribute).itemSize;
+        const length=existing.vertices*this.geometry.getAttribute(attribute).itemSize;
+        if(b.length!==length){this.rejected++;return false;}
+        for(let i=0;i<length;i++)if(!Object.is(a[first+i],b[i])){this.rejected++;return false;}
       }
+      const a=existing.data?.index??this.geometry.index!.array,offset=existing.data?0:existing.ownerSlot!*this.maxIndicesPerAnimal;
+      const base=existing.data?0:existing.ownerSlot!*this.maxVerticesPerAnimal;
+      for(let i=0;i<existing.indices;i++)if(a[offset+i]-base!==data.index[i]){this.rejected++;return false;}
       return true;
     }
     if(this.cache.size>=this.maxGeometryEntries){this.rejected++;return false;}
+    if(this.cacheMode==='atlas-owned'&&[...this.cache.values()].some(record=>record.data!==null)){this.rejected++;return false;}
     const v=data.positions.length/3;
     if(!Number.isInteger(v)||v<1||v>this.maxVerticesPerAnimal||data.index.length>this.maxIndicesPerAnimal||data.index.length%3||
       data.plan.bones.length!==FAUNA_PALETTE_BONES||data.normals.length!==v*3||data.colors.length!==v*3||
@@ -183,9 +198,10 @@ export class FaunaSkinnedBatch {
       if(sum!==255){this.rejected++;return false;}
     }
     for(const a of [data.positions,data.normals])for(const n of a)if(!Number.isFinite(n)){this.rejected++;return false;}
-    const record:GeometryRecord={plan:data.plan,positions:data.positions.slice(),normals:data.normals.slice(),colors:data.colors.slice(),
-      skinIndex:data.skinIndex.slice(),skinWeight:data.skinWeight.slice(),index:data.index.slice(),bytes:0,uses:0};
-    record.bytes=record.positions.byteLength+record.normals.byteLength+record.colors.byteLength+record.skinIndex.byteLength+record.skinWeight.byteLength+record.index.byteLength;
+    const arrays:GeometryArrays={positions:data.positions.slice(),normals:data.normals.slice(),colors:data.colors.slice(),
+      skinIndex:data.skinIndex.slice(),skinWeight:data.skinWeight.slice(),index:data.index.slice()};
+    const record:GeometryRecord={plan:data.plan,data:arrays,vertices:v,indices:data.index.length,bytes:0,uses:0,ownerSlot:null};
+    record.bytes=arrays.positions.byteLength+arrays.normals.byteLength+arrays.colors.byteLength+arrays.skinIndex.byteLength+arrays.skinWeight.byteLength+arrays.index.byteLength;
     this.cache.set(key,record);return true;
   }
   prepareAnimal(memberId:string,key:string):boolean{
@@ -193,26 +209,40 @@ export class FaunaSkinnedBatch {
     let slot=this.members.get(memberId);
     if(slot!==undefined&&this.slots[slot]?.key===key)return true;
     if(slot===undefined){slot=this.slots.findIndex(s=>s===null);if(slot<0){this.rejected++;return false;}this.members.set(memberId,slot);}
-    const old=this.slots[slot];if(old)this.cache.get(old.key)!.uses--;
+    const old=this.slots[slot];if(old)this.dropOwner(old.key,slot);
     this.seen[slot]=0;this.slots[slot]={id:memberId,key,roughness:data.plan.genome.appearance?.roughness??.86};data.uses++;
     const base=slot*this.maxVerticesPerAnimal;
     for(const name of ['position','normal','color','skinIndex','skinWeight'] as const){
-      const attr=this.geometry.getAttribute(name) as THREE.BufferAttribute,source=data[name==='position'?'positions':name==='normal'?'normals':name==='color'?'colors':name];
-      (attr.array as Float32Array|Uint8Array).set(source,base*attr.itemSize);attr.addUpdateRange(base*attr.itemSize,source.length);attr.needsUpdate=true;
+      const attr=this.geometry.getAttribute(name) as THREE.BufferAttribute,length=data.vertices*attr.itemSize;
+      const field=name==='position'?'positions':name==='normal'?'normals':name==='color'?'colors':name;
+      if(data.data)(attr.array as Float32Array|Uint8Array).set(data.data[field],base*attr.itemSize);
+      else (attr.array as Float32Array|Uint8Array).copyWithin(base*attr.itemSize,data.ownerSlot!*this.maxVerticesPerAnimal*attr.itemSize,data.ownerSlot!*this.maxVerticesPerAnimal*attr.itemSize+length);
+      attr.addUpdateRange(base*attr.itemSize,length);attr.needsUpdate=true;
     }
     const actor=this.geometry.getAttribute('faunaActor') as THREE.BufferAttribute;
     (actor.array as Uint16Array).fill(slot,base,base+this.maxVerticesPerAnimal);actor.addUpdateRange(base,this.maxVerticesPerAnimal);actor.needsUpdate=true;
     const index=this.geometry.index!,indices=index.array as Uint16Array|Uint32Array,io=slot*this.maxIndicesPerAnimal;
-    indices.fill(base,io,io+this.maxIndicesPerAnimal);for(let i=0;i<data.index.length;i++)indices[io+i]=base+data.index[i];
+    const sourceOffset=data.ownerSlot===null?0:data.ownerSlot*this.maxIndicesPerAnimal,sourceBase=data.ownerSlot===null?0:data.ownerSlot*this.maxVerticesPerAnimal;
+    indices.fill(base,io,io+this.maxIndicesPerAnimal);
+    for(let i=0;i<data.indices;i++)indices[io+i]=base+(data.data?data.data.index[i]:indices[sourceOffset+i]-sourceBase);
     index.addUpdateRange(io,this.maxIndicesPerAnimal);index.needsUpdate=true;
+    data.ownerSlot??=slot;
+    if(this.cacheMode==='atlas-owned'){data.data=null;data.bytes=0;}
     this.highWater=Math.max(this.highWater,slot+1);this.geometry.setDrawRange(0,this.highWater*this.maxIndicesPerAnimal);this.geometryUploads++;return true;
   }
   releaseAnimal(memberId:string):void{
     const slot=this.members.get(memberId);if(slot===undefined)return;
-    this.cache.get(this.slots[slot]!.key)!.uses--;this.slots[slot]=null;this.members.delete(memberId);
+    this.dropOwner(this.slots[slot]!.key,slot);this.slots[slot]=null;this.members.delete(memberId);
     this.rootMatrices[slot*20+16]=0;this.rootDirty=true;this.rootDirtyRows[slot]=1;
   }
   releaseGeometry(key:string):boolean{const data=this.cache.get(key);if(!data||data.uses)return false;return this.cache.delete(key);}
+  private dropOwner(key:string,slot:number){
+    const record=this.cache.get(key)!;record.uses--;
+    if(this.cacheMode==='atlas-owned'){
+      if(!record.uses)this.cache.delete(key);
+      else if(record.ownerSlot===slot)record.ownerSlot=this.slots.findIndex((s,i)=>i!==slot&&s?.key===key);
+    }
+  }
   beginFrame(origin:THREE.Vector3):void{this.group.position.copy(origin);this.frame=(this.frame+1)>>>0;if(!this.frame){this.seen.fill(0);this.frame=1;}this.active=0;this.actualTriangles=0;this.uploadBytes=0;}
   submit(memberId:string,root:THREE.Matrix4,bones:Float32Array,options?:{roughness?:number;coverage?:number}):boolean{
     const slot=this.members.get(memberId);if(slot===undefined||this.disposed||bones.length!==FAUNA_PALETTE_BONES*16)return false;
@@ -222,7 +252,7 @@ export class FaunaSkinnedBatch {
     for(let i=0;i<bones.length;i++)if(!Object.is(this.boneMatrices[b+i],bones[i])){this.boneMatrices[b+i]=bones[i];this.boneDirty=true;this.boneDirtyRows[slot]=1;}
     const roughness=options?.roughness??this.slots[slot]!.roughness,coverage=options?.coverage??1;
     for(let i=0;i<4;i++){const n=Math.fround(i===0?1:i===1?roughness:i===2?coverage:0);if(!Object.is(this.rootMatrices[p+16+i],n)){this.rootMatrices[p+16+i]=n;this.rootDirty=true;this.rootDirtyRows[slot]=1;}}
-    this.seen[slot]=this.frame;this.active++;this.actualTriangles+=this.cache.get(this.slots[slot]!.key)!.index.length/3;return true;
+    this.seen[slot]=this.frame;this.active++;this.actualTriangles+=this.cache.get(this.slots[slot]!.key)!.indices/3;return true;
   }
   endFrame():void{
     for(let i=0;i<this.highWater;i++)if(this.seen[i]!==this.frame&&this.rootMatrices[i*20+16]!==0){this.rootMatrices[i*20+16]=0;this.rootDirty=true;this.rootDirtyRows[i]=1;}
@@ -260,7 +290,8 @@ export class FaunaSkinnedBatch {
     let geometryBytes=this.geometry.index!.array.byteLength,cacheBytes=0;
     for(const a of Object.values(this.geometry.attributes))geometryBytes+=a.array.byteLength;
     for(const record of this.cache.values())cacheBytes+=record.bytes;
-    return {prototype:true,estimatedBufferBytes:this.estimatedBufferBytes,maxBufferBytes:this.maxBufferBytes,indexBytes:this.indexBytes,active:this.active,prepared:this.members.size,geometryEntries:this.cache.size,geometryUploads:this.geometryUploads,
+    return {prototype:true,cacheMode:this.cacheMode,pendingGeometryEntries:this.cacheMode==='atlas-owned'?[...this.cache.values()].filter(record=>record.data!==null).length:0,
+      estimatedBufferBytes:this.estimatedBufferBytes,maxBufferBytes:this.maxBufferBytes,indexBytes:this.indexBytes,active:this.active,prepared:this.members.size,geometryEntries:this.cache.size,geometryUploads:this.geometryUploads,
       triangles:this.actualTriangles,reservedTriangles:this.highWater*this.maxIndicesPerAnimal/3,drawsPerPass:this.active?1:0,
       geometryBytes,paletteBytes:this.boneMatrices.byteLength+this.rootMatrices.byteLength,
       paletteRingSize:this.paletteRingSize,paletteUploadMode:this.paletteUploadMode,paletteIndex:this.paletteIndex,

@@ -126,3 +126,59 @@ test('ring allocation has explicit CPU/GPU headroom and rejects invalid streamin
  assert.throws(()=>new FaunaSkinnedBatch({paletteRingSize:4}),/Invalid fauna palette/);
  assert.throws(()=>new FaunaSkinnedBatch({paletteUploadMode:'invalid'}),/Invalid fauna palette/);
 });
+
+test('atlas ownership admits128 unique definitions without retaining duplicate geometry arrays',()=>{
+ const b=new FaunaSkinnedBatch({capacity:128,maxVerticesPerAnimal:3,maxIndicesPerAnimal:3,cacheMode:'atlas-owned'});
+ try{
+  assert.equal(b.cacheMode,'atlas-owned');
+  for(let i=0;i<128;i++){
+   const d=tiny();d.plan=createQuadrupedPlan(generateCreatureGenome('UNIQUE-ATLAS/'+i,'browser'));d.positions[0]=Math.fround(i/10);
+   assert.ok(b.registerGeometry('unique/'+i,d));
+   assert.ok(b.diagnostics().cacheBytes>0);assert.equal(b.diagnostics().pendingGeometryEntries,1);
+   assert.ok(b.prepareAnimal('member/'+i,'unique/'+i));
+   assert.equal(b.diagnostics().cacheBytes,0);assert.equal(b.diagnostics().pendingGeometryEntries,0);
+   assert.equal(b.mesh.geometry.attributes.position.array[i*9],d.positions[0],'actor retains its own geometry');
+  }
+  b.beginFrame(new THREE.Vector3());const p=identityPalette();
+  for(let i=0;i<128;i++)assert.ok(b.submit('member/'+i,new THREE.Matrix4(),p));b.endFrame();
+  assert.equal(b.diagnostics().active,128);assert.equal(b.diagnostics().geometryEntries,128);
+  assert.equal(b.diagnostics().triangles,128);
+  b.releaseAnimal('member/42');assert.equal(b.geometryFor('unique/42'),null);
+  assert.ok(b.registerGeometry('replacement',tiny()));assert.ok(b.prepareAnimal('replacement-member','replacement'));
+  assert.equal(b.diagnostics().cacheBytes,0);assert.equal(b.diagnostics().geometryEntries,128);
+ }finally{b.dispose();}
+});
+
+test('live atlas owner migration preserves exact reuse and rejects changed data after source eviction',()=>{
+ const b=new FaunaSkinnedBatch({capacity:4,maxVerticesPerAnimal:3,maxIndicesPerAnimal:3,cacheMode:'atlas-owned'}),d=tiny();
+ try{
+  assert.ok(b.registerGeometry('a',d));assert.ok(b.prepareAnimal('first','a'));
+  assert.ok(b.registerGeometry('a',tiny()));assert.ok(b.prepareAnimal('second','a'));
+  assert.deepEqual(Array.from(b.mesh.geometry.index.array.slice(3,6)),[3,4,5]);
+  const changed=tiny();changed.colors[0]++;assert.equal(b.registerGeometry('a',changed),false);
+  b.releaseAnimal('first');const other=tiny();other.positions[0]=10;
+  assert.ok(b.registerGeometry('b',other));assert.ok(b.prepareAnimal('third','b'),'overwrites freed original owner slot');
+  assert.ok(b.registerGeometry('a',tiny()));assert.ok(b.prepareAnimal('fourth','a'));
+  assert.deepEqual(Array.from(b.mesh.geometry.attributes.position.array.slice(18,27)),Array.from(d.positions));
+  assert.deepEqual(Array.from(b.mesh.geometry.index.array.slice(6,9)),[6,7,8]);
+  b.releaseAnimal('second');assert.ok(b.registerGeometry('a',tiny()));
+  b.releaseAnimal('fourth');assert.equal(b.geometryFor('a'),null,'last owner removes metadata');
+  assert.ok(b.registerGeometry('a',tiny()));assert.ok(b.prepareAnimal('again','a'));
+ }finally{b.dispose();}
+});
+
+test('compact mode bounds pending ownership, allows cancellation, and preserves default cache behavior',()=>{
+ const options={capacity:4,maxVerticesPerAnimal:3,maxIndicesPerAnimal:3},compact=new FaunaSkinnedBatch({...options,cacheMode:'atlas-owned'}),retained=new FaunaSkinnedBatch(options);
+ try{
+  assert.ok(compact.registerGeometry('pending',tiny()));assert.equal(compact.registerGeometry('second',tiny()),false);
+  assert.ok(compact.releaseGeometry('pending'));assert.ok(compact.registerGeometry('second',tiny()));
+  assert.ok(compact.prepareAnimal('actor','second'));assert.equal(compact.releaseGeometry('second'),false);
+  assert.equal(compact.diagnostics().cacheBytes,0);
+  assert.ok(retained.registerGeometry('body',tiny()));assert.ok(retained.prepareAnimal('actor','body'));
+  const held=retained.diagnostics().cacheBytes;assert.ok(held>0);
+  retained.releaseAnimal('actor');assert.equal(retained.diagnostics().cacheBytes,held);
+  assert.ok(retained.registerGeometry('body',tiny()));assert.ok(retained.prepareAnimal('again','body'));
+  assert.equal(compact.estimatedBufferBytes,retained.estimatedBufferBytes-3*(3*35+3*4));
+ }finally{compact.dispose();retained.dispose();}
+ assert.throws(()=>new FaunaSkinnedBatch({cacheMode:'unknown'}),/Invalid fauna cache/);
+});
