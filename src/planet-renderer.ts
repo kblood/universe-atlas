@@ -445,6 +445,9 @@ export const LOW_FLIGHT_CLEARANCE_M=19500;
  * scenario leaves it off, and the change gets its own behavioural test
  * (tests/life-continuity-scenario.test.mjs; decision D1, 2026-10-07). */
 export interface PlanetRendererOptions{
+  /** Scoped byte/state-exact bark texture sharing. Off until native pixel,
+   * shadow, resource and lifetime acceptance passes. */
+  forestBarkSharing?:boolean;
   /** Local research opt-in only. The accepted production constructor omits
    * this adapter while packed appearance/CPU/GPU/memory gates are pending. */
   faunaLodPrototype?:()=>{adapter:FaunaLodRuntimeAdapter;sourceVersion:string;appearanceVersion:string;controller?:FaunaLodControllerOptions};
@@ -949,7 +952,7 @@ export class PlanetRenderer {
     // All geometry/materials/buckets are built ONCE here; the per-frame path
     // in `update()`/`drawFlora`/`drawFauna` only mutates preallocated state.
     this.classify = biomeClassifier(body);
-    this.forest=new PlanetForest(body,undefined,{skipIneligibleResources:true});this.group.add(this.forest.group);
+    this.forest=new PlanetForest(body,undefined,{skipIneligibleResources:true,shareBarkTextures:options.forestBarkSharing===true});this.group.add(this.forest.group);
     // Canonical surface rocks share the terrain's rock PBR lease (not owned).
     this.rocks=new PlanetRocks({body,sample:()=>this.sample,classify:()=>this.classify,textures:this.groundPbrTextures,
       attach:mesh=>attachLocalAerial(mesh,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform)});

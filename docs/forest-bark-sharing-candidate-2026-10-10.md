@@ -6,6 +6,12 @@ bark base-colour and normal maps before batches or first GPU upload. Materials,
 geometry, wind/variant uniforms, foliage maps and offline mip sidecars remain
 family-owned. Source GLBs and image bytes are unchanged.
 
+The combined runtime candidate exposes `PlanetRendererOptions.forestBarkSharing`
+and the main-route `?forest-bark-sharing=1` opt-in, independent of the existing
+`?fauna-lod-prototype=float` option. Both remain off when omitted, allowing
+balanced on/off runs on the exact same build and quality settings. World
+population, IDs, dates, poses and sampler state are unchanged.
+
 Sharing requires the encoded PNG SHA256, texture role, colour space, channel,
 mapping, format/type, filtering/wrapping/anisotropy, upload flags, automatic mip
 policy and complete UV transform to match. The decoded maps must be 1024px.
