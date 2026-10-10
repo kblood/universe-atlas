@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import {faunaBodyGeometry} from '../src/fauna-near-rig.ts';
 import {createFaunaMaterial} from '../src/fauna-material.ts';
-const data=await fetch('/test-results/animal-lod-review/data.json').then(r=>r.json());
+const data=await fetch(new URLSearchParams(location.search).get('data')||'/test-results/animal-lod-review/data.json').then(r=>r.json());
+let createFaunaBodyCoatGeometry,createFaunaBodyCoatMaterial;
+if(data.rows[0]?.coatLevels)({createFaunaBodyCoatGeometry,createFaunaBodyCoatMaterial}=await import('../src/fauna-body-coat-material.ts'));
+let crispGeometry,crispMaterial,packedGeometry,packedMaterial;
+if(data.rows[0]?.crispLevels){({createFaunaPlanetCrispGeometry:crispGeometry,createFaunaPlanetCrispMaterial:crispMaterial}=await import('../src/fauna-planet-crisp.ts'));
+  ({createFaunaPlanetCrispPackedGeometry:packedGeometry,createFaunaPlanetCrispPackedMaterial:packedMaterial}=await import('../src/fauna-planet-crisp-packed.ts'));}
 const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setPixelRatio(1);renderer.setSize(1440,1080);renderer.autoClear=false;document.body.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#25313b');scene.add(new THREE.HemisphereLight(0xffffff,0x63564c,2.5));const light=new THREE.DirectionalLight(0xfff3df,3);light.position.set(5,8,9);scene.add(light);
 let camera=new THREE.OrthographicCamera(-2,2,2,-2,.01,100);const maskMaterial=new THREE.MeshBasicMaterial({color:0xffffff});
@@ -11,7 +16,14 @@ function rigFor(row,level,key){
   if(rigs.has(key))return rigs.get(key);
   const bones=row.plan.bones.map(()=>new THREE.Bone());row.plan.bones.forEach((b,i)=>{const parent=b.parent>=0?row.plan.bones[b.parent].rest:[0,0,0];bones[i].position.set(...b.rest.map((v,c)=>v-parent[c]));if(b.parent>=0)bones[b.parent].add(bones[i]);});bones[0].updateMatrixWorld(true);
   const skeleton=new THREE.Skeleton(bones,row.plan.bones.map(b=>new THREE.Matrix4().makeTranslation(...b.rest.map(v=>-v))));
-  const mesh=new THREE.SkinnedMesh(faunaBodyGeometry(decode({...level,plan:row.plan})),createFaunaMaterial(true));mesh.bind(skeleton,new THREE.Matrix4());mesh.add(bones[0]);mesh.frustumCulled=false;
+  let geometry,material;
+  if(level.crisp){const c=level.crisp,packed=c.coefficientType==='Int16Array',extra={...c,sourceGeometry:decode({...level,plan:row.plan}),
+      c0:packed?new Int16Array(c.c0):new Float32Array(c.c0),c1:packed?new Int16Array(c.c1):new Float32Array(c.c1),c2:packed?new Int16Array(c.c2):new Float32Array(c.c2),sample:new Float32Array(c.sample),clip:new Uint8Array(c.clip)};
+    geometry=(packed?packedGeometry:crispGeometry)(extra);material=(packed?packedMaterial:crispMaterial)(extra);}
+  else if(level.coatUv){const atlas={...decode({...level,index:[]}),coatUv:new Float32Array(level.coatUv),coatMask:new Uint8Array(level.coatMask),texture:{...level.texture,data:Uint8Array.from(atob(level.texture.base64),c=>c.charCodeAt(0))}};
+    geometry=createFaunaBodyCoatGeometry(atlas);material=createFaunaBodyCoatMaterial(atlas).material;}
+  else{geometry=faunaBodyGeometry(decode({...level,plan:row.plan}));material=createFaunaMaterial(true);}
+  const mesh=new THREE.SkinnedMesh(geometry,material);mesh.bind(skeleton,new THREE.Matrix4());mesh.add(bones[0]);mesh.frustumCulled=false;
   const rig={mesh,bones,skeleton};rigs.set(key,rig);return rig;
 }
 function poseRig(rig,pose){const positions=Object.values(pose.pose.positions),quats=Object.values(pose.pose.quaternions);rig.bones.forEach((bone,i)=>{bone.position.fromArray(positions,i*3);bone.quaternion.fromArray(quats,i*4);});rig.bones[0].updateMatrixWorld(true);rig.skeleton.update();
@@ -42,12 +54,28 @@ async function review(rowIndex,poseName='rest',view='side'){
   const sourceMask=pixels(source.mesh,true),sourceLit=pixels(source.mesh,false),panels=[];
   if(!sourceMask.some((v,i)=>i%4===0&&v>0))throw new Error('Empty source silhouette');
   for(let i=0;i<360;i++)if(sourceMask[i*4]>0||sourceMask[((359*360)+i)*4]>0||sourceMask[(i*360)*4]>0||sourceMask[(i*360+359)*4]>0)throw new Error('Source silhouette clips the review viewport');
-  const methods=[{method:'full source',levels:[{target:1500,...row.source},{target:750,...row.source},{target:500,...row.source}]},...row.chains];
+  const methods=row.crispLevels?[{method:'original full source vertex-colour',levels:[1500,750,500].map(target=>({target,...row.source}))},
+    {method:'full source same raw-fragment control',levels:[1500,750,500].map(target=>({target,...row.crispFull}))},
+    {method:'joint-QEM raw-fragment float',levels:row.crispLevels.map(l=>({...l,crisp:l.crispFloat}))},
+    {method:'joint-QEM raw-fragment packed',levels:row.crispLevels.map(l=>({...l,crisp:l.crispPacked}))}]:row.coatLevels?[{method:'original full source vertex-colour',levels:[{target:1500,...row.source},{target:750,...row.source},{target:500,...row.source}]},
+    {method:'full source same baked shader (4)',levels:[1500,750,500].map(target=>({target,...row.coatFull}))},
+    {...row.chains.find(c=>c.method==='joint-constrained-qem'),method:'joint-QEM vertex-colour'},
+    {method:'joint-QEM baked shader (16)',levels:row.coatLevels}]:[{method:'full source',levels:[{target:1500,...row.source},{target:750,...row.source},{target:500,...row.source}]},...row.chains];
+  let fragmentControl;
+  if(row.crispLevels){const rig=rigFor(row,row.crispFull,`${rowIndex}/full-crisp`);poseRig(rig,pose);fragmentControl=pixels(rig.mesh,false);}
+  else if(row.coatLevels){const rig=rigFor(row,row.coatFull,`${rowIndex}/full-coat`);poseRig(rig,pose);fragmentControl=pixels(rig.mesh,false);}
   renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,1440,1080);renderer.clear();
+  const floatPanels=new Map();
   for(let column=0;column<methods.length;column++)for(let band=0;band<3;band++){
-    const method=methods[column],level=method.levels[band],rig=column===0?source:rigFor(row,level,`${rowIndex}/${column}/${band}`);poseRig(rig,pose);
+    const method=methods[column],level=method.levels[band],rig=column===0?source:rigFor(row,level,row.crispLevels&&column===1?`${rowIndex}/full-crisp`:row.coatLevels&&column===1?`${rowIndex}/full-coat`:`${rowIndex}/${column}/${band}`);poseRig(rig,pose);
     const mask=pixels(rig.mesh,true),lit=pixels(rig.mesh,false);
-    panels.push({method:method.method,target:level.target,reached:level.reached,triangles:level.triangleCount??row.triangleCount,vertices:level.vertexCount??row.vertexCount,...metrics(sourceMask,mask,sourceLit,lit)});
+    let packedComparison;
+    if(row.crispLevels&&column===2)floatPanels.set(band,{mask,lit});
+    if(row.crispLevels&&column===3){const f=floatPanels.get(band);let max=0,different=0,maskDifferences=0;for(let i=0;i<360*360;i++){
+      if(f.mask[i*4]!==mask[i*4])maskDifferences++;let changed=false;for(let ch=0;ch<3;ch++){const delta=Math.abs(f.lit[i*4+ch]-lit[i*4+ch]);max=Math.max(max,delta);changed||=delta!==0;}if(changed)different++;}
+      packedComparison={maxChannelDifference:max,differentPixels:different,silhouettePixelDifferences:maskDifferences};}
+    panels.push({method:method.method,target:level.target,reached:level.reached,triangles:level.triangleCount??row.triangleCount,vertices:level.vertexCount??row.vertexCount,...metrics(sourceMask,mask,sourceLit,lit),
+      ...(fragmentControl?{sameShaderControl:metrics(sourceMask,mask,fragmentControl,lit)}:{}),...(packedComparison?{packedComparison}:{})});
     renderer.setRenderTarget(null);renderer.setViewport(column*360,(2-band)*360,360,360);renderer.setScissor(column*360,(2-band)*360,360,360);renderer.setScissorTest(true);scene.background.set('#25313b');scene.add(rig.mesh);renderer.clear();renderer.render(scene,camera);scene.remove(rig.mesh);
   }
   renderer.setScissorTest(false);last={id:row.id,pose:poseName,view,sourceDigest:row.sourceDigest,panels,

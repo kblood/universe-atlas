@@ -10,7 +10,8 @@ const report={errors:[],reviews:[],scope:'canonical loaded geometry with same ex
 try{
   lock=await acquireGpuLock({owner:'canonical animal LOD anatomy review',capture:true,retryMs:30000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
   const page=await browser.newPage({viewport:{width:1440,height:1120}});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
-  await page.goto(`http://127.0.0.1:${server.port}/tests/fauna-lod-review.html`);await page.waitForFunction(()=>window.__animalLodReview?.ready,undefined,{timeout:90000});
+  const query=process.env.LOD_REVIEW_DATA?'?data='+encodeURIComponent(process.env.LOD_REVIEW_DATA):'';
+  await page.goto(`http://127.0.0.1:${server.port}/tests/fauna-lod-review.html${query}`);await page.waitForFunction(()=>window.__animalLodReview?.ready,undefined,{timeout:90000});
   const count=await page.evaluate(()=>window.__animalLodReview.count);
   const selectedRows=process.env.LOD_REVIEW_ROWS?JSON.parse(process.env.LOD_REVIEW_ROWS):Array.from({length:count},(_,i)=>i);
   const views=process.env.LOD_REVIEW_VIEWS?JSON.parse(process.env.LOD_REVIEW_VIEWS):['side','front'];

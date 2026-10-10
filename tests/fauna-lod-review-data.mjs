@@ -15,6 +15,7 @@ for(const file of ['fauna-body-lod.ts','fauna-composer-lod.ts'])dependencies['ba
 const fields=['positions','normals','colors','skinIndex','skinWeight','index'];
 const pack=level=>({...Object.fromEntries(fields.map(f=>[f,Array.from(level[f])])),target:level.target,vertexCount:level.vertexCount,triangleCount:level.triangleCount,
   reached:level.reached,withinBudget:level.withinBudget,droppedFeatures:level.droppedFeatures,appendagesPresent:level.appendagesPresent,stats:level.stats,
+  bodyVertexCount:level.bodyVertexCount,bodyTriangleCount:level.bodyTriangleCount,structuralVertexCount:level.structuralVertexCount,structuralTriangleCount:level.structuralTriangleCount,cellM:level.cellM,grid:level.grid,
   ...(level.sourceVertex?{sourceVertex:Array.from(level.sourceVertex)}:{}),
   ...(level.initialSourceVertex?{initialSourceVertex:Array.from(level.initialSourceVertex),sourceTriangle:Array.from(level.sourceTriangle),barycentric:Array.from(level.barycentric),resampled:level.resampled,refinement:level.refinement}:{}),
   representative:Array.from(level.representative),parts:level.parts});

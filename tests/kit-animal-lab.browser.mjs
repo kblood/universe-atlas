@@ -7,10 +7,11 @@ import {startDistPreview,stopServer} from './helpers/free-port.mjs';
 const out=process.env.ATLAS_RESULTS||'test-results/kit-animal-lab';await mkdir(out,{recursive:true});
 let server,lock,browser;const report={errors:[],scope:'same canonical genome transported between separately built Atlas and Kit Lab applications',ok:false};
 try{
-  server=await startDistPreview({dist:process.env.ATLAS_DIST||'dist'});report.build=server.build;
+  server=process.env.ATLAS_URL?{base:process.env.ATLAS_URL}:await startDistPreview({dist:process.env.ATLAS_DIST||'dist'});report.build=server.build;
   lock=await acquireGpuLock({owner:'shared canonical Animal Lab definition roundtrip',capture:true,retryMs:30000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
   const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
   await page.addInitScript(()=>{window.__labDraws=0;for(const p of [WebGLRenderingContext.prototype,WebGL2RenderingContext.prototype])for(const key of ['drawElements','drawArrays']){const original=p[key];p[key]=function(...args){window.__labDraws++;return original.apply(this,args);};}});
+  if(process.env.ATLAS_URL){report.build=await(await page.request.get(server.base+'build-info.json')).json();assert.equal(report.build.git?.sha??report.build.commit,process.env.ATLAS_EXPECT_SHA);}
   await page.goto(server.base+'creature-lab.html');await page.waitForFunction(()=>window.__creatureLab?.ready,undefined,{timeout:90000});
   report.atlas=await page.evaluate(()=>({mode:window.__creatureLab.mode,error:window.__creatureLab.error,individual:window.__creatureLab.individuals[0],details:window.__creatureLab.skinDetails,draws:window.__labDraws}));
   assert.equal(report.atlas.mode,'skin');assert.equal(report.atlas.error,null);assert(report.atlas.draws>0);assert.equal(report.atlas.individual.source,'procedural');
@@ -31,4 +32,4 @@ try{
   report.actualDaunune=await page.evaluate(()=>window.__planetAnimalLab.details());assert.deepEqual(report.actualDaunune.definition.genome,actual.genome);assert.equal(report.actualDaunune.triangles,actual.triangleCount);
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.screenshot({path:out+'/standalone-actual-daunune.png'});
   assert.deepEqual(report.errors,[]);report.ok=true;
-}finally{await browser?.close();await lock?.release();if(server)await stopServer(server.child);await writeFile(out+'/report.json',JSON.stringify(report,null,2));}
+}finally{await browser?.close();await lock?.release();if(server?.child)await stopServer(server.child);await writeFile(out+'/report.json',JSON.stringify(report,null,2));}

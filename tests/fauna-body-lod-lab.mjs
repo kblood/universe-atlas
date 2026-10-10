@@ -11,6 +11,10 @@ const movingStride=Number(streaming.get('movingStride')||1);
 if(!Number.isInteger(movingStride)||movingStride<1||movingStride>128)throw new Error('Invalid moving stride');
 let method='existing-qem';
 function selectMethod(next){method=next;for(const row of data.rows)if(row.chains){const chain=row.chains.find(c=>c.method===method);if(!chain)throw new Error('Unknown frozen LOD method '+method);row.name=row.id;row.levels=chain.levels.map(l=>({...l,plan:row.plan}));}}
+const compactMode=new URLSearchParams(location.search).get('compact');
+const CrispBatch=compactMode?(await import('../src/fauna-planet-crisp-batch.ts')).FaunaPlanetCrispBatch:null;
+function crispGeometry(row,target){const level=row.crispLevels.find(l=>l.target===target),basis=compactMode==='float'?level.crispFloat:level.crispPacked,geometry=decode({...level,plan:row.plan});
+return {...basis,sourceGeometry:geometry,source:{plan:row.plan},c0:new (compactMode==='float'?Float32Array:Int16Array)(basis.c0),c1:new (compactMode==='float'?Float32Array:Int16Array)(basis.c1),c2:new (compactMode==='float'?Float32Array:Int16Array)(basis.c2),sample:new Float32Array(basis.sample),clip:new Uint8Array(basis.clip)};}
 selectMethod(method);
 const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(1440,1000);renderer.setPixelRatio(1);
 renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
@@ -42,6 +46,10 @@ function choose(next,nextTarget=500,n=512,nextMethod=method){selectMethod(nextMe
       mesh.position.x=i*4;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);meshes.push(mesh);
     }
     active={group,dispose(){meshes.forEach(m=>{m.geometry.dispose();m.material.dispose();m.skeleton.dispose();});group.removeFromParent();}};
+  }
+  else if(compactMode){active=new CrispBatch({cacheMode:'atlas-owned',basisStorage:compactMode==='float'?'float32':'packed-snorm16',capacity:count,maxVerticesPerAnimal:500,maxIndicesPerAnimal:1500,paletteRingSize,paletteUploadMode});
+    for(let i=0;i<count;i++){const key='individual/'+i;if(!active.registerGeometry(key,crispGeometry(data.rows[i%data.rows.length],target))||!active.prepareAnimal(members[i].id,key))throw new Error('Unique-key compact admission failed '+i);}
+    handles=members.map((m,i)=>cheap.prepare(data.rows[i%data.rows.length].levels.find(l=>l.target===target).plan,m));
   }
   else{active=new FaunaSkinnedBatch({capacity:count,maxVerticesPerAnimal:target===1500?900:target===500?500:200,maxIndicesPerAnimal:target*3,maxGeometryEntries:data.rows.length,maxBufferBytes:count>128?64*1024*1024:16*1024*1024,paletteRingSize,paletteUploadMode});
     data.rows.forEach((r,i)=>{const l=r.levels.find(l=>l.target===target);if(!active.registerGeometry('sample/'+i,decode(l)))throw new Error('LOD admission failed');});

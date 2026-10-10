@@ -10,6 +10,7 @@ const server=await startOnFreePort({url:p=>`http://127.0.0.1:${p}/tests/fauna-bo
   spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port',String(p),'--strictPort'],{stdio:'ignore'})});
 let browser,lock,page;const streaming=new URLSearchParams({paletteRingSize:process.env.BODY_LOD_RING_SIZE||'1',paletteUploadMode:process.env.BODY_LOD_UPLOAD_MODE||'full',movingStride:process.env.BODY_LOD_MOVING_STRIDE||'1'});
 if(process.env.BODY_LOD_DATA)streaming.set('data',process.env.BODY_LOD_DATA);
+if(process.env.BODY_LOD_COMPACT)streaming.set('compact',process.env.BODY_LOD_COMPACT);
 const report={prototypeOnly:true,errors:[],rows:[],scope:'one desktop prototype; full update CPU includes activity+selectedpose+submission; no release gate',poseMode:process.env.BODY_LOD_POSE_MODE||'canonical',paletteStreaming:Object.fromEntries(streaming)};
 try{
   lock=await acquireGpuLock({owner:'body LOD GPU prototype',capture:true,retryMs:30000});
@@ -43,6 +44,12 @@ try{
         };
       }));
       report.rows.push({mode,target,method,paused,...timings});await writeFile(out+'/report.json',JSON.stringify(report,null,2));
+      if(process.env.BODY_LOD_COMPACT&&mode==='derived'){
+        const b=timings.info.backend;assert.equal(b.prepared,Number(process.env.BODY_LOD_COUNT||512));assert.equal(b.geometryEntries,b.prepared);
+        assert.equal(b.cacheBytes,0);assert.equal(b.basisCacheBytes,0);assert.equal(b.pendingGeometryEntries,0);assert.equal(b.pendingAppearanceGeometry,false);assert.equal(b.rejected,0);
+        if(paused)assert.equal(b.paletteUploadBytes,0);
+        report.admissionScope='Distinct owner keys each registered/prepared interleaved; frozen fixture genomes reused, not a distinct-genome quality corpus';
+      }
       console.log(JSON.stringify({mode,target,paused,cpu:timings.cpu,renderCpu:timings.renderCpu,gpu:timings.gpu,draw:timings.info.render,backend:timings.info.backend}));
     }
     await page.evaluate(fixed=>{if(fixed){window.__lodLab.setRestPose(true);window.__lodLab.setPaused(true);}window.__lodLab.closeup(0);},process.env.BODY_LOD_FIXED_CAPTURE==='1');await page.waitForTimeout(1000);
