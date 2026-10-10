@@ -934,7 +934,7 @@ export class PlanetRenderer {
     // All geometry/materials/buckets are built ONCE here; the per-frame path
     // in `update()`/`drawFlora`/`drawFauna` only mutates preallocated state.
     this.classify = biomeClassifier(body);
-    this.forest=new PlanetForest(body);this.group.add(this.forest.group);
+    this.forest=new PlanetForest(body,undefined,{skipIneligibleResources:true});this.group.add(this.forest.group);
     // Canonical surface rocks share the terrain's rock PBR lease (not owned).
     this.rocks=new PlanetRocks({body,sample:()=>this.sample,classify:()=>this.classify,textures:this.groundPbrTextures,
       attach:mesh=>attachLocalAerial(mesh,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform)});

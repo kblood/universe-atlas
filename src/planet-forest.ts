@@ -6,7 +6,7 @@ import {quantizeForestCoverage} from './forest-coverage.ts';
 import {systemTimer} from './render-profile.ts';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
-import {biomeClassifier} from './surface-biomes.ts';
+import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
 import {forestPopulationCells,FAR_CROWN_PROBABILITY,type PopulationCell} from './planet-population.ts';
 import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
 import type {ForestSelectionCache} from './forest-selection-cache.ts';
@@ -84,6 +84,11 @@ function tallyAllometry(tally:AllometryTally,dimensions:ForestTreeDimensions){
  * each); 81 views per family complete in 27 frames per family. Families are
  * baked one after another. */
 export const FOREST_FAR_ATLAS_VIEWS_PER_FRAME=3;
+export interface PlanetForestOptions {
+  /** Production-only allocation gate, captured once from the same physical
+   * predicate as biomeClassifier. Dates never change body eligibility. */
+  skipIneligibleResources?:boolean;
+}
 /** One structural choice per canonical individual: the dated binding's bounded
  * variant, applied only when the adopted family carries that pool member. */
 function familyVariant(binding:ForestTreeBinding,presentation:{structuralVariants?:readonly unknown[]}){
@@ -106,8 +111,10 @@ export class PlanetForest {
    * renders of one pose differ exactly in the tree pixels. */
   private debug:{middleHandoffM:number|null;hideColour:boolean}={middleHandoffM:null,hideColour:false};
   private debugWrites=new Map<THREE.Material,[boolean,boolean]>();
-  private meshes:THREE.InstancedMesh[];
-  private canopy:THREE.InstancedMesh;
+  private meshes:THREE.InstancedMesh[]=[];
+  private canopy:THREE.InstancedMesh|null=null;
+  private readonly allocationSkipped:boolean;
+  private get legacyMeshes(){return this.canopy?[...this.meshes,this.canopy]:this.meshes;}
   private cache=new ResidentCache();
   private wanted:PopulationCell[]=[];
   private queue:PopulationCell[]=[];
@@ -235,12 +242,15 @@ export class PlanetForest {
   private wantPass=0;private poolPass=0;
   // Marks cached residents that belong to the latest work selection.
   private selectionPass=0;
-  constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
+  constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily,options:PlanetForestOptions={}){
+    this.allocationSkipped=!!options.skipIneligibleResources&&!forestBodyEligible(body);
     this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
     this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
     this.assets=new ForestTreeFamilyLibrary(this.group,(a,b,options)=>this.treeLoader(a,b,options),resident=>resident.cell.id,[B.forestNearCapacity,B.forestCapacity]);
     this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
     this.habitat=forestHabitat(this.sample,this.classify,body.radiusM);
+    this.group.name='Continuous planetary forest';
+    if(this.allocationSkipped){this.group.visible=false;return;}
     this.meshes=[B.forestNearCapacity,B.forestCapacity].map((capacity,i)=>{
       const mesh=new THREE.InstancedMesh(treeGeometry(i===0?1:0),
         forestMaterial(true),capacity);
@@ -299,6 +309,8 @@ export class PlanetForest {
     return this.loadTreeFamilies([{kind:'branching',lod0:a,lod1:b}],options);
   }
   loadTreeFamilies(inputs:readonly ForestTreeFamilyInput[],options:TreeAssetOptions={}){
+    if(this.disposed)return Promise.reject(new Error('Forest is disposed'));
+    if(this.allocationSkipped)return Promise.resolve(false);
     return this.assets.replace(inputs,options);
   }
   clearTreeAssets(){
@@ -504,7 +516,7 @@ export class PlanetForest {
   }
   /** Slots belong to resident IDs, not their current visibility/sort ordinal. */
   private writeInstance(batch:number,index:number,resident:Resident,coverage:number){
-    const mesh=batch===2?this.canopy:this.meshes[batch],updates=this.updates[batch];
+    const mesh=batch===2?this.canopy!:this.meshes[batch],updates=this.updates[batch];
     const changed=updates.residents[index]!==resident,dimensions=this.dimensions(resident);
     if(changed||updates.originVersions[index]!==this.originVersion||updates.dimensions[index]!==dimensions){
       const {cell,height}=resident,r=this.body.radiusM;
@@ -576,7 +588,7 @@ export class PlanetForest {
     if(this.slottedCanopy)this.fullCanopy!.ownSlot(resident.slot,coverage);else this.fullCanopy?.own(resident.cell.id,coverage);
   }
   private reconcileBatch(batch:number){
-    const updates=this.updates[batch],mesh=batch===2?this.canopy:this.meshes[batch];
+    const updates=this.updates[batch],mesh=batch===2?this.canopy!:this.meshes[batch];
     const coverage=batch===2?this.canopyCoverage:this.coverage[batch];
     if(batch<2){
       for(const entry of this.assets.entries.values())entry.wanted[batch].length=0;
@@ -650,6 +662,7 @@ export class PlanetForest {
   }
   update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[],worldNs=0n,treeSpecies?:readonly Species[],shadowFrustum:THREE.Frustum|null=null){
     if(!Number.isFinite(water))throw new Error('Forest water level must be finite');
+    if(this.disposed||!this.canopy){this.group.visible=false;this.worldDate=worldNs;return;}
     // Species dimensions apply to every representation, including the legacy
     // forest when no family asset is loaded.
     this.setCatalogue(treeSpecies);
@@ -939,7 +952,7 @@ export class PlanetForest {
   }
   diagnostics(){
     const ownedEntries=this.assets.ownedEntries;
-    const farMesh=this.fullCanopy?.renderer?.mesh,legacyMeshes=[...this.meshes,this.canopy,...(farMesh?[farMesh]:[])];
+    const farMesh=this.fullCanopy?.renderer?.mesh,legacyMeshes=[...this.legacyMeshes,...(farMesh?[farMesh]:[])];
     const legacyBuffers=forestMeshBufferFootprint(legacyMeshes);
     const familyGeometries=ownedEntries.flatMap(entry=>(entry.family.lods??[]).flatMap(lod=>lod.map(mesh=>mesh.geometry)));
     const familyMeshes=ownedEntries.flatMap(entry=>entry.batches.flatMap(batch=>batch.meshes??[]));
@@ -970,7 +983,7 @@ export class PlanetForest {
       familyDecodedTextureCpuBytes:textures.decodedCpuBytes,familyGpuTextureEstimateBytes:textures.gpuEstimateBytes,embeddedImageFileBytes,
       canopyHostPersistentCpuBytes:canopyMemory.hostPersistentCpuBytes,canopyCurrentScratchCpuBytes:canopyMemory.hostScratchCpuBytes,
       canopyScratchPeakCpuBytes:canopyMemory.hostScratchPeakCpuBytes,
-      allocationCaps:{maximumFamilies:2,legacyInstanceSlots:[...this.meshes,this.canopy].map(mesh=>mesh.instanceMatrix.count),
+      allocationCaps:{maximumFamilies:2,legacyInstanceSlots:this.legacyMeshes.map(mesh=>mesh.instanceMatrix.count),
         familyInstanceSlots:ownedEntries.map(entry=>({kind:entry.kind,lods:entry.batches.map(batch=>batch.meshes?.[0]?.instanceMatrix.count??null)})),
         farAtlasCount:2,farAtlasViewsPerFamily:FOREST_FAR_ATLAS_VIEWS,farAtlasMembersPerFamily:FOREST_VARIANT_COUNT},
       farAtlasResidentGpuBytes,farAtlasScratchGpuBytes,farAtlasCaptureBufferCpuBytes:farAtlasCaptureCpuBytes,
@@ -978,7 +991,7 @@ export class PlanetForest {
       retainedCpuBytes,estimatedGpuBytes,estimatedPeakCpuBytes,estimatedPeakGpuBytes,
       currentCombinedEstimateBytes:retainedCpuBytes+estimatedGpuBytes,peakCombinedEstimateBytes:estimatedPeakCpuBytes+estimatedPeakGpuBytes,
       pendingFamilyReplacements:Math.max(0,ownedEntries.length-this.assets.entries.size)};
-    return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
+    return {...(this.allocationSkipped?{resourceState:'body-ineligible' as const}:{}),visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     detailedTrees:{ready:this.assets.entries.size>0,loading:this.assets.loading,error:this.assets.error||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
       heightPolicy:'species-allometry',
       allometry:{version:TREE_ALLOMETRY_VERSION,familyEnvelope:TREE_FAMILY_ALLOMETRY_ENVELOPE,cardScale:TREE_ALLOMETRY_CARD,legacyHeightRangeM:TREE_LEGACY_ALLOMETRY_ENVELOPE.heightM,
@@ -986,7 +999,7 @@ export class PlanetForest {
         familyBoundRadiusM:Object.fromEntries([...this.presentedFamilies].map(([kind,p])=>[kind,p.conservativeBounds.radiusM])),
         // Instance channels carrying rendered dimensions (already inside memoryAccounting).
         // Far ratios share the existing parameter float; family atlases stay one per family.
-        channelBytes:{legacyRatios:[...this.meshes,this.canopy].reduce((n,mesh)=>n+(mesh.geometry.getAttribute('instanceTreeAllometry')?.array.byteLength??0),0),
+        channelBytes:{legacyRatios:this.legacyMeshes.reduce((n,mesh)=>n+(mesh.geometry.getAttribute('instanceTreeAllometry')?.array.byteLength??0),0),
           detailedTreeParameters:Object.fromEntries(ownedEntries.map(entry=>[entry.kind,entry.batches.reduce((n,batch)=>
             n+((batch.meshes?.[0]?.geometry.getAttribute('instanceTree')?.array as ArrayBufferView|undefined)?.byteLength??0),0)])),
           farPacked:0,canopyCanonicalHeights:this.fullCanopy?.canonicalHeightBytes?.()??0}},
@@ -1004,7 +1017,7 @@ export class PlanetForest {
         variantHistogram:this.variantHistogram(entry)})),
       foliageMipmaps:this.assets.entries.get('branching')?.family.foliageMipmaps??null,samples:this.detailedSamples(),
       handoffSamples:this.detailedSamples().map(sample=>({id:sample.id,far:this.fullCanopy?.presentationSample?.(sample.id)??null}))},
-    candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
+    candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?(this.canopy?.count??0):0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
     selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,fullCanopy:this.fullCanopy?.diagnostics()??null,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
@@ -1015,12 +1028,13 @@ export class PlanetForest {
   }
   /** Debug-only GPU attribution: objects of one presentation tier (see PlanetRenderer.profilingObjects). */
   profilingObjects(tier:'forestNear'|'forestMiddle'|'forestFar'):THREE.Object3D[]{
+    if(!this.canopy)return [];
     const lod=tier==='forestNear'?0:tier==='forestMiddle'?1:-1;
     if(lod<0)return [this.canopy,...(this.fullCanopy?[this.fullCanopy.group]:[])];
     return [this.meshes[lod],...[...this.assets.entries.values()].flatMap(entry=>entry.batches[lod]?[entry.batches[lod].group]:[])];
   }
   backlog(){return {forestPending:this.queue.length,forestSelectionPending:this.selecting,forestVisible:this.visibleTrees,forestNear:this.nearTrees,
-    forestFarTrees:!this.group.visible?0:(this.canopy.visible?this.canopy.count:0)+(this.fullCanopy?.group.visible?this.fullCanopy.diagnostics().trees:0),forestOriginVersion:this.originVersion,
+    forestFarTrees:!this.group.visible?0:(this.canopy?.visible?this.canopy.count:0)+(this.fullCanopy?.group.visible?this.fullCanopy.diagnostics().trees:0),forestOriginVersion:this.originVersion,
     forestMatrixWrites:this.matrixWrites,forestColorWrites:this.colorWrites,forestCoverageWrites:this.coverageWrites,forestSelectionApplyMs:this.selectionApplyMs,forestUpdateMs:this.updateMs};}
-  dispose(){if(this.disposed)return;this.disposed=true;this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
+  dispose(){if(this.disposed)return;this.disposed=true;this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of this.legacyMeshes){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
 }
