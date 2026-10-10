@@ -27,11 +27,11 @@ export async function samplePlanetFrameWindow(page,{frames=180}={}){
 
 /** Separate window: the app profiler owns GPU queries and full callback CPU. */
 export async function samplePlanetCpuWindow(page,{frames=180}={}){
- return page.evaluate(({frames})=>new Promise(resolve=>{const a=window.__atlas,wasEnabled=a.renderProfile.enabled,history=a.renderProfile.historyLimit;
+ return page.evaluate(({frames})=>new Promise(resolve=>{const a=window.__atlas,renderer=a.renderDebug().renderer,autoReset=renderer.info.autoReset,wasEnabled=a.renderProfile.enabled,history=a.renderProfile.historyLimit;
   a.setProfiling(true);a.resetProfile();a.setProfileHistory(frames);let drain=3,count=0;
   function tick(){if(drain-->0){requestAnimationFrame(tick);return;}if(++count<frames){requestAnimationFrame(tick);return;}
    const profile=a.renderProfile;const result={scope:'separate uncaptured window with native app profiler; cpu/frameWorkMs spans actual whole animation callback, GPU uses native non-overlapping pass queries',profile};
-   a.setProfiling(wasEnabled);a.setProfileHistory(history);resolve(result);
+   a.setProfiling(wasEnabled);a.setProfileHistory(history);renderer.info.autoReset=autoReset;if(!wasEnabled)renderer.info.reset();resolve(result);
   }requestAnimationFrame(tick);
  }),{frames});
 }
