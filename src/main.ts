@@ -2742,10 +2742,12 @@ function holdPlanetOrbit() {
   orbitAssist = {bodyId: state.body.id, axis: new THREE.Vector3().crossVectors(radial, tangent.normalize()).normalize()};
   panel();
 }
+const faunaLodProfile=new URLSearchParams(location.search).get('fauna-lod-profile')==='1';
+const faunaLodPaletteUpload=new URLSearchParams(location.search).get('fauna-lod-upload')==='rows'?'adaptive-rows':'full';
 const faunaLodMode=new URLSearchParams(location.search).get('fauna-lod-prototype');
 let faunaLodFactory:typeof import('./fauna-lod-runtime-adapter.ts')['createFaunaLodRuntimePrototype']|null=null;
 if(faunaLodMode==='packed'||faunaLodMode==='float')void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;
-  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16'}));});
+  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload}));});
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
   if (!state.body || !surfaceMesh || state.body.type === 'Gas giant') return;
@@ -2760,7 +2762,7 @@ function restartPlanetTiles() {
   planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()),undefined,
     {presentationContinuity:new URLSearchParams(location.search).get('continuity')!=='0',
       forestBarkSharing,
-      ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16'})}:{})});
+      ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload})}:{})});
   planetTiles.setSurfaceDetail(surfaceDetail);
   planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
 }

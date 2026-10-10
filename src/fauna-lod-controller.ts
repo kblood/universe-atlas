@@ -57,6 +57,7 @@ export interface FaunaLodRuntimeAdapter {
   beginFrame(origin:Vector3):void;submit(candidate:FaunaLodCandidate,coverage:number,coverageStart:number):boolean;endFrame():void;
   reset():void;dispose():void;
   trace?():readonly FaunaLodPresentationRow[];diagnostics?():unknown;
+  beginControllerProfile?():void;endControllerProfile?():void;
 }
 export interface FaunaLodControllerOptions {
   maxActors?:number;maxDistanceM?:number;maxResultBytes?:number;maxTotalBytes?:number;
@@ -117,6 +118,7 @@ export class FaunaLodController {
       if(!candidate.id||!Number.isFinite(candidate.distanceM)||candidate.distanceM<0||!Number.isFinite(candidate.nearCoverage)||candidate.nearCoverage<0||candidate.nearCoverage>1)continue;
       if(!this.desired.has(candidate.id))this.desired.set(candidate.id,candidate);
     }
+    this.adapter.beginControllerProfile?.();
     const now=this.now();this.adoptionMs=0;
     // A ready message only wakes the paused frame. Adoption remains a bounded
     // frame operation, and malformed/oversized/stale results keep the fallback.
@@ -146,7 +148,7 @@ export class FaunaLodController {
       if(drawn){this.submitted.add(candidate.id);this.fallback.set(candidate.id,1-faunaCoverageEnd(candidate.nearCoverage,coverage));}
     }
     this.adapter.endFrame();
-    this.startNext(now);return this.submitted;
+    this.startNext(now);this.adapter.endControllerProfile?.();return this.submitted;
   }
   private evict(){
     let victim:Entry|undefined;

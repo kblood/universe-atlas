@@ -21,7 +21,7 @@ function candidate(id,genome){return {id,genome,member:{id,anchorOffsetX:0,ancho
   cameraVisible:true,distanceM:140,matrix:new THREE.Matrix4(),rigSeconds:1,nearCoverage:0,ground:(x,z)=>x*.12-z*.08,groundRevision:1};}
 
 test('real Kit cold payload adopts unique body, canonical terrain-aware pose and Float32 interval; worker exits per job',async()=>{
-  workers=[];const p=createFaunaLodRuntimePrototype({workerFactory:()=>new WorkerFixture()}),g=planet.realisticIndividualCreatureGenome(planet.generateCreatureGenome('RUNTIME-POSE','browser'),'runtime-id',1,'adult','ungulate'),c=candidate('runtime-id',g),j=job(p,c.id,'middle',g);
+  workers=[];const p=createFaunaLodRuntimePrototype({profile:true,workerFactory:()=>new WorkerFixture()}),g=planet.realisticIndividualCreatureGenome(planet.generateCreatureGenome('RUNTIME-POSE','browser'),'runtime-id',1,'adult','ungulate'),c=candidate('runtime-id',g),j=job(p,c.id,'middle',g);
   try{
     const before=p.adapter.ownedBytes,result=await p.adapter.build(j,new AbortController().signal);assert.equal(result.accepted,true);assert.equal(workers[0].terminated,true);assert.equal(result.payload.source,undefined);
     const sourcePlan=result.payload.sourcePlan;assert.deepEqual(sourcePlan.genome,g);assert.equal(p.adapter.adopt(c.id,j.key,result,2),true);assert.ok(p.adapter.ownedBytes>before);
@@ -30,6 +30,9 @@ test('real Kit cold payload adopts unique body, canonical terrain-aware pose and
     const palette=new Float32Array(22*16);new FaunaBonePaletteWriter().write(sourcePlan,expected,palette);
     const material=p.adapter.group.children[1].children[0].material,template=THREE.ShaderLib.standard,shader={vertexShader:template.vertexShader,fragmentShader:template.fragmentShader,uniforms:{}};material.onBeforeCompile(shader,{});
     assert.deepEqual(shader.uniforms.faunaBones.value.image.data.slice(0,22*16),palette,'Into is written immediately and exactly matches independent canonical palette');
+    const attribution=p.adapter.diagnostics().profile;
+    assert.equal(attribution.phases.pose.calls,1);assert.equal(attribution.phases.palette.calls,1);
+    assert.ok(attribution.phases.ground.calls>0);assert.equal(attribution.phases.workerDispatch.calls,1);
     // Exercise the real parent/pool/actor transform contract with a nonzero
     // floating origin, including a deformed vertex from the GPU source arrays.
     const parent=new THREE.Group(),floatingOrigin=new THREE.Vector3(.4,.7,-.3),canonicalPosition=new THREE.Vector3(.41,.72,-.29);parent.position.copy(floatingOrigin);parent.add(p.adapter.group);
