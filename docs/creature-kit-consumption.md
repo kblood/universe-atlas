@@ -1,5 +1,17 @@
 # How Atlas consumes creature-kit
 
+Current status, 2026-10-10: Atlas consumes the built, self-contained Kit 0.5 public
+planet entry through `#creature-kit/planet`, pinned in `vendor/creature-kit/PACKAGE.json`.
+The actual canonical planet body/appearance/rig core is Kit-owned; genomes, body4
+arithmetic and source identity are preserved. Kit also owns the shared planet
+inspector and independent Lab, published at `/animal-lab/planet-skin.html`.
+`npm run update:creature-kit -- --kit C:/LLM/IWSDK/creature-kit` atomically preflights
+and updates committed sources, built package and Lab bundle; `npm run check:creature-kit`
+checks drift. No sibling-repository runtime import or npm link is required.
+Experimental composer recipes and authored deer references remain separate;
+this is not a claim that their definitions have already converged with planet genomes.
+The following 2026-10-07/08 options and receipts are historical.
+
 Date: 2026-10-07. Branch `infra/creature-kit-consume` (from main `ab6042c`). Written and implemented by Claude Opus 5.5.
 Owner decision: Kasper, 2026-10-07, the creature kit is its own repo (`C:/LLM/IWSDK/creature-kit`) that Atlas consumes
 (`docs/owner-decisions-2026-10-04.md`, "Owner answers 2026-10-07", A18 Q6). Plan:
@@ -87,7 +99,7 @@ Owner decision: Kasper, 2026-10-07, the creature kit is its own repo (`C:/LLM/IW
 - `package.json` "test" now registers `tests/fauna-composer-coat-crisp.test.mjs` (after the gloss test).
 - `needs: tests/tiers.json`: tier `tests/fauna-composer-coat-crisp.test.mjs` with the other composer tests.
 
-## Moving to the plan's phase 4b later
+## Historical phase 4b proposal (planet entry and independent Lab now implemented)
 
 Option B (vendored `dist/`, `creature-kit/three` and `creature-kit/gltf` entry points, the Lab as a kit app) stays the
 target of phase 4b. It needs a documented re-key of `V1_PINS.core` and of the sidecar `generator.sourceSha256`, and the

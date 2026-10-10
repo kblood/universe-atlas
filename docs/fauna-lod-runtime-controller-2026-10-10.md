@@ -1,16 +1,32 @@
-# Opt-in runtime LOD controller prototype
+# Desktop source LOD runtime
 
-Production remains unchanged: `PlanetRendererOptions.faunaLodPrototype` is
-absent from its normal construction. The new option supplies a lazy factory
-for a worker/render adapter plus exact source and appearance versions. It does not
-select another generator or enable an unreviewed material.
+Ordinary desktop Atlas construction enables the accepted Kit 0.5 source float
+LOD and bark texture sharing. `?fauna-lod-prototype=off` restores legacy fauna;
+`?forest-bark-sharing=0` disables bark sharing independently. Options are captured
+before bookmark normalization. Packed coefficients, row uploads, profiling and
+other research methods remain disabled unless explicitly requested. The lazy
+factory retains exact source and appearance versions; it does not select another
+animal generator. Initial XR creates no provider; desktop→XR disposes it and
+restores the proven legacy fauna path. Physical Quest performance is unverified.
+
+Acceptance used identical 180×1 ms dates, camera, canonical poses/cohort/source
+and shared six-near palettes, with no workers during measured windows. CPU p95
+off/on was 9.665/10.480 ms and reverse 10.005/9.990; GPU p95 6.645/6.838 and
+reverse 6.215/6.783 ms. This accepts a visual quality tradeoff, not an FPS gain.
+Actual opt-in frame-interval p95 was 17.545–18.025 ms with diagnostic recording;
+separate CPU/GPU work below 16.67 ms does not establish strict 60 FPS. Natural
+streaming receipts remain relevant and are not replaced by the short diagnostic.
+Observed settled LOD ownership was 14,707,462 bytes; independent exact bark
+sharing recovered 19,573,416 bytes. The combined default still needs final smoke
+accounting; these independent receipts are not a combined measurement.
 
 The controller takes the existing stable camera-first distance/ID order. It
 can replace at most 128 unique camera-visible members through 200 m. Six full
 near skins remain authoritative; shadow-only and out-of-range members keep
 the existing fallback. Renderer policy currently reserves 16 close candidates
 at 1500 triangles and 112 middle candidates at 750; close/middle hysteresis is
-65/95 m. These are requested targets, not claims every source reaches them or
+65/95 m. Close rank owners remain until 95 m unless a newcomer is strictly more
+than 20% closer; free slots use the original distance/ID order. These are requested targets, not claims every source reaches them or
 passes quality. Excess/unsupported candidates remain present as fallback;
 unused close slots never force a distant animal into that tier.
 
@@ -61,8 +77,8 @@ Diagnostics report these scopes, optional live worker typed/JS measurements
 (missing instrumentation is unknown), blocked admission reasons and the whole
 flora + full-near + fallback + LOD + forest estimate. Worker reserve replaces
 the live worker measurement for peak accounting rather than adding it twice.
-The production reserve must be reconciled with actual receipts before enabling
-this option.
+These scopes remain separate from the legacy life reserve; ordinary worker JS
+heap is reported separately and has no demonstrated hard ceiling.
 
 ## Validation and remaining gates
 
@@ -77,8 +93,8 @@ The historical life CPU identity scenario also passes with the option off.
 
 ## Concrete runtime control
 
-`?fauna-lod-prototype=packed` or `float` opts the actual Atlas route into a
-self-contained Kit 0.5 provider. Without the flag it stays off. The runtime
+The ordinary route uses the self-contained Kit 0.5 float provider;
+`?fauna-lod-prototype=packed` remains an explicit diagnostic experiment. The runtime
 uses one dedicated worker per cold job and terminates it on completion,
 cancellation or failure. It transfers only cloned input/owned output buffers.
 The worker emits a SHA256 over the original six body arrays for the independent
@@ -117,11 +133,13 @@ legacy fauna active and is reported without repeated allocation attempts.
 Physical Quest rendering/performance remains unverified.
 
 Focused control/fallback/real-provider/route and XR lifecycle tests pass with
-TypeScript. GPU nonzero-origin placement and XR transition captures are also
-required: a prior candidate applied the floating origin twice; the adapter now
+TypeScript. Independent GPU nonzero-origin placement and lifecycle probes passed:
+a prior candidate applied the floating origin twice; the adapter now
 keeps nested pool groups at zero and a shader-palette/model-transform regression
 checks the actual deformed vertex under a nonzero parent origin.
-Actual GPU interval/shader checks, per-specimen target/feature quality,
-whole-world CPU/GPU/memory, same-pose arrival/near/revisit captures and source/LOD
-coat coherence remain acceptance gates. Unit/mocked transport tests do not
-claim those rendering gates have passed.
+Independent same-geometry lit/depth/distance interval probes and dated production
+source/body/pose checks passed. Moving quality remains a representation tradeoff;
+750 triangles do not retain every fine ridge or feature of the full body. Rejected
+targets remain represented by fallback. The final no-query defaults, combined
+resources and actual UI smoke remain release gates; mocked transport tests alone
+do not establish those rendering results.

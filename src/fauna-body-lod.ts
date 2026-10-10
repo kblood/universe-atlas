@@ -1,7 +1,7 @@
-/** Prototype only: deterministic LODs derived from an existing loaded body.
- * Construction is synchronous and expensive; schedule it off-frame/worker,
- * then retain results in the bounded source-identity cache. No renderer imports
- * this module. The original body and every surviving attribute stay untouched. */
+/** Shared off-frame LOD utilities derived from an existing loaded body.
+ * Construction is synchronous and expensive; the production worker reuses
+ * source validation/parts while review tools also build comparison chains.
+ * The original body stays untouched; caches retain exact source identity. */
 import type {QuadrupedBodyData} from './fauna-body-plan.ts';
 import {buildComposerLodChain,composerLodDeviation,COMPOSER_LOD_VERSION,type ComposerLodOptions,type ComposerLodPart,type ComposerLodStats} from './fauna-composer-lod.ts';
 

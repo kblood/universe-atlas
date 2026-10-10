@@ -28,6 +28,7 @@ import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown, planetaryRenderUnit, LOCAL_RENDER_EXIT_M, LOCAL_ORIGIN_RADIUS_M } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
 import {ExplorationClockStep} from './exploration-clock-step.ts';
+import {faunaPresentationOptions} from './fauna-presentation-options.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
 import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt,type BiosphereQueryStage} from './world-surface.ts';
 import type {LifeGateContext} from './planet-renderer.ts';
@@ -670,7 +671,8 @@ function effectiveQuality():RenderQualityName{return qualityMode==='auto'?adapti
 let detailedForestEnabled=new URLSearchParams(location.search).get('trees')!=='0';
 // Bookmark canonicalization omits debug keys. Capture the requested option
 // before navigation rewrites location.search; every later planet keeps it.
-const forestBarkSharing=new URLSearchParams(location.search).get('forest-bark-sharing')==='1';
+const faunaPresentation=faunaPresentationOptions(location.search);
+const forestBarkSharing=faunaPresentation.forestBarkSharing;
 const forestAssetSource=new ForestAssetSource(new URL('assets/forest/desktop-v1/forest-bundle-manifest.json',document.baseURI));
 const forestAssetAttachment=new ForestAssetAttachment(forestAssetSource,()=>panel());
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
@@ -2746,12 +2748,13 @@ function holdPlanetOrbit() {
   orbitAssist = {bodyId: state.body.id, axis: new THREE.Vector3().crossVectors(radial, tangent.normalize()).normalize()};
   panel();
 }
-const faunaLodProfile=new URLSearchParams(location.search).get('fauna-lod-profile')==='1';
-const faunaLodPaletteUpload=new URLSearchParams(location.search).get('fauna-lod-upload')==='rows'?'adaptive-rows':'full';
-const faunaLodMode=new URLSearchParams(location.search).get('fauna-lod-prototype');
+const faunaLodProfile=faunaPresentation.profile;
+const faunaLodPaletteUpload=faunaPresentation.paletteUploadMode;
+const faunaLodMode=faunaPresentation.lodMode;
 let faunaLodFactory:typeof import('./fauna-lod-runtime-adapter.ts')['createFaunaLodRuntimePrototype']|null=null;
+let faunaLodModuleError:string|null=null;
 if(faunaLodMode==='packed'||faunaLodMode==='float')void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;
-  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload}));});
+  planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload}));}).catch(error=>{faunaLodModuleError=String(error);});
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
   if (!state.body || !surfaceMesh || state.body.type === 'Gas giant') return;
@@ -5170,6 +5173,7 @@ Object.defineProperty(window, "__atlas", {
     // Explicit diagnostic input only; no public seek/reset per benchmark frame.
     setExplorationStepNs:(stepNs:string|null,maxTicks=180)=>explorationClockStep.configure(stepNs,maxTicks),
     get explorationStep(){return explorationClockStep.snapshot();},
+    get faunaPresentation(){return {...faunaPresentation,moduleStatus:faunaLodMode==='off'?'disabled':faunaLodModuleError?'failed':faunaLodFactory?'ready':'loading',moduleError:faunaLodModuleError};},
     async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');

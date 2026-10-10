@@ -1,6 +1,7 @@
-/** Off-frame comparison prototypes. Neither method changes the loaded source or
- * participates in production rendering. Copied coat samples are not a promise
- * of matching interpolated coat appearance; paired images remain required. */
+/** Off-frame source-preserving candidates. The production worker selects joint
+ * constrained QEM; spatial clustering remains a review experiment. Copied coat
+ * samples do not promise matching interpolated appearance; production uses
+ * the separately validated raw field material and paired image review. */
 import type {QuadrupedBodyData} from './fauna-body-plan.ts';
 import {buildFaunaBodyLodChain,faunaBodyLodValidateSource,faunaBodyLodSourceParts,type FaunaBodyLodLevel} from './fauna-body-lod.ts';
 import {COMPOSER_LOD_CONSTRAINTS_VERSION} from './fauna-composer-lod.ts';

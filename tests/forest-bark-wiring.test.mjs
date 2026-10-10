@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {lifeRendererModule,createRenderer,body} from './life-scenario.mjs';
 import {ForestAssetSource} from '../src/forest-asset-source.ts';
 import {ForestAssetAttachment} from '../src/forest-asset-attachment.ts';
+import {faunaPresentationOptions} from '../src/fauna-presentation-options.ts';
 
 test('actual packaged source→attachment→PlanetRenderer→forest loader shares six maps before GPU upload',async()=>{
   // Only image decoding/statistics are a Node stand-in. GLB parsing, verified
@@ -15,7 +16,7 @@ test('actual packaged source→attachment→PlanetRenderer→forest loader share
   globalThis.ImageData=class{constructor(data,width,height){this.data=data;this.width=width;this.height=height;}};
   globalThis.createImageBitmap=async input=>{if(input instanceof globalThis.ImageData)return new Bitmap(input.width,input.height);const bytes=new DataView(await input.arrayBuffer());return new Bitmap(bytes.getUint32(16),bytes.getUint32(20));};
   globalThis.OffscreenCanvas=class{constructor(w,h){this.width=w;this.height=h;}getContext(){let image;return {drawImage(value){image=value;},getImageData(){return {data:new Uint8ClampedArray(image.width*image.height*4).fill(255)};}};}};
-  const fixture=await lifeRendererModule({prefix:'forest-bark-wiring-'}),target=createRenderer(fixture.module,body,{rendererOptions:{forestBarkSharing:true}});
+  const fixture=await lifeRendererModule({prefix:'forest-bark-wiring-'}),target=createRenderer(fixture.module,body,{rendererOptions:{forestBarkSharing:faunaPresentationOptions('').forestBarkSharing}});
   const directory=new URL('../public/assets/forest/desktop-v1/',import.meta.url),base=new URL('https://fixture.invalid/forest/');
   const source=new ForestAssetSource(new URL('forest-bundle-manifest.json',base),async url=>{
     const name=new URL(url).pathname.slice(base.pathname.length),bytes=readFileSync(new URL(name,directory));return new Response(bytes,{status:200,headers:{'content-length':String(bytes.byteLength)}});
