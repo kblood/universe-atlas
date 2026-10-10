@@ -10,7 +10,7 @@ export const FAUNA_BODY_LOD_TARGETS=Object.freeze([1500,500,200]);
 export const FAUNA_BODY_LOD_SOURCE_TRIANGLE_LIMIT=60000;
 export const FAUNA_BODY_LOD_SOURCE_VERTEX_LIMIT=40000;
 const DEFAULT_OPTIONS=Object.freeze({});
-const DEFAULT_OPTIONS_KEY=JSON.stringify([FAUNA_BODY_LOD_TARGETS,true,.02,.05,.08,10,.3]);
+const DEFAULT_OPTIONS_KEY=JSON.stringify([FAUNA_BODY_LOD_TARGETS,true,.02,.05,.08,10,.3,null,null]);
 export interface FaunaBodyLodOptions {targets?:readonly number[];reducer?:ComposerLodOptions}
 export interface FaunaBodyLodLevel extends QuadrupedBodyData {
   index:Uint32Array;
@@ -33,7 +33,7 @@ function optionsKey(options:FaunaBodyLodOptions):string {
   if(o.symmetry!==undefined&&typeof o.symmetry!=='boolean')throw new Error('fauna body lod: symmetry must be boolean');
   for(const value of [o.colour,o.gloss,o.skin,o.boundary])if(value!==undefined&&(!Number.isFinite(value)||value<0))throw new Error('fauna body lod: finite non-negative reducer weights required');
   if(o.minFaceCosine!==undefined&&(!Number.isFinite(o.minFaceCosine)||o.minFaceCosine<0||o.minFaceCosine>1))throw new Error('fauna body lod: minFaceCosine must be in 0..1');
-  return JSON.stringify([targets,o.symmetry??true,o.colour??.02,o.gloss??.05,o.skin??.08,o.boundary??10,o.minFaceCosine??.3]);
+  return JSON.stringify([targets,o.symmetry??true,o.colour??.02,o.gloss??.05,o.skin??.08,o.boundary??10,o.minFaceCosine??.3,o.protectedVertices?Array.from(o.protectedVertices):null,o.vertexImportance?Array.from(o.vertexImportance):null]);
 }
 function validate(source:QuadrupedBodyData):void {
   const n=source.vertexCount,t=source.triangleCount;
@@ -60,7 +60,7 @@ function checksum(source:QuadrupedBodyData):string {
 }
 /** Existing builder ranges: body, each ear/horn, structural appendages, faces.
  * No guessed morphology or second genome is introduced. */
-function sourceParts(source:QuadrupedBodyData):ComposerLodPart[]{
+export function faunaBodyLodSourceParts(source:QuadrupedBodyData):ComposerLodPart[]{
   const parts:ComposerLodPart[]=[{part:'body',label:'body',firstTriangle:0,triangles:source.bodyTriangleCount}];
   let cursor=source.bodyTriangleCount;
   source.plan.appendages.forEach((a,i)=>{
@@ -82,7 +82,7 @@ const takeBytes=(source:Uint8Array,vertices:Uint32Array,lanes:number)=>{
   return out;
 };
 export function buildFaunaBodyLodChain(source:QuadrupedBodyData,options:FaunaBodyLodOptions=DEFAULT_OPTIONS):FaunaBodyLodChain{
-  optionsKey(options);validate(source);const parts=sourceParts(source);
+  optionsKey(options);validate(source);const parts=faunaBodyLodSourceParts(source);
   // Only scoring data is normalized; output copies original Uint8 bytes.
   const chain=buildComposerLodChain({positions:source.positions,normals:source.normals,index:source.index,
     colors:Float32Array.from(source.colors,x=>x/255),skinIndex:Uint16Array.from(source.skinIndex),skinWeight:Float32Array.from(source.skinWeight,x=>x/255),parts},options.targets??FAUNA_BODY_LOD_TARGETS,options.reducer);
