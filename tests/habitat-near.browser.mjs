@@ -14,6 +14,8 @@ const base=process.env.ATLAS_URL||server.base;
 let lock,browser,page,phase='start';
 const report={ok:false,base,contention:'contended host; no performance acceptance',errors:[],worlds:[]};
 const replay=process.env.HABITAT_REPLAY?JSON.parse(await readFile(process.env.HABITAT_REPLAY,'utf8')):null;
+const nearReplay=process.env.HABITAT_NEAR_FIXTURE?JSON.parse(await readFile(process.env.HABITAT_NEAR_FIXTURE,'utf8')):null;
+const skipTiming=process.env.HABITAT_SKIP_TIMING==='1';
 const save=()=>writeFile(out+'/report.json',JSON.stringify(report,null,2));
 const wait=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout});
 const snapshot=()=>page.evaluate(()=>{
@@ -56,6 +58,13 @@ const snapshot=()=>page.evaluate(()=>{
     frame:debug?{calls:debug.renderer.info.render.calls,triangles:debug.renderer.info.render.triangles}:null};
 });
 async function capture(label){phase=label;const state=await snapshot();await writeFile(out+'/'+label+'.json',JSON.stringify(state,null,2));
+  if(process.env.HABITAT_RECORD_BODY_DIGESTS==='1'){
+    state.bodyDigests=await page.evaluate(async()=>{const result=[];for(const [id,entry] of window.__atlas.renderDebug().planet.faunaNear.cache){
+      const g=entry.geometry,arrays=['position','normal','color','skinIndex','skinWeight'].map(name=>g.attributes[name].array).concat([g.index.array]);
+      const bytes=new Uint8Array(arrays.reduce((sum,a)=>sum+a.byteLength,0));let offset=0;for(const a of arrays){bytes.set(new Uint8Array(a.buffer,a.byteOffset,a.byteLength),offset);offset+=a.byteLength;}
+      const hash=await crypto.subtle.digest('SHA-256',bytes);result.push({id,genome:entry.plan.genome,digest:[...new Uint8Array(hash)].map(v=>v.toString(16).padStart(2,'0')).join('')});
+    }return result;});await writeFile(out+'/'+label+'.json',JSON.stringify(state,null,2));
+  }
   await page.screenshot({path:out+'/'+label+'.png'});console.log(JSON.stringify({phase,body:state.body?.name,clearanceM:state.clearanceM,
     flora:state.tiles?.floraSubmittedCount,fauna:state.tiles?.faunaDrawn?.length,forest:state.tiles?.forest?.visible,meshes:state.meshCounts}));return state;}
 const frameWindow=()=>page.evaluate(()=>new Promise(resolve=>{
@@ -91,6 +100,7 @@ try{
   for(const index of (process.env.HABITAT_WORLD_INDICES||'0,1').split(',').map(Number)){
     phase='finder-'+index;
     const fixed=replay?.worlds.find(w=>w.index===index);
+    const nearFixed=fixed??nearReplay?.worlds.find(w=>w.index===index);
     let finder;
     if(fixed){
       finder=fixed.finder;
@@ -125,14 +135,15 @@ try{
       assert.ok(start.tiles.forest.visible>0&&start.cameraDraws.trees>0,'Find forest habitat shows actual main-camera trees without landing');
     }
     const visible=new Set(start.faunaTrace?.individuals.filter(x=>x.cameraVisible&&x.drawnIndex!==null).map(x=>x.id));
-    const target=fixed?.target??start.tiles.faunaDrawn.filter(x=>visible.has(x.id)).sort((a,b)=>
+    const target=nearFixed?.target??start.tiles.faunaDrawn.filter(x=>visible.has(x.id)).sort((a,b)=>
       (b.genome.torsoLength*b.genome.torsoWidth)-(a.genome.torsoLength*a.genome.torsoWidth))[0];
     assert.ok(target,'camera-visible canonical animal available for fixed near view');
-    const world={index,finder,target,arrival:start,arrivalFrames:process.env.HABITAT_ROUTE_ONLY==='1'?null:await frameWindow(),views:[]};report.worlds.push(world);await save();
+    const world={index,finder,target,arrival:start,arrivalFrames:skipTiming||process.env.HABITAT_ROUTE_ONLY==='1'?null:await frameWindow(),views:[]};report.worlds.push(world);await save();
+    if(nearFixed&&!fixed)await page.evaluate(date=>window.__atlas.seek(date),nearFixed.date);
     const at=new THREE.Vector3(...target.position).multiplyScalar(r),up=at.clone().normalize();
     const ref=Math.abs(up.y)>.92?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0),tangent=new THREE.Vector3().crossVectors(ref,up).normalize();
     for(const clearance of process.env.HABITAT_ROUTE_ONLY==='1'?[]:[20,30]){
-      const savedPose=fixed?.views.find(v=>v.clearance===clearance);
+      const savedPose=nearFixed?.views.find(v=>v.clearance===clearance);
       const eye=savedPose?new THREE.Vector3(...savedPose.p):at.clone().addScaledVector(tangent,10).addScaledVector(up,clearance);
       const look=at.clone().addScaledVector(up,target.genome.legLength+target.genome.torsoHeight*.5);
       const heading=savedPose?new THREE.Quaternion(...savedPose.q):new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye,look,up));
@@ -141,7 +152,7 @@ try{
       await wait(()=>{const d=window.__atlas.terrain.tiles;return d.lifePending===0&&d.faunaTerrainPending===0;},undefined,120000);
       const state=await capture(`world-${index}-animal-flight${clearance}`);
       assert.ok(!state.walking&&!state.landing,'near view remains flight-only');
-      world.views.push({clearance,state,frames:await frameWindow()});await save();
+      world.views.push({clearance,state,frames:skipTiming?null:await frameWindow()});await save();
     }
     const eye=new THREE.Vector3(...start.bodyRelativeM),rangeUp=eye.clone().normalize();
     const rangeRef=Math.abs(rangeUp.y)>.92?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
@@ -151,7 +162,7 @@ try{
     await page.evaluate(({p,q})=>window.__atlas.setPose(p,q,20),{p:eye.toArray(),q:rangeHeading.toArray()});
     await page.waitForTimeout(5000);await wait(()=>{const d=window.__atlas.terrain.tiles;return d.lifePending===0&&d.faunaTerrainPending===0;},undefined,120000);
     world.vegetationRange=await capture(`world-${index}-vegetation-range20`);
-    world.rangeFrames=process.env.HABITAT_ROUTE_ONLY==='1'&&index!==0?null:await frameWindow();await save();
+    world.rangeFrames=skipTiming||(process.env.HABITAT_ROUTE_ONLY==='1'&&index!==0)?null:await frameWindow();await save();
     if(process.env.HABITAT_EXPECT_EXTENDED_FLORA==='1'){
       const kinds=world.vegetationRange.floraKinds,far=(kinds.grass?.from55to120??0)+(kinds.flower?.from55to120??0);
       assert.ok(far>0&&world.vegetationRange.cameraDraws.flora>0,'fine flora beyond 55 m reaches the camera frustum and main render pass');
