@@ -1,0 +1,28 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {startDistPreview,stopServer} from './helpers/free-port.mjs';
+import {acquireGpuLock} from './helpers/gpu-lock.mjs';
+import {CURRENT_VERSIONS,MODEL_MANIFEST_ID,encodeVersions} from '../src/time-nav.ts';
+const out=process.env.ATLAS_RESULTS||'test-results/forest-bark-sharing';await mkdir(out,{recursive:true});const world=JSON.parse(await readFile('C:/LLM/IWSDK/Assets/_assetctl/life-presentation-20261009/baseline-flight/replay.json','utf8')).worlds[1],pose=world.views[0];
+let server,lock,browser;const report={ok:false,errors:[],runs:[],scope:'same compiled build, identical dated Anitar pose; high render quality; candidate texture ownership only'};
+try{server=await startDistPreview({dist:process.env.ATLAS_DIST});report.build=server.build;lock=await acquireGpuLock({owner:'fixed Anitar bark sharing parity and lifetime',capture:true,retryMs:30000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
+ for(const sharing of [false,true]){const page=await browser.newPage({viewport:{width:1440,height:1000}});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
+  const params=new URLSearchParams({seed:'LETHRA-001',g:'G001',system:world.bodyId.split('/planet/')[0],body:world.bodyId,date:world.date,wv:encodeVersions(CURRENT_VERSIONS),mv:MODEL_MANIFEST_ID});if(sharing)params.set('forest-bark-sharing','1');
+  await page.goto(server.base+'?'+params);const ready=()=>page.waitForFunction(id=>window.__atlas?.ready&&window.__atlas.state.body?.id===id&&window.__atlas.terrain.tiles.ready,world.bodyId,{timeout:180000});await ready();
+  const settle=async()=>{await page.evaluate(({pose,date})=>{const a=window.__atlas;a.setRenderQuality('high');a.setExplorationPaused(true);a.seek(date);a.setPose(pose.p,pose.q,pose.clearance);},{pose,date:world.date});
+   await page.waitForTimeout(6000);await page.waitForFunction(()=>{const a=window.__atlas,b=a.perfSample().backlog,f=a.terrain.tiles.forest?.detailedTrees;return b.terrainPending===0&&b.lifePending===0&&b.faunaTerrainPending===0&&!a.forestAssets.loading&&f?.ready&&f.farAtlas?.families?.every(x=>x.state==='ready');},undefined,{timeout:180000});};
+  const capture=async label=>{const snapshot=await page.evaluate(async()=>{const a=window.__atlas,d=a.renderDebug(),p=d.planet,r=d.renderer,ids=a.terrain.tiles.faunaDrawn.map(x=>x.id),calls=[],original=r.renderBufferDirect;
+    a.setShadowCache(false);r.renderBufferDirect=function(camera,scene,geometry,material,object,group){calls.push({pass:camera===d.camera?'main':'shadow',name:object.name,type:object.type,triangles:(group?.count??geometry.index?.count??geometry.attributes.position?.count??0)/3*(object.isInstancedMesh?object.count:1)});return original.apply(this,arguments);};
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));r.renderBufferDirect=original;
+    const forest=p.forest.diagnostics(),settings={quality:a.qualitySettings().renderQuality,pixelRatio:r.getPixelRatio(),canvas:[r.domElement.width,r.domElement.height],drawingBuffer:[r.getContext().drawingBufferWidth,r.getContext().drawingBufferHeight],shadow:{enabled:r.shadowMap.enabled,type:r.shadowMap.type,mapSize:d.light.shadow.mapSize.toArray(),bias:d.light.shadow.bias,normalBias:d.light.shadow.normalBias},clouds:a.terrain.tiles.clouds};
+    a.setShadowCache(true);return {ids,trace:a.faunaTrace(ids),trees:p.forest.detailedSamples(),forest,calls:calls.slice(Math.floor(calls.length/2)).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),settings};});
+   await page.locator('canvas').first().screenshot({path:out+'/'+label+'.png'});return snapshot;};
+  await settle();const before=await capture(sharing?'on':'off');let disposed=null,revisited=null;
+  if(sharing){await page.evaluate(()=>{window.__heldBarkPlanet=window.__atlas.renderDebug().planet;});await page.locator('#back').click();await page.waitForFunction(()=>window.__atlas.state.level==='system'&&window.__heldBarkPlanet.disposed,undefined,{timeout:90000});
+   disposed=await page.evaluate(()=>({planet:window.__heldBarkPlanet.disposed,attached:!!window.__heldBarkPlanet.group.parent,bark:window.__heldBarkPlanet.forest.diagnostics().barkTextures}));assert(disposed.planet&&!disposed.attached);
+   await page.locator(`[data-select="${world.bodyId}"]`).first().click();await page.keyboard.press('f');await ready();await settle();revisited=await capture('on-revisited');assert.deepEqual(revisited.trees,before.trees);assert.deepEqual(revisited.ids,before.ids);}
+  report.runs.push({sharing,before,disposed,revisited});await writeFile(out+'/report.json',JSON.stringify(report,null,2));await page.close();
+ }const [off,on]=report.runs;assert.deepEqual(on.before.ids,off.before.ids);assert.deepEqual(on.before.trace,off.before.trace);assert.deepEqual(on.before.trees,off.before.trees);assert.deepEqual(on.before.calls,off.before.calls);
+ const a=off.before.forest.memoryAccounting,b=on.before.forest.memoryAccounting;report.resourceDelta={cpu:a.retainedCpuBytes-b.retainedCpuBytes,gpu:a.estimatedGpuBytes-b.estimatedGpuBytes};assert.equal(report.resourceDelta.cpu,8388608);assert.equal(report.resourceDelta.gpu,11184808);assert.deepEqual(report.errors,[]);report.ok=true;
+}finally{await browser?.close();await lock?.release();if(server)await stopServer(server.child);await writeFile(out+'/report.json',JSON.stringify(report,null,2));}
