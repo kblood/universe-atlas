@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {createComposerColouredMaterial, COMPOSER_COAT_CRISP_GLSL} from './fauna-composer.ts';
 import {patchFaunaComposerInstancing} from './fauna-composer-instance-batch.ts';
 import type {FaunaComposerRenderSkin} from './fauna-composer-render-source.ts';
-import {COMPOSER_PACKED_STORAGE_VERSION, isPackedComposerSkin, compactComposerIndices, composerQuantizationProof, composerStorageCodec, assertComposerQuantizationProof, type ComposerQuantizationProof, type ComposerStoredArray, type FaunaComposerStoredSkin, type FaunaComposerPackedSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
+import {COMPOSER_PACKED_STORAGE_VERSION, COMPOSER_GPU_STORAGE_VERSION, isGpuComposerSkin, composerStoredVertices, isPackedComposerSkin, compactComposerIndices, composerQuantizationProof, composerStorageCodec, assertComposerQuantizationProof, type ComposerQuantizationProof, type ComposerStoredArray, type FaunaComposerStoredSkin, type FaunaComposerPackedSkin, type FaunaComposerGpuSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
+import {FaunaComposerGpuBuffers,COMPOSER_ARENA_ATTRIBUTES,composerArenaArrayType} from './fauna-composer-gpu-buffers.ts';
 
 /** One dynamic branch per animal, with the original pattern arithmetic. Flat
  * varyings keep the pattern/seed constant over every triangle. This removes the
@@ -68,7 +69,8 @@ function release(free: Block[], start: number, count: number): void {
     if (a.start + a.count === b.start) {a.count += b.count; free.splice(i + 1, 1);} else i++;}
 }
 type Record = {vertex: number; vertices: number; index: number; indices: number; row: number; skinVersion: string; crisp: FaunaComposerRenderSkin['coatCrisp']; roughness: number; proof?: ComposerQuantizationProof};
-export interface FaunaComposerMergedOptions {storage?: FaunaComposerArenaStorage; maxVertices: number; maxIndices: number; maxActors: number; maxBytes: number; bones: {value: THREE.DataTexture}}
+export interface FaunaComposerMergedOptions {storage?: FaunaComposerArenaStorage; gpuContext?:WebGL2RenderingContext; maxVertices: number; maxIndices: number; maxActors: number; maxBytes: number; bones: {value: THREE.DataTexture}}
+const gpuOwners=new WeakMap<FaunaComposerGpuSkin,{pool:FaunaComposerMergedBatch;id:string;record:Record}>();
 
 /** Bounded unique-geometry arena: one draw for any mix of Composer anatomy and
  * coats. CPU source arrays are copied once on admission, never regenerated.
@@ -77,6 +79,9 @@ export interface FaunaComposerMergedOptions {storage?: FaunaComposerArenaStorage
 export class FaunaComposerMergedBatch {
   readonly mesh: THREE.Mesh;
   readonly ownedBytes: number;
+  private readonly cpuBytes:number;
+  private readonly gpuBytes:number;
+  private readonly gpu?:FaunaComposerGpuBuffers;
   private readonly geometry = new THREE.BufferGeometry();
   private readonly records = new Map<string, Record>();
   private readonly copying = new Map<string, {record: Record; skin: FaunaComposerStoredSkin; vertexAt: number; indexAt: number; seen: boolean}>();
@@ -92,16 +97,26 @@ export class FaunaComposerMergedBatch {
     // Packed: position12 + normal6 + colour6 + joints4 + weights8 + gloss1
     // + coat colours18 + exact noise sample16 + actor row2 =73 bytes/vertex.
     const packed = options.storage === 'packed-1';
-    this.ownedBytes = (options.maxVertices * (packed ? 73 : 120) + options.maxIndices * 4 + options.maxActors * 28 * 4) * 2;
+    if(options.gpuContext&&!packed)throw new Error('GPU-owned Composer storage requires the explicit packed format');
+    const attributeBytes=options.maxVertices*(packed?73:120)+options.maxIndices*4,rootBytes=options.maxActors*28*4;
+    this.cpuBytes=(options.gpuContext?128*73+768*4:attributeBytes)+rootBytes;
+    this.gpuBytes=attributeBytes+rootBytes;this.ownedBytes=this.cpuBytes+this.gpuBytes;
     if (this.ownedBytes > options.maxBytes) throw new Error('Merged Composer arena exceeds byte ceiling');
     const vertex = options.maxVertices;
-    for (const [name, width] of [['position',3],['normal',3],['color',3],['skinWeight',4],['composerGloss',1],['coatL0',3],['coatL1',3],['coatL2',3],['coatSample',4],['composerActor',1],['skinIndex',4]] as const) {
+    if(options.gpuContext)this.gpu=new FaunaComposerGpuBuffers(options.gpuContext,this.geometry,vertex,options.maxIndices,packed);
+    else {
+    for (const [name, width] of COMPOSER_ARENA_ATTRIBUTES) {
       const codec = composerStorageCodec(name);
-      const ArrayType = !packed ? (name==='skinIndex'?Uint16Array:Float32Array) : name==='normal'?Int16Array : name==='composerGloss'||name==='skinIndex'?Uint8Array : codec||name==='composerActor'?Uint16Array:Float32Array;
+      const ArrayType = composerArenaArrayType(name,packed);
       this.geometry.setAttribute(name, new THREE.BufferAttribute(new ArrayType(vertex*width),width,packed&&!!codec).setUsage(THREE.DynamicDrawUsage));
     }
-    this.geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(options.maxIndices), 1).setUsage(THREE.DynamicDrawUsage)); this.geometry.setDrawRange(0, 0);
+    this.geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(options.maxIndices), 1).setUsage(THREE.DynamicDrawUsage));
     for (const attribute of Object.values(this.geometry.attributes)) this.backingBuffers.add(attribute.array.buffer); this.backingBuffers.add(this.geometry.index!.array.buffer);
+    }
+    this.geometry.setDrawRange(0,0);
+    // Vertices are transformed by per-actor root/palette textures. A static
+    // unposed geometry bound cannot describe this explicitly uncullable batch.
+    this.geometry.boundingSphere=new THREE.Sphere(new THREE.Vector3(),Infinity);
     this.freeVertices = [{start: 0, count: vertex}]; this.freeIndices = [{start: 0, count: options.maxIndices}];
     this.roots = new Float32Array(options.maxActors * 28);
     this.rootTexture = new THREE.DataTexture(this.roots, 7, options.maxActors, THREE.RGBAFormat, THREE.FloatType);
@@ -119,35 +134,41 @@ export class FaunaComposerMergedBatch {
     return this.registerSlice(id, skin, row, roughness, Infinity) === 'ready';
   }
   canAdmit(skin: FaunaComposerStoredSkin): boolean {
-    return this.freeVertices.some(b => b.count >= skin.positions.length / 3) && this.freeIndices.some(b => b.count >= skin.index.length);
+    return this.freeVertices.some(b => b.count >= composerStoredVertices(skin)) && this.freeIndices.some(b => b.count >= skin.index.length);
   }
   /** Copies at most 128 vertices or 768 indices between deadline checks. A
    * partial admission is invisible and retains its previous tier until complete. */
   registerSlice(id: string, skin: FaunaComposerStoredSkin, row: number, roughness: number, deadline: number, now = () => performance.now()): 'ready'|'pending'|'full' {
     if (this.records.has(id)) return 'ready';
-    if (isPackedComposerSkin(skin) && this.options.storage !== 'packed-1') throw new Error('Cannot restore a raw Composer tier from packed runtime attributes');
+    const stored=isPackedComposerSkin(skin)||isGpuComposerSkin(skin);
+    if (stored && this.options.storage !== 'packed-1') throw new Error('Cannot restore a raw Composer tier from packed runtime attributes');
+    const owner=isGpuComposerSkin(skin)?gpuOwners.get(skin):undefined;
+    const sourceRecord=owner?.pool.records.get(owner.id);
+    if(isGpuComposerSkin(skin)&&(!this.gpu||!owner?.pool.gpu||!sourceRecord||sourceRecord!==owner.record))throw new Error('Composer GPU source allocation is no longer resident');
     if (this.disposed || !id || !Number.isInteger(row) || row < 0 || row >= this.options.maxActors) return 'full';
     let pending = this.copying.get(id);
     if (pending && pending.skin !== skin) {this.release(id); pending = undefined;}
     if (!pending) {
       if ([...this.records.values()].some(r => r.row === row) || [...this.copying.values()].some(p => p.record.row === row)) return 'full';
-      const vertices = skin.positions.length / 3, indices = skin.index.length;
+      const vertices = composerStoredVertices(skin), indices = skin.index.length;
       const vertex = allocate(this.freeVertices, vertices); if (vertex === null) return 'full';
       const index = allocate(this.freeIndices, indices); if (index === null) {release(this.freeVertices, vertex, vertices); return 'full';}
-      pending = {record: {vertex, vertices, index, indices, row, skinVersion: skin.version, crisp: skin.coatCrisp, roughness, proof:this.options.storage==='packed-1'?{...(isPackedComposerSkin(skin)?skin.storage.proof:composerQuantizationProof(vertices)),checkedVertices:0}:undefined}, skin, vertexAt: 0, indexAt: 0, seen: true};
+      pending = {record: {vertex, vertices, index, indices, row, skinVersion: skin.version, crisp: skin.coatCrisp, roughness, proof:this.options.storage==='packed-1'?{...(stored?skin.storage.proof:composerQuantizationProof(vertices)),checkedVertices:0}:undefined}, skin, vertexAt: 0, indexAt: 0, seen: true};
       this.copying.set(id, pending); this.roots[row * 28 + 23] = 0;
     }
     pending.seen = true; const r = pending.record;
-    const arrays: [string, ComposerStoredArray|null, number][] = [['position', skin.positions, 3], ['normal', skin.normals, 3], ['color', skin.colors, 3], ['skinIndex', skin.skinIndex, 4], ['skinWeight', skin.skinWeight, 4], ['composerGloss', skin.gloss, 1],
+    const arrays: [string, ComposerStoredArray|null, number][] = isGpuComposerSkin(skin)?[]:[['position', skin.positions, 3], ['normal', skin.normals, 3], ['color', skin.colors, 3], ['skinIndex', skin.skinIndex, 4], ['skinWeight', skin.skinWeight, 4], ['composerGloss', skin.gloss, 1],
       ['coatL0', skin.coatLayers?.c0 ?? skin.colors, 3], ['coatL1', skin.coatLayers?.c1 ?? skin.colors, 3], ['coatL2', skin.coatLayers?.c2 ?? skin.colors, 3], ['coatSample', skin.coatLayers?.sample ?? null, 4]];
     while (pending.vertexAt < r.vertices && now() < deadline) {
       const begin = pending.vertexAt, end = Math.min(r.vertices, begin + 128);
+      if(owner&&sourceRecord)this.gpu!.copyVertices(owner.pool.gpu!,sourceRecord.vertex+begin,r.vertex+begin,end-begin);
       for (const [name, source, width] of arrays) {const a = this.geometry.getAttribute(name) as THREE.BufferAttribute;
+        const out=this.gpu?this.gpu.scratch(name).subarray(0,(end-begin)*width):a.array.subarray((r.vertex+begin)*width,(r.vertex+end)*width);
         const codec=this.options.storage==='packed-1'?composerStorageCodec(name):null;
-        if(source&&codec&&!isPackedComposerSkin(skin)) {
+        if(source&&codec&&!stored) {
           for(let i=begin*width;i<end*width;i++) {
             const value=source[i]!;if(!Number.isFinite(value)||value<(codec.signed?-1:0)-1e-7||value>codec.range+1e-7)throw new Error(`Composer packed ${name} outside normalized range`);
-            const encoded=Math.round(Math.max(codec.signed?-1:0,Math.min(codec.range,value))/codec.range*codec.scale);a.array[r.vertex*width+i]=encoded;
+            const encoded=Math.round(Math.max(codec.signed?-1:0,Math.min(codec.range,value))/codec.range*codec.scale);out[i-begin*width]=encoded;
             const error=Math.abs(value-encoded/codec.scale*codec.range),proof=r.proof!;
             if(name==='normal')proof.maxNormalError=Math.max(proof.maxNormalError,error);
             else if(name==='composerGloss')proof.maxGlossError=Math.max(proof.maxGlossError,error);
@@ -155,17 +176,23 @@ export class FaunaComposerMergedBatch {
           }
         } else if (source) {
           if(name==='skinIndex'&&this.options.storage==='packed-1')for(let i=begin*width;i<end*width;i++)if(source[i]!>255||source[i]!<0||!Number.isInteger(source[i]))throw new Error('Composer packed joint exceeds byte range');
-          a.array.set(source.subarray(begin*width,end*width),(r.vertex+begin)*width);
-        } else a.array.fill(0,(r.vertex+begin)*width,(r.vertex+end)*width);
-        a.addUpdateRange((r.vertex + begin) * width, (end - begin) * width); a.needsUpdate = true;}
-      const rows = this.geometry.getAttribute('composerActor') as THREE.BufferAttribute; rows.array.fill(row, r.vertex + begin, r.vertex + end); rows.addUpdateRange(r.vertex + begin, end - begin); rows.needsUpdate = true;
+          out.set(source.subarray(begin*width,end*width));
+        } else out.fill(0);
+        if(this.gpu)this.gpu.upload(name,r.vertex+begin,end-begin);
+        else {a.addUpdateRange((r.vertex + begin) * width, (end - begin) * width); a.needsUpdate = true;}}
+      const rows = this.geometry.getAttribute('composerActor') as THREE.BufferAttribute;
+      if(this.gpu){this.gpu.scratch('composerActor').fill(row,0,end-begin);this.gpu.upload('composerActor',r.vertex+begin,end-begin);}
+      else {rows.array.fill(row, r.vertex + begin, r.vertex + end); rows.addUpdateRange(r.vertex + begin, end - begin); rows.needsUpdate = true;}
       if(r.proof) {
-        const weights=this.geometry.getAttribute('skinWeight').array;
+        if(!isGpuComposerSkin(skin)) {
+        const weights=this.gpu?this.gpu.scratch('skinWeight'):this.geometry.getAttribute('skinWeight').array;
         for(let v=begin;v<end;v++) {
-          let sum=0;for(let k=0;k<4;k++)sum+=weights[(r.vertex+v)*4+k]!/65535;
+          const at=this.gpu?v-begin:r.vertex+v;
+          let sum=0;for(let k=0;k<4;k++)sum+=weights[at*4+k]!/65535;
           if(sum<=0)throw new Error('Composer packed weights have zero sum');
           r.proof.maxWeightSumError=Math.max(r.proof.maxWeightSumError,Math.abs(sum-1));
-          if(!isPackedComposerSkin(skin))for(let k=0;k<4;k++)r.proof.maxWeightError=Math.max(r.proof.maxWeightError,Math.abs(skin.skinWeight[v*4+k]!-weights[(r.vertex+v)*4+k]!/65535/sum));
+          if(!isPackedComposerSkin(skin))for(let k=0;k<4;k++)r.proof.maxWeightError=Math.max(r.proof.maxWeightError,Math.abs(skin.skinWeight[v*4+k]!-weights[at*4+k]!/65535/sum));
+        }
         }
         r.proof.checkedVertices=end;
       }
@@ -174,8 +201,9 @@ export class FaunaComposerMergedBatch {
     const out = this.geometry.index!;
     while (pending.vertexAt === r.vertices && pending.indexAt < r.indices && now() < deadline) {
       const begin = pending.indexAt, end = Math.min(r.indices, begin + 768);
-      for (let i = begin; i < end; i++) out.array[r.index + i] = skin.index[i]! + r.vertex;
-      out.addUpdateRange(r.index + begin, end - begin); out.needsUpdate = true; pending.indexAt = end;
+      for (let i = begin; i < end; i++) {if(this.gpu)this.gpu.indexScratch[i-begin]=skin.index[i]!+r.vertex;else out.array[r.index + i] = skin.index[i]! + r.vertex;}
+      if(this.gpu)this.gpu.uploadIndices(r.index+begin,end-begin);
+      else {out.addUpdateRange(r.index + begin, end - begin); out.needsUpdate = true;} pending.indexAt = end;
     }
     if (pending.indexAt < r.indices) return 'pending';
     if(r.proof)assertComposerQuantizationProof(r.proof);
@@ -185,6 +213,16 @@ export class FaunaComposerMergedBatch {
    * and source-vertex map remain outside its already-accounted backing buffers. */
   residentSkin(id: string, source: FaunaComposerStoredSkin): FaunaComposerStoredSkin {
     const r = this.records.get(id); if (!r) throw new Error('Composer arena source not resident');
+    if(this.gpu){
+      assertComposerQuantizationProof(r.proof!);
+      const index=compactComposerIndices(source.index),sourceVertex=source.sourceVertex?compactComposerIndices(source.sourceVertex):null;
+      const skin:FaunaComposerGpuSkin={version:source.version,index,sourceVertex,coatCrisp:source.coatCrisp,vertexCount:r.vertices,
+        hasCoatLayers:isGpuComposerSkin(source)?source.hasCoatLayers:!!source.coatLayers,
+        storage:{version:COMPOSER_GPU_STORAGE_VERSION,format:COMPOSER_PACKED_STORAGE_VERSION,proof:{...r.proof!},
+          localIndexType:index instanceof Uint16Array?'uint16':'uint32',sourceVertexType:sourceVertex?(sourceVertex instanceof Uint16Array?'uint16':'uint32'):null}};
+      gpuOwners.set(skin,{pool:this,id,record:r});return skin;
+    }
+    if(isGpuComposerSkin(source))throw new Error('Cannot borrow GPU-owned Composer attributes as CPU arrays');
     const view = (name:string,width:number) => (this.geometry.getAttribute(name).array as ComposerStoredArray).subarray(r.vertex*width,(r.vertex+r.vertices)*width);
     if(this.options.storage==='packed-1') {
       assertComposerQuantizationProof(r.proof!);
@@ -199,6 +237,31 @@ export class FaunaComposerMergedBatch {
       skinIndex:view('skinIndex',4) as Uint16Array,skinWeight:view('skinWeight',4) as Float32Array,gloss:view('composerGloss',1) as Float32Array,
       coatLayers:source.coatLayers?{c0:view('coatL0',3) as Float32Array,c1:view('coatL1',3) as Float32Array,c2:view('coatL2',3) as Float32Array,sample:view('coatSample',4) as Float32Array}:null};
   }
+  /** Actual GPU bytes, only for an explicit inspection. The returned CPU copy is
+   * owned by that caller and never retained in the resident cache. */
+  static snapshotSkin(source:FaunaComposerStoredSkin):FaunaComposerRenderSkin|FaunaComposerPackedSkin {
+    if(!isGpuComposerSkin(source))return source;
+    const owner=gpuOwners.get(source),r=owner?.pool.records.get(owner.id),gpu=owner?.pool.gpu;
+    if(!r||r!==owner?.record||!gpu)throw new Error('Composer GPU inspection source is no longer resident');
+    const view=(name:string)=>gpu.read(name,r.vertex,r.vertices);
+    const indices=gpu.readIndices(r.index,r.indices);for(let i=0;i<indices.length;i++){indices[i]-=r.vertex;if(indices[i]!==source.index[i])throw new Error('Composer GPU index readback differs from verified local topology');}
+    const actorRows=view('composerActor');if(actorRows.some(row=>row!==r.row))throw new Error('Composer GPU actor rows differ from palette ownership');
+    return {version:source.version,index:compactComposerIndices(indices),sourceVertex:source.sourceVertex,coatCrisp:source.coatCrisp,
+      storage:{version:COMPOSER_PACKED_STORAGE_VERSION,proof:{...source.storage.proof},localIndexType:source.storage.localIndexType,sourceVertexType:source.storage.sourceVertexType,readback:'webgl2-getBufferSubData',sourceOwnership:COMPOSER_GPU_STORAGE_VERSION},
+      positions:view('position') as Float32Array,normals:view('normal') as Int16Array,colors:view('color') as Uint16Array,skinIndex:view('skinIndex') as Uint8Array,
+      skinWeight:view('skinWeight') as Uint16Array,gloss:view('composerGloss') as Uint8Array,
+      coatLayers:source.hasCoatLayers?{c0:view('coatL0') as Uint16Array,c1:view('coatL1') as Uint16Array,c2:view('coatL2') as Uint16Array,sample:view('coatSample') as Float32Array}:null};
+  }
+  /** Called after context loss cleared all source owners. No stale allocation
+   * receipt survives; canonical jobs repopulate the empty new buffers. */
+  loseContext():void {
+    // Remove Three's old-generation disposal listeners while the lost context
+    // accepts deletion as a no-op. Reusing a geometry without this leaves an
+    // old listener that would later delete stale VBO handles after restoration.
+    this.geometry.dispose();this.rootTexture.dispose();(this.mesh.material as THREE.Material).dispose();this.mesh.customDepthMaterial!.dispose();this.mesh.customDistanceMaterial!.dispose();
+  }
+  restoreContext():void {if(this.records.size||this.copying.size)throw new Error('Composer context restoration requires an empty arena');this.gpu?.restore();this.rootTexture.needsUpdate=true;}
+  reset():void {for(const id of new Set([...this.records.keys(),...this.copying.keys()]))this.release(id);this.beginFrame();this.endFrame();}
   beginFrame(): void {for (const p of this.copying.values()) p.seen = false; this.active = 0; this.triangles = 0; for (const r of this.records.values()) this.roots[r.row * 28 + 23] = 0;}
   submit(id: string, matrix: THREE.Matrix4): boolean {
     const r = this.records.get(id); if (!r || this.disposed) return false;
@@ -212,10 +275,12 @@ export class FaunaComposerMergedBatch {
   endFrame(): void {for (const [id, p] of this.copying) if (!p.seen) this.release(id); this.rootTexture.needsUpdate = true; this.mesh.visible = this.active > 0;}
   release(id: string): void {
     const r = this.records.get(id) ?? this.copying.get(id)?.record; if (!r) return; this.records.delete(id); this.copying.delete(id); this.roots[r.row * 28 + 23] = 0;
-    const index = this.geometry.index!; index.array.fill(0, r.index, r.index + r.indices); index.addUpdateRange(r.index, r.indices); index.needsUpdate = true;
+    const index = this.geometry.index!;
+    if(this.gpu)this.gpu.clearIndices(r.index,r.indices);
+    else {index.array.fill(0, r.index, r.index + r.indices); index.addUpdateRange(r.index, r.indices); index.needsUpdate = true;}
     release(this.freeVertices, r.vertex, r.vertices); release(this.freeIndices, r.index, r.indices);
     this.highIndex = Math.max(0, ...[...this.records.values()].map(record => record.index + record.indices)); this.geometry.setDrawRange(0, this.highIndex);
   }
-  diagnostics() {return {storage:this.options.storage??'float-1',vertexStride:this.options.storage==='packed-1'?73:120,actors: this.active, records: this.records.size, copying: this.copying.size, draws: this.active ? 1 : 0, activeTriangles: this.triangles, reservedTriangles: this.highIndex / 3, ownedBytes: this.disposed ? 0 : this.ownedBytes, cpuBytes: this.ownedBytes / 2, gpuBytes: this.ownedBytes / 2};}
-  dispose(): void {if (this.disposed) return; this.disposed = true; this.records.clear(); this.copying.clear(); this.mesh.removeFromParent(); this.geometry.dispose(); (this.mesh.material as THREE.Material).dispose(); this.mesh.customDepthMaterial!.dispose(); this.mesh.customDistanceMaterial!.dispose(); this.rootTexture.dispose();}
+  diagnostics() {return {storage:this.options.storage??'float-1',ownership:this.gpu?COMPOSER_GPU_STORAGE_VERSION:'cpu-gpu-mirror',vertexStride:this.options.storage==='packed-1'?73:120,actors: this.active, records: this.records.size, copying: this.copying.size, draws: this.active ? 1 : 0, activeTriangles: this.triangles, reservedTriangles: this.highIndex / 3, ownedBytes: this.disposed ? 0 : this.ownedBytes, cpuBytes:this.disposed?0:this.cpuBytes,gpuBytes:this.disposed?0:this.gpuBytes};}
+  dispose(): void {if (this.disposed) return; this.disposed = true; this.records.clear(); this.copying.clear(); this.mesh.removeFromParent(); this.geometry.dispose();this.gpu?.dispose(); (this.mesh.material as THREE.Material).dispose(); this.mesh.customDepthMaterial!.dispose(); this.mesh.customDistanceMaterial!.dispose(); this.rootTexture.dispose();}
 }

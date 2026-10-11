@@ -3,7 +3,7 @@ import {COMPOSER_BUDGET, type ComposerGraph, type ComposerPose} from './fauna-co
 import {FaunaComposerPaletteWriter} from './fauna-composer-palette.ts';
 import {FaunaComposerInstanceBatch, FAUNA_COMPOSER_REQUIRED_ATTRIBUTES} from './fauna-composer-instance-batch.ts';
 import {FaunaComposerMergedBatch} from './fauna-composer-merged-batch.ts';
-import {isPackedComposerSkin, type FaunaComposerStoredSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
+import {isPackedComposerSkin, isGpuComposerSkin, type FaunaComposerStoredSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
 import {canonicalComposerJson, composerContentDigest, freezeComposerDefinition, isVerifiedComposerBuild} from './fauna-composer-build-receipt.ts';
 import {FAUNA_COMPOSER_TIERS, FAUNA_COMPOSER_RENDER_VERSION, composerTypedBytes, validateComposerRenderSkin, validateComposerRenderLod,
   type FaunaComposerSource, type FaunaComposerSourceProvider, type FaunaComposerBuildResult, type FaunaComposerRenderSkin, type FaunaComposerTier} from './fauna-composer-render-source.ts';
@@ -25,6 +25,9 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
   pose: (graph: ComposerGraph, candidate: C) => ComposerPose;
   /** Attach the planet's lighting/aerial/shadow hooks to this owned mesh once. */
   onMeshAdopted?: (mesh: THREE.Mesh) => void;
+  /** Optional WebGL2-owned packed arenas. Full CPU attribute mirrors are absent;
+   * only explicit snapshotOf inspection performs readback. */
+  mergedGpuContext?:WebGL2RenderingContext;
   /** Explicitly sized arenas: unique reduced animals share one draw per tier.
    * Arena CPU+GPU allocations count against maxBytes before accepting sources. */
   mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number; storage?: FaunaComposerArenaStorage}>>;
@@ -93,6 +96,9 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     buildMs: 0, adoptionMs: 0, adoptionOverruns: 0, preparationMs: 0, geometryCopyMs: 0, copySliceMaxMs: 0, verificationOnMain: 0, completedOutOfView: 0,
     stagedEvictions: 0, blockedAdmissions: 0, upgradesPending: 0, active: 0, draws: 0, triangles: 0, poseBuilds: 0, uploadBytes: 0};
   private lastError: string | null = null;
+  private contextLost=false;
+  private readonly onContextLost=(event:Event)=>{event.preventDefault();this.contextLost=true;this.group.visible=false;this.setContext(this.context,true);for(const batch of this.merged.values())batch.loseContext();};
+  private readonly onContextRestored=()=>{if(this.disposed)return;for(const batch of this.merged.values())batch.restoreContext();this.contextLost=false;this.group.visible=true;this.options.onReady?.();};
 
   constructor(options: FaunaComposerRendererOptions<D, C>) {
     this.options = options; this.capacity = options.capacity ?? 512; this.maxBones = options.maxBones ?? COMPOSER_BUDGET.maxBones;
@@ -111,7 +117,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     if (this.ownedBytes > this.maxBytes) {this.paletteUniform.value.dispose(); throw new Error('Composer palette exceeds resident budget');}
     try {for (const tier of ['middle', 'far'] as const) {
       const budget = options.mergedTiers?.[tier]; if (!budget) continue;
-      const batch = new FaunaComposerMergedBatch({...budget, maxActors: this.capacity, bones: this.paletteUniform});
+      const batch = new FaunaComposerMergedBatch({...budget, gpuContext:options.mergedGpuContext,maxActors: this.capacity, bones: this.paletteUniform});
       this.merged.set(tier, batch);
       for (const buffer of batch.backingBuffers) this.arenaBuffers.add(buffer);
       if (this.ownedBytes > this.maxBytes) throw new Error('Composer merged arenas exceed resident budget');
@@ -119,6 +125,8 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       options.onMeshAdopted?.(batch.mesh); this.group.add(batch.mesh);
     }} catch (error) {for (const b of this.merged.values()) b.dispose(); this.paletteUniform.value.dispose(); throw error;}
     this.group.name = 'Planet Composer animals'; this.group.userData.version = FAUNA_COMPOSER_RENDER_VERSION;
+    options.mergedGpuContext?.canvas.addEventListener('webglcontextlost',this.onContextLost);
+    options.mergedGpuContext?.canvas.addEventListener('webglcontextrestored',this.onContextRestored);
   }
   private makePalette(): THREE.DataTexture {
     const texture = new THREE.DataTexture(this.paletteData, this.paletteBones * 4, this.capacity, THREE.RGBAFormat, THREE.FloatType);
@@ -137,17 +145,19 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     if (c.maxAttributes < FAUNA_COMPOSER_REQUIRED_ATTRIBUTES || c.maxVertexTextures < 1 ||
         c.maxTextureSize < Math.max(this.maxBones * 4, this.capacity)) throw new Error('Planet Composer requires variable bone textures and 15 vertex attributes');
   }
-  setContext(context: string): void {
-    if (context === this.context) return; this.context = context; this.epoch++;
+  setContext(context: string,forceReset=false): void {
+    if (context === this.context&&!forceReset) return; this.context = context; this.epoch++;
     this.coldJobs = 0;
     this.fullSourceKeys.clear(); this.middleSourceKeys.clear();
-    this.running?.abort.abort(); this.ready.clear(); this.blocked.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.actors.clear(); this.failed.clear(); this.revision++;
+    this.running?.abort.abort();this.running=null; this.ready.clear(); this.blocked.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.actors.clear(); this.failed.clear(); this.revision++;
     for (const id of this.mergedBindings.keys()) this.releaseMerged(id);
     for (const key of this.entries.keys()) this.evict(key);
+    for(const batch of this.merged.values())batch.reset();
+    this.stats.active=0;this.stats.draws=0;this.stats.triangles=0;
     this.resizePalette(Math.min(16, this.maxBones));
   }
   update(candidates: readonly C[], origin?: THREE.Vector3): ReadonlySet<string> {
-    this.drawn.clear(); if (this.disposed) return this.drawn;
+    this.drawn.clear(); if (this.disposed||this.contextLost) return this.drawn;
     if (origin) this.group.position.copy(origin);
     this.frame++; const priorKeys = new Set(this.members.keys()); this.desired.clear(); this.members.clear(); this.stats.budgetDrops = 0; this.stats.pending = 0;
     const keys = new Set<string>();
@@ -284,7 +294,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private batch(entry: Entry, tier: FaunaComposerTier, protectedKeys: ReadonlySet<string>, instances: number): FaunaComposerInstanceBatch | null {
     const existing = entry.batches[tier]; if (existing && existing.capacity >= instances) return existing;
     const skin = entry.levels[tier]!;
-    if (isPackedComposerSkin(skin)) return null; // Packed storage is an explicit arena representation only.
+    if (isPackedComposerSkin(skin)||isGpuComposerSkin(skin)) return null; // Packed storage is an explicit arena representation only.
     // sourceVertex is not uploaded. This upper bound also counts it and safely over-reserves admission.
     const bytes = (existing ? 0 : composerTypedBytes(skin)) + instances * 68 * 2 - (existing?.instanceBytes ?? 0) * 2;
     if (!this.room(bytes, protectedKeys, false)) return null;
@@ -461,11 +471,12 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   snapshotOf(id:string){
     const actor=this.actors.get(id),entry=actor?this.entries.get(actor.key):undefined;
     if(!actor||!entry||!actor.tier)return null;
-    return {id,key:actor.key,tier:actor.tier,graph:entry.graph,skin:entry.levels[actor.tier]??null,source:entry.source,pose:actor.pose,
+    const skin=entry.levels[actor.tier];
+    return {id,key:actor.key,tier:actor.tier,graph:entry.graph,skin:skin?FaunaComposerMergedBatch.snapshotSkin(skin):null,source:entry.source,pose:actor.pose,
       palette:this.paletteData.subarray(actor.row*this.paletteBones*16,actor.row*this.paletteBones*16+entry.graph.bones.length*16)};
   }
   poseOf(id: string): ComposerPose | null {return this.actors.get(id)?.pose ?? null;}
-  diagnostics() {return {version: FAUNA_COMPOSER_RENDER_VERSION, ...this.stats, capacity: this.capacity, sources: this.entries.size,
+  diagnostics() {return {version: FAUNA_COMPOSER_RENDER_VERSION, ...this.stats, contextLost:this.contextLost, capacity: this.capacity, sources: this.entries.size,
     middleSourceLimit: this.options.middleSourceCache ?? this.maxSources, middleSourcesEligible: this.middleSourceKeys.size,
     farTierBudgetFallbacks: [...this.desired.values()].filter(c => this.tier(c.distanceM, this.actors.get(c.id)?.tier) !== 'far' && this.candidateTier(c, this.actors.get(c.id)?.tier) === 'far').length,
     actors: [...this.drawn].map(id => {const actor = this.actors.get(id)!, entry = this.entries.get(actor.key)!; return {id, key: actor.key, tier: actor.tier, bones: entry.graph.bones.length, skin: entry.levels[actor.tier!]!.version};}),
@@ -481,6 +492,8 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     running: this.running?.key ?? null, lastError: this.lastError};}
   dispose(): void {
     if (this.disposed) return; this.disposed = true; this.epoch++; this.running?.abort.abort(); this.ready.clear(); this.blocked.clear();
+    this.options.mergedGpuContext?.canvas.removeEventListener('webglcontextlost',this.onContextLost);
+    this.options.mergedGpuContext?.canvas.removeEventListener('webglcontextrestored',this.onContextRestored);
     for (const key of this.entries.keys()) this.evict(key); this.paletteUniform.value.dispose(); this.options.provider.dispose?.();
     for (const batch of this.merged.values()) batch.dispose(); this.merged.clear(); this.mergedBindings.clear(); this.levelOwners.clear(); this.arenaBuffers.clear();
     this.paletteData = new Float32Array(0); this.scratch = new Float32Array(0); this.paletteUniform.value.image.data = this.paletteData;

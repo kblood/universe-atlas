@@ -1,6 +1,7 @@
 import type {FaunaComposerRenderSkin} from './fauna-composer-render-source.ts';
 
 export const COMPOSER_PACKED_STORAGE_VERSION = 'composer-arena-packed-1';
+export const COMPOSER_GPU_STORAGE_VERSION = 'composer-gpu-arena-1';
 export type FaunaComposerArenaStorage = 'float-1'|'packed-1';
 export type ComposerStoredArray = Float32Array|Int16Array|Uint16Array|Uint8Array;
 export interface ComposerQuantizationProof {
@@ -13,12 +14,24 @@ export interface ComposerQuantizationProof {
 }
 export type FaunaComposerPackedSkin = Omit<FaunaComposerRenderSkin, 'normals'|'colors'|'skinIndex'|'skinWeight'|'gloss'|'coatLayers'|'index'|'sourceVertex'> & {
   storage: {version: typeof COMPOSER_PACKED_STORAGE_VERSION; proof: ComposerQuantizationProof;
-    localIndexType:'uint16'|'uint32';sourceVertexType:'uint16'|'uint32'|null};
+    localIndexType:'uint16'|'uint32';sourceVertexType:'uint16'|'uint32'|null;
+    readback?:'webgl2-getBufferSubData';sourceOwnership?:typeof COMPOSER_GPU_STORAGE_VERSION};
   normals: Int16Array; colors: Uint16Array; skinIndex: Uint8Array; skinWeight: Uint16Array; gloss: Uint8Array;
   coatLayers: null|{c0:Uint16Array;c1:Uint16Array;c2:Uint16Array;sample:Float32Array};
   index:Uint16Array|Uint32Array;sourceVertex:Uint16Array|Uint32Array|null;
 };
-export type FaunaComposerStoredSkin = FaunaComposerRenderSkin|FaunaComposerPackedSkin;
+/** An explicit GPU allocation receipt, never a pretend array of raw floats.
+ * Original LOD lookup metadata remains exact and source reconstruction is pure. */
+export type FaunaComposerGpuSkin = Pick<FaunaComposerPackedSkin,'version'|'index'|'sourceVertex'|'coatCrisp'> & {
+  vertexCount:number;hasCoatLayers:boolean;
+  storage:{version:typeof COMPOSER_GPU_STORAGE_VERSION;format:typeof COMPOSER_PACKED_STORAGE_VERSION;proof:ComposerQuantizationProof;
+    localIndexType:'uint16'|'uint32';sourceVertexType:'uint16'|'uint32'|null};
+};
+export type FaunaComposerStoredSkin = FaunaComposerRenderSkin|FaunaComposerPackedSkin|FaunaComposerGpuSkin;
+export function isGpuComposerSkin(skin:FaunaComposerStoredSkin):skin is FaunaComposerGpuSkin {
+  return 'storage' in skin&&skin.storage?.version===COMPOSER_GPU_STORAGE_VERSION;
+}
+export function composerStoredVertices(skin:FaunaComposerStoredSkin):number{return isGpuComposerSkin(skin)?skin.vertexCount:skin.positions.length/3;}
 export function isPackedComposerSkin(skin: FaunaComposerStoredSkin): skin is FaunaComposerPackedSkin {
   return 'storage' in skin && skin.storage?.version === COMPOSER_PACKED_STORAGE_VERSION;
 }
