@@ -3,6 +3,7 @@ import {planetComposerWorldDefinition,planetComposerSourceIdentity, posePlanetCo
 import {FaunaComposerRenderer, type FaunaComposerCandidate} from './fauna-composer-renderer.ts';
 import receipt from '../vendor/creature-kit/PACKAGE.json' with {type:'json'};
 import {createFaunaComposerWorkerProvider} from './fauna-composer-worker-provider.ts';
+import {ComposerWorkerDiagnostics} from './fauna-composer-worker-diagnostics.ts';
 import type {CreatureGenome, FaunaHerdMember, FaunaMemberActivity} from './fauna-runtime.ts';
 import type {FaunaGround} from './fauna-locomotion.ts';
 import {FAUNA_PLANET_COMPOSER_POLICY} from './fauna-planet-composer-policy.ts';
@@ -22,7 +23,10 @@ export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMe
  if(!options.renderer)throw new Error('Planet Composer requires its WebGL2 renderer for GPU-owned arenas');
  const gl=options.renderer.getContext();
  if(!('getBufferSubData' in gl))throw new Error('Planet Composer GPU-owned arenas require WebGL2');
- const provider=createFaunaComposerWorkerProvider<PlanetComposerDefinition>(()=>new Worker(new URL('./fauna-planet-composer.worker.ts',import.meta.url),{type:'module'}));
+ const workerDiagnostics=new ComposerWorkerDiagnostics();
+ const workerProvider=createFaunaComposerWorkerProvider<PlanetComposerDefinition>(()=>new Worker(new URL('./fauna-planet-composer.worker.ts',import.meta.url),{type:'module'}),30000,{onProgress:workerDiagnostics.record});
+ const provider={build:workerProvider.build,dispose(){workerProvider.dispose?.();workerDiagnostics.dispose();},
+  get diagnosticBytes(){return workerDiagnostics.reservedBytes;},diagnostics:()=>workerDiagnostics.snapshot()};
  const renderer=new FaunaComposerRenderer<PlanetComposerDefinition,FaunaPlanetComposerCandidate>({provider,
   pose:(graph,c)=>posePlanetComposer(graph,c.member,c.activity,c.ground,c.rigSeconds),
   onReady:options.onReady,onMeshAdopted:options.onMeshAdopted,capacity:p.capacity,maxBones:p.maxBones,maxSources:p.capacity,

@@ -15,6 +15,8 @@ export type FaunaComposerRenderSkin = Pick<ComposerSkin, 'positions'|'normals'|'
 export interface FaunaComposerSource {graph: ComposerGraph; skin: ComposerSkin; sourceVersion?: string}
 export interface FaunaComposerBuildJob<D> {
   key: string; definition: D; tiers: readonly FaunaComposerTier[];
+  /** Operational metadata only; does not change source construction or identity. */
+  diagnosticRetry?: {failedFrame: number; currentFrame: number};
   /** Borrowed: a worker provider must COPY these arrays, never detach resident buffers. */
   loadedSource?: FaunaComposerSource;
 }
@@ -27,6 +29,9 @@ export interface FaunaComposerBuildResult {
 export interface FaunaComposerSourceProvider<D> {
   /** Must return asynchronously (normally a single worker). One request is active at a time. */
   build(job: FaunaComposerBuildJob<D>, signal: AbortSignal): Promise<FaunaComposerBuildResult>;
+  /** Fixed conservative reserve for bounded provider diagnostic records. */
+  readonly diagnosticBytes?: number;
+  diagnostics?(): unknown;
   dispose?(): void;
 }
 /** Full definition includes phenotype, IDs and provenance, not merely recipe text. */

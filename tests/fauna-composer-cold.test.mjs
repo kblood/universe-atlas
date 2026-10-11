@@ -10,6 +10,7 @@ import {buildFaunaComposerLevels, buildFaunaComposerRequestedLevels, composerTyp
 import {createComposerBuildReceipt, verifyComposerBuildReceipt, isVerifiedComposerBuild} from '../src/fauna-composer-build-receipt.ts';
 import {createFaunaComposerWorkerProvider, installFaunaComposerSourceWorker} from '../src/fauna-composer-worker-provider.ts';
 import {composerFakeGl} from './helpers/composer-fake-gl.mjs';
+import {ComposerWorkerDiagnostics, COMPOSER_WORKER_DIAGNOSTIC_LIMITS, COMPOSER_WORKER_DIAGNOSTIC_RESERVE_BYTES} from '../src/fauna-composer-worker-diagnostics.ts';
 
 const animal = createComposerCreature(composerPreset('turtle'), {presentation: 'realism-1'});
 const source = {graph: animal.graph, skin: animal.skin}, levels = buildFaunaComposerLevels(source);
@@ -191,6 +192,9 @@ test('verified receipts bind all real arrays, exact definition and source versio
   const job = {key: 'a', definition: {id: 'a'}, tiers: ['far']}, valid = result(job);
   valid.receipt = await createComposerBuildReceipt(job, valid);
   assert.equal(isVerifiedComposerBuild(valid), false); await verifyComposerBuildReceipt(job, valid); assert.equal(isVerifiedComposerBuild(valid), true);
+  const retryJob = {...job, diagnosticRetry: {failedFrame: 3, currentFrame: 123}};
+  assert.deepEqual(await createComposerBuildReceipt(retryJob, valid), valid.receipt, 'operational retry metadata changes no public source proof');
+  await verifyComposerBuildReceipt(retryJob, valid);
   const changed = structuredClone(valid); changed.levels.far.gloss[0] += .01;
   await assert.rejects(verifyComposerBuildReceipt(job, changed), /digest mismatch/);
   await assert.rejects(verifyComposerBuildReceipt({...job, definition: {id: 'b'}}, structuredClone(valid)), /digest mismatch/);
@@ -206,15 +210,100 @@ test('persistent worker performs strict checks once per job, reuses startup, and
     postMessage(data) {queueMicrotask(() => this.scope.onmessage({data: structuredClone(data)}));}
     terminate() {terminated++;}
   }
-  const provider = createFaunaComposerWorkerProvider(() => new FakeWorker(), 30000, {maxJobsPerWorker: 4});
+  const trace = new ComposerWorkerDiagnostics();
+  const provider = createFaunaComposerWorkerProvider(() => new FakeWorker(), 30000, {maxJobsPerWorker: 4, onProgress: trace.record});
   try {for (const key of ['a','b']) {const r = await provider.build({key, definition: {key}, tiers: ['near'], loadedSource: source}, new AbortController().signal); assert.ok(isVerifiedComposerBuild(r));}
     assert.equal(created, 1); assert.equal(terminated, 0); assert.ok(source.skin.positions.byteLength > 0);
+    for (const job of trace.snapshot().jobs) {
+      assert.deepEqual(job.stages.map(s => s.phase), ['startup','source','lod','built','worker-receipt','verified','main-receive','main-receipt','complete']);
+      assert.ok(job.stages.every(s => s.elapsedMs >= 0));
+      assert.ok(job.stages.filter(s => s.workerElapsedMs !== undefined).every(s => s.workerElapsedMs >= 0));
+    }
   } finally {provider.dispose();} assert.equal(terminated, 1);
   created=0;terminated=0;const recycled=createFaunaComposerWorkerProvider(()=>new FakeWorker());
   try {for(const key of ['a','b'])await recycled.build({key,definition:{key},tiers:['near'],loadedSource:source},new AbortController().signal);
     assert.equal(created,2);assert.equal(terminated,2,'default retires each completed worker');
   }finally{recycled.dispose();}
   assert.throws(()=>createFaunaComposerWorkerProvider(()=>new FakeWorker(),30000,{maxJobsPerWorker:0}),/reuse cap/);
+});
+
+test('the unchanged 30s deadline reports the exact last worker phase and renderer-supplied retry frames', async t => {
+  t.mock.timers.enable({apis: ['setTimeout']});
+  const trace = new ComposerWorkerDiagnostics(); let current, terminated = 0;
+  const provider = createFaunaComposerWorkerProvider(() => current = {postMessage() {}, terminate() {terminated++;}}, undefined, {onProgress: trace.record});
+  try {
+    for (const [index, phase] of ['startup','source','lod','worker-receipt','verified'].entries()) {
+      const key = `slow-${phase}`, retry = index ? {failedFrame: 10, currentFrame: 130} : undefined;
+      const pending = provider.build({key, definition: {key}, tiers: ['far'], diagnosticRetry: retry}, new AbortController().signal);
+      const rejection = assert.rejects(pending, new RegExp(`build deadline during ${phase} \\(job ${index + 1}\\)`));
+      if (phase !== 'startup') current.onmessage({data: {type: 'progress', key, phase, elapsedMs: 123}});
+      t.mock.timers.tick(29999); assert.equal(terminated, index, 'no earlier timeout');
+      t.mock.timers.tick(1); await rejection;
+      const job = trace.snapshot().jobs.at(-1);
+      assert.equal(job.key, key); assert.equal(job.stages.at(-1).failedPhase, phase);
+      assert.equal(job.stages.at(-1).phase, 'failure');
+      assert.deepEqual(job.retry, retry); assert.equal(job.stages[0].phase, retry ? 'retry' : 'startup');
+    }
+  } finally {provider.dispose();}
+});
+
+test('a result already delivered can time out in main receipt verification without misreporting worker LOD', async t => {
+  const job = {key: 'main-receipt-stall', definition: {id: 'a'}, tiers: ['near']}, value = result(job);
+  value.receipt = await createComposerBuildReceipt(job, value);
+  t.mock.timers.enable({apis: ['setTimeout']});
+  let finishDigest, terminated = 0;
+  t.mock.method(crypto.subtle, 'digest', () => new Promise(resolve => {finishDigest = resolve;}));
+  const trace = new ComposerWorkerDiagnostics();
+  const provider = createFaunaComposerWorkerProvider(() => ({postMessage() {this.onmessage({data: {key: job.key, result: value}});}, terminate() {terminated++;}}), undefined, {onProgress: trace.record});
+  const pending = provider.build(job, new AbortController().signal);
+  const rejection = assert.rejects(pending, /build deadline during main-receipt/);
+  assert.deepEqual(trace.snapshot().jobs[0].stages.map(s => s.phase), ['startup','main-receive','main-receipt']);
+  t.mock.timers.tick(30000); await rejection;
+  assert.equal(terminated, 1); assert.equal(trace.snapshot().jobs[0].stages.at(-1).failedPhase, 'main-receipt');
+  finishDigest(new ArrayBuffer(32)); await Promise.resolve(); await Promise.resolve();
+  assert.equal(trace.snapshot().jobs[0].stages.at(-1).phase, 'failure', 'late receipt completion cannot replace terminal timeout');
+  provider.dispose();
+});
+
+test('diagnostic records cap jobs, stages and text and reserve ownership until disposal', () => {
+  const trace = new ComposerWorkerDiagnostics(), limits = COMPOSER_WORKER_DIAGNOSTIC_LIMITS;
+  for (let jobId = 1; jobId <= limits.jobs + 3; jobId++) {
+    const key = `prefix-${jobId}/` + 'k'.repeat(limits.keyCharacters * 4) + `/suffix-${jobId}`;
+    for (let stage = 0; stage < limits.stages + 7; stage++) trace.record({jobId, key, phase: stage ? 'lod' : 'startup', elapsedMs: stage});
+    trace.record({jobId, key, phase: 'failure', failedPhase: 'lod', error: 'e'.repeat(limits.errorCharacters * 4), elapsedMs: 100});
+  }
+  const snapshot = trace.snapshot();
+  assert.equal(snapshot.retainedJobs, limits.jobs); assert.equal(snapshot.droppedJobs, 3);
+  assert.equal(snapshot.retainedStages, limits.jobs * limits.stages);
+  assert.ok(snapshot.retainedFieldEstimateBytes <= snapshot.reservedBytes);
+  assert.equal(trace.reservedBytes, COMPOSER_WORKER_DIAGNOSTIC_RESERVE_BYTES);
+  for (const row of snapshot.jobs) {
+    assert.equal(row.key.length, limits.keyCharacters); assert.equal(row.keyTruncated, true);
+    assert.equal(row.error.length, limits.errorCharacters); assert.equal(row.stages[0].phase, 'startup');
+    assert.equal(row.stages.at(-1).phase, 'failure'); assert.equal(row.droppedStages, 8);
+  }
+  snapshot.jobs[0].stages[0].phase = 'complete';
+  assert.equal(trace.snapshot().jobs[0].stages[0].phase, 'startup', 'inspection cannot mutate retained evidence');
+  const provider = {build: async () => {throw Error('unused');}, get diagnosticBytes() {return trace.reservedBytes;}, diagnostics: () => trace.snapshot(), dispose() {trace.dispose();}};
+  const renderer = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 1, maxBytes: 2e6});
+  const baseline = new FaunaComposerRenderer({provider: {build: provider.build}, pose: g => poseComposer(g, 'idle', 0), capacity: 1, maxBytes: 2e6});
+  assert.equal(renderer.ownedBytes - baseline.ownedBytes, COMPOSER_WORKER_DIAGNOSTIC_RESERVE_BYTES);
+  assert.equal(renderer.diagnostics().workerDiagnosticBytes, COMPOSER_WORKER_DIAGNOSTIC_RESERVE_BYTES);
+  renderer.dispose(); baseline.dispose();
+  assert.equal(renderer.ownedBytes, 0); assert.equal(trace.snapshot().retainedJobs, 0); assert.equal(trace.snapshot().reservedBytes, 0);
+});
+
+test('renderer reports a retry only after its existing 120-frame failure cooldown', async () => {
+  const jobs = [], c = candidate('retry-me');
+  const renderer = new FaunaComposerRenderer({capacity: 1, maxBytes: 4e6, provider: {async build(job) {jobs.push(job); throw Error('deliberate unavailable worker');}}, pose: g => poseComposer(g, 'idle', 0)});
+  try {
+    renderer.update([c]); await tick(); const failedFrame = renderer.frame;
+    assert.equal(jobs.length, 1); assert.equal(jobs[0].diagnosticRetry, undefined);
+    for (let i = 0; i < 119; i++) renderer.update([c]);
+    assert.equal(jobs.length, 1, 'diagnostics do not introduce early retries');
+    renderer.update([c]); await tick(); assert.equal(jobs.length, 2);
+    assert.deepEqual(jobs[1].diagnosticRetry, {failedFrame, currentFrame: failedFrame + 120});
+  } finally {renderer.dispose();}
 });
 test('sliced arena admission remains invisible until complete, owns exact attributes and frees partial reservations', () => {
   const skin = levels.far, vertices = skin.positions.length / 3;

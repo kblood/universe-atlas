@@ -292,7 +292,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private recount(entry: Entry, key: string): void {
     entry.cpuBytes = composerTypedBytes({source: entry.source, levels: entry.levels}, this.arenaBuffers) + (entry.definition.length + key.length + entry.graphIdentity.length + entry.skinIdentity.length) * 2 + entry.graphBytes;
   }
-  get ownedBytes(): number {let n = this.paletteData.byteLength * 2 + this.scratch.byteLength; for (const e of this.entries.values()) n += this.entryBytes(e); for (const a of this.actors.values()) n += a.poseBytes; for (const b of this.merged.values()) n += b.diagnostics().ownedBytes; return n;}
+  get ownedBytes(): number {let n = this.paletteData.byteLength * 2 + this.scratch.byteLength + (this.options.provider.diagnosticBytes ?? 0); for (const e of this.entries.values()) n += this.entryBytes(e); for (const a of this.actors.values()) n += a.poseBytes; for (const b of this.merged.values()) n += b.diagnostics().ownedBytes; return n;}
   private get stagedBytes(): number {let bytes = 0; for (const p of this.ready.values()) bytes += p.bytes; return bytes;}
   get reservedBytes(): number {return this.disposed ? 0 : this.ownedBytes + this.workerReserveBytes + this.stagedBytes + (this.running ? this.maxResultBytes : 0);}
   private room(bytes: number, protectedKeys: ReadonlySet<string>, extraEntry: boolean): boolean {
@@ -430,7 +430,9 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       const run: Running = {key, definition: this.identity(c.definition, false, c.canonicalDefinition), definitionRef: c.definition, tiers: [tier], epoch: this.epoch, abort: new AbortController()};
       this.running = run;
       if (cold) this.coldJobs++; else if (tier === 'near') this.coldJobs = 0;
-      try {Promise.resolve(this.options.provider.build({key, definition: c.definition, tiers: run.tiers, loadedSource: entry?.source ?? undefined}, run.abort.signal)).then(async result => {
+      const failedFrame = this.failed.get(key);
+      try {Promise.resolve(this.options.provider.build({key, definition: c.definition, tiers: run.tiers, loadedSource: entry?.source ?? undefined,
+        ...(failedFrame === undefined ? {} : {diagnosticRetry: {failedFrame, currentFrame: this.frame}})}, run.abort.signal)).then(async result => {
         if (this.disposed || run.abort.signal.aborted || run.epoch !== this.epoch) {this.stats.stale++; return;}
         const prepared = await this.prepare(run, result);
         if (this.disposed || run.abort.signal.aborted || run.epoch !== this.epoch) {this.stats.stale++; return;}
@@ -505,7 +507,8 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     pendingResultBytes: this.stagedBytes, stagedSources: this.ready.size, blockedSources: this.blocked.size, receivingReserveBytes: this.running ? this.maxResultBytes : 0,
     poseCpuBytes: [...this.actors.values()].reduce((n, a) => n + a.poseBytes, 0),
     mergedTiers: Object.fromEntries([...this.merged].map(([tier, batch]) => [tier, batch.diagnostics()])),
-    running: this.running?.key ?? null, lastError: this.lastError};}
+    running: this.running?.key ?? null, lastError: this.lastError,
+    workerDiagnosticBytes: this.options.provider.diagnosticBytes ?? 0, workerDiagnostics: this.options.provider.diagnostics?.() ?? null};}
   dispose(): void {
     if (this.disposed) return; this.disposed = true; this.epoch++; this.running?.abort.abort(); this.ready.clear(); this.blocked.clear();
     this.options.mergedGpuContext?.canvas.removeEventListener('webglcontextlost',this.onContextLost);
