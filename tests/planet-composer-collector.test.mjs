@@ -89,3 +89,13 @@ test('isolation negative control rejects readiness carrying an unchecked previou
  const cache=new Map([['unchecked',true]]);let reopened=false;
  await assert.rejects(()=>isolatedQaCycle({persist:async()=>{},measure:async()=>({}),release:async()=>{},operate:async()=>{assert.equal(cache.size,0,'old source proofs must be cleared');reopened=true;}}),/old source proofs/);assert.equal(reopened,false);
 });
+
+import {threeDrawCost} from './helpers/three-draw-cost.mjs';
+test('main-camera triangle census intersects ranges and counts actual geometry instances',()=>{
+ assert.deepEqual(threeDrawCost({drawStart:6,drawCount:18,groupStart:12,groupCount:30,indexCount:21}),{start:12,count:9,instances:1,mode:'TRIANGLES',triangles:3,submittedVertices:9});
+ assert.equal(threeDrawCost({indexCount:6,instancedGeometry:true,geometryInstanceCount:44774,maxInstanceCount:229376}).triangles,89548);
+ assert.equal(threeDrawCost({indexCount:6,instancedGeometry:true,geometryInstanceCount:600,maxInstanceCount:100}).triangles,200);
+ assert.equal(threeDrawCost({indexCount:6,instancedMesh:true,objectCount:3,instancedGeometry:true,geometryInstanceCount:600,maxInstanceCount:100}).triangles,6);
+ for(const flags of [{points:true},{line:true},{lineSegments:true},{lineLoop:true},{wireframe:true}])assert.equal(threeDrawCost({positionCount:999,...flags}).triangles,0);
+ assert.equal(threeDrawCost({drawStart:100,indexCount:3}).triangles,0);
+});
