@@ -29,7 +29,7 @@ test('stored LOD evidence checks actual positions, colour, joints and retained s
  assert.equal(auditStoredSourceMap({...skin,positions:[1.02,2,3]},source).positionError,.020000000000000018);
 });
 
-test('packed crisp coat preserves the 0–2 domain and exact sample coordinates',()=>{
+test('packed crisp coat preserves the 0â€“2 domain and exact sample coordinates',()=>{
  const source={positions:[0,0,0],colors:[1.6,1.6,1.6],skinIndex:[0,0,0,0],skinWeight:[1,0,0,0],gloss:[.5],coatLayers:{c0:[1.6,1.6,1.6],c1:[1.6,1.6,1.6],c2:[1.6,1.6,1.6],sample:[1.2,-.4,.7,0]}};
  const skin={...source,storage:{version:'composer-arena-packed-1'},colors:[52428,52428,52428],skinWeight:[65535,0,0,0],gloss:[128],coatLayers:{c0:[52428,52428,52428],c1:[52428,52428,52428],c2:[52428,52428,52428],sample:[1.2,-.4,.7,0]}};
  assert.equal(auditStoredSourceMap(skin,source).coatLayerError,0);
@@ -45,3 +45,13 @@ test('declared production digest ignores key order and detects one changed byte'
 });
 
 test('receipt accepts repeated plain references without classifying them as cycles',async()=>{const shared={coefficient:2,view:new Uint8Array([1,2])},payload=[shared,shared];assert.equal(await browserContentDigest(payload),await composerContentDigest(payload));});
+
+import {stringifyTransport,parseTransport,evaluateJson} from './helpers/planet-json-transport.mjs';
+test('JSON string bridge preserves source bytes, graph numbers and text',async()=>{
+ const original=new Float32Array([-0,1.8e-15,Math.PI,0]),input={graph:{root:[-0,Infinity,-Infinity,NaN],text:'DNA\n\u00e6\ud83d\udc3e'},source:Array.from(original.subarray(0,3))};
+ const restored=parseTransport(stringifyTransport(input));assert.deepEqual(restored,input);
+ assert.equal(contentDigest(new Float32Array(restored.source)),contentDigest(original.subarray(0,3)));
+ const fakePage={evaluate:async expression=>(0,eval)(expression)};
+ const result=await evaluateJson(fakePage,x=>({graph:x.graph,source:x.source}),input);assert.deepEqual(result,input);
+ assert.equal(contentDigest(new Float32Array(result.source)),contentDigest(original.subarray(0,3)));
+});
