@@ -3,18 +3,21 @@ import {createComposerBuildReceipt, verifyComposerBuildReceipt} from './fauna-co
 
 /** Provider bridge. The integrator's worker imports buildPlanetComposerSource
  * from the pinned Kit package and calls installFaunaComposerSourceWorker below.
- * At most one worker exists. Successful jobs reuse it; failure, abort and
- * disposal terminate it. This avoids recompiling the source builder per animal. */
+ * At most one worker exists. Recycling bounds allocation accumulation without
+ * relying on unavailable production forced-GC hooks. One job is the conservative
+ * default; a measured platform policy may opt into a small bounded reuse count. */
 export function createFaunaComposerWorkerProvider<D>(factory: () => Worker, timeoutMs = 30000,
-  options: {onProgress?: (progress: {key: string; phase: string; elapsedMs: number}) => void} = {}): FaunaComposerSourceProvider<D> {
-  let active: {cancel: () => void} | null = null, worker: Worker | null = null, disposed = false;
+  options: {maxJobsPerWorker?: number; onProgress?: (progress: {key: string; phase: string; elapsedMs: number}) => void} = {}): FaunaComposerSourceProvider<D> {
+  const maxJobs = options.maxJobsPerWorker ?? 1;
+  if (!Number.isSafeInteger(maxJobs) || maxJobs < 1 || maxJobs > 64) throw new Error('Composer worker reuse cap must be 1..64 jobs');
+  let active: {cancel: () => void} | null = null, worker: Worker | null = null, disposed = false, workerJobs = 0;
   return {
     build(job, signal) {
       if (disposed || active) return Promise.reject(new Error('Composer worker unavailable or busy'));
       return new Promise((resolve, reject) => {
         worker ??= factory(); const current = worker; let finished = false;
         const finish = (terminate = false) => {if (finished) return; finished = true; clearTimeout(timer); signal.removeEventListener('abort', abort); current.onmessage = current.onerror = current.onmessageerror = null;
-          if (terminate) {current.terminate(); if (worker === current) worker = null;} active = null;};
+          if (terminate) {current.terminate(); if (worker === current) {worker = null; workerJobs = 0;}} active = null;};
         const abort = () => {finish(true); reject(new Error('Composer worker cancelled'));};
         const timer = setTimeout(() => {finish(true); reject(new Error('Composer worker exceeded build deadline'));}, timeoutMs);
         active = {cancel: abort}; signal.addEventListener('abort', abort, {once: true});
@@ -22,7 +25,7 @@ export function createFaunaComposerWorkerProvider<D>(factory: () => Worker, time
         current.onmessage = async ({data}) => {
           if (data?.type === 'progress' && data.key === job.key) {options.onProgress?.(data); return;}
           if (data?.key !== job.key || data.error || !data.result) {finish(true); reject(new Error(data?.error ?? 'Composer worker returned wrong source')); return;}
-          try {await verifyComposerBuildReceipt(job, data.result); if (finished || signal.aborted || disposed) return; finish(); resolve(data.result);}
+          try {await verifyComposerBuildReceipt(job, data.result); if (finished || signal.aborted || disposed) return; workerJobs++; finish(workerJobs >= maxJobs); resolve(data.result);}
           catch (error) {if (!finished) {finish(true); reject(error);}}
         };
         current.onerror = event => {event.preventDefault(); finish(true); reject(new Error(event.message || 'Composer worker failed'));};

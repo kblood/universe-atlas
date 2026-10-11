@@ -87,10 +87,15 @@ test('persistent worker performs strict checks once per job, reuses startup, and
     postMessage(data) {queueMicrotask(() => this.scope.onmessage({data: structuredClone(data)}));}
     terminate() {terminated++;}
   }
-  const provider = createFaunaComposerWorkerProvider(() => new FakeWorker());
+  const provider = createFaunaComposerWorkerProvider(() => new FakeWorker(), 30000, {maxJobsPerWorker: 4});
   try {for (const key of ['a','b']) {const r = await provider.build({key, definition: {key}, tiers: ['near'], loadedSource: source}, new AbortController().signal); assert.ok(isVerifiedComposerBuild(r));}
     assert.equal(created, 1); assert.equal(terminated, 0); assert.ok(source.skin.positions.byteLength > 0);
   } finally {provider.dispose();} assert.equal(terminated, 1);
+  created=0;terminated=0;const recycled=createFaunaComposerWorkerProvider(()=>new FakeWorker());
+  try {for(const key of ['a','b'])await recycled.build({key,definition:{key},tiers:['near'],loadedSource:source},new AbortController().signal);
+    assert.equal(created,2);assert.equal(terminated,2,'default retires each completed worker');
+  }finally{recycled.dispose();}
+  assert.throws(()=>createFaunaComposerWorkerProvider(()=>new FakeWorker(),30000,{maxJobsPerWorker:0}),/reuse cap/);
 });
 test('sliced arena admission remains invisible until complete, owns exact attributes and frees partial reservations', () => {
   const skin = levels.far, vertices = skin.positions.length / 3;

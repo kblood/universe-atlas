@@ -16,8 +16,9 @@ import {installFaunaComposerSourceWorker} from './fauna-composer-worker-provider
 installFaunaComposerSourceWorker(self, buildPlanetComposerSource);
 ```
 
-Only one worker request can run. Successful requests reuse one persistent worker.
-Abort, errors, timeout and disposal terminate it. Resident source arrays are copied by structured clone and never
+Only one worker request can run. By default each completed request retires its
+worker. An explicit `maxJobsPerWorker` (1..64) permits bounded reuse after a
+platform measurement; abort, errors, timeout and disposal also terminate it. Resident source arrays are copied by structured clone and never
 detached. A near request returns the original source; reduced requests run the
 anatomically constrained Kit Composer reducer off the render thread. Every LOD
 vertex keeps its original position, normal, bone indices/weights, gloss and all
@@ -104,10 +105,22 @@ production dependency pins are untouched. CDP Runtime.getHeapUsage is sampled
 when the worker accepts commands, so the reported peak is a sampled lower bound,
 not a hard heap limit. Typed-result byte counts are reported separately.
 
-The successful browser24 run (far1500, actual pinned Kit source) measured first
+The initial unbounded-reuse browser24 run (far1500, actual pinned Kit source) measured first
 visible at308ms, all24 at6.363s, zero main long tasks, zero admission overruns and
 maximum geometry-copy slice0.39ms. The persistent worker sampled103 times via CDP
 reached usedSize50,997,728B, totalSize90,673,152B and backingStorage23,669,921B
 (separate peaks). These measurements invalidate the tentative16 MiB worker
 reserve. This change exposes the result; it does not silently raise the planet's
 shared256 MiB budget. Browser evidence: Assets/_assetctl/planet-composer-cold-20261011/browser24/report.json.
+
+A subsequent bounded-reuse comparison uses the same24 real definitions and no
+forced GC. One job per worker took7.548s overall (first visible291ms), with115
+samples and24 worker lifetimes. Four jobs took7.489s (first visible344ms), with119
+samples and6 worker lifetimes. Concurrent sampled usedSize+backingStorage peaked
+at25,447,667B versus54,079,401B; totalSize+backingStorage at33,770,169B versus
+73,638,985B. The negligible latency difference does not justify the extra memory,
+so default recycling is one job. A proposed40 MiB reserve has headroom over the
+sampled one-job committed total, but no shared world budget is increased here;
+root integration must approve that allocation and broader hardware coverage.
+Evidence: browser24-jobs1/report.json and browser24-jobs4/report.json in the same
+review directory. Set COMPOSER_WORKER_JOBS to reproduce either cap.
