@@ -1,3 +1,4 @@
+export { faunaFawnSpotLayout, faunaJuvenileStockingStrength, type FaunaFawnSpotLayout } from '../fauna-coat-juvenile.ts';
 import type { CreatureArchetype, CreatureGenome } from './creature-model.ts';
 import { type CoatMarkName, type CoatRegion, type PigmentFamily, type ResolvedCoatPattern } from '../fauna-coat-vocab.ts';
 import { type CoatGenome, type CoatRGB, type CoatSample } from '../fauna-coat-fields.ts';
@@ -186,15 +187,6 @@ export declare function faunaCoatMaxScale(coat: CoatGenome, cell: number): numbe
 /** Exact prepared planetary pattern coordinates and the source-density-clamped
  * coat. Caller scratch receives a copy; no global sampler scratch is exposed. */
 export declare function faunaPreparedCoatContextInto(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: FaunaBodyRegion | CoatRegion, surface: FaunaCoatSurface, out: CoatSample): Readonly<CoatGenome> | undefined;
-export interface FaunaFawnSpotLayout {
-    radius: number;
-    spacing: number;
-    rowGap: number;
-    rows: readonly number[];
-}
-/** Spot layout in torso lengths for a near body whose vertex cell is
- * `cell` torso lengths. */
-export declare function faunaFawnSpotLayout(cell: number): FaunaFawnSpotLayout;
 /** Vertex coat in linear light. Torso-normalised bind-space coordinates keep
  * the same markings on adult and juvenile bodies; z is signed, so the flanks
  * differ. No maps, GPU resources, random state or added draw calls. The
@@ -205,14 +197,6 @@ export declare function sampleFaunaCoat(genome: CreatureGenome, x: number, y: nu
  * Used to test whether a source point is affine enough for a shared GLSL mask. */
 export declare function sampleFaunaCoatWithPatternMask(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: FaunaBodyRegion | CoatRegion, surface: FaunaCoatSurface, mask: number, patch: number): CoatColor | undefined;
 export declare function sampleFaunaCoatWithRawPatternMask(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: FaunaBodyRegion | CoatRegion, surface: FaunaCoatSurface, mask: number, patch: number): CoatColor | undefined;
-/** Stocking strength of a juvenile (0.4 at maturity 0.2, 0.7 at 0.45, 1 by
- * 0.7). Leg stockings darken and sharpen with age: gaur and banteng calves
- * are near body-coloured below the knee, and bear cubs and young tapirs lack
- * the adults' dark legs. The young's lower legs also take a larger share of
- * the skin (by about half), so full-strength stockings would make juveniles
- * read darker than their stage-invariant far colour. */
-export declare function faunaJuvenileStockingStrength(maturity: number): number;
 /** Review/test probe: the raw pattern mark (0..1) the coat draws at a point,
  * before region strength and colour; 0 for legacy appearances. */
 export declare function faunaCoatMark(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region?: FaunaBodyRegion | CoatRegion, surface?: FaunaCoatSurface): number;
-export {};

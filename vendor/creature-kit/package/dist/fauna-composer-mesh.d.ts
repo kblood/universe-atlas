@@ -48,6 +48,8 @@ export interface ComposerCoatCrisp {
         origin: [number, number];
         forward: [number, number];
         scale: number;
+        phase?: number;
+        lateral?: number;
     };
 }
 /** Per-vertex crisp-coat layers (linear RGB, 3 per vertex): c0 = the coat at pattern mask 0, c1 = at mask 1 (patch

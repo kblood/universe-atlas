@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { composerHash, composerRandom } from "./fauna-composer-recipe.js";
 import { COAT_REGIONS } from "./fauna-coat-vocab.js";
 import { COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, coatSeedMix, defaultCoatGenome, evaluateCoat, evaluateCoatWithMask, hash3u, valueNoise3 } from "./fauna-coat-fields.js";
+import { evaluateFaunaStageCoat } from "./fauna-coat-juvenile.js";
 import { composerIndividualTraits } from "./fauna-composer-individual.js";
 import { COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerEyeProfileId, composerEyeRulesOf, composerHeadgearBuild, composerSkullOf, resolveComposerEyes } from "./fauna-composer-face.js";
 import { EYE_PATCH, EYE_ROLE, OCELLUS, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, raycastLine } from "./fauna-composer-eye.js";
@@ -782,7 +783,7 @@ export function buildComposerSkin(graph, options = {}) {
     const tone = 1 + jv * (u9[9] - 0.5) * 0.34;
     const individual = { traits, jv, osteoSeed: word(u9[6]), plateSeed: word(u9[7]), featherSeed: word(u9[8]) };
     // ---- coat genome (built once per creature)
-    let genome = applyCoatDrift(defaultCoatGenome(r.palette, r.colorSeed, { pattern: r.pattern, marks: r.marks, scale: r.patternScale, contrast: r.patternContrast, countershade: r.countershade, juvenileSpots: traits.coat.juvenileSpots }), coatIndividualDrift(traits.coat.driftKey, r.variability));
+    let genome = graph.phenotype ? structuredClone(graph.phenotype.coat) : applyCoatDrift(defaultCoatGenome(r.palette, r.colorSeed, { pattern: r.pattern, marks: r.marks, scale: r.patternScale, contrast: r.patternContrast, countershade: r.countershade, juvenileSpots: traits.coat.juvenileSpots }), coatIndividualDrift(traits.coat.driftKey, r.variability));
     if (jv > 0)
         genome = { ...genome, bellyLine: clamp(genome.bellyLine + bellyShift, -1, 1), countershade: clamp(genome.countershade * countershadeScale, 0, 1) };
     const requestedScale = genome.scale;
@@ -803,6 +804,8 @@ export function buildComposerSkin(graph, options = {}) {
     if (fwd.lengthSq() < 1e-12)
         fwd.set(1, 0, 0);
     fwd.normalize();
+    const coatPhase = graph.phenotype?.coatFrame.phase ?? 0, coatLateral = graph.phenotype?.coatFrame.lateral ?? 1;
+    const coatStage = graph.phenotype?.coatStage, stageBody = { x: 0, y: 0, z: 0, halfH: d.torsoHeight / scale, halfW: d.torsoWidth / scale, cell: .024 };
     const coatOut = new Float64Array(3);
     const sample = { x: 0, y: 0, z: 0, dorsal: 0, region: 'torso', along: 0, footprint: 0 };
     const groundRef = Math.max(d.legReach, d.frontLegReach, 1e-3);
@@ -811,32 +814,45 @@ export function buildComposerSkin(graph, options = {}) {
     const crispPattern = COMPOSER_COAT_CRISP_PATTERNS.includes(genome.pattern) ? genome.pattern : null;
     const hook = { mode: 0, calls: 0, ok: false, sample, sampledAt: q => {
             const dx = q.x - origin.x, dy = q.y - origin.y;
-            return sample.x === (dx * fwd.x + dy * fwd.y) / scale && sample.y === (dy * fwd.x - dx * fwd.y) / scale && sample.z === q.z / scale;
+            return sample.x === (dx * fwd.x + dy * fwd.y) / scale + coatPhase && sample.y === (dy * fwd.x - dx * fwd.y) / scale && sample.z === q.z / scale * coatLateral;
         } };
     if (crispPattern)
         s.coat = hook;
     const coatAt = (p, dorsal, region, along, fp = 0) => {
         const dx = p.x - origin.x, dy = p.y - origin.y;
-        sample.x = (dx * fwd.x + dy * fwd.y) / scale;
+        sample.x = (dx * fwd.x + dy * fwd.y) / scale + coatPhase;
         sample.y = (dy * fwd.x - dx * fwd.y) / scale;
-        sample.z = p.z / scale;
+        sample.z = p.z / scale * coatLateral;
         sample.dorsal = clamp(dorsal, -1, 1);
         sample.region = region;
         sample.along = clamp(along, 0, 1);
         sample.footprint = fp;
+        if (coatStage) {
+            stageBody.x = sample.x - coatPhase;
+            stageBody.y = sample.y;
+            stageBody.z = p.z / scale;
+        }
         const mode = hook.mode;
         if (mode === 0) {
-            evaluateCoat(genome, sample, coatOut, 0);
+            if (coatStage)
+                evaluateFaunaStageCoat(genome, coatStage, sample, stageBody, coatOut);
+            else
+                evaluateCoat(genome, sample, coatOut, 0);
             hook.calls++;
             hook.ok = region !== 'eye' && region !== 'horn' && region !== 'armor' && !(CRISP_OFF_LIMBS.has(genome.pattern) && LIMB_REGIONS.has(region));
         }
+        else if (coatStage)
+            evaluateFaunaStageCoat(genome, coatStage, sample, stageBody, coatOut, mode === 1 ? 0 : 1, mode === 3 ? 1 : 0);
         else
             evaluateCoatWithMask(genome, sample, coatOut, 0, mode === 1 ? 0 : 1, mode === 3 ? 1 : 0);
         let c = [coatOut[0], coatOut[1], coatOut[2]];
         // body bands continued as rings down every leg read as a striped sock (toy-like); reptile limbs carry the
         // banding faintly, as scale-row shading, so it fades to 40% strength there
         if (plainGenome && (region === 'limb-upper' || region === 'limb-lower' || region === 'foot')) {
-            evaluateCoat(plainGenome, sample, coatOut, 0);
+            if (coatStage)
+                evaluateFaunaStageCoat(plainGenome, coatStage, sample, stageBody, coatOut);
+            else
+                evaluateCoat(plainGenome, sample, coatOut, 0);
             c = mixC([coatOut[0], coatOut[1], coatOut[2]], c, 0.4);
         }
         if (region === 'eye' || region === 'horn' || region === 'armor')
@@ -1154,11 +1170,18 @@ export function buildComposerSkin(graph, options = {}) {
     const torsoEdges = loftEdgeLengths(axialRings, axialRadial, i => axialMetas[i].region === 'torso' && axialMetas[i + 1].region === 'torso');
     torsoEdges.sort();
     const torsoEdge = torsoEdges.length ? torsoEdges[torsoEdges.length >> 1] : 0;
+    if (coatStage)
+        stageBody.cell = torsoEdge / scale;
     const cells = COAT_CELLS_PER_BODY[genome.pattern];
     if (cells > 0 && genome.pattern !== 'roan' && torsoEdge > 0) {
         const maxScale = scale / (4 * 1.08 * cells * torsoEdge);
         if (genome.scale > maxScale)
             genome = { ...genome, scale: maxScale };
+    }
+    if (coatStage) {
+        Object.freeze(genome);
+        if (plainGenome)
+            Object.freeze(plainGenome);
     }
     // the end cap closes the neck inside the head (whose first station is the neck's last ring)
     loft(s, axialRings, axialRadial, tail.length ? 0.25 : 0.85, 0.25, 2);
@@ -1550,11 +1573,30 @@ export function buildComposerSkin(graph, options = {}) {
             s.end();
             s.begin('foot', `${r.feet} ${limb.pair + 1}${tag}`);
             s.region = REGION.foot;
+            const firstFootVertex = s.nv;
             const footCoat = (p) => coatAt(p, 0, 'foot', 1);
             if (realism && (r.feet === 'pad' || r.feet === 'hoof' || r.feet === 'claw'))
-                buildRealismFoot(s, r.feet, footBone, limb.footHeight, limb.footLength, limb.side, ankle, pal, at, axis, footCoat);
+                buildRealismFoot(s, r.feet, footBone, limb.footHeight, limb.footLength, limb.side, ankle, pal, at, axis, footCoat, graph.phenotype?.dimensions);
             else
                 buildFoot(s, r.feet, footBone, bones[limb.bones[limb.bones.length - 2]], limb.footHeight, limb.footLength, limb.side, pal, at, axis, footCoat);
+            if (graph.phenotype && r.feet === 'paw') {
+                // Paw lobes are separate overlapping geometry in the existing Composer.
+                // Fit their lateral extent to the resolved foot width, in the foot frame.
+                const centre = P(footBone), lateral = axis(footBone, 0, 0, 1), p = V();
+                let lo = Infinity, hi = -Infinity;
+                for (let v = firstFootVertex; v < s.nv; v++) {
+                    const z = p.fromArray(s.p, v * 3).sub(centre).dot(lateral);
+                    lo = Math.min(lo, z);
+                    hi = Math.max(hi, z);
+                }
+                const k = graph.phenotype.dimensions.footWidth / (hi - lo), middle = (lo + hi) / 2;
+                for (let v = firstFootVertex; v < s.nv; v++) {
+                    p.fromArray(s.p, v * 3);
+                    const z = p.clone().sub(centre).dot(lateral);
+                    p.addScaledVector(lateral, (z - middle) * k - z);
+                    s.p.set([p.x, p.y, p.z], v * 3);
+                }
+            }
             s.end();
             fitFootContract(s, firstVertex, footBone, limb.footHeight, limb.footExtent);
         }
@@ -1590,7 +1632,7 @@ export function buildComposerSkin(graph, options = {}) {
         version: COMPOSER_COAT_CRISP_VERSION, pattern: crispPattern, code: COMPOSER_COAT_CRISP_PATTERNS.indexOf(crispPattern) + 1, genome: crispGenome,
         seed: coatSeedMix(crispGenome.seed) >>> 0, cellsPerBody: COAT_CELLS_PER_BODY[crispPattern] * crispGenome.scale,
         threshold: crispGenome.threshold, warp: crispGenome.warp, bellyLine: crispGenome.bellyLine,
-        frame: { origin: [origin.x, origin.y], forward: [fwd.x, fwd.y], scale },
+        frame: { origin: [origin.x, origin.y], forward: [fwd.x, fwd.y], scale, ...(graph.phenotype ? { phase: coatPhase, lateral: coatLateral } : {}) },
     } : null;
     let coatLayers = null;
     if (crispPattern) {
@@ -1602,9 +1644,9 @@ export function buildComposerSkin(graph, options = {}) {
                 continue;
             }
             const dx = s.p[i * 3] - origin.x, dy = s.p[i * 3 + 1] - origin.y;
-            sampleOut[i * 4] = (dx * fwd.x + dy * fwd.y) / scale;
+            sampleOut[i * 4] = (dx * fwd.x + dy * fwd.y) / scale + coatPhase;
             sampleOut[i * 4 + 1] = (dy * fwd.x - dx * fwd.y) / scale;
-            sampleOut[i * 4 + 2] = s.p[i * 3 + 2] / scale;
+            sampleOut[i * 4 + 2] = s.p[i * 3 + 2] / scale * coatLateral;
             sampleOut[i * 4 + 3] = 0;
         }
         coatLayers = { c0: s.l0.slice(0, s.nv * 3), c1: s.l1.slice(0, s.nv * 3), c2: s.l2.slice(0, s.nv * 3), sample: sampleOut };
@@ -1672,7 +1714,7 @@ function buildHead(s, graph, hb, pal, at, axis, hc, st0, firstWeights, ind, coat
     s.begin('head', r.head);
     s.region = REGION.head;
     let tipX = 0.4 * H + sn, tipY = -0.2 * cH, tipH = 0.5 * cH;
-    const es = tr.earScale;
+    const es = graph.phenotype ? graph.phenotype.dimensions.earLength / (H * (r.head === 'proboscis' ? PROBOSCIS_EAR.length : .34)) : tr.earScale;
     if (r.head === 'proboscis') {
         // elephant/tapir face (fauna-composer-face-geometry-1): a high-domed cranium and a short, deep muzzle that ends in a
         // round section and hands over into the trunk without a cap; its last stations pitch down toward the trunk
@@ -1704,7 +1746,7 @@ function buildHead(s, graph, hb, pal, at, axis, hc, st0, firstWeights, ind, coat
         // lobe, bowed outward and thinning toward its free rim (proboscisEar)
         s.begin('head', `${r.head} ears`);
         s.region = REGION.ear;
-        for (const side of [-1, 1]) {
+        for (const side of es > 0 ? [-1, 1] : []) {
             const back = PROBOSCIS_EAR.flare * Math.PI / 180, e1 = ax.clone().multiplyScalar(Math.cos(back)).addScaledVector(az, -side * Math.sin(back)).normalize();
             const out = az.clone().multiplyScalar(side * Math.cos(back)).addScaledVector(ax, Math.sin(back)).normalize();
             const root = at(hb, 0.02 * H, 0.4 * cH, side * 0.9 * cW).addScaledVector(e1, 0.06 * H * es).addScaledVector(ay, -0.1 * H * es).addScaledVector(out, -0.02 * H * es);
@@ -1752,7 +1794,7 @@ function buildHead(s, graph, hb, pal, at, axis, hc, st0, firstWeights, ind, coat
             const horned = hg.built === 'ossicones' || hg.built === 'paired';
             s.begin('head', `${r.head} ears`);
             s.region = REGION.ear;
-            for (const side of [-1, 1]) {
+            for (const side of es > 0 ? [-1, 1] : []) {
                 const base = horned ? at(hb, -0.06 * H, 0.55 * cH, side * 0.62 * cW) : at(hb, 0.04 * H, 0.75 * cH, side * 0.55 * cW);
                 const dir = horned ? ay.clone().multiplyScalar(0.45).addScaledVector(az, side * 0.85).addScaledVector(ax, -0.25).normalize() : ay.clone().multiplyScalar(0.8).addScaledVector(az, side * 0.6).addScaledVector(ax, -0.25).normalize();
                 ellipsoid(s, base.clone().addScaledVector(dir, 0.16 * H * es), [dir, ax.clone().negate(), az], [0.18 * H * es, 0.03 * H * es, 0.09 * H * es], w, (_a, f, p) => mixC(coatAt(p, 0.4, 'ear', f), pal.skin, 0.25), 8, 4);
@@ -1914,7 +1956,8 @@ function buildHead(s, graph, hb, pal, at, axis, hc, st0, firstWeights, ind, coat
         const topAt = (x, fallback) => { const h = surface && raycastFirstHit(surface, [x, 2 * cH, 0], [0, -1, 0]); return h && h.point[1] >= lowest && h.point[1] <= 1.2 * cH ? h.point[1] : fallback; };
         s.begin('horn', casque ? 'casque' : hg.built);
         s.region = REGION.horn;
-        const hs = tr.hornScale, curl = tr.hornCurl, asym = tr.hornAsym, thick = 0.5 + 0.5 * hs;
+        const pairedLength = Math.hypot(.05 * H, .25 * cH, .3 * cW) + Math.hypot(.12 * H, .3 * cH, .3 * cW) + Math.hypot(.03 * H, .5 * cH, .05 * cW) + Math.hypot(.1 * H, .35 * cH, .2 * cW);
+        const hs = graph.phenotype && hg.built === 'paired' ? graph.phenotype.dimensions.hornLength / pairedLength : tr.hornScale, curl = tr.hornCurl, asym = tr.hornAsym, thick = 0.5 + 0.5 * hs;
         const hornCol = (i, n, p) => mixC(coatAt(p, 1, 'horn', i / n), pal.keratin, 0.35 + 0.65 * i / n);
         const curled = (pts, base, about, angle) => angle === 0 ? pts : pts.map((p, i) => i === 0 ? p : p.clone().sub(base).applyAxisAngle(about, angle * i / (pts.length - 1)).add(base));
         const grow = (pts, k) => k === 1 ? pts : pts.map((p, i) => i === 0 ? p : p.clone().sub(pts[0]).multiplyScalar(k).add(pts[0]));
@@ -2820,7 +2863,7 @@ function fitFootContract(s, firstVertex, foot, hF, [back, front]) {
 /** Skin-6 feet continue the actual ankle boundary. The shared ring keeps its exact
  * position, weight and colour samples, so its seam stays closed under every pose.
  * Foot height/extent and the graph's contact solver retain their skin-5 meaning. */
-function buildRealismFoot(s, type, foot, hF, lF, side, ankle, pal, at, axis, coat) {
+function buildRealismFoot(s, type, foot, hF, lF, side, ankle, pal, at, axis, coat, measured) {
     const w = [[foot.index, 1]], ax = axis(foot, 1, 0, 0), ay = axis(foot, 0, 1, 0), az = axis(foot, 0, 0, 1);
     const down = ay.clone().negate(), a = ankle.ring, r0 = a.rx;
     const skinColour = (p) => mixC(coat(p), pal.skin, type === 'claw' ? 0.4 : 0.18);
@@ -2830,6 +2873,12 @@ function buildRealismFoot(s, type, foot, hF, lF, side, ankle, pal, at, axis, coa
     const shape = type === 'claw'
         ? [[0.06, -0.28, Math.max(a.ry, 0.16 * lF), Math.max(r0, 0.15 * lF)], [0.15, -0.65, 0.25 * lF, Math.max(r0, 0.19 * lF)], [0.17, -1, 0.23 * lF, Math.max(r0 * 0.94, 0.17 * lF)]]
         : [[0.03, -0.25, Math.max(a.ry, r0 * 1.08), r0 * 1.05], [0.11, -0.7, Math.max(r0 * 1.2, lF * 0.38), r0 * 1.23], [0.14, -1, Math.max(r0 * 1.23, lF * 0.4), r0 * 1.24]];
+    if (measured && type !== 'claw') {
+        shape[1][2] = measured.footLength * .48;
+        shape[1][3] = measured.footWidth * .48;
+        shape[2][2] = measured.footLength * .5;
+        shape[2][3] = measured.footWidth * .5;
+    }
     const rings = [a, ...shape.map(([x, y, fore, lateral], i) => ({
             c: at(foot, x * lF, y * hF), t: down, u: ax,
             rx: lateral, ry: fore, w, region: REGION.foot, color: (_angle, p) => colour(i + 1, p),

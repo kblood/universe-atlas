@@ -13,6 +13,7 @@ import ts from 'typescript';
 
 export const CREATURE_CORE_MODULES = Object.freeze([
   'fauna-coat-fields.ts',
+  'fauna-coat-juvenile.ts',
   'fauna-coat-crisp-glsl.ts',
   'fauna-coat-vocab.ts',
   'fauna-composer-eye-catalogue.ts',
@@ -21,6 +22,8 @@ export const CREATURE_CORE_MODULES = Object.freeze([
   'fauna-composer-face.ts',
   'fauna-composer-individual.ts',
   'fauna-composer-mesh.ts',
+  'fauna-composer-phenotype.ts',
+  'fauna-composer-source.ts',
   'fauna-composer-recipe.ts',
   'fauna-composer-rig.ts',
   'fauna-composer-species.ts',

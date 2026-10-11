@@ -401,6 +401,13 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     pool.release(id); this.mergedBindings.delete(id); this.revision++;
   }
   sourceOf(id: string): FaunaComposerSource | null {const actor = this.actors.get(id); return actor ? this.entries.get(actor.key)?.source ?? null : null;}
+  /** Explicit QA/inspection only; callers must copy before mutating borrowed arrays. */
+  snapshotOf(id:string){
+    const actor=this.actors.get(id),entry=actor?this.entries.get(actor.key):undefined;
+    if(!actor||!entry||!actor.tier)return null;
+    return {id,key:actor.key,tier:actor.tier,graph:entry.graph,skin:entry.levels[actor.tier]??null,source:entry.source,pose:actor.pose,
+      palette:this.paletteData.subarray(actor.row*this.paletteBones*16,actor.row*this.paletteBones*16+entry.graph.bones.length*16)};
+  }
   poseOf(id: string): ComposerPose | null {return this.actors.get(id)?.pose ?? null;}
   diagnostics() {return {version: FAUNA_COMPOSER_RENDER_VERSION, ...this.stats, capacity: this.capacity, sources: this.entries.size,
     actors: [...this.drawn].map(id => {const actor = this.actors.get(id)!, entry = this.entries.get(actor.key)!; return {id, key: actor.key, tier: actor.tier, bones: entry.graph.bones.length, skin: entry.levels[actor.tier!]!.version};}),

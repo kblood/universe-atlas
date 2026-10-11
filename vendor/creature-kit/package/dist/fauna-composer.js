@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { composerConstraints, normalizeComposerRecipe } from "./fauna-composer-recipe.js";
-import { buildComposerGraph, composerSkeletonSegments, composerStructure, poseComposer, COMPOSER_BUDGET, COMPOSER_TRUNK_MOTION_VERSION } from "./fauna-composer-rig.js";
-import { COMPOSER_COAT_CRISP_VERSION, buildComposerSkin } from "./fauna-composer-mesh.js";
+import { composerConstraints } from "./fauna-composer-recipe.js";
+import { composerSkeletonSegments, composerStructure, poseComposer, COMPOSER_BUDGET, COMPOSER_TRUNK_MOTION_VERSION } from "./fauna-composer-rig.js";
+import { COMPOSER_COAT_CRISP_VERSION } from "./fauna-composer-mesh.js";
 import { COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL } from "./fauna-coat-crisp-glsl.js";
 export { COAT_PATTERN_CRISP_GLSL as COMPOSER_COAT_CRISP_GLSL } from "./fauna-coat-crisp-glsl.js";
-import { deriveComposerIndividual } from "./fauna-composer-individual.js";
+import { buildComposerSource } from "./fauna-composer-source.js";
 /** Per-vertex gloss (the skin's `gloss`, attribute `composerGloss`): roughness falls toward this value with it, which
  * gives the cornea a real specular highlight. Gloss 0 leaves the material's roughness untouched. */
 export const COMPOSER_GLOSS_ROUGHNESS = 0.06;
@@ -90,11 +90,7 @@ export function createComposerCreature(input, options = {}) {
     // an already built creature without updating its version metadata.
     const poseOptions = { trunkMotion: options.trunkMotion ?? 'legacy' };
     const started = performance.now();
-    const recipe = normalizeComposerRecipe(input).recipe;
-    // The only caller of deriveComposerIndividual: the rig and skin receive the effective recipe.
-    const derived = deriveComposerIndividual(recipe);
-    const graph = buildComposerGraph(derived.recipe);
-    const skin = buildComposerSkin(graph, options);
+    const { recipe, individual: derived, graph, skin } = buildComposerSource(input, options);
     if (skin.vertexCount > COMPOSER_BUDGET.maxVertices || skin.triangleCount > COMPOSER_BUDGET.maxTriangles)
         throw new Error(`Composer skin exceeds the desktop preview budget (${skin.vertexCount} vertices, ${skin.triangleCount} triangles).`);
     const geometry = new THREE.BufferGeometry();
@@ -114,9 +110,13 @@ export function createComposerCreature(input, options = {}) {
     // skin-5: the skin's shading normals (three's vertex normals with welded seams sharing one normal)
     geometry.setAttribute('normal', new THREE.BufferAttribute(skin.normals, 3));
     geometry.userData.composer = { graph: graph.version, skin: skin.version, coatCrisp: skin.coatCrisp?.version ?? null };
+    if (graph.phenotype)
+        Object.assign(geometry.userData.composer, { phenotype: graph.phenotype.version, identity: structuredClone(graph.phenotype.identity) });
     if (poseOptions.trunkMotion === 'wave-1' && graph.chains.trunk.length)
         geometry.userData.composer.trunkMotion = COMPOSER_TRUNK_MOTION_VERSION;
     const coloured = skin.coatCrisp && skin.coatLayers ? createComposerCrispCoatMaterial(skin.coatCrisp) : createComposerColouredMaterial();
+    if (graph.phenotype)
+        coloured.roughness = graph.phenotype.roughness;
     const neutralMaterial = new THREE.MeshStandardMaterial({ color: '#a9aba6', roughness: 0.9, metalness: 0 });
     const mesh = new THREE.SkinnedMesh(geometry, coloured);
     mesh.name = 'composer-skin';

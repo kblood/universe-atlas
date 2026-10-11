@@ -48,6 +48,20 @@
         "CoatWeightedSample"
       ]
     },
+    "fauna-coat-juvenile.ts": {
+      "values": [
+        "FAUNA_JUVENILE_COAT_VERSION",
+        "FAWN_CREAM",
+        "evaluateFaunaStageCoat",
+        "faunaFawnSpotLayout",
+        "faunaFawnSpotMask",
+        "faunaJuvenileStockingStrength"
+      ],
+      "types": [
+        "FaunaFawnSpotLayout",
+        "FaunaJuvenileCoatStage"
+      ]
+    },
     "fauna-coat-crisp-glsl.ts": {
       "values": [
         "COAT_PATTERN_CRISP_GLSL",
@@ -318,6 +332,16 @@
         "ComposerSkinRing"
       ]
     },
+    "fauna-composer-phenotype.ts": {
+      "values": [
+        "COMPOSER_BUILD_PHENOTYPE_VERSION",
+        "assertComposerResolvedRecipe",
+        "cloneComposerBuildPhenotype"
+      ],
+      "types": [
+        "ComposerBuildPhenotype"
+      ]
+    },
     "fauna-composer-recipe.ts": {
       "values": [
         "COMPOSER_CHOICES",
@@ -393,12 +417,16 @@
         "ComposerBone",
         "ComposerContact",
         "ComposerGraph",
+        "ComposerGroundContact",
         "ComposerLimb",
         "ComposerLimbKind",
         "ComposerLocomotion",
         "ComposerMotion",
         "ComposerPart",
+        "ComposerPhenotypeFit",
+        "ComposerPhenotypeFitEntry",
         "ComposerPose",
+        "ComposerPoseEnvironment",
         "ComposerPoseOptions",
         "ComposerSection",
         "Quat",
@@ -421,6 +449,15 @@
         "CoherentComposerSpecies",
         "ComposerArchetype",
         "ComposerBalance"
+      ]
+    },
+    "fauna-composer-source.ts": {
+      "values": [
+        "buildComposerSource"
+      ],
+      "types": [
+        "ComposerSource",
+        "ComposerSourceOptions"
       ]
     },
     "fauna-composer.ts": {

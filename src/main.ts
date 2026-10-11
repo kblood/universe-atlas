@@ -2753,7 +2753,7 @@ const faunaLodPaletteUpload=faunaPresentation.paletteUploadMode;
 const faunaLodMode=faunaPresentation.lodMode;
 let faunaLodFactory:typeof import('./fauna-lod-runtime-adapter.ts')['createFaunaLodRuntimePrototype']|null=null;
 let faunaLodModuleError:string|null=null;
-if(faunaLodMode==='packed'||faunaLodMode==='float')void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;
+if(faunaPresentation.generator==='archive-quadruped'&&(faunaLodMode==='packed'||faunaLodMode==='float'))void import('./fauna-lod-runtime-adapter.ts').then(module=>{faunaLodFactory=module.createFaunaLodRuntimePrototype;
   planetTiles?.setFaunaLodPrototypeFactory(()=>faunaLodFactory!({presentation:faunaPresentation.bodyPresentation,basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload}));}).catch(error=>{faunaLodModuleError=String(error);});
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
@@ -2769,11 +2769,17 @@ function restartPlanetTiles() {
   planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()),undefined,
     {presentationContinuity:new URLSearchParams(location.search).get('continuity')!=='0',
       forestBarkSharing,
+      faunaGenerator:faunaPresentation.generator,faunaWebGLRenderer:renderer,
       faunaBodyPresentation:faunaPresentation.bodyPresentation,
       ...(faunaLodFactory?{faunaLodPrototype:()=>faunaLodFactory!({presentation:faunaPresentation.bodyPresentation,basisStorage:faunaLodMode==='float'?'float32':'packed-snorm16',profile:faunaLodProfile,paletteUploadMode:faunaLodPaletteUpload})}:{})});
   planetTiles.setSurfaceDetail(surfaceDetail);
   planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
 }
+document.getElementById('inspect-animal')?.addEventListener('click',()=>{
+  const link=planetTiles?.nearestAnimalLabLink();
+  if(!link){announce('Approach a visible animal to inspect it in Animal Lab.');return;}
+  window.open(new URL(link,location.href).href,'_blank','noopener');
+});
 const SPIN_Y_AXIS = new THREE.Vector3(0, 1, 0), SPIN_X_AXIS = new THREE.Vector3(1, 0, 0);
 /** Contract §4.4: the sun direction seen from a spinning body's surface must
  * follow its rotation. The terrain mesh and the ground-walker's frame are
@@ -5174,7 +5180,9 @@ Object.defineProperty(window, "__atlas", {
     // Explicit diagnostic input only; no public seek/reset per benchmark frame.
     setExplorationStepNs:(stepNs:string|null,maxTicks=180)=>explorationClockStep.configure(stepNs,maxTicks),
     get explorationStep(){return explorationClockStep.snapshot();},
-    get faunaPresentation(){return {...faunaPresentation,moduleStatus:faunaLodMode==='off'?'disabled':faunaLodModuleError?'failed':faunaLodFactory?'ready':'loading',moduleError:faunaLodModuleError};},
+    get faunaPresentation(){return {...faunaPresentation,moduleStatus:faunaPresentation.generator==='composer'?'shared-composer':faunaLodMode==='off'?'disabled':faunaLodModuleError?'failed':faunaLodFactory?'ready':'loading',moduleError:faunaLodModuleError};},
+    nearestAnimalLabLink(){return planetTiles?.nearestAnimalLabLink()??null;},
+    composerAnimalSnapshot(id:string){return planetTiles?.composerAnimalSnapshot(id)??null;},
     async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');

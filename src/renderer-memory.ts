@@ -7,7 +7,11 @@ export const TOTAL_BUDGET_BYTES=256*1024*1024;
 // RiverWater has its own 16 MiB cap and the retained environment allocation is
 // reserved here, so terrain admission cannot consume their headroom.
 export const WATER_ENVIRONMENT_RESERVE_BYTES=28*1024*1024;
-export const LIFE_RESERVE_BYTES=16*1024*1024;
+export const LEGACY_LIFE_RESERVE_BYTES=16*1024*1024;
+/** Shared Composer admission64MiB, measured one-job-worker reserve40MiB,
+ * staged/receiving results16MiB and flora16MiB. Total core stays256MiB: terrain receives the
+ * remaining budget. These ceilings require the migration's live resource gate. */
+export const LIFE_RESERVE_BYTES=136*1024*1024;
 // Surface rocks reserve their declared worst-case ceiling (geometry, instance
 // buffers, staging, estimated records and per-update transients). Shared PBR
 // textures are not part of it: they are GROUND_RESOURCE_BYTES, counted once.

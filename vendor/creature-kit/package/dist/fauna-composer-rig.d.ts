@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { type ComposerConstraint, type ComposerRecipe } from './fauna-composer-recipe.ts';
 import { type ComposerIndividualTraits } from './fauna-composer-individual.ts';
+import { type ComposerBuildPhenotype } from './fauna-composer-phenotype.ts';
 /** Variable articulated body-plan graph for the modular composer. It is
  * deliberately separate from the fixed 22-bone quadruped rig: limbless,
  * biped, quadruped, sprawled and many-legged plans each get their own bones.
@@ -9,8 +10,32 @@ import { type ComposerIndividualTraits } from './fauna-composer-individual.ts';
  * +Z to the animal's right, ground at y = 0. */
 export declare const COMPOSER_GRAPH_VERSION = "fauna-composer-graph-4";
 export declare const COMPOSER_TRUNK_MOTION_VERSION = "fauna-composer-trunk-motion-1";
+export interface ComposerGroundContact {
+    position: Vec3;
+    normal?: Vec3;
+    forward?: Vec3;
+    pitch?: number;
+    stance?: boolean;
+}
+/** Optional caller-owned terrain/path context. The same Composer IK handles
+ * authored previews and dated planetary movement; no world controller is imported. */
+export interface ComposerPoseEnvironment {
+    cycle?: number;
+    clock?: number;
+    stride?: number;
+    speed?: number;
+    cycleLength?: number;
+    /** Closed-form startup/settling blend; omitted on unchanged authored clips. */
+    walkWeight?: number;
+    idleWeight?: number;
+    rootHeight?: number;
+    rootRotation?: Quat;
+    ground?: (x: number, z: number) => number;
+    contact?: (limb: ComposerLimb, phase: number, stance: boolean, target: Vec3) => ComposerGroundContact;
+}
 export interface ComposerPoseOptions {
     trunkMotion?: 'legacy' | 'wave-1';
+    environment?: ComposerPoseEnvironment;
 }
 /** Desktop preview budget. Not a Quest qualification. */
 export declare const COMPOSER_BUDGET: Readonly<{
@@ -90,6 +115,10 @@ export interface ComposerLocomotion {
 }
 export interface ComposerGraph {
     version: typeof COMPOSER_GRAPH_VERSION;
+    /** Additive, explicit measured-anatomy input. Absent on historical graphs. */
+    phenotype?: ComposerBuildPhenotype;
+    /** Numeric fit audit exists only for explicitly resolved phenotypes. */
+    phenotypeFit?: ComposerPhenotypeFit;
     recipe: ComposerRecipe;
     constraints: ComposerConstraint[];
     bones: ComposerBone[];
@@ -126,6 +155,24 @@ export interface ComposerGraph {
      * motion desync (phase, period, duty, lift, breathing and look phases); the build reads limb robustness, leg segment
      * jitter, torso profile terms and carriage. Neutral traits build the version-1 rest skeleton bit for bit. */
     traits: ComposerIndividualTraits;
+}
+export interface ComposerPhenotypeFitEntry {
+    field: string;
+    requested: number;
+    built: number;
+    units: 'm' | 'm/s' | 's' | 'ratio';
+    reason: string;
+}
+export interface ComposerPhenotypeFit {
+    version: 'composer-phenotype-fit-1';
+    entries: ComposerPhenotypeFitEntry[];
+    deviations: ComposerPhenotypeFitEntry[];
+    derived: {
+        snoutToHeadRatio: number;
+        craniumHeightToWidthRatio: number;
+        footHeightToWidthRatio: number;
+        neckBones: number;
+    };
 }
 /** A leg's ground support. `contact` is the sole point under the foot in the centred display frame;
  * `world` adds the walk's travel along +X. `extension` is socket-to-hock distance / (upper + lower). */
@@ -170,7 +217,9 @@ export declare function composerTwoBone(root: THREE.Vector3, target: THREE.Vecto
     reachError: number;
 };
 /** Builds the bind-pose graph. Pure and deterministic. */
-export declare function buildComposerGraph(input: ComposerRecipe): ComposerGraph;
+export declare function buildComposerGraph(input: ComposerRecipe, options?: {
+    phenotype?: ComposerBuildPhenotype;
+}): ComposerGraph;
 /** Bone-local bounding ellipsoids [x past the tip bone's end, z, rx, ry, rz] of the tail-tip ornament. The skin builds
  * the ornament inside them and the rest and posed tail keep them above the ground. */
 export declare function composerTailTipBounds(recipe: ComposerRecipe, L: number, tip: {

@@ -1,3 +1,4 @@
+import type { ComposerBuildPhenotype } from './fauna-composer-phenotype.ts';
 import { type ComposerRecipe } from './fauna-composer-recipe.ts';
 import { type ComposerGraph, type ComposerMotion, type ComposerPose, type ComposerPoseOptions } from './fauna-composer-rig.ts';
 import { type ComposerSkinPresentation } from './fauna-composer-mesh.ts';
@@ -100,6 +101,8 @@ export interface ComposerClipRequest {
     duration?: number;
 }
 export interface ComposerExportOptions extends ComposerPoseOptions {
+    /** Already resolved metre anatomy and coat; recipe text alone cannot replay it. */
+    phenotype?: ComposerBuildPhenotype;
     /** Surface revision, independent of recipe identity. Omitted exports skin-5. */
     presentation?: ComposerSkinPresentation;
     /** Motions (or explicit clip windows) to bake; default every COMPOSER_MOTIONS entry. */
@@ -182,6 +185,7 @@ export interface ComposerExportReport {
     recipeText: string;
     speciesKey: string;
     versions: Record<string, string | number>;
+    phenotype?: ComposerBuildPhenotype;
     individual: {
         deltas: string[];
         effectiveRecipeText: string;
