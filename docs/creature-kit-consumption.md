@@ -24,6 +24,14 @@ its final ordinary-world visibility/resource acceptance and deployment. Desktop
 functional evidence is not a physical Quest performance result.
 The following 2026-10-07/08 options and receipts are historical.
 
+The bounded desktop policy prioritizes six original near sources and six middle
+sources, then uses source-derived anatomical far tiers for other admitted members.
+Measured middle vertex/index footprints also constrain arena admission. Ineligible
+upgrades do not remain pending or repeatedly rebuild; their canonical IDs remain
+represented. The 80 MiB resident ceiling includes CPU/GPU arenas and palettes;
+worker and staged-result reservations are accounted separately within the combined
+renderer budget. These are allocation contracts, not a headset frame-rate claim.
+
 Date: 2026-10-07. Branch `infra/creature-kit-consume` (from main `ab6042c`). Written and implemented by Claude Opus 5.5.
 Owner decision: Kasper, 2026-10-07, the creature kit is its own repo (`C:/LLM/IWSDK/creature-kit`) that Atlas consumes
 (`docs/owner-decisions-2026-10-04.md`, "Owner answers 2026-10-07", A18 Q6). Plan:
