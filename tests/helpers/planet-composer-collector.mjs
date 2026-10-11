@@ -16,6 +16,7 @@ export function auditStoredSourceMap(skin,source){const map=skin.sourceVertex;le
 
 let kitPromise,browserReference;const independentSources=new Map();
 async function ensureBrowserReference(page){if(!browserReference)browserReference=await startPinnedKitReference(page.context(),{kitRoot:process.env.PLANET_COMPOSER_KIT,receiptPath:resolve(process.env.ATLAS_BUILD_ROOT,'vendor/creature-kit/PACKAGE.json')});}
+export async function startupReference(page){await ensureBrowserReference(page);return browserReference.metadata;}
 export async function closeReference(){if(browserReference){await browserReference.close();browserReference=null;independentSources.clear();}}
 function kit(){assert(process.env.PLANET_COMPOSER_KIT,'pinned independent Kit path required');return kitPromise??=import(pathToFileURL(resolve(process.env.PLANET_COMPOSER_KIT,'src/planet-composer.ts')).href);}
 const frame=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
