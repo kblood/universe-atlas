@@ -1419,6 +1419,7 @@ export class PlanetRenderer {
     if (this.continuity) this.groundLifeOn=altitudeGate(this.groundLifeOn,altitudeM,PLANET_DETAIL.groundLifeAltitudeM,PLANET_DETAIL.groundLifeAltitudeExitM);
     if (this.relief === 1 && (contact||(this.continuity?this.groundLifeOn:altitudeM<PLANET_DETAIL.groundLifeAltitudeM)) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
+    this.faunaComposer?.setViewCameras(viewCameras);
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
     // Ocean wave distance fade (OCEAN-PRESENT, ocean-wave-fade-1), smooth
