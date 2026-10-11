@@ -35,7 +35,7 @@ export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMe
   middleSourceCache:p.middleSources,
   mergedGpuContext:gl as WebGL2RenderingContext,
   nearM:p.nearM,middleM:p.middleM,maxDistanceM:p.visibleM,
-  mergedTiers:{middle:{maxVertices:p.middleVertices,maxIndices:p.middleIndices,maxBytes:5*1024*1024,storage:'packed-1'},far:{maxVertices:p.farVertices,maxIndices:p.farIndices,maxBytes:35*1024*1024,storage:'packed-1'}},
+  mergedTiers:{middle:{maxVertices:p.middleVertices,maxIndices:p.middleIndices,maxBytes:5*1024*1024,storage:'packed-1'},far:{maxVertices:p.farVertices,maxIndices:p.farIndices,maxIndexPerRecord:p.farTargetTriangles*3,maxBytes:35*1024*1024,storage:'packed-1'}},
  });
  if(options.renderer)renderer.assertCapabilities(options.renderer);
  return renderer;
