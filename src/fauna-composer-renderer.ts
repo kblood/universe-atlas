@@ -30,7 +30,7 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
   mergedGpuContext?:WebGL2RenderingContext;
   /** Explicitly sized arenas: unique reduced animals share one draw per tier.
    * Arena CPU+GPU allocations count against maxBytes before accepting sources. */
-  mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number; storage?: FaunaComposerArenaStorage; maxIndexPerRecord?:number}>>;
+  mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number; storage?: FaunaComposerArenaStorage; activeIndexPasses?:boolean}>>;
   capacity?: number; maxSources?: number; maxBones?: number; maxBytes?: number; maxResultBytes?: number;
   workerReserveBytes?: number; maxDistanceM?: number; nearM?: number; middleM?: number;
   fullSourceCache?: number; adoptionBudgetMs?: number; now?: () => number; onReady?: () => void;

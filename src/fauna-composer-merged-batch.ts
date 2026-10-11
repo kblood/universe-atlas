@@ -70,11 +70,11 @@ function release(free: Block[], start: number, count: number): void {
 }
 type Record = {vertex: number; vertices: number; index: number; indices: number; row: number; skinVersion: string; crisp: FaunaComposerRenderSkin['coatCrisp']; roughness: number; proof?: ComposerQuantizationProof;
   /** Borrowed immutable topology; shared with the source/retained receipt, never copied for relocation. */
-  localIndex:Uint16Array|Uint32Array; views:Set<WeakRef<FaunaComposerRenderSkin|FaunaComposerPackedSkin>>; pass?:0|1|2};
+  localIndex:Uint16Array|Uint32Array; views:Set<WeakRef<FaunaComposerRenderSkin|FaunaComposerPackedSkin>>; pass?:0|1|2; writtenIndices?:number};
 export interface FaunaComposerMergedOptions {storage?: FaunaComposerArenaStorage; gpuContext?:WebGL2RenderingContext; maxVertices: number; maxIndices: number; maxActors: number; maxBytes: number; bones: {value: THREE.DataTexture};
-  /** Optional fixed index slots. Exact local topology is retained; unused slot
-   * indices are degenerate. Requires maxIndices === maxActors * this value. */
-  maxIndexPerRecord?:number}
+  /** Pack actual variable-length topology into camera/active-union prefixes.
+   * Anatomy-preserving target misses use their actual aggregate index cost. */
+  activeIndexPasses?:boolean}
 const gpuOwners=new WeakMap<FaunaComposerGpuSkin,{pool:FaunaComposerMergedBatch;id:string;record:Record}>();
 
 /** Bounded unique-geometry arena: one draw for any mix of Composer anatomy and
@@ -96,22 +96,21 @@ export class FaunaComposerMergedBatch {
   private readonly options: FaunaComposerMergedOptions;
   private highIndex = 0; private disposed = false; private active = 0; private triangles = 0;
   private compactionMoves=0; private compactionMaxMoveMs=0; private compactionMaxOverrunMs=0;
-  private readonly indexSlots?:Array<Record|null>;
-  private readonly indexSwapLog?:Uint16Array;
+  private readonly indexOrder?:Record[];
   private viewCameras:readonly THREE.Camera[]=[];
-  private cameraSlots=0; private activeSlots=0; private indexSlotSwaps=0;
+  private cameraActors=0; private unionActors=0; private cameraIndices=0; private unionIndices=0;
+  private indexTransactions=0; private indexRecordsMoved=0; private indexRewriteIndices=0; private indexRewriteMs=0; private indexRewriteMaxMs=0;
   private readonly indexMetadataBytes:number;
   private restorePassCallbacks?:()=>void;
   constructor(options: FaunaComposerMergedOptions) {
     this.options = options;
     if (options.storage !== undefined && options.storage !== 'float-1' && options.storage !== 'packed-1') throw new Error('Unknown Composer arena storage');
     if (![options.maxVertices, options.maxIndices, options.maxActors, options.maxBytes].every(n => Number.isSafeInteger(n) && n > 0) || options.maxIndices % 3 || options.maxActors > 512) throw new Error('Invalid merged Composer capacity');
-    const slot=options.maxIndexPerRecord;
-    if(slot!==undefined&&(!Number.isSafeInteger(slot)||slot<=0||slot%3||slot*options.maxActors!==options.maxIndices))throw new Error('Invalid Composer fixed index capacity');
-    // Conservative reference/pass-field reserve and bounded transaction log.
-    // This CPU slot-number log is not a second topology/index buffer.
-    this.indexMetadataBytes=slot===undefined?0:options.maxActors*20;
-    if(slot!==undefined){this.indexSlots=Array.from({length:options.maxActors},()=>null);this.indexSwapLog=new Uint16Array(options.maxActors*2);}
+    if(options.activeIndexPasses!==undefined&&typeof options.activeIndexPasses!=='boolean')throw new Error('Invalid Composer active index mode');
+    // Conservative reference-plan plus pass/written-prefix field reserve.
+    // Retained local topology supplies rollback; no second index mirror exists.
+    this.indexMetadataBytes=options.activeIndexPasses?options.maxActors*24:0;
+    if(options.activeIndexPasses)this.indexOrder=[];
     // Packed: position12 + normal6 + colour6 + joints4 + weights8 + gloss1
     // + coat colours18 + exact noise sample16 + actor row2 =73 bytes/vertex.
     const packed = options.storage === 'packed-1';
@@ -146,12 +145,12 @@ export class FaunaComposerMergedBatch {
     this.mesh = new THREE.Mesh(this.geometry, material); this.mesh.frustumCulled = false; this.mesh.castShadow = true; this.mesh.receiveShadow = true; this.mesh.visible = false; this.mesh.name = 'Merged Composer tier';
     const depth = new THREE.MeshDepthMaterial({depthPacking: THREE.RGBADepthPacking}); install(depth, false); this.mesh.customDepthMaterial = depth;
     const distance = new THREE.MeshDistanceMaterial(); install(distance, false); this.mesh.customDistanceMaterial = distance;
-    if(this.indexSlots)this.installIndexPasses();
+    if(this.indexOrder)this.installIndexPasses();
   }
   /** Only the actual registered view cameras use the camera prefix. Auxiliary
    * cameras (including reflection) and shadow cameras retain the active union. */
   setViewCameras(cameras:readonly THREE.Camera[]):void {this.viewCameras=cameras;}
-  private setIndexDrawRange(camera:boolean):void {this.geometry.setDrawRange(0,(camera?this.cameraSlots:this.activeSlots)*this.options.maxIndexPerRecord!);}
+  private setIndexDrawRange(camera:boolean):void {this.geometry.setDrawRange(0,camera?this.cameraIndices:this.unionIndices);}
   private installIndexPasses():void {
     const mesh=this.mesh,before=mesh.onBeforeRender,after=mesh.onAfterRender,shadow=mesh.onBeforeShadow,afterShadow=mesh.onAfterShadow;
     const onBeforeRender:typeof before=(...args)=>{const camera=this.viewCameras.includes(args[2]);this.setIndexDrawRange(camera);try{before.apply(mesh,args);this.setIndexDrawRange(camera);}catch(error){this.setIndexDrawRange(true);throw error;}};
@@ -161,71 +160,69 @@ export class FaunaComposerMergedBatch {
     mesh.onBeforeRender=onBeforeRender;mesh.onAfterRender=onAfterRender;mesh.onBeforeShadow=onBeforeShadow;mesh.onAfterShadow=onAfterShadow;
     this.restorePassCallbacks=()=>{if(mesh.onBeforeRender===onBeforeRender)mesh.onBeforeRender=before;if(mesh.onAfterRender===onAfterRender)mesh.onAfterRender=after;if(mesh.onBeforeShadow===onBeforeShadow)mesh.onBeforeShadow=shadow;if(mesh.onAfterShadow===onAfterShadow)mesh.onAfterShadow=afterShadow;};
   }
-  private indexFootprint(indices:number):number {return this.options.maxIndexPerRecord??indices;}
   register(id: string, skin: FaunaComposerStoredSkin, row: number, roughness = .82): boolean {
     if (this.records.has(id)) return false;
     return this.registerSlice(id, skin, row, roughness, Infinity) === 'ready';
   }
   canAdmit(skin: FaunaComposerStoredSkin): boolean {
-    return !(this.indexSlots&&skin.index.length>this.options.maxIndexPerRecord!)&&this.freeVertices.some(b => b.count >= composerStoredVertices(skin)) && this.freeIndices.some(b => b.count >= this.indexFootprint(skin.index.length));
+    return this.freeVertices.some(b => b.count >= composerStoredVertices(skin)) && this.freeIndices.some(b => b.count >= skin.index.length);
   }
-  /** Rewrite one bounded slot from retained local topology, never a readback. */
-  private writeIndexSlot(r:Record|null,slot:number):void {
-    const size=this.options.maxIndexPerRecord!,at=slot*size;
-    if(r)this.writeIndices(r,at,r.vertex);
-    this.clearIndices(at+(r?.indices??0),size-(r?.indices??0));
+  /** A pending record owns the whole span, but only its uploaded prefix is
+   * nonzero. Reconstruct that exact state without reading GPU memory. */
+  private writeStoredIndices(r:Record,index:number):void {
+    const written=r.writtenIndices??r.indices;
+    this.writeIndices(r,index,r.vertex,written);this.clearIndices(index+written,r.indices-written);
   }
-  private swapIndexSlots(a:number,b:number):void {
-    if(a===b)return;
-    const slots=this.indexSlots!,left=slots[a]!,right=slots[b]!,gl=this.gpu?.gl;
-    const previous=gl?.getParameter(gl.COPY_WRITE_BUFFER_BINDING);
+  /** One synchronous frame-end transaction, bounded by the existing aggregate
+   * index capacity. Overlapping spans cannot yield while partially rewritten.
+   * Admission still uses its original per-record deadline checks. Timing below
+   * includes failed attempts/rollback; rewritten-index counts are committed work. */
+  private partitionIndices():void {
+    const order=this.indexOrder!,gl=this.gpu?.gl,previous=gl?.getParameter(gl.COPY_WRITE_BUFFER_BINDING);
+    for(const r of this.records.values())order.push(r);for(const p of this.copying.values())order.push(p.record);
+    order.sort((a,b)=>(a.pass||3)-(b.pass||3)||a.index-b.index);
+    let total=0,oldHigh=0,first=Infinity,last=0,moved=0,camera=0,union=0,cameraActors=0,unionActors=0;
+    for(const r of order){
+      oldHigh=Math.max(oldHigh,r.index+r.indices);
+      if(total!==r.index){first=Math.min(first,total,r.index);last=Math.max(last,total+r.indices,r.index+r.indices);moved++;}
+      total+=r.indices;if(r.pass===1){camera=total;cameraActors++;}if(r.pass){union=total;unionActors++;}
+    }
+    this.indexRewriteMs=0;
+    const started=moved?performance.now():0;
     try {
-      try{this.writeIndexSlot(right,a);this.writeIndexSlot(left,b);}
-      catch(error){if(!gl?.isContextLost()){this.writeIndexSlot(left,a);this.writeIndexSlot(right,b);}throw error;}
-      // Publish both offsets together. GPU receipts keep these same Records.
-      slots[a]=right;slots[b]=left;
-      if(left)left.index=b*this.options.maxIndexPerRecord!;
-      if(right)right.index=a*this.options.maxIndexPerRecord!;
-      this.indexSlotSwaps++;
-    }finally{if(gl)gl.bindBuffer(gl.COPY_WRITE_BUFFER,previous);}
-  }
-  private partitionIndexSlots():void {
-    const slots=this.indexSlots!,moves=this.indexSlotSwaps,log=this.indexSwapLog!;let logged=0;
-    const partition=(start:number,accept:(r:Record|null)=>boolean)=>{
-      let left=start,right=slots.length-1;
-      while(left<=right){if(accept(slots[left]!)){left++;continue;}while(right>left&&!accept(slots[right]!))right--;if(right<=left)break;this.swapIndexSlots(left,right);log[logged++]=left++;log[logged++]=right--;}
-      return left;
-    };
-    try {
-      const camera=partition(0,r=>r?.pass===1),active=partition(camera,r=>r?.pass===2);
-      this.cameraSlots=camera;this.activeSlots=active;
-    }catch(error){
-      // The failing pair restored itself. Reverse earlier complete pairs too,
-      // so a retry starts from the same offsets, free blocks and pass ranges.
-      if(!this.gpu?.gl.isContextLost())while(logged){const b=log[--logged]!,a=log[--logged]!;this.swapIndexSlots(a,b);}
-      throw error;
-    }finally{
-      // Includes partially admitted slots: their offsets may move, but their
-      // original vertex/index copy progress and invisibility do not change.
-      if(this.indexSlotSwaps!==moves){
-        // Vertex ownership never changes in an index swap. Rebuild just the
-        // slot free list, without sorting or allocating per-record plans.
-        this.freeIndices.length=0;let start=-1;this.highIndex=0;
-        for(let i=0;i<=slots.length;i++){
-          if(i<slots.length&&!slots[i]){if(start<0)start=i;}
-          else {if(start>=0){this.freeIndices.push({start:start*this.options.maxIndexPerRecord!,count:(i-start)*this.options.maxIndexPerRecord!});start=-1;}if(i<slots.length)this.highIndex=(i+1)*this.options.maxIndexPerRecord!;}
+      if(moved){
+        let at=0,rewritten=0;
+        try {
+          // Unchanged prefixes/suffixes retain their bytes and do not upload.
+          for(const r of order){if(r.index!==at){this.writeStoredIndices(r,at);rewritten+=r.indices;}at+=r.indices;}
+          this.clearIndices(total,oldHigh-total);rewritten+=oldHigh-total;
+        }catch(error){
+          // Offsets/free lists are still the original allocation. Reconstruct
+          // changed original spans, including partial copies, then old holes.
+          if(!gl?.isContextLost()){
+            let originalAt=0;for(const r of order){if(r.index!==originalAt)this.writeStoredIndices(r,r.index);originalAt+=r.indices;}
+            for(const hole of this.freeIndices){const begin=Math.max(first,hole.start),end=Math.min(last,hole.start+hole.count);if(end>begin)this.clearIndices(begin,end-begin);}
+          }
+          throw error;
         }
+        // Commit all aliases only after the entire variable-length transaction.
+        at=0;for(const r of order){r.index=at;at+=r.indices;}
+        this.freeIndices.length=0;if(total<this.options.maxIndices)this.freeIndices.push({start:total,count:this.options.maxIndices-total});
+        this.highIndex=total;this.indexTransactions++;this.indexRecordsMoved+=moved;this.indexRewriteIndices+=rewritten;
       }
-      this.setIndexDrawRange(true);
+      this.cameraIndices=camera;this.unionIndices=union;this.cameraActors=cameraActors;this.unionActors=unionActors;this.setIndexDrawRange(true);
+    }finally{
+      if(moved){this.indexRewriteMs=performance.now()-started;this.indexRewriteMaxMs=Math.max(this.indexRewriteMaxMs,this.indexRewriteMs);}
+      order.length=0;if(gl)gl.bindBuffer(gl.COPY_WRITE_BUFFER,previous);
     }
   }
-  private writeIndices(r:Record,index:number,vertex:number):void {
+  private writeIndices(r:Record,index:number,vertex:number,count=r.indices):void {
     const out=this.geometry.index!;
-    for(let begin=0;begin<r.indices;begin+=768){const end=Math.min(r.indices,begin+768);
+    for(let begin=0;begin<count;begin+=768){const end=Math.min(count,begin+768);
       for(let i=begin;i<end;i++)if(this.gpu)this.gpu.indexScratch[i-begin]=r.localIndex[i]!+vertex;else out.array[index+i]=r.localIndex[i]!+vertex;
       if(this.gpu)this.gpu.uploadIndices(index+begin,end-begin);
     }
-    if(!this.gpu){out.addUpdateRange(index,r.indices);out.needsUpdate=true;}
+    if(!this.gpu&&count){out.addUpdateRange(index,count);out.needsUpdate=true;}
   }
   private clearIndices(index:number,count:number):void {
     if(!count)return;
@@ -240,21 +237,20 @@ export class FaunaComposerMergedBatch {
     }
   }
   private rebuildFree():void {
-    const records=[...this.records.values(),...(this.indexSlots?[...this.copying.values()].map(p=>p.record):[])];
+    const records=[...this.records.values(),...(this.indexOrder?[...this.copying.values()].map(p=>p.record):[])];
     for(const [free,offset,length,limit]of [[this.freeVertices,'vertex','vertices',this.options.maxVertices],[this.freeIndices,'index','indices',this.options.maxIndices]] as const){
-      free.length=0;let at=0;for(const r of records.slice().sort((a,b)=>a[offset]-b[offset])){if(r[offset]>at)free.push({start:at,count:r[offset]-at});at=r[offset]+(offset==='index'?this.indexFootprint(r.indices):r[length]);}
+      free.length=0;let at=0;for(const r of records.slice().sort((a,b)=>a[offset]-b[offset])){if(r[offset]>at)free.push({start:at,count:r[offset]-at});at=r[offset]+r[length];}
       if(at<limit)free.push({start:at,count:limit-at});
     }
-    this.highIndex=Math.max(0,...records.map(r=>r.index+this.indexFootprint(r.indices)));if(!this.indexSlots)this.geometry.setDrawRange(0,this.highIndex);
+    this.highIndex=Math.max(0,...records.map(r=>r.index+r.indices));if(!this.indexOrder)this.geometry.setDrawRange(0,this.highIndex);
   }
   /** Compact only when summed free space fits but a contiguous span does not.
    * Each record move is atomic; deadlines are checked between complete moves.
    * No plan survives a frame, release or context generation. */
   private compact(skin:FaunaComposerStoredSkin,deadline:number,now:()=>number):'ready'|'pending'|'full' {
-    if(this.freeVertices.reduce((n,b)=>n+b.count,0)<composerStoredVertices(skin)||this.freeIndices.reduce((n,b)=>n+b.count,0)<this.indexFootprint(skin.index.length))return 'full';
+    if(this.freeVertices.reduce((n,b)=>n+b.count,0)<composerStoredVertices(skin)||this.freeIndices.reduce((n,b)=>n+b.count,0)<skin.index.length)return 'full';
     if(this.copying.size)return 'pending';
     for(const axis of ['vertex','index'] as const){
-      if(axis==='index'&&this.indexSlots)continue;
       const free=axis==='vertex'?this.freeVertices:this.freeIndices,required=axis==='vertex'?composerStoredVertices(skin):skin.index.length;
       // Fragmentation in one arena must not relocate an already-fitting arena.
       if(free.some(block=>block.count>=required))continue;
@@ -284,7 +280,6 @@ export class FaunaComposerMergedBatch {
   /** Copies at most 128 vertices or 768 indices between deadline checks. A
    * partial admission is invisible and retains its previous tier until complete. */
   registerSlice(id: string, skin: FaunaComposerStoredSkin, row: number, roughness: number, deadline: number, now = () => performance.now()): 'ready'|'pending'|'full' {
-    if(this.indexSlots&&skin.index.length>this.options.maxIndexPerRecord!)throw new Error('Composer source exceeds explicit maxIndexPerRecord');
     if (this.records.has(id)) return 'ready';
     const stored=isPackedComposerSkin(skin)||isGpuComposerSkin(skin);
     if (stored && this.options.storage !== 'packed-1') throw new Error('Cannot restore a raw Composer tier from packed runtime attributes');
@@ -299,10 +294,10 @@ export class FaunaComposerMergedBatch {
       const vertices = composerStoredVertices(skin), indices = skin.index.length;
       if(!this.canAdmit(skin)){const status=this.compact(skin,deadline,now);if(status!=='ready')return status;}
       const vertex = allocate(this.freeVertices, vertices); if (vertex === null) return 'full';
-      const index = allocate(this.freeIndices, this.indexFootprint(indices)); if (index === null) {release(this.freeVertices, vertex, vertices); return 'full';}
+      const index = allocate(this.freeIndices, indices); if (index === null) {release(this.freeVertices, vertex, vertices); return 'full';}
       pending = {record: {vertex, vertices, index, indices, row, skinVersion: skin.version, crisp: skin.coatCrisp, roughness, localIndex:skin.index,views:new Set(),proof:this.options.storage==='packed-1'?{...(stored?skin.storage.proof:composerQuantizationProof(vertices)),checkedVertices:0}:undefined}, skin, vertexAt: 0, indexAt: 0, seen: true};
       this.copying.set(id, pending); this.roots[row * 28 + 23] = 0;
-      if(this.indexSlots){this.indexSlots[index/this.options.maxIndexPerRecord!]=pending.record;pending.record.pass=0;}
+      if(this.indexOrder){pending.record.pass=0;pending.record.writtenIndices=0;}
     }
     pending.seen = true; const r = pending.record;
     const arrays: [string, ComposerStoredArray|null, number][] = isGpuComposerSkin(skin)?[]:[['position', skin.positions, 3], ['normal', skin.normals, 3], ['color', skin.colors, 3], ['skinIndex', skin.skinIndex, 4], ['skinWeight', skin.skinWeight, 4], ['composerGloss', skin.gloss, 1],
@@ -351,11 +346,11 @@ export class FaunaComposerMergedBatch {
       const begin = pending.indexAt, end = Math.min(r.indices, begin + 768);
       for (let i = begin; i < end; i++) {if(this.gpu)this.gpu.indexScratch[i-begin]=skin.index[i]!+r.vertex;else out.array[r.index + i] = skin.index[i]! + r.vertex;}
       if(this.gpu)this.gpu.uploadIndices(r.index+begin,end-begin);
-      else {out.addUpdateRange(r.index + begin, end - begin); out.needsUpdate = true;} pending.indexAt = end;
+      else {out.addUpdateRange(r.index + begin, end - begin); out.needsUpdate = true;} pending.indexAt = end;if(this.indexOrder)r.writtenIndices=end;
     }
     if (pending.indexAt < r.indices) return 'pending';
     if(r.proof)assertComposerQuantizationProof(r.proof);
-    this.copying.delete(id); this.records.set(id, r); this.highIndex = Math.max(this.highIndex, r.index + this.indexFootprint(r.indices)); if(!this.indexSlots)this.geometry.setDrawRange(0, this.highIndex); return 'ready';
+    this.copying.delete(id); this.records.set(id, r); this.highIndex = Math.max(this.highIndex, r.index + r.indices); if(!this.indexOrder)this.geometry.setDrawRange(0, this.highIndex); return 'ready';
   }
   /** The arena owns these exact attribute views. Only the compact local index
    * and source-vertex map remain outside its already-accounted backing buffers.
@@ -415,7 +410,7 @@ export class FaunaComposerMergedBatch {
   }
   restoreContext():void {if(this.records.size||this.copying.size)throw new Error('Composer context restoration requires an empty arena');this.gpu?.restore();this.rootTexture.needsUpdate=true;}
   reset():void {for(const id of new Set([...this.records.keys(),...this.copying.keys()]))this.release(id);this.beginFrame();this.endFrame();}
-  beginFrame(): void {for (const p of this.copying.values()) p.seen = false; this.active = 0; this.triangles = 0; for (const r of this.records.values()) {this.roots[r.row * 28 + 23] = 0;if(this.indexSlots)r.pass=0;}}
+  beginFrame(): void {for (const p of this.copying.values()) p.seen = false; this.active = 0; this.triangles = 0; for (const r of this.records.values()) {this.roots[r.row * 28 + 23] = 0;if(this.indexOrder)r.pass=0;}}
   submit(id: string, matrix: THREE.Matrix4, cameraVisible=true): boolean {
     const r = this.records.get(id); if (!r || this.disposed) return false;
     const at = r.row * 28, crisp = r.crisp, seed = crisp?.seed ?? 0;
@@ -423,23 +418,22 @@ export class FaunaComposerMergedBatch {
     this.roots[at + 18] = crisp?.cellsPerBody ?? 0; this.roots[at + 19] = crisp?.threshold ?? 0;
     this.roots[at + 20] = crisp?.warp ?? 0; this.roots[at + 21] = crisp?.bellyLine ?? 0; this.roots[at + 22] = crisp?.code ?? 0; this.roots[at + 23] = 1;
     this.roots[at + 24] = r.roughness;
-    if(this.indexSlots){if(!r.pass){this.active++;this.triangles+=r.indices/3;}r.pass=cameraVisible||r.pass===1?1:2;return true;}
+    if(this.indexOrder){if(!r.pass){this.active++;this.triangles+=r.indices/3;}r.pass=cameraVisible||r.pass===1?1:2;return true;}
     this.active++; this.triangles += r.indices / 3; return true;
   }
-  endFrame(): void {for (const [id, p] of this.copying) if (!p.seen) this.release(id);if(this.indexSlots)this.partitionIndexSlots(); this.rootTexture.needsUpdate = true; this.mesh.visible = this.active > 0;}
+  endFrame(): void {for (const [id, p] of this.copying) if (!p.seen) this.release(id);if(this.indexOrder)this.partitionIndices(); this.rootTexture.needsUpdate = true; this.mesh.visible = this.active > 0;}
   release(id: string): void {
     const r = this.records.get(id) ?? this.copying.get(id)?.record; if (!r) return;
-    if(this.indexSlots){
+    if(this.indexOrder){
       const gl=this.gpu?.gl,previous=gl?.getParameter(gl.COPY_WRITE_BUFFER_BINDING);
-      try{try{this.clearIndices(r.index,this.indexFootprint(r.indices));}catch(error){if(!gl?.isContextLost())this.writeIndexSlot(r,r.index/this.options.maxIndexPerRecord!);throw error;}}
+      try{try{this.clearIndices(r.index,r.indices);}catch(error){if(!gl?.isContextLost())this.writeStoredIndices(r,r.index);throw error;}}
       finally{if(gl)gl.bindBuffer(gl.COPY_WRITE_BUFFER,previous);}
     }else this.clearIndices(r.index,r.indices);
     this.records.delete(id); this.copying.delete(id); this.roots[r.row * 28 + 23] = 0;r.views.clear();
-    if(this.indexSlots)this.indexSlots[r.index/this.options.maxIndexPerRecord!]=null;
-    release(this.freeVertices, r.vertex, r.vertices); release(this.freeIndices, r.index, this.indexFootprint(r.indices));
-    this.highIndex = Math.max(0, ...[...this.records.values()].map(record => record.index + this.indexFootprint(record.indices))); if(!this.indexSlots)this.geometry.setDrawRange(0, this.highIndex);
+    release(this.freeVertices, r.vertex, r.vertices); release(this.freeIndices, r.index, r.indices);
+    this.highIndex = Math.max(0, ...[...this.records.values()].map(record => record.index + record.indices)); if(!this.indexOrder)this.geometry.setDrawRange(0, this.highIndex);
   }
   diagnostics() {return {storage:this.options.storage??'float-1',ownership:this.gpu?COMPOSER_GPU_STORAGE_VERSION:'cpu-gpu-mirror',vertexStride:this.options.storage==='packed-1'?73:120,actors: this.active, records: this.records.size, copying: this.copying.size, draws: this.active ? 1 : 0, activeTriangles: this.triangles, reservedTriangles: this.highIndex / 3, ownedBytes: this.disposed ? 0 : this.ownedBytes, cpuBytes:this.disposed?0:this.cpuBytes,gpuBytes:this.disposed?0:this.gpuBytes,compactionMoves:this.compactionMoves,compactionMaxMoveMs:this.compactionMaxMoveMs,compactionMaxOverrunMs:this.compactionMaxOverrunMs,
-    ...(this.indexSlots?{maxIndexPerRecord:this.options.maxIndexPerRecord,indexMetadataBytes:this.disposed?0:this.indexMetadataBytes,indexSlotSwaps:this.indexSlotSwaps,cameraActors:this.cameraSlots,unionActors:this.activeSlots,cameraSubmittedTriangles:this.cameraSlots*this.options.maxIndexPerRecord!/3,unionSubmittedTriangles:this.activeSlots*this.options.maxIndexPerRecord!/3}: {})};}
-  dispose(): void {if (this.disposed) return; this.disposed = true; this.records.clear(); this.copying.clear();this.indexSlots?.fill(null);this.viewCameras=[];this.restorePassCallbacks?.(); this.mesh.removeFromParent(); this.geometry.dispose();this.gpu?.dispose(); (this.mesh.material as THREE.Material).dispose(); this.mesh.customDepthMaterial!.dispose(); this.mesh.customDistanceMaterial!.dispose(); this.rootTexture.dispose();}
+    ...(this.indexOrder?{activeIndexPasses:true,indexMetadataBytes:this.disposed?0:this.indexMetadataBytes,indexTransactions:this.indexTransactions,indexRecordsMoved:this.indexRecordsMoved,indexRewriteIndices:this.indexRewriteIndices,indexRewriteMs:this.indexRewriteMs,indexRewriteMaxMs:this.indexRewriteMaxMs,cameraActors:this.cameraActors,unionActors:this.unionActors,cameraSubmittedTriangles:this.cameraIndices/3,unionSubmittedTriangles:this.unionIndices/3}: {})};}
+  dispose(): void {if (this.disposed) return; this.disposed = true; this.records.clear(); this.copying.clear();if(this.indexOrder)this.indexOrder.length=0;this.viewCameras=[];this.restorePassCallbacks?.(); this.mesh.removeFromParent(); this.geometry.dispose();this.gpu?.dispose(); (this.mesh.material as THREE.Material).dispose(); this.mesh.customDepthMaterial!.dispose(); this.mesh.customDistanceMaterial!.dispose(); this.rootTexture.dispose();}
 }

@@ -1,0 +1,389 @@
+{
+  "provenance": {
+    "artifact": "Assets/_assetctl/planet-composer-migration-20261011/active-index-admission-e1702dd-01/state-10.json",
+    "sha256": "77d165ddbaeba49257ce34325ba0f12d8e990310dd5bd2d5d9deab932bea98fa",
+    "atlas": "e1702dd363fde3cfe876164dabbb498de56bde11",
+    "kit": "12ba0b156dc74355c7abbea3fed49593c9999c42"
+  },
+  "key": "planet-composer-identity-1/planet-composer-source-2/fauna-composer-graph-4/fauna-composer-skin-6/fauna-composer-lod-1/fauna-composer-lod-constraints-4/fauna-composer-foot-lod-1/fauna-composer-anatomy-lod-3/realism-1/12ba0b156dc74355c7abbea3fed49593c9999c42/9b3859f565f76dc14f496a95b0161b3b",
+  "sourceDigest": "8664f6b6fb69a597c22d7efa619d9a5fe5099f6e732402aa3a58ef66fb8e95b6",
+  "graphDigest": "4d0d7247c6cead58aad5bab6493a6c64acba83a1896a7a07b27b61d000c9f608",
+  "expected": {
+    "indices": 3006,
+    "vertices": 660,
+    "sourceVertices": 660
+  },
+  "definition": {
+    "schema": "planet-composer-definition-1",
+    "kind": "planet-composer",
+    "genome": {
+      "version": "creature-genome-1",
+      "archetype": "browser",
+      "torsoLength": 1.72,
+      "torsoHeight": 0.84,
+      "torsoWidth": 0.903,
+      "legLength": 1.082,
+      "upperLegFraction": 0.53,
+      "stanceWidth": 0.827,
+      "neckLength": 0.919,
+      "neckRise": 0.334,
+      "headLength": 0.649,
+      "headWidth": 0.322,
+      "tailLength": 0.517,
+      "footLength": 0.244,
+      "footWidth": 0.161,
+      "hornLength": 0.231,
+      "earLength": 0.19,
+      "armor": 0.08,
+      "walkSpeed": 1.26,
+      "runSpeed": 3.922,
+      "strideLength": 0.953,
+      "color": "#a29173",
+      "accentColor": "#423221",
+      "pattern": "plain",
+      "mutationLog": [
+        "browser founder anatomy",
+        "browsing neck increased: 0.614m → 0.761m",
+        "muzzle increased: 0.486m → 0.573m",
+        "horn development increased: 0.22m → 0.312m",
+        "barrel torso increased: 0.656m → 0.748m",
+        "browsing neck increased: 0.761m → 0.944m",
+        "muzzle increased: 0.573m → 0.676m",
+        "horn development increased: 0.312m → 0.443m",
+        "barrel torso increased: 0.748m → 0.853m",
+        "ungulate phenotype; adult anatomy and identity-preserving coat; female"
+      ],
+      "appearance": {
+        "version": "fauna-appearance-2",
+        "individualKey": "G001/C-715,-331,-495/0/planet/1:fauna:bd527168/0/appearance-v1",
+        "markingSeed": 2229609384,
+        "pattern": "plain",
+        "palette": {
+          "base": "#a29173",
+          "marking": "#423221",
+          "belly": "#bdaf90"
+        },
+        "roughness": 0.8369391580372907,
+        "profile": {
+          "mass": 0.9980708551588633,
+          "limb": 0.512231996635029,
+          "neck": -0.7488652075987461,
+          "dimorphism": 0.7,
+          "hornlessFemales": false
+        },
+        "individual": {
+          "size": 0.3161945392648211,
+          "condition": -0.4014023885599809,
+          "muzzle": -0.9276097500528232,
+          "ears": 0.7615979369174684,
+          "sex": "female",
+          "coatPhase": 0.23268616246059537,
+          "limb": 0.8010260480924105,
+          "neck": 0.07879681165302088,
+          "tail": -0.1253361793061104
+        },
+        "growth": {
+          "stage": "adult",
+          "maturity": 1,
+          "lateral": 1
+        },
+        "coat": {
+          "version": "fauna-coat-1",
+          "pattern": "roan",
+          "marks": 64,
+          "scale": 0.8887896734267507,
+          "contrast": 1.0130487169837579,
+          "countershade": 0.7667002221220173,
+          "bellyLine": -0.45580626165028665,
+          "colours": {
+            "base": [
+              0.308250755655582,
+              0.2196112520666114,
+              0.10330150870422178
+            ],
+            "accent": [
+              0.054383863923076876,
+              0.032149288887722866,
+              0.015118309297569427
+            ],
+            "belly": [
+              0.5065567206055167,
+              0.42742249160806806,
+              0.27842164975954714
+            ],
+            "keratin": [
+              0.026707957538306456,
+              0.02074293099725091,
+              0.015593519700755365
+            ],
+            "skin": [
+              0.23103077154470575,
+              0.1596229612080947,
+              0.09931239702109701
+            ],
+            "eye": [
+              0.005949128818691805,
+              0.004322784451768671,
+              0.0029797642530016875
+            ],
+            "horn": [
+              0.09965437983967353,
+              0.07815579544363863,
+              0.0629757947808278
+            ],
+            "plate": [
+              0.1771184513146749,
+              0.13131400521448336,
+              0.06909930703104034
+            ]
+          },
+          "markRole": "accent",
+          "seed": 2706677455,
+          "warp": 0.3026950196363032,
+          "threshold": -0.017128788139671093,
+          "juvenileSpots": 0,
+          "greying": 0.28292348539049617
+        },
+        "lineage": {
+          "family": "dun",
+          "pattern": "roan"
+        }
+      },
+      "morphology": {
+        "version": "fauna-morphology-1",
+        "family": "ungulate",
+        "footType": "hoof",
+        "trunkLength": 0,
+        "wingSpan": 0,
+        "wingState": "none"
+      }
+    },
+    "recipe": {
+      "version": 4,
+      "layout": "quadruped",
+      "legPairs": 2,
+      "bodyLength": 1.72,
+      "girth": 1,
+      "posture": 0,
+      "torso": "barrel",
+      "neckLength": 0.64,
+      "head": "muzzle",
+      "headSize": 1,
+      "snoutLength": 0.6,
+      "horns": "paired",
+      "legs": "unguligrade",
+      "legLength": 0.63,
+      "feet": "hoof",
+      "arms": "none",
+      "armLength": 0.6,
+      "hands": "hand",
+      "tail": "tufted",
+      "tailLength": 0.3,
+      "armor": "osteoderms",
+      "wings": "none",
+      "wingSpan": 2,
+      "trunk": "none",
+      "trunkLength": 0.8,
+      "palette": "dun",
+      "colorSeed": 0,
+      "pattern": "roan",
+      "marks": 64,
+      "patternScale": 0.9,
+      "patternContrast": 1,
+      "countershade": 0.75,
+      "dimorphism": 0,
+      "variability": 0,
+      "allometry": 0,
+      "individualSeed": 0,
+      "sex": "auto",
+      "maturity": 1,
+      "condition": 0,
+      "eyes": "auto",
+      "iris": "auto",
+      "eyeRules": 2
+    },
+    "phenotype": {
+      "version": "fauna-composer-phenotype-1",
+      "units": "m",
+      "identity": {
+        "individualId": "G001/C-715,-331,-495/0/planet/1:fauna:bd527168",
+        "speciesId": "biosphere-lab-3/planet/15895547ebfc795b/lineage/quadruped/browser/2",
+        "appearanceKey": "G001/C-715,-331,-495/0/planet/1:fauna:bd527168/0/appearance-v1",
+        "maturity": 1,
+        "sex": "female"
+      },
+      "dimensions": {
+        "bodyLength": 1.72,
+        "torsoWidth": 0.903,
+        "torsoHeight": 0.84,
+        "legReach": 1.082,
+        "upperLegFraction": 0.53,
+        "stanceWidth": 0.827,
+        "neckLength": 0.9940192221984444,
+        "neckElevation": 1.2412801304665209,
+        "headLength": 0.649,
+        "headWidth": 0.322,
+        "tailLength": 0.517,
+        "footLength": 0.244,
+        "footWidth": 0.161,
+        "hornLength": 0.231,
+        "earLength": 0.19,
+        "trunkLength": 0,
+        "wingSpan": 0
+      },
+      "coat": {
+        "version": "fauna-coat-1",
+        "pattern": "roan",
+        "marks": 64,
+        "scale": 0.8887896734267507,
+        "contrast": 1.0130487169837579,
+        "countershade": 0.7667002221220173,
+        "bellyLine": -0.45580626165028665,
+        "colours": {
+          "base": [
+            0.308250755655582,
+            0.2196112520666114,
+            0.10330150870422178
+          ],
+          "accent": [
+            0.054383863923076876,
+            0.032149288887722866,
+            0.015118309297569427
+          ],
+          "belly": [
+            0.5065567206055167,
+            0.42742249160806806,
+            0.27842164975954714
+          ],
+          "keratin": [
+            0.026707957538306456,
+            0.02074293099725091,
+            0.015593519700755365
+          ],
+          "skin": [
+            0.23103077154470575,
+            0.1596229612080947,
+            0.09931239702109701
+          ],
+          "eye": [
+            0.005949128818691805,
+            0.004322784451768671,
+            0.0029797642530016875
+          ],
+          "horn": [
+            0.09965437983967353,
+            0.07815579544363863,
+            0.0629757947808278
+          ],
+          "plate": [
+            0.1771184513146749,
+            0.13131400521448336,
+            0.06909930703104034
+          ]
+        },
+        "markRole": "accent",
+        "seed": 2706677455,
+        "warp": 0.3026950196363032,
+        "threshold": -0.017128788139671093,
+        "juvenileSpots": 0,
+        "greying": 0.28292348539049617
+      },
+      "coatStage": {
+        "version": "planet-juvenile-coat-1",
+        "stage": "adult",
+        "maturity": 1
+      },
+      "coatFrame": {
+        "phase": 0,
+        "lateral": 1
+      },
+      "roughness": 0.8369391580372907,
+      "motion": {
+        "walkSpeed": 1.26,
+        "strideLength": 0.953
+      }
+    },
+    "ledger": {
+      "units": "metres; radians for neckElevation; linear RGB for coat",
+      "sourceGenomeVersion": "creature-genome-1",
+      "sourceAppearanceVersion": "fauna-appearance-2",
+      "sourceMorphologyVersion": "fauna-morphology-1",
+      "family": "ungulate",
+      "growth": "already-resolved-no-additional-growth",
+      "coat": "resolved-coat-exact",
+      "recipeControlAdjustments": [
+        "neckLength: control 0.6421312804899512 → 0.64; resolved phenotype remains exact",
+        "legLength: control 0.6290697674418605 → 0.63; resolved phenotype remains exact",
+        "tailLength: control 0.3005813953488372 → 0.3; resolved phenotype remains exact",
+        "patternScale: control 0.8887896734267507 → 0.9; resolved phenotype remains exact",
+        "patternContrast: control 1.0130487169837579 → 1; resolved phenotype remains exact",
+        "countershade: control 0.7667002221220173 → 0.75; resolved phenotype remains exact"
+      ],
+      "mappings": [
+        "Inherited genome is quadrupedal; categorical anatomy is mapped field by field, without selecting a Composer preset.",
+        "Torso width/height and head width are full diameters; Composer graph sections use half-extents. Surface lobes and shading remain Composer geometry.",
+        "Neck centreline preserves the genome forward=.35×neckLength and rise=neckRise+.66×neckLength vector; stored neckLength is its Euclidean length.",
+        "Leg reach is nominal articulated length; upperLegFraction divides upper/lower after any metapodial share. The Composer ground/reach solver may lengthen limbs and shorten stride; graph constraints disclose this.",
+        "Stance width is the exact left/right sole-centre separation. Foot length/width are nominal profile dimensions; generated/deformed bounds are separate measurements.",
+        "Head, muzzle, ears, horns, armor and tail surface shapes use Composer profiles; armor amount selects presence, not the old plate-area fraction.",
+        "Derived profile mappings: cranium height = headWidth/(2×face.craniumWidth); snout length = headLength×recipe.snoutLength×face.snout (initial recipe.snoutLength .6); foot height = .42×footWidth; neck bone count = round(1+3.4×recipe.neckLength), clamped to 1..6. graph.phenotypeFit exposes numeric derived ratios.",
+        "Resolved coat RGB, seed, pattern and marks are copied exactly. Coat coordinates use the Composer torso frame plus the existing phase/lateral growth offsets; surface coverage changes with anatomy.",
+        "Source runSpeed and mutation log remain in the genome; Composer walking uses source walkSpeed with reach-fitted stride and cadence. No new species/individual identity is generated.",
+        "phenotype.motion.strideLength is metres per full gait cycle. Composer stance sweep = duty×cycleLength; period = cycleLength/walkSpeed. graph.phenotypeFit records requested and fitted cycle, sweep, period and limb reaches.",
+        "Explicit coatStage retains planetary fawn rows and developing stockings in both vertex fallback and all crisp-colour layers, with a layout sized for the generated Composer torso cells. Shared shader interpolates those layers; spot placement follows the new anatomy."
+      ]
+    }
+  },
+  "member": {
+    "id": "G001/C-715,-331,-495/0/planet/1:fauna:bd527168",
+    "spatialCellId": "y-/425198/487140",
+    "archetype": "browser",
+    "speciesId": "biosphere-lab-3/planet/15895547ebfc795b/lineage/quadruped/browser/2",
+    "speciesGenome": {
+      "version": "creature-genome-1",
+      "archetype": "browser",
+      "torsoLength": 1.626,
+      "torsoHeight": 0.808,
+      "torsoWidth": 0.853,
+      "legLength": 1.022,
+      "upperLegFraction": 0.53,
+      "stanceWidth": 0.76,
+      "neckLength": 0.944,
+      "neckRise": 0.34,
+      "headLength": 0.676,
+      "headWidth": 0.32,
+      "tailLength": 0.513,
+      "footLength": 0.239,
+      "footWidth": 0.15,
+      "hornLength": 0.443,
+      "earLength": 0.17,
+      "armor": 0.08,
+      "walkSpeed": 1.225,
+      "runSpeed": 3.812,
+      "strideLength": 0.9,
+      "color": "#657a4b",
+      "accentColor": "#c98757",
+      "pattern": "plain",
+      "mutationLog": [
+        "browser founder anatomy",
+        "browsing neck increased: 0.614m → 0.761m",
+        "muzzle increased: 0.486m → 0.573m",
+        "horn development increased: 0.22m → 0.312m",
+        "barrel torso increased: 0.656m → 0.748m",
+        "browsing neck increased: 0.761m → 0.944m",
+        "muzzle increased: 0.573m → 0.676m",
+        "horn development increased: 0.312m → 0.443m",
+        "barrel torso increased: 0.748m → 0.853m"
+      ]
+    },
+    "genomeSeed": "[\"[\\\"LETHRA-001\\\",\\\"G001\\\"]\",[-715,-331,-495],0]/planet/1|G001/C-715,-331,-495/0/planet/1|fauna|y-/425198/487140|founder",
+    "variant": 0,
+    "stage": "adult",
+    "anchorOffsetX": 4.070629372079993,
+    "anchorOffsetZ": -1.5154798301049792,
+    "orbitRadiusM": 6.728531465632841,
+    "orbitAngularSpeed": -0.0951102917260564,
+    "orbitPhase": 0.04376218200196623,
+    "gaitPeriodS": 17.499751400202513
+  }
+}
