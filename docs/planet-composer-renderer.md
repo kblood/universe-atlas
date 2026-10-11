@@ -182,3 +182,25 @@ These results are not Quest qualification: the triangle totals exceed the broade
 object overhead (including small quantization-proof records) still needs
 whole-process heap measurement, as described above. Profiles are under
 Assets/_assetctl/planet-composer-packed-20261011/{profile289,mixed289}.
+
+The first normal-world integration exposed a separate whole-budget failure.
+At the preserved Daunune 20 m flight view, the selected Composer mesh reached
+the GPU and its CPU-skinned screen bounds covered about 180 by 170 pixels, but
+the screenshot showed terrain. Disabling only that animal material's depth test
+revealed the correctly positioned patterned animals. The rendered terrain at
+the target was level 6, height 189.901–189.904 m, whereas canonical ground was
+186.115–186.118 m. Sampled body vertices lay 1.134–3.779 m below the drawn mesh;
+terrain and Composer had identical logarithmic-depth uniforms. The 152 MiB life
+reservation left a 44,127,572 B terrain budget, and refinement was byte-blocked.
+This is not repaired by moving canonical animals onto a false ground surface.
+Integration must restore sufficient terrain refinement within the shared budget.
+
+`tests/fauna-composer-world-diagnostic.browser.mjs` reproduces this diagnosis
+against an existing built app (`ATLAS_ROOT`) and saved habitat replay
+(`HABITAT_REPLAY`, optional `HABITAT_WORLD_INDEX`). It writes normal and explicitly
+depth-disabled diagnostic captures, actual main-camera draw counts, screen bounds,
+drawn/canonical height samples, and compiled shader uniforms/sources. Set
+`COMPOSER_REQUIRE_ABOVE_TERRAIN=1` to reject a completely buried target. This probe
+is functional evidence, not a frame-time measurement. The original captures and
+measurements are preserved under
+Assets/_assetctl/planet-composer-migration-20261011/world-diagnostic/.
