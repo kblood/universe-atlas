@@ -5,7 +5,6 @@ import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {faunaHerdAt,faunaMemberActivityAtWorldNs,toSeconds} from '../../src/fauna-runtime.ts';
-import {CURRENT_VERSIONS,MODEL_MANIFEST_ID,encodeVersions} from '../../src/time-nav.ts';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 export function canonical(value){if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])]));return value;}
@@ -25,7 +24,7 @@ async function approachActualAnimal(page){
 
 export async function enterOrdinaryHabitat(page,base,scenario){
  await page.addInitScript(()=>{const NativeWorker=window.Worker;window.__composerQaWorkers={created:0,terminated:0,live:0,peak:0};window.Worker=class extends NativeWorker{constructor(...args){super(...args);this.__qaAlive=String(args[0]).includes('fauna-planet-composer');if(this.__qaAlive){const q=window.__composerQaWorkers;q.created++;q.live++;q.peak=Math.max(q.peak,q.live);}}terminate(){if(this.__qaAlive){this.__qaAlive=false;const q=window.__composerQaWorkers;q.terminated++;q.live--;}return super.terminate();}};});
- const query=new URLSearchParams({seed:'LETHRA-001',g:'G001',wv:encodeVersions(CURRENT_VERSIONS),mv:MODEL_MANIFEST_ID});await page.goto(new URL('?'+query,base).href);
+ const query=new URLSearchParams({seed:'LETHRA-001',g:'G001'});await page.goto(new URL('?'+query,base).href);
  await page.waitForFunction(()=>window.__atlas?.ready&&window.__atlas.state.level==='galaxy');await page.locator('#find-animal-worlds').click();await page.waitForFunction(()=>document.querySelectorAll('[data-animal-world]').length===5);
  const row=page.locator('[data-animal-world]').filter({hasText:scenario.finder.text.split(' · ')[0].split('Neitis')[0]});
  // ID selects the original generated Finder row; no system/body query shortcut.
