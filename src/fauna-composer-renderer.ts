@@ -10,6 +10,9 @@ import {FAUNA_COMPOSER_TIERS, FAUNA_COMPOSER_RENDER_VERSION, composerTypedBytes,
 
 export interface FaunaComposerCandidate<D> {
   id: string; definition: D; sourceKey: string;
+  /** Optional shared immutable identity text from the actual source provider.
+   * Validated before reuse; its bytes remain included in resident accounting. */
+  canonicalDefinition?: string;
   /** Metre-space body to radius-normalized origin-relative world. +X is forward. */
   matrix: THREE.Matrix4; distanceM: number; cameraVisible: boolean; shadowVisible?: boolean;
   rigSeconds: number;
@@ -191,7 +194,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       const entry = this.entries.get(c.sourceKey);
       if (!entry) {this.stats.pending++; continue;}
       // Detect accidental key reuse instead of replacing another phenotype under the same cache key.
-      if (entry.definition !== this.identity(c.definition, true)) {this.lastError = 'Composer source key reused for a different definition'; this.stats.failures++; continue;}
+      if (entry.definition !== this.identity(c.definition, true, c.canonicalDefinition)) {this.lastError = 'Composer source key reused for a different definition'; this.stats.failures++; continue;}
       entry.used = this.frame;
       let actor = this.actors.get(c.id);
       const wanted = this.candidateTier(c, actor?.tier);
@@ -290,14 +293,22 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     try {this.options.onMeshAdopted?.(batch.mesh);} catch (error) {batch.dispose(); this.lastError = String(error); return null;}
     entry.batches[tier] = batch; this.group.add(batch.mesh); return batch;
   }
-  private identity(definition: unknown, freeze = false): string {
+  private identity(definition: unknown, freeze = false, canonicalDefinition?: string): string {
     if (definition && typeof definition === 'object') {
-      const cached = this.identities.get(definition); if (cached !== undefined) return cached;
-      const identity = canonicalComposerJson(definition);
+      const cached = this.identities.get(definition);
+      if (cached !== undefined) {
+        if(canonicalDefinition!==undefined&&canonicalDefinition!==cached)throw new Error('Composer shared canonical identity mismatch');
+        return cached;
+      }
+      const serialized = canonicalComposerJson(definition);
+      if(canonicalDefinition!==undefined&&canonicalDefinition!==serialized)throw new Error('Composer shared canonical identity mismatch');
+      const identity = canonicalDefinition ?? serialized;
       if (freeze) {freezeComposerDefinition(definition); this.identities.set(definition, identity);}
       return identity;
     }
-    return canonicalComposerJson(definition);
+    const serialized=canonicalComposerJson(definition);
+    if(canonicalDefinition!==undefined&&canonicalDefinition!==serialized)throw new Error('Composer shared canonical identity mismatch');
+    return canonicalDefinition??serialized;
   }
   /** Runs in the completion task, outside update(). The production provider has
    * verified strict worker checks against digests of the actual received arrays.
@@ -347,7 +358,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       try {
         if (p.run.epoch !== this.epoch) {this.ready.delete(key); this.stats.stale++; continue;}
         // Definitions can be mutable before admission, but never afterward.
-        if (canonicalComposerJson(p.run.definitionRef) !== p.run.definition || this.members.get(key)?.some(c => this.identity(c.definition) !== p.run.definition)) throw new Error('Composer definition mutated during build/admission');
+        if (canonicalComposerJson(p.run.definitionRef) !== p.run.definition || this.members.get(key)?.some(c => this.identity(c.definition, false, c.canonicalDefinition) !== p.run.definition)) throw new Error('Composer definition mutated during build/admission');
         const prior = this.entries.get(key);
         if (prior && (prior.graphIdentity !== p.graphIdentity || prior.skinIdentity !== p.skinIdentity)) throw new Error('Composer original source changed during upgrade');
         let source = prior?.source ?? p.source;
@@ -361,7 +372,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
         const added = cpuBytes + writer.ownedBytes - (prior ? prior.cpuBytes + prior.writer.ownedBytes : 0) + paletteGrowth;
         if (!this.room(added, new Set([...keys, key]), !prior)) {this.stats.blockedAdmissions++; this.lastError = 'Composer resident source budget full; completed source retained'; p.attempt = this.revision; continue;}
         if (width !== this.paletteBones) this.resizePalette(width);
-        this.identity(p.run.definitionRef, true); for (const c of this.members.get(key) ?? []) this.identity(c.definition, true);
+        this.identity(p.run.definitionRef, true, p.run.definition); for (const c of this.members.get(key) ?? []) this.identity(c.definition, true, c.canonicalDefinition);
         const middle = p.levels.middle;
         this.entries.set(key, {source, graph: p.graph, graphIdentity: p.graphIdentity, skinIdentity: p.skinIdentity, graphBytes: p.graphBytes, levels, writer, definition: p.run.definition, batches: prior?.batches ?? {}, used: this.frame, cpuBytes,
           middleFootprint: middle ? {vertices: middle.positions.length / 3, indices: middle.index.length} : prior?.middleFootprint});
@@ -395,7 +406,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
         if (!this.room(Math.max(0, blocked.bytes - (entry ? entry.cpuBytes + entry.writer.ownedBytes : 0)), new Set(this.members.keys()), blocked.extra)) continue;
         this.blocked.delete(key);
       }
-      const run: Running = {key, definition: this.identity(c.definition), definitionRef: c.definition, tiers: [tier], epoch: this.epoch, abort: new AbortController()};
+      const run: Running = {key, definition: this.identity(c.definition, false, c.canonicalDefinition), definitionRef: c.definition, tiers: [tier], epoch: this.epoch, abort: new AbortController()};
       this.running = run;
       if (cold) this.coldJobs++; else if (tier === 'near') this.coldJobs = 0;
       try {Promise.resolve(this.options.provider.build({key, definition: c.definition, tiers: run.tiers, loadedSource: entry?.source ?? undefined}, run.abort.signal)).then(async result => {

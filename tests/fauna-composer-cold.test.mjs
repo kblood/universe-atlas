@@ -29,6 +29,18 @@ test('all cold animals receive coarse jobs before any near upgrade; identities a
     assert.throws(() => {candidates[0].definition.id = 'changed';}, /read only/);
   } finally {r.dispose();}
 });
+
+test('shared canonical text is validated, frozen and retained without removing its budget allowance',async()=>{
+ const r=new FaunaComposerRenderer({provider:{async build(job){return result(job);}},pose:g=>poseComposer(g,'idle',0),capacity:1});
+ try{
+  const a={...candidate('shared'),canonicalDefinition:'{"id":"shared"}'};
+  await pump(r,[a]);assert.equal(r.diagnostics().active,1);assert.ok(Object.isFrozen(a.definition));
+  const entry=r.entries.get(a.sourceKey);assert.equal(entry.definition,a.canonicalDefinition);
+  assert.ok(entry.cpuBytes>=entry.graphBytes+a.canonicalDefinition.length*2,'the retained shared text is still accounted');
+  assert.throws(()=>r.update([{...a,canonicalDefinition:'{"id":"changed"}'}]),/shared canonical identity mismatch/);
+  r.setContext('new');assert.throws(()=>r.update([{...candidate('bad'),canonicalDefinition:'{"id":"different"}'}]),/shared canonical identity mismatch/);
+ }finally{r.dispose();}
+});
 test('bounded near promotions preserve cold coverage and borrow the verified original', async () => {
   const calls = [], provider = {async build(job) {calls.push(job); return result(job);}};
   const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 6, coldJobsBeforeNearUpgrade: 2});

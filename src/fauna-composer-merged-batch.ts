@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {createComposerColouredMaterial, COMPOSER_COAT_CRISP_GLSL} from './fauna-composer.ts';
 import {patchFaunaComposerInstancing} from './fauna-composer-instance-batch.ts';
 import type {FaunaComposerRenderSkin} from './fauna-composer-render-source.ts';
-import {COMPOSER_PACKED_STORAGE_VERSION, isPackedComposerSkin, composerQuantizationProof, composerStorageCodec, assertComposerQuantizationProof, type ComposerQuantizationProof, type ComposerStoredArray, type FaunaComposerStoredSkin, type FaunaComposerPackedSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
+import {COMPOSER_PACKED_STORAGE_VERSION, isPackedComposerSkin, compactComposerIndices, composerQuantizationProof, composerStorageCodec, assertComposerQuantizationProof, type ComposerQuantizationProof, type ComposerStoredArray, type FaunaComposerStoredSkin, type FaunaComposerPackedSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
 
 /** One dynamic branch per animal, with the original pattern arithmetic. Flat
  * varyings keep the pattern/seed constant over every triangle. This removes the
@@ -188,7 +188,9 @@ export class FaunaComposerMergedBatch {
     const view = (name:string,width:number) => (this.geometry.getAttribute(name).array as ComposerStoredArray).subarray(r.vertex*width,(r.vertex+r.vertices)*width);
     if(this.options.storage==='packed-1') {
       assertComposerQuantizationProof(r.proof!);
-      return {...source,storage:{version:COMPOSER_PACKED_STORAGE_VERSION,proof:{...r.proof!}},positions:view('position',3) as Float32Array,normals:view('normal',3) as Int16Array,
+      const index=compactComposerIndices(source.index),sourceVertex=source.sourceVertex?compactComposerIndices(source.sourceVertex):null;
+      return {...source,index,sourceVertex,storage:{version:COMPOSER_PACKED_STORAGE_VERSION,proof:{...r.proof!},
+        localIndexType:index instanceof Uint16Array?'uint16':'uint32',sourceVertexType:sourceVertex?(sourceVertex instanceof Uint16Array?'uint16':'uint32'):null},positions:view('position',3) as Float32Array,normals:view('normal',3) as Int16Array,
         colors:view('color',3) as Uint16Array,skinIndex:view('skinIndex',4) as Uint8Array,skinWeight:view('skinWeight',4) as Uint16Array,gloss:view('composerGloss',1) as Uint8Array,
         coatLayers:source.coatLayers?{c0:view('coatL0',3) as Uint16Array,c1:view('coatL1',3) as Uint16Array,c2:view('coatL2',3) as Uint16Array,sample:view('coatSample',4) as Float32Array}:null} satisfies FaunaComposerPackedSkin;
     }

@@ -6,7 +6,7 @@ import {createComposerCreature} from '../src/fauna-composer.ts';
 import {FaunaComposerMergedBatch,patchComposerMergedShader} from '../src/fauna-composer-merged-batch.ts';
 import {FaunaComposerPaletteWriter} from '../src/fauna-composer-palette.ts';
 import {composerRenderSkin,buildFaunaComposerRequestedLevels,validateComposerRenderLod} from '../src/fauna-composer-render-source.ts';
-import {COMPOSER_PACKED_STORAGE_VERSION,validatePackedComposerSkin} from '../src/fauna-composer-storage.ts';
+import {COMPOSER_PACKED_STORAGE_VERSION,validatePackedComposerSkin,compactComposerIndices} from '../src/fauna-composer-storage.ts';
 
 function arenaFor(skin,actors=1) {const texture=new THREE.DataTexture(new Float32Array(160*16*actors),640,actors);
   return {texture,arena:new FaunaComposerMergedBatch({storage:'packed-1',maxActors:actors,maxVertices:skin.positions.length/3*actors,maxIndices:skin.index.length*actors,maxBytes:40e6,bones:{value:texture}})};}
@@ -22,6 +22,8 @@ test('packed arena has explicit storage and bounded error across every preset, p
     const source=composerRenderSkin(creature.skin),{arena,texture}=arenaFor(source);
     try{const originalPositions=source.positions.slice(),originalWeights=source.skinWeight.slice();assert.ok(arena.register(name,source,0));const packed=arena.residentSkin(name,source);
       assert.equal(packed.storage.version,COMPOSER_PACKED_STORAGE_VERSION);const proof=validatePackedComposerSkin(source,packed);assert.equal(proof.checkedVertices,source.positions.length/3);
+      assert.ok(packed.index instanceof Uint16Array);assert.equal(packed.storage.localIndexType,'uint16');
+      assert.ok(arena.mesh.geometry.index.array instanceof Uint32Array,'global GPU indices retain the full arena address range');
       assert.ok(packed.normals instanceof Int16Array);assert.ok(packed.colors instanceof Uint16Array);assert.ok(packed.skinIndex instanceof Uint8Array);assert.ok(packed.skinWeight instanceof Uint16Array);assert.ok(packed.gloss instanceof Uint8Array);assert.ok(packed.coatLayers.sample instanceof Float32Array);
       for(const name of ['normal','color','skinWeight','composerGloss','coatL0','coatL1','coatL2'])assert.equal(arena.mesh.geometry.getAttribute(name).normalized,true);
       assert.equal(arena.mesh.geometry.getAttribute('skinIndex').normalized,false);assert.equal(arena.mesh.geometry.getAttribute('composerActor').array.BYTES_PER_ELEMENT,2);
@@ -38,9 +40,17 @@ test('packed arena has explicit storage and bounded error across every preset, p
 test('reduced source proof stays raw and packed-to-packed reuse never requantizes or mutates it',()=>{
   const creature=createComposerCreature({...composerPreset('trunked-centipede'),pattern:'bands'},{presentation:'realism-1'}),source=buildFaunaComposerRequestedLevels({graph:creature.graph,skin:creature.skin},['far']).far,{arena,texture}=arenaFor(source,2);
   try{validateComposerRenderLod(creature.skin,source);assert.ok(arena.register('a',source,0));const packed=arena.residentSkin('a',source);assert.ok(arena.register('b',packed,1));const copy=arena.residentSkin('b',packed);
+    assert.ok(packed.sourceVertex instanceof Uint16Array);assert.equal(packed.sourceVertex.byteLength,source.sourceVertex.byteLength/2);
     assert.deepEqual(copy.normals,packed.normals);assert.deepEqual(copy.skinWeight,packed.skinWeight);assert.deepEqual(copy.coatLayers.c0,packed.coatLayers.c0);validatePackedComposerSkin(source,copy);
     arena.release('a');validatePackedComposerSkin(source,copy);validateComposerRenderLod(creature.skin,source);
   }finally{arena.dispose();texture.dispose();creature.dispose();}
+});
+
+test('retained index compression is exact at the16-bit boundary and leaves wider source maps untouched',()=>{
+  const raw=Uint32Array.of(0,65535,1),before=raw.slice(),small=compactComposerIndices(raw);
+  assert.ok(small instanceof Uint16Array);assert.deepEqual([...small],[...raw]);assert.deepEqual(raw,before);
+  assert.equal(compactComposerIndices(small),small,'a rebind shares the already compact metadata');
+  const wide=Uint32Array.of(65536,2);assert.equal(compactComposerIndices(wide),wide,'no wrap or lossy narrowing');
 });
 test('lit and every shadow shader decode normalized packed weights identically',()=>{
   for(const name of ['standard','depth','distanceRGBA']){const shader={vertexShader:THREE.ShaderLib[name].vertexShader,fragmentShader:THREE.ShaderLib[name].fragmentShader};patchComposerMergedShader(shader,name==='standard','packed-1');

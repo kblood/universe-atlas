@@ -11,14 +11,23 @@ export interface ComposerQuantizationProof {
    * are exact. Only the explicitly listed normalized attributes are quantized. */
   exact: readonly ['positions','coatSample','skinIndex','index','sourceVertex'];
 }
-export type FaunaComposerPackedSkin = Omit<FaunaComposerRenderSkin, 'normals'|'colors'|'skinIndex'|'skinWeight'|'gloss'|'coatLayers'> & {
-  storage: {version: typeof COMPOSER_PACKED_STORAGE_VERSION; proof: ComposerQuantizationProof};
+export type FaunaComposerPackedSkin = Omit<FaunaComposerRenderSkin, 'normals'|'colors'|'skinIndex'|'skinWeight'|'gloss'|'coatLayers'|'index'|'sourceVertex'> & {
+  storage: {version: typeof COMPOSER_PACKED_STORAGE_VERSION; proof: ComposerQuantizationProof;
+    localIndexType:'uint16'|'uint32';sourceVertexType:'uint16'|'uint32'|null};
   normals: Int16Array; colors: Uint16Array; skinIndex: Uint8Array; skinWeight: Uint16Array; gloss: Uint8Array;
   coatLayers: null|{c0:Uint16Array;c1:Uint16Array;c2:Uint16Array;sample:Float32Array};
+  index:Uint16Array|Uint32Array;sourceVertex:Uint16Array|Uint32Array|null;
 };
 export type FaunaComposerStoredSkin = FaunaComposerRenderSkin|FaunaComposerPackedSkin;
 export function isPackedComposerSkin(skin: FaunaComposerStoredSkin): skin is FaunaComposerPackedSkin {
   return 'storage' in skin && skin.storage?.version === COMPOSER_PACKED_STORAGE_VERSION;
+}
+/** Exact retained lookup metadata, not geometry quantization. The original
+ * source/reducer arrays and the arena's global Uint32 GPU index stay untouched. */
+export function compactComposerIndices(source:Uint16Array|Uint32Array):Uint16Array|Uint32Array {
+  if(source instanceof Uint16Array)return source;
+  for(const value of source)if(value>65535)return source;
+  return new Uint16Array(source);
 }
 export function composerQuantizationProof(vertices: number): ComposerQuantizationProof {
   return {version:'composer-quantization-proof-1',vertices,checkedVertices:0,maxNormalError:0,maxColourError:0,maxWeightError:0,maxGlossError:0,maxWeightSumError:0,
