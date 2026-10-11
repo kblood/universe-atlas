@@ -67,3 +67,9 @@ test('planet revisit reaches galaxy breadcrumb before ordinary Finder',async()=>
  const events=[],page={locator:selector=>({isVisible:async()=>false,click:async()=>events.push(selector)}),waitForFunction:async()=>events.push('wait')};
  await openOrdinaryAnimalFinder(page);assert.deepEqual(events,['#breadcrumbs [data-level="galaxy"]','wait','#find-animal-worlds','wait']);
 });
+
+import {waitOrdinaryNavigation} from './helpers/planet-composer-collector.mjs';
+test('ordinary navigation waits for selected body and finished asynchronous transition',async()=>{
+ const prior=globalThis.window;globalThis.window={__atlas:{ready:true,state:{level:'body',body:{id:'other'}},transition:{active:true,retainedViews:0}}};
+ try{const page={waitForFunction:async(fn,arg)=>{assert.equal(fn(arg),false);window.__atlas.transition.active=false;assert.equal(fn(arg),true);window.__atlas.state.body.id='late-old';assert.equal(fn(arg),false);}};await waitOrdinaryNavigation(page,'body','other');}finally{globalThis.window=prior;}
+});
