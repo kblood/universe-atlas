@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {browserContentDigest} from './helpers/planet-browser-digest.mjs';
 import {contentDigest,decodeStored,auditStoredSourceMap} from './helpers/planet-composer-collector.mjs';
 
 test('content receipt binds typed-array type and actual view bytes',()=>{
@@ -30,3 +31,5 @@ test('packed crisp coat preserves the 0–2 domain and exact sample coordinates'
  const layer=structuredClone(skin);layer.coatLayers.c1[0]=50000;assert.throws(()=>auditStoredSourceMap(layer,source));
  const sample=structuredClone(skin);sample.coatLayers.sample[0]+=1e-6;assert.throws(()=>auditStoredSourceMap(sample,source));
 });
+
+test('browser typed descriptor hashing matches recursively canonical receipt',async()=>{const payload={z:new Float32Array([1,2,3]),a:{weights:new Uint16Array([32768,32767])}};assert.equal(await browserContentDigest(payload),contentDigest(payload));});

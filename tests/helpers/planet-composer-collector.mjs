@@ -6,6 +6,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {faunaHerdAt,faunaMemberActivityAtWorldNs,toSeconds} from '../../src/fauna-runtime.ts';
 import {auditDisposedComposer} from './planet-composer-acceptance.mjs';
+import {browserContentDigest} from './planet-browser-digest.mjs';
 import {startPinnedKitReference} from './planet-composer-reference.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -49,10 +50,10 @@ export async function enterOrdinaryHabitat(page,base,scenario){
 // supplies original cell/biome/gate inputs, not an expected ID list.
 export function canonicalControl(raw){const members=[];for(const r of raw.residents){const herd=faunaHerdAt(raw.body.seed,raw.body.id,r.cell.direction,r.biome,raw.gate,toSeconds(0),r.cell.id.split('/').slice(2).join('/'));if(herd.present)for(const member of herd.members){const activity=faunaMemberActivityAtWorldNs(member,BigInt(raw.worldNs));members.push({id:member.id,member,position:activity.pose,activity});}}return {bodyId:raw.body.id,worldNs:raw.worldNs,members};}
 
-async function rawSnapshot(page){return page.evaluate(async()=>{
+async function rawSnapshot(page){await page.addScriptTag({content:'window.__qaContentDigest='+browserContentDigest.toString()+';'});return page.evaluate(async()=>{
  const a=window.__atlas,p=a.renderDebug().planet,r=p.faunaComposer; if(!r)throw Error('actual Composer backend missing');
  const copy=x=>ArrayBuffer.isView(x)?Array.from(x):Array.isArray(x)?x.map(copy):x&&typeof x==='object'?Object.fromEntries(Object.entries(x).map(([k,v])=>[k,copy(v)])):x;
- const digest=async value=>{const hex=b=>Array.from(new Uint8Array(b)).map(v=>v.toString(16).padStart(2,'0')).join(''),hash=async bytes=>hex(await crypto.subtle.digest('SHA-256',bytes));const desc=async v=>{if(ArrayBuffer.isView(v))return {typed:v.constructor.name,bytes:v.byteLength,sha256:await hash(new Uint8Array(v.buffer,v.byteOffset,v.byteLength))};if(Array.isArray(v))return Promise.all(v.map(desc));if(v&&typeof v==='object'){const out={};for(const k of Object.keys(v).sort())out[k]=await desc(v[k]);return out;}return v;};return hash(new TextEncoder().encode(JSON.stringify(await desc(value))));};
+ const digest=window.__qaContentDigest;
  const canonicalObject=x=>Array.isArray(x)?x.map(canonicalObject):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,canonicalObject(x[k])])):x;const cacheIds=[...p.faunaComposerDefinitions.keys()].sort(),desiredIds=[...r.desired.keys()].sort();if(JSON.stringify(cacheIds)!==JSON.stringify(desiredIds)||cacheIds.length>512||p.faunaComposerPool.length>p.faunaComposerList.length)throw Error('world definition/candidate wrapper retention exceeds current eligible cohort');let canonicalCharacters=0;for(const c of r.desired.values()){const cached=p.faunaComposerDefinitions.get(c.id);if(c.canonicalDefinition!==cached.canonical||JSON.stringify(canonicalObject(JSON.parse(c.canonicalDefinition)))!==JSON.stringify(canonicalObject(c.definition)))throw Error('canonical definition handoff mismatch');canonicalCharacters+=c.canonicalDefinition.length;}const wrapperCounts={definitions:cacheIds.length,poolSlots:p.faunaComposerPool.length,currentList:p.faunaComposerList.length,canonicalJsonEquivalentBytes:canonicalCharacters*2,canonicalHandoffValuesExact:true,scope:'actual wrapper counts and conservative canonical JSON equivalent only; not measured whole heap'};
  const d=r.diagnostics(),records=[...p.lifeResidents.values()].filter(v=>v.cell.layer==='fauna'),life=p.lifeContext,worldNs=String(p.faunaTraceNs),canonicalMembers=[];
  // Stored activity is checked against the independent caller on Node.
