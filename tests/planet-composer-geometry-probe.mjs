@@ -22,7 +22,7 @@ function vertex(skin,v,matrices){const p=new THREE.Vector3().fromArray(skin.posi
 // does not reuse the solver's contact/ground implementation.
 function world(p,a,ground){const c=Math.cos(a.pose.yaw),s=Math.sin(a.pose.yaw);return [a.pose.x+c*p.x+s*p.z,ground(a.pose.x,a.pose.z)+p.y,a.pose.z+s*p.x-c*p.z];}
 const idsOf=(skin,part)=>[...new Set(skin.index.slice(part.firstTriangle*3,(part.firstTriangle+part.triangles)*3))];
-const report={scope:'four preserved mapped phenotypes; shared Kit actual source vertices on nonlinear terrain and boundaries; not production renderer/device/performance acceptance',kit,policy,rows:[],ok:false};
+const report={scope:'four preserved mapped phenotypes; shared Kit actual source vertices on nonlinear terrain and boundaries; not production renderer/device/performance acceptance',kit,policy,rows:[],violations:[],ok:false};
 try{
  for(const index of fixtures.initialControlledIndices){
   const row=fixtures.controlledSourceInputs.find(r=>r.index===index),original=structuredClone(row.genome),definition=core.planetComposerDefinition(row.genome,{individualId:row.id}),source=core.buildPlanetComposerSource(definition),actor=core.createPlanetComposerAnimal(definition);
@@ -34,25 +34,25 @@ try{
    const feet=source.skin.parts.filter(p=>p.part==='foot').map(p=>({part:p,ids:idsOf(source.skin,p),limb:source.graph.limbs.find(l=>l.kind==='leg'&&p.label.endsWith(String(l.pair+1)+(l.side<0?'L':'R')))}));assert(feet.length>0);
    const result={id:row.id,stage:row.stage,family:row.family,bones:source.graph.bones.length,triangles:source.skin.triangleCount,terrain:[]};
    for(const [name,ground] of Object.entries(terrain)){
-    let observations=0,stance=0,swing=0,minGround=Infinity,maxStanceGap=0,maxDrift=0,maxBoundaryJump=0;
+    let observations=0,stance=0,swing=0,minGround=Infinity,maxStanceGap=0,maxDrift=0,maxContactDrift=0,maxBoundaryJump=0,maxBoundaryJointJump=0,maxBoundaryContactJump=0;const anchors=new Map();
     const measure=(a,t)=>{const pose=poser.posePlanetComposer(source.graph,{...member,id:row.id},a,ground,t),matrices=palette(source.graph,pose);return {pose,matrices};};
-    for(let frame=0;frame<32;frame++){
-     const elapsed=frame*.0012*revolutionS,delta=1e-6*revolutionS,a=activity(.18+frame*.0012,'walk',2+elapsed),b=activity(a.travel+1e-6,'walk',2+elapsed+delta),p=measure(a,1000+elapsed),q=measure(b,1000+elapsed+delta);
-     for(const foot of feet){const contact=p.pose.contacts.find(c=>c.limb===foot.limb.index),next=q.pose.contacts.find(c=>c.limb===foot.limb.index);let low=Infinity,lowest;
+    const cycles=measure(activity(.18),1000).pose.planet.cyclesPerRevolution,frames=Math.max(32,Math.ceil(2/(cycles*.0012))+1);
+    for(let frame=0;frame<frames;frame++){
+     const elapsed=frame*.0012*revolutionS,a=activity(.18+frame*.0012,'walk',2+elapsed),p=measure(a,1000+elapsed);
+     for(const foot of feet){const contact=p.pose.contacts.find(c=>c.limb===foot.limb.index);let low=Infinity,lowest;
       for(const v of foot.ids){const w=world(vertex(source.skin,v,p.matrices),a,ground),gap=w[1]-ground(w[0],w[2]);if(gap<low){low=gap;lowest={v,w};}}
-      assert(low>=-policy.maxPenetrationM,`${row.id}/${name}: actual source sole penetrates ${low}`);minGround=Math.min(minGround,low);if(contact.stance){stance++;maxStanceGap=Math.max(maxStanceGap,low);assert(low<=policy.maxStanceGapM,`${row.id}/${name}: source sole floats ${low}`);}else swing++;
-      if(contact.stance&&next.stance){const nextWorld=world(vertex(source.skin,lowest.v,q.matrices),b,ground),drift=Math.hypot(...nextWorld.map((x,k)=>x-lowest.w[k]));maxDrift=Math.max(maxDrift,drift);assert(drift<=policy.maxStanceDriftM,`${row.id}/${name}: actual stance vertex drifts ${drift}`);}
+      minGround=Math.min(minGround,low);if(contact.stance){stance++;maxStanceGap=Math.max(maxStanceGap,low);const key=foot.part.label,anchor=anchors.get(key);if(!anchor)anchors.set(key,{v:lowest.v,world:lowest.w,contact:[...contact.world],firstFrame:frame});else{const w=world(vertex(source.skin,anchor.v,p.matrices),a,ground);maxDrift=Math.max(maxDrift,Math.hypot(...w.map((x,k)=>x-anchor.world[k])));maxContactDrift=Math.max(maxContactDrift,Math.hypot(...contact.world.map((x,k)=>x-anchor.contact[k])));}}else{swing++;anchors.delete(foot.part.label);}
       observations++;
      }
     }
     const at=.321,first=measure(activity(at),19000).pose;measure(activity(.8),900000);assert.deepEqual(measure(activity(at),19000).pose,first,'exact A-B-A pose');
     // Same root at each side of the gait boundary isolates representation
     // changes from canonical travel. Measure actual foot vertices, not labels.
-    for(const [left,right] of [[activity(at,'idle',16-1e-9),activity(at+1e-9/revolutionS,'walk',1e-9)],[activity(at-1e-9/revolutionS,'walk',16-1e-9),activity(at,'idle',1e-9)]]){const p=measure(left,1000),q=measure(right,1000+2e-9);for(const foot of feet)for(const v of foot.ids){const a=world(vertex(source.skin,v,p.matrices),left,ground),b=world(vertex(source.skin,v,q.matrices),right,ground);maxBoundaryJump=Math.max(maxBoundaryJump,Math.hypot(...b.map((x,k)=>x-a[k])));}}
-    assert(maxBoundaryJump<=policy.maxBoundaryVertexJumpM,`${row.id}/${name}: idle/walk vertex jump ${maxBoundaryJump}`);assert(stance>0&&swing>0);result.terrain.push({name,observations,stance,swing,minGround,maxStanceGap,maxDrift,maxBoundaryJump});
+    for(const [left,right] of [[activity(at,'idle',16-1e-9),activity(at+1e-9/revolutionS,'walk',1e-9)],[activity(at-1e-9/revolutionS,'walk',16-1e-9),activity(at,'idle',1e-9)]]){const p=measure(left,1000),q=measure(right,1000+2e-9);for(let i=0;i<source.graph.bones.length;i++){const a=world(new THREE.Vector3().fromArray(p.pose.positions,i*3),left,ground),b=world(new THREE.Vector3().fromArray(q.pose.positions,i*3),right,ground);maxBoundaryJointJump=Math.max(maxBoundaryJointJump,Math.hypot(...b.map((x,k)=>x-a[k])));}for(const c of p.pose.contacts){const d=q.pose.contacts.find(x=>x.limb===c.limb);maxBoundaryContactJump=Math.max(maxBoundaryContactJump,Math.hypot(...d.world.map((x,k)=>x-c.world[k])));}for(const foot of feet)for(const v of foot.ids){const a=world(vertex(source.skin,v,p.matrices),left,ground),b=world(vertex(source.skin,v,q.matrices),right,ground);maxBoundaryJump=Math.max(maxBoundaryJump,Math.hypot(...b.map((x,k)=>x-a[k])));}}
+    assert(stance>0&&swing>0);for(const [gate,value,pin] of [['penetration',-minGround,policy.maxPenetrationM],['stanceGap',maxStanceGap,policy.maxStanceGapM],['fullStanceVertexDrift',maxDrift,policy.maxStanceDriftM],['boundaryVertexJump',maxBoundaryJump,policy.maxBoundaryVertexJumpM],['boundaryJointJump',maxBoundaryJointJump,policy.maxBoundaryVertexJumpM],['boundaryContactJump',maxBoundaryContactJump,policy.maxBoundaryVertexJumpM]])if(value>pin)report.violations.push({id:row.id,terrain:name,gate,value,pin});result.terrain.push({name,observations,stance,swing,minGround,maxStanceGap,maxFullStanceVertexDriftM:maxDrift,maxSolverContactDriftM:maxContactDrift,maxBoundaryJump,maxBoundaryJointJump,maxBoundaryContactJump,frames,cyclesPerRevolution:cycles});
    }
    report.rows.push(result);
   }finally{actor.dispose();}
  }
- report.ok=true;
+ assert.deepEqual(report.violations,[],'owner geometry acceptance pins');report.ok=true;
 }catch(error){report.failure=String(error.stack||error);throw error;}finally{await writeFile(out+'/report.json',JSON.stringify(report,null,2));}
