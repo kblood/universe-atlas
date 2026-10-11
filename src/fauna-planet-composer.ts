@@ -19,6 +19,9 @@ export function faunaPlanetComposerDefinition(genome:CreatureGenome,member:Fauna
 }
 export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMeshAdopted:(mesh:THREE.Mesh)=>void;renderer?:THREE.WebGLRenderer}):FaunaPlanetComposerRenderer {
  const p=FAUNA_PLANET_COMPOSER_POLICY;
+ if(!options.renderer)throw new Error('Planet Composer requires its WebGL2 renderer for GPU-owned arenas');
+ const gl=options.renderer.getContext();
+ if(!('getBufferSubData' in gl))throw new Error('Planet Composer GPU-owned arenas require WebGL2');
  const provider=createFaunaComposerWorkerProvider<PlanetComposerDefinition>(()=>new Worker(new URL('./fauna-planet-composer.worker.ts',import.meta.url),{type:'module'}));
  const renderer=new FaunaComposerRenderer<PlanetComposerDefinition,FaunaPlanetComposerCandidate>({provider,
   pose:(graph,c)=>posePlanetComposer(graph,c.member,c.activity,c.ground,c.rigSeconds),
@@ -26,6 +29,7 @@ export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMe
   maxBytes:p.residentBytes,maxResultBytes:p.resultBytes,workerReserveBytes:p.workerReserveBytes,fullSourceCache:p.nearSources,
   coldJobsBeforeNearUpgrade:8,
   middleSourceCache:p.middleSources,
+  mergedGpuContext:gl as WebGL2RenderingContext,
   nearM:p.nearM,middleM:p.middleM,maxDistanceM:p.visibleM,
   mergedTiers:{middle:{maxVertices:p.middleVertices,maxIndices:p.middleIndices,maxBytes:5*1024*1024,storage:'packed-1'},far:{maxVertices:p.farVertices,maxIndices:p.farIndices,maxBytes:35*1024*1024,storage:'packed-1'}},
  });
