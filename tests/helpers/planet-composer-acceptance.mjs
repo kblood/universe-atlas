@@ -18,9 +18,9 @@ export function auditPlanetCanonicalCensus(control,candidate){
  const a=new Map(control.members.map(m=>[m.id,m])),b=new Map(candidate.members.map(m=>[m.id,m]));
  assert.equal(a.size,control.members.length,'unique baseline canonical IDs');assert.equal(b.size,candidate.members.length,'unique candidate canonical IDs');
  assert.deepEqual([...b.keys()].sort(),[...a.keys()].sort(),'resident canonical census, not visibility-selected list');
- let adults=0,young=0,walking=0;
- for(const [id,x] of a){const y=b.get(id);assert.deepEqual(y.member,x.member,`${id}: seed/species/variant/stage/anchor member preserved`);assert.deepEqual(y.position,x.position,`${id}: dated canonical root position`);assert.deepEqual(y.activity,x.activity,`${id}: dated canonical activity`);if(y.member.stage==='adult')adults++;if(y.member.stage==='juvenile')young++;if(y.activity.pose.gait==='walk'){assert(Number.isFinite(y.activity.revolutionS)&&y.activity.revolutionS>0,`${id}: real walking revolution`);walking++;}}
- return {ids:a.size,adults,young,walking,scope:'canonical resident identity only; no source/visibility/quality conclusion'};
+ let adults=0,young=0,walking=0,productionPoses=0,retainedUnposed=0;
+ for(const [id,x] of a){const y=b.get(id);assert.deepEqual(y.member,x.member,`${id}: seed/species/variant/stage/anchor member preserved`);if(y.activityEvidence==='not-submitted'){assert.equal(y.position,null);assert.equal(y.activity,null);retainedUnposed++;}else{assert.deepEqual(y.position,x.position,`${id}: dated canonical root position`);assert.deepEqual(y.activity,x.activity,`${id}: dated canonical activity`);productionPoses++;}if(y.member.stage==='adult')adults++;if(y.member.stage==='juvenile')young++;if(y.activity?.pose.gait==='walk'){assert(Number.isFinite(y.activity.revolutionS)&&y.activity.revolutionS>0,`${id}: real walking revolution`);walking++;}}
+ return {ids:a.size,adults,young,walking,productionPoses,retainedUnposed,scope:'all resident identity; production dated activity only where pose-cache receipt exists; no source/visibility/quality conclusion'};
 }
 
 export function auditPlanetComposerSource(runtime,independentKitSource,policy){
