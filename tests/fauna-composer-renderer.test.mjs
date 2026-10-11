@@ -13,8 +13,10 @@ const creatures = new Map();
 function source(name) {if (!creatures.has(name)) creatures.set(name, createComposerCreature(composerPreset(name), {presentation: 'realism-1'})); const c = creatures.get(name); return {graph: c.graph, skin: c.skin};}
 test.after(() => {for (const c of creatures.values()) c.dispose();});
 const candidate = (id, name = 'worm', distanceM = 10) => ({id, definition: {name}, sourceKey: name, matrix: new THREE.Matrix4().makeTranslation(100, 20, 30), distanceM, cameraVisible: true, rigSeconds: .47, poseKey: 't=.47-ground0'});
-const tick = () => new Promise(resolve => setImmediate(resolve));
-function provider() {const calls = []; return {calls, build(job, signal) {calls.push({job, signal}); const s = source(job.definition.name); return Promise.resolve({key: job.key, source: s, levels: {near: composerRenderSkin(s.skin)}, buildMs: 1});}};}
+const tick = () => new Promise(resolve => setTimeout(resolve, 15));
+async function settled(r) {for(let i=0;i<100&&r.diagnostics().running;i++)await tick();assert.equal(r.diagnostics().running,null,'async preparation completed');}
+const levelCache = new Map();
+function provider() {const calls = []; return {calls, build(job, signal) {calls.push({job, signal}); const s = source(job.definition.name); if (!levelCache.has(job.definition.name)) levelCache.set(job.definition.name, buildFaunaComposerLevels(s)); const levels = levelCache.get(job.definition.name); return Promise.resolve({key: job.key, source: s, levels: Object.fromEntries(job.tiers.map(t => [t, levels[t]])), buildMs: 1});}};}
 
 test('variable Composer palette exactly matches native flat skeleton, including bind rotation and radial/chord scale', () => {
   const counts = new Set();
@@ -38,11 +40,11 @@ test('same-source instancing uses one draw and independent dated palettes; sourc
   const p = provider(), r = new FaunaComposerRenderer({provider: p, pose: (graph, c) => poseComposer(graph, 'walk', c.rigSeconds), capacity: 3});
   try {
     const a = candidate('a'), b = {...candidate('b'), rigSeconds: 1.23, poseKey: 't=1.23'};
-    assert.equal(r.update([a, b]).size, 0); await tick(); assert.equal(r.update([a, b]).size, 2);
+    assert.equal(r.update([a, b]).size, 0); await settled(r); assert.equal(r.update([a, b]).size, 2);
     assert.equal(r.diagnostics().draws, 1); assert.equal(r.group.children[0].count, 2);
     assert.notDeepEqual(r.poseOf('a').positions, r.poseOf('b').positions);
     assert.equal(r.diagnostics().poseBuilds, 2); r.update([a, b]); assert.equal(r.diagnostics().poseBuilds, 2);
-    assert.equal(r.diagnostics().uploadBytes, 0); assert.equal(p.calls.length, 1);
+    assert.equal(r.diagnostics().uploadBytes, 0); assert.equal(p.calls.length, 2); assert.deepEqual(p.calls[0].job.tiers, ['far']);
     assert.notEqual(faunaComposerSourceKey({recipe: 'same', phenotype: {height: 1}}, 'v1'), faunaComposerSourceKey({recipe: 'same', phenotype: {height: 2}}, 'v1'));
     r.assertCapabilities({capabilities: {maxAttributes: 16, maxVertexTextures: 16, maxTextureSize: 2048}});
     assert.throws(() => r.assertCapabilities({capabilities: {maxAttributes: 14, maxVertexTextures: 16, maxTextureSize: 2048}}), /15 vertex/);
@@ -53,17 +55,17 @@ test('pending upgrade keeps same coarser animal, then source upgrades without ch
   const p = {calls: 0, build(job) {this.calls++; return this.calls === 1 ? Promise.resolve({key: job.key, source: s, levels: {far: levels.far}, buildMs: 1}) : new Promise(resolve => {resolveUpgrade = () => resolve({key: job.key, source: s, levels: {near: levels.near}, buildMs: 1});});}};
   const r = new FaunaComposerRenderer({provider: p, pose: (g, c) => poseComposer(g, 'walk', c.rigSeconds), capacity: 1});
   try {
-    const a = candidate('a', 'worm', 300); r.update([a]); await tick(); assert.equal(r.update([a]).size, 1); assert.equal(r.sourceOf('a'), null, 'full source not retained for far animal');
+    const a = candidate('a', 'worm', 300); r.update([a]); await settled(r); assert.equal(r.update([a]).size, 1); assert.equal(r.sourceOf('a'), null, 'full source not retained for far animal');
     a.distanceM = 5; assert.equal(r.update([a]).size, 1); assert.equal(r.diagnostics().actors[0].tier, 'far');
     const oldPose = r.poseOf('a'); r.update([a]); assert.equal(r.poseOf('a'), oldPose);
-    resolveUpgrade(); await tick(); assert.equal(r.update([a]).size, 1); assert.equal(r.diagnostics().actors[0].tier, 'near'); assert.equal(r.poseOf('a'), oldPose);
+    resolveUpgrade(); await settled(r); assert.equal(r.update([a]).size, 1); assert.equal(r.diagnostics().actors[0].tier, 'near'); assert.equal(r.poseOf('a'), oldPose);
   } finally {r.dispose();}
 });
 test('tight resident budget rejects admission visibly and preserves an already drawn source', async () => {
   const p = provider(), r = new FaunaComposerRenderer({provider: p, pose: g => poseComposer(g, 'idle', 0), capacity: 2, maxSources: 1, maxBytes: 8 * 1024 * 1024});
   try {
     const a = candidate('a'), b = candidate('b', 'turtle'); r.update([a]); await tick(); r.update([a]);
-    r.update([a, b]); await tick(); const drawn = r.update([a, b]);
+    for (let i = 0; i < 8; i++) {r.update([a, b]); await tick();} const drawn = r.update([a, b]);
     assert.ok(drawn.has('a')); assert.ok(!drawn.has('b')); assert.match(r.diagnostics().lastError, /budget full/); assert.equal(r.diagnostics().sources, 1);
     assert.ok(r.ownedBytes <= 8 * 1024 * 1024);
     r.update([b]); for (let i = 0; i < 125; i++) r.update([b]); await tick(); r.update([b]); assert.equal(r.diagnostics().sources, 1);
@@ -92,7 +94,7 @@ test('controller merges unique reduced sources and keeps the far tier when middl
     a.distanceM = 75; b.distanceM = 80;
     assert.equal(r.update([a, b]).size, 2); assert.ok(r.diagnostics().actors.every(a => a.tier === 'far')); assert.equal(r.diagnostics().draws, 1);
     assert.equal(adopted, 2, 'only the two arena meshes need lighting attachment');
-    r.update([b]); assert.equal(r.diagnostics().mergedTiers.far.records, 1);
+    r.update([b]); assert.equal(r.diagnostics().mergedTiers.far.records, 2);
     r.setContext('new-planet'); assert.equal(r.diagnostics().mergedTiers.far.records, 0);
   } finally {r.dispose(); assert.equal(r.ownedBytes, 0);}
 });

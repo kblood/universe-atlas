@@ -3,6 +3,7 @@ import {COMPOSER_BUDGET, type ComposerGraph, type ComposerPose} from './fauna-co
 import {FaunaComposerPaletteWriter} from './fauna-composer-palette.ts';
 import {FaunaComposerInstanceBatch, FAUNA_COMPOSER_REQUIRED_ATTRIBUTES} from './fauna-composer-instance-batch.ts';
 import {FaunaComposerMergedBatch} from './fauna-composer-merged-batch.ts';
+import {canonicalComposerJson, composerContentDigest, freezeComposerDefinition, isVerifiedComposerBuild} from './fauna-composer-build-receipt.ts';
 import {FAUNA_COMPOSER_TIERS, FAUNA_COMPOSER_RENDER_VERSION, composerTypedBytes, validateComposerRenderSkin, validateComposerRenderLod,
   type FaunaComposerSource, type FaunaComposerSourceProvider, type FaunaComposerBuildResult, type FaunaComposerRenderSkin, type FaunaComposerTier} from './fauna-composer-render-source.ts';
 
@@ -29,9 +30,11 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
 }
 type Entry = {source: FaunaComposerSource | null; graph: ComposerGraph; levels: Partial<Record<FaunaComposerTier, FaunaComposerRenderSkin>>;
   batches: Partial<Record<FaunaComposerTier, FaunaComposerInstanceBatch>>; writer: FaunaComposerPaletteWriter;
-  definition: string; used: number; cpuBytes: number};
+  definition: string; graphIdentity: string; skinIdentity: string; graphBytes: number; used: number; cpuBytes: number};
 type Actor = {key: string; row: number; poseKey?: string; tier?: FaunaComposerTier; pose: ComposerPose | null; poseBytes: number};
-type Running = {key: string; definition: string; epoch: number; abort: AbortController};
+type Running = {key: string; definition: string; definitionRef: unknown; tiers: readonly FaunaComposerTier[]; epoch: number; abort: AbortController};
+type Prepared = {run: Running; source: FaunaComposerSource | null; graph: ComposerGraph; graphIdentity: string; skinIdentity: string; graphBytes: number;
+  levels: Partial<Record<FaunaComposerTier, FaunaComposerRenderSkin>>; writer: FaunaComposerPaletteWriter; bytes: number; buildMs: number; attempt: number};
 const positive = (n: number) => Number.isSafeInteger(n) && n > 0;
 function sourceRoughness(graph: ComposerGraph): number {return (graph as ComposerGraph & {phenotype?: {roughness: number}}).phenotype?.roughness ?? .82;}
 
@@ -53,21 +56,28 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private readonly actors = new Map<string, Actor>();
   private readonly failed = new Map<string, number>();
   private readonly desired = new Map<string, C>();
+  private readonly members = new Map<string, C[]>();
+  private readonly identities = new WeakMap<object, string>();
+  private readonly ready = new Map<string, Prepared>();
+  private readonly blocked = new Map<string, {bytes: number; extra: boolean; revision: number}>();
   private readonly fullSourceKeys = new Set<string>();
   private readonly merged = new Map<'middle'|'far', FaunaComposerMergedBatch>();
   private readonly mergedBindings = new Map<string, {tier: 'middle'|'far'; key: string}>();
+  private readonly levelOwners = new Map<string, string>();
+  private readonly arenaBuffers = new Set<ArrayBufferLike>();
   private paletteData: Float32Array;
   private scratch: Float32Array;
   private readonly paletteUniform: {value: THREE.DataTexture};
   private paletteBones: number;
   private readonly drawn = new Set<string>();
   private running: Running | null = null;
-  private pending: {run: Running; result: FaunaComposerBuildResult} | null = null;
+  private revision = 0;
   private frame = 0; private epoch = 0; private context = ''; private disposed = false;
   private readonly maxSources: number; private readonly maxBytes: number; private readonly maxResultBytes: number;
   private readonly now: () => number;
   private stats = {builds: 0, failures: 0, evictions: 0, stale: 0, budgetDrops: 0, pending: 0, poseFailures: 0,
-    buildMs: 0, adoptionMs: 0, adoptionOverruns: 0, active: 0, draws: 0, triangles: 0, poseBuilds: 0, uploadBytes: 0};
+    buildMs: 0, adoptionMs: 0, adoptionOverruns: 0, preparationMs: 0, geometryCopyMs: 0, copySliceMaxMs: 0, verificationOnMain: 0, completedOutOfView: 0,
+    stagedEvictions: 0, blockedAdmissions: 0, active: 0, draws: 0, triangles: 0, poseBuilds: 0, uploadBytes: 0};
   private lastError: string | null = null;
 
   constructor(options: FaunaComposerRendererOptions<D, C>) {
@@ -87,6 +97,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       const budget = options.mergedTiers?.[tier]; if (!budget) continue;
       const batch = new FaunaComposerMergedBatch({...budget, maxActors: this.capacity, bones: this.paletteUniform});
       this.merged.set(tier, batch);
+      for (const buffer of batch.backingBuffers) this.arenaBuffers.add(buffer);
       if (this.ownedBytes > this.maxBytes) throw new Error('Composer merged arenas exceed resident budget');
       // Both mesh types use the same world lighting hooks; ownership stays here.
       options.onMeshAdopted?.(batch.mesh); this.group.add(batch.mesh);
@@ -112,7 +123,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   }
   setContext(context: string): void {
     if (context === this.context) return; this.context = context; this.epoch++;
-    this.running?.abort.abort(); this.pending = null; this.desired.clear(); this.drawn.clear(); this.actors.clear(); this.failed.clear();
+    this.running?.abort.abort(); this.ready.clear(); this.blocked.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.actors.clear(); this.failed.clear(); this.revision++;
     for (const id of this.mergedBindings.keys()) this.releaseMerged(id);
     for (const key of this.entries.keys()) this.evict(key);
     this.resizePalette(Math.min(16, this.maxBones));
@@ -120,32 +131,46 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   update(candidates: readonly C[], origin?: THREE.Vector3): ReadonlySet<string> {
     this.drawn.clear(); if (this.disposed) return this.drawn;
     if (origin) this.group.position.copy(origin);
-    this.frame++; this.desired.clear(); this.stats.budgetDrops = 0; this.stats.pending = 0;
+    this.frame++; const priorKeys = new Set(this.members.keys()); this.desired.clear(); this.members.clear(); this.stats.budgetDrops = 0; this.stats.pending = 0;
     const keys = new Set<string>();
     for (const c of candidates) {
       if ((!c.cameraVisible && !c.shadowVisible) || !c.id || !c.sourceKey || !Number.isFinite(c.distanceM) || c.distanceM < 0 || c.distanceM > (this.options.maxDistanceM ?? 600) || this.desired.has(c.id)) continue;
       if (this.desired.size >= this.capacity) {this.stats.budgetDrops++; continue;}
       this.desired.set(c.id, c); keys.add(c.sourceKey);
+      let members = this.members.get(c.sourceKey); if (!members) {members = []; this.members.set(c.sourceKey, members);} members.push(c);
     }
+    if (keys.size !== priorKeys.size || [...keys].some(key => !priorKeys.has(key))) this.revision++;
     this.fullSourceKeys.clear();
     for (const c of this.desired.values()) if (c.distanceM < (this.options.nearM ?? 35) * 1.1 && this.fullSourceKeys.size < (this.options.fullSourceCache ?? 6)) this.fullSourceKeys.add(c.sourceKey);
     this.trimFullSources(); this.adoptPending(keys);
     for (const entry of this.entries.values()) for (const batch of Object.values(entry.batches)) batch.beginFrame();
     for (const batch of this.merged.values()) batch.beginFrame();
-    for (const [id, actor] of this.actors) if (this.desired.get(id)?.sourceKey !== actor.key) {this.releaseMerged(id); this.actors.delete(id);}
+    for (const [id, actor] of this.actors) if (this.desired.has(id) && this.desired.get(id)!.sourceKey !== actor.key) {this.releaseMerged(id); this.actors.delete(id);}
     const rows = new Set([...this.actors.values()].map(a => a.row));
+    this.stats.geometryCopyMs = 0;
+    const copy = (pool: FaunaComposerMergedBatch, id: string, skin: FaunaComposerRenderSkin, row: number, roughness: number) => {
+      const start = this.now(), deadline = start + Math.max(0, (this.options.adoptionBudgetMs ?? 3) - this.stats.adoptionMs - this.stats.geometryCopyMs);
+      const status = pool.registerSlice(id, skin, row, roughness, deadline, this.now);
+      const elapsed = this.now() - start; this.stats.geometryCopyMs += elapsed; this.stats.copySliceMaxMs = Math.max(this.stats.copySliceMaxMs, elapsed); return status;
+    };
     let dirty = false; this.stats.active = 0; this.stats.draws = 0; this.stats.triangles = 0; this.stats.uploadBytes = 0;
     for (const c of this.desired.values()) {
       const entry = this.entries.get(c.sourceKey);
       if (!entry) {this.stats.pending++; continue;}
       // Detect accidental key reuse instead of replacing another phenotype under the same cache key.
-      if (entry.definition !== JSON.stringify(c.definition)) {this.lastError = 'Composer source key reused for a different definition'; this.stats.failures++; continue;}
+      if (entry.definition !== this.identity(c.definition, true)) {this.lastError = 'Composer source key reused for a different definition'; this.stats.failures++; continue;}
       entry.used = this.frame;
       let actor = this.actors.get(c.id);
       const wanted = this.candidateTier(c, actor?.tier);
       const choices = [...new Set([wanted, ...(actor?.tier ? [actor.tier] : []), ...FAUNA_COMPOSER_TIERS])].filter(t => entry.levels[t]);
       if (!choices.length) {this.stats.pending++; continue;}
-      if (!actor) {let row = 0; while (rows.has(row)) row++; rows.add(row); actor = {key: c.sourceKey, row, pose: null, poseBytes: 0}; this.actors.set(c.id, actor);}
+      if (!actor) {
+        if (this.actors.size >= this.capacity) {
+          const victim = [...this.actors].filter(([id]) => !this.desired.has(id)).sort((a, b) => (this.entries.get(a[1].key)?.used ?? 0) - (this.entries.get(b[1].key)?.used ?? 0))[0];
+          if (!victim) {this.stats.budgetDrops++; continue;} this.releaseMerged(victim[0]); rows.delete(victim[1].row); this.actors.delete(victim[0]);
+        }
+        let row = 0; while (rows.has(row)) row++; rows.add(row); actor = {key: c.sourceKey, row, pose: null, poseBytes: 0}; this.actors.set(c.id, actor);
+      }
       let available: FaunaComposerTier | undefined, batch: FaunaComposerInstanceBatch | null = null, mergedBatch: FaunaComposerMergedBatch | undefined;
       for (const tier of choices) {
         const pool = tier === 'near' ? undefined : this.merged.get(tier);
@@ -153,10 +178,17 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
           const binding = this.mergedBindings.get(c.id);
           if (binding?.tier === tier && binding.key === c.sourceKey) {mergedBatch = pool; available = tier; break;}
           if (binding?.tier === tier) this.releaseMerged(c.id);
-          if (!pool.register(c.id, entry.levels[tier]!, actor.row, sourceRoughness(entry.graph))) continue;
-          this.releaseMerged(c.id); this.mergedBindings.set(c.id, {tier: tier as 'middle'|'far', key: c.sourceKey}); mergedBatch = pool; available = tier; break;
+          let status = copy(pool, c.id, entry.levels[tier]!, actor.row, sourceRoughness(entry.graph));
+          if (status === 'full') {
+            const victim = [...this.entries].filter(([key]) => !keys.has(key)).sort((a, b) => a[1].used - b[1].used)[0];
+            if (victim) {this.evict(victim[0]); status = copy(pool, c.id, entry.levels[tier]!, actor.row, sourceRoughness(entry.graph));}
+          }
+          if (status !== 'ready') continue;
+          this.releaseMerged(c.id); this.mergedBindings.set(c.id, {tier: tier as 'middle'|'far', key: c.sourceKey});
+          entry.levels[tier] = pool.residentSkin(c.id, entry.levels[tier]!); this.levelOwners.set(`${c.sourceKey}\0${tier}`, c.id); this.recount(entry, c.sourceKey);
+          mergedBatch = pool; available = tier; break;
         }
-        const instances = [...this.desired.values()].filter(x => x.sourceKey === c.sourceKey).length;
+        const instances = this.members.get(c.sourceKey)!.length;
         batch = this.batch(entry, tier, keys, instances);
         if (batch) {this.releaseMerged(c.id); available = tier; break;}
       }
@@ -164,7 +196,8 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       try {
         if (!actor.pose || c.poseKey === undefined || actor.poseKey !== c.poseKey) {
           const pose = this.options.pose(entry.graph, c); entry.writer.write(pose, this.scratch);
-          const poseBytes = composerTypedBytes(pose) + JSON.stringify(pose.contacts).length * 2;
+          // Typed transforms plus a conservative fixed allowance per plain contact record.
+          const poseBytes = composerTypedBytes(pose) + pose.contacts.length * 256;
           if (!this.room(poseBytes - actor.poseBytes, keys, false)) throw new Error('Composer pose exceeds resident budget');
           const count = entry.graph.bones.length * 16, offset = actor.row * this.paletteBones * 16;
           for (let i = 0; i < count; i++) if (!Object.is(this.paletteData[offset + i], this.scratch[i])) {this.paletteData[offset + i] = this.scratch[i]!; dirty = true;}
@@ -196,8 +229,12 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     for (const b of Object.values(entry.batches)) bytes += b.uploadedGeometryBytes + b.instanceBytes * 2;
     return bytes;
   }
+  private recount(entry: Entry, key: string): void {
+    entry.cpuBytes = composerTypedBytes({source: entry.source, levels: entry.levels}, this.arenaBuffers) + (entry.definition.length + key.length + entry.graphIdentity.length + entry.skinIdentity.length) * 2 + entry.graphBytes;
+  }
   get ownedBytes(): number {let n = this.paletteData.byteLength * 2 + this.scratch.byteLength; for (const e of this.entries.values()) n += this.entryBytes(e); for (const a of this.actors.values()) n += a.poseBytes; for (const b of this.merged.values()) n += b.diagnostics().ownedBytes; return n;}
-  get reservedBytes(): number {return this.disposed ? 0 : this.ownedBytes + this.workerReserveBytes + (this.pending ? composerTypedBytes(this.pending.result) : 0);}
+  private get stagedBytes(): number {let bytes = 0; for (const p of this.ready.values()) bytes += p.bytes; return bytes;}
+  get reservedBytes(): number {return this.disposed ? 0 : this.ownedBytes + this.workerReserveBytes + this.stagedBytes + (this.running ? this.maxResultBytes : 0);}
   private room(bytes: number, protectedKeys: ReadonlySet<string>, extraEntry: boolean): boolean {
     while (this.ownedBytes + bytes > this.maxBytes || (extraEntry && this.entries.size >= this.maxSources)) {
       const victim = [...this.entries].filter(([key]) => !protectedKeys.has(key)).sort((a, b) => a[1].used - b[1].used)[0];
@@ -216,68 +253,130 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     try {this.options.onMeshAdopted?.(batch.mesh);} catch (error) {batch.dispose(); this.lastError = String(error); return null;}
     entry.batches[tier] = batch; this.group.add(batch.mesh); return batch;
   }
-  private adoptPending(keys: ReadonlySet<string>): void {
-    this.stats.adoptionMs = 0; if (!this.pending) return;
-    const {run, result} = this.pending; this.pending = null; const started = this.now();
-    try {
-      if (run.epoch !== this.epoch || !keys.has(run.key)) {this.stats.stale++; return;}
-      if (result.key !== run.key || !result.source || result.source.skin.version !== 'fauna-composer-skin-6') throw new Error('Composer source identity/version mismatch');
-      const count = result.source.graph.bones.length;
-      if (count < 1 || count > this.maxBones || composerTypedBytes(result) > this.maxResultBytes) throw new Error('Composer build result exceeds budget');
+  private identity(definition: unknown, freeze = false): string {
+    if (definition && typeof definition === 'object') {
+      const cached = this.identities.get(definition); if (cached !== undefined) return cached;
+      const identity = canonicalComposerJson(definition);
+      if (freeze) {freezeComposerDefinition(definition); this.identities.set(definition, identity);}
+      return identity;
+    }
+    return canonicalComposerJson(definition);
+  }
+  /** Runs in the completion task, outside update(). The production provider has
+   * verified strict worker checks against digests of the actual received arrays.
+   * Custom providers retain the full local validation path. */
+  private async prepare(run: Running, result: FaunaComposerBuildResult): Promise<Prepared> {
+    const started = this.now();
+    if (result.key !== run.key || !result.source || result.source.skin.version !== 'fauna-composer-skin-6') throw new Error('Composer source identity/version mismatch');
+    const count = result.source.graph.bones.length;
+    if (count < 1 || count > this.maxBones || composerTypedBytes(result) > this.maxResultBytes) throw new Error('Composer build result exceeds budget');
+    if (canonicalComposerJson(run.definitionRef) !== run.definition) throw new Error('Composer definition mutated during build');
+    if (!isVerifiedComposerBuild(result)) {
+      this.stats.verificationOnMain++;
       validateComposerRenderSkin({...result.source.skin, sourceVertex: null}, count);
-      for (const level of Object.values(result.levels)) {if (level.version !== result.source.skin.version) throw new Error('LOD source version mismatch'); validateComposerRenderSkin(level, count); validateComposerRenderLod(result.source.skin, level);}
-      if (!Object.keys(result.levels).length) throw new Error('Composer build returned no levels');
-      const prior = this.entries.get(run.key);
-      if (prior && JSON.stringify(prior.graph) !== JSON.stringify(result.source.graph)) throw new Error('Composer source graph changed during upgrade');
-      // Never mutate a resident original during a tier upgrade.
-      let source: FaunaComposerSource | null = prior?.source ?? result.source;
-      const levels = {...result.levels, ...prior?.levels};
-      if (prior) for (const level of Object.values(levels)) validateComposerRenderLod(source.skin, level);
-      const graph = source.graph, writer = prior?.writer ?? new FaunaComposerPaletteWriter(graph);
-      if (!this.fullSourceKeys.has(run.key) && (levels.middle || levels.far)) {source = null; delete levels.near;}
-      if (!prior && levels.far && [...this.desired.values()].filter(c => c.sourceKey === run.key).every(c => this.candidateTier(c) === 'far')) delete levels.middle;
-      const definitionBytes = (run.definition.length + run.key.length) * 2, graphBytes = JSON.stringify(graph).length * 2;
-      const cpuBytes = composerTypedBytes({source, levels}) + definitionBytes + graphBytes;
-      const width = Math.max(this.paletteBones, Math.min(this.maxBones, Math.ceil(count / 16) * 16));
-      const paletteGrowth = (width - this.paletteBones) * this.capacity * 16 * 4 * 2;
-      const added = cpuBytes + writer.ownedBytes - (prior ? prior.cpuBytes + prior.writer.ownedBytes : 0) + paletteGrowth;
-      if (!this.room(added, keys, !prior)) throw new Error('Composer resident source budget full');
-      if (width !== this.paletteBones) this.resizePalette(width);
-      const entry: Entry = {source, graph, levels, writer, definition: run.definition, batches: prior?.batches ?? {}, used: this.frame, cpuBytes};
-      this.entries.set(run.key, entry); this.failed.delete(run.key); this.stats.builds++; this.stats.buildMs += result.buildMs;
-    } catch (error) {this.fail(run.key, error);}
-    finally {this.stats.adoptionMs = this.now() - started; if (this.stats.adoptionMs > (this.options.adoptionBudgetMs ?? 3)) this.stats.adoptionOverruns++;}
+      for (const level of Object.values(result.levels)) {validateComposerRenderSkin(level, count); validateComposerRenderLod(result.source.skin, level);}
+    }
+    for (const level of Object.values(result.levels)) if (level.version !== result.source.skin.version) throw new Error('LOD source version mismatch');
+    if (!Object.keys(result.levels).length || run.tiers.some(tier => !result.levels[tier])) throw new Error('Composer build omitted requested levels');
+    const graph = result.source.graph, levels = {...result.levels};
+    // Cache the compact requested tiers, not all incidental reducer snapshots.
+    for (const tier of FAUNA_COMPOSER_TIERS) if (!run.tiers.includes(tier)) delete levels[tier];
+    const source = this.fullSourceKeys.has(run.key) ? result.source : null;
+    if (!source) delete levels.near;
+    const graphIdentity = isVerifiedComposerBuild(result) ? result.receipt!.graphDigest : await composerContentDigest(graph), writer = new FaunaComposerPaletteWriter(graph);
+    const skinIdentity = isVerifiedComposerBuild(result) ? result.receipt!.skinDigest : await composerContentDigest(result.source.skin);
+    const graphBytes = canonicalComposerJson(graph).length * 2;
+    const bytes = graphBytes + composerTypedBytes({source, levels}) + (run.definition.length + run.key.length + graphIdentity.length + skinIdentity.length) * 2 + writer.ownedBytes;
+    this.stats.preparationMs = this.now() - started;
+    return {run, source, graph, graphIdentity, skinIdentity, graphBytes, levels, writer, bytes, buildMs: result.buildMs, attempt: -1};
+  }
+  private retain(prepared: Prepared): void {
+    this.ready.set(prepared.run.key, prepared);
+    // Finished animals remain an LRU cache even after a one-frame visibility
+    // change. Staging is bounded separately from resident CPU/GPU allocations.
+    while (this.stagedBytes > this.maxResultBytes) {
+      const candidates = [...this.ready].sort((a, b) => Number(this.members.has(a[0])) - Number(this.members.has(b[0])));
+      const [key, victim] = candidates[0]!;
+      this.ready.delete(key); this.blocked.set(key, {bytes: victim.bytes, extra: !this.entries.has(key), revision: this.revision}); this.stats.stagedEvictions++;
+    }
+    while (this.blocked.size > this.maxSources) this.blocked.delete(this.blocked.keys().next().value!);
+  }
+  private adoptPending(keys: ReadonlySet<string>): void {
+    this.stats.adoptionMs = 0; const started = this.now();
+    for (const [key, p] of this.ready) {
+      if (this.now() - started >= (this.options.adoptionBudgetMs ?? 3)) break;
+      if (p.attempt === this.revision) continue;
+      p.attempt = this.revision;
+      try {
+        if (p.run.epoch !== this.epoch) {this.ready.delete(key); this.stats.stale++; continue;}
+        // Definitions can be mutable before admission, but never afterward.
+        if (canonicalComposerJson(p.run.definitionRef) !== p.run.definition || this.members.get(key)?.some(c => this.identity(c.definition) !== p.run.definition)) throw new Error('Composer definition mutated during build/admission');
+        const prior = this.entries.get(key);
+        if (prior && (prior.graphIdentity !== p.graphIdentity || prior.skinIdentity !== p.skinIdentity)) throw new Error('Composer original source changed during upgrade');
+        let source = prior?.source ?? p.source;
+        const levels = {...p.levels, ...prior?.levels};
+        if (!this.fullSourceKeys.has(key) && (levels.middle || levels.far)) {source = null; delete levels.near;}
+        if (!Object.keys(levels).length) {this.ready.delete(key); continue;}
+        const writer = prior?.writer ?? p.writer;
+        const cpuBytes = p.graphBytes + composerTypedBytes({source, levels}, this.arenaBuffers) + (p.run.definition.length + key.length + p.graphIdentity.length + p.skinIdentity.length) * 2;
+        const width = Math.max(this.paletteBones, Math.min(this.maxBones, Math.ceil(p.graph.bones.length / 16) * 16));
+        const paletteGrowth = (width - this.paletteBones) * this.capacity * 16 * 4 * 2;
+        const added = cpuBytes + writer.ownedBytes - (prior ? prior.cpuBytes + prior.writer.ownedBytes : 0) + paletteGrowth;
+        if (!this.room(added, new Set([...keys, key]), !prior)) {this.stats.blockedAdmissions++; this.lastError = 'Composer resident source budget full; completed source retained'; p.attempt = this.revision; continue;}
+        if (width !== this.paletteBones) this.resizePalette(width);
+        this.identity(p.run.definitionRef, true); for (const c of this.members.get(key) ?? []) this.identity(c.definition, true);
+        this.entries.set(key, {source, graph: p.graph, graphIdentity: p.graphIdentity, skinIdentity: p.skinIdentity, graphBytes: p.graphBytes, levels, writer, definition: p.run.definition, batches: prior?.batches ?? {}, used: this.frame, cpuBytes});
+        this.ready.delete(key); this.blocked.delete(key); this.failed.delete(key); this.stats.builds++; this.stats.buildMs += p.buildMs;
+        if (!keys.has(key)) this.stats.completedOutOfView++;
+        this.revision++;
+      } catch (error) {this.ready.delete(key); this.fail(key, error);}
+    }
+    this.stats.adoptionMs = this.now() - started;
+    if (this.stats.adoptionMs > (this.options.adoptionBudgetMs ?? 3)) this.stats.adoptionOverruns++;
   }
   private startNext(): void {
-    if (this.running || this.pending || this.disposed) return;
-    for (const c of this.desired.values()) {
-      const entry = this.entries.get(c.sourceKey), tier = this.candidateTier(c, this.actors.get(c.id)?.tier);
-      if (entry?.levels[tier] || (this.failed.get(c.sourceKey) ?? -Infinity) > this.frame - 120) continue;
-      const run: Running = {key: c.sourceKey, definition: JSON.stringify(c.definition), epoch: this.epoch, abort: new AbortController()};
+    if (this.running || this.disposed) return;
+    // All missing canonical animals receive a first coarse tier before any
+    // near/middle refinement, including a newly arrived member of a known herd.
+    for (const cold of [true, false]) for (const [key, members] of this.members) {
+      const c = members[0]!, entry = this.entries.get(key);
+      if ((!entry || !Object.keys(entry.levels).length) !== cold || this.ready.has(key) || (this.failed.get(key) ?? -Infinity) > this.frame - 120) continue;
+      const tier = cold ? 'far' : members.map(c => this.candidateTier(c, this.actors.get(c.id)?.tier)).sort((a, b) => FAUNA_COMPOSER_TIERS.indexOf(a) - FAUNA_COMPOSER_TIERS.indexOf(b))[0]!;
+      if (entry?.levels[tier]) continue;
+      const blocked = this.blocked.get(key);
+      if (blocked) {
+        if (blocked.revision === this.revision) continue;
+        blocked.revision = this.revision;
+        // Known actual compact result bytes preflight retry; no timed rebuild loop.
+        if (!this.room(Math.max(0, blocked.bytes - (entry ? entry.cpuBytes + entry.writer.ownedBytes : 0)), new Set(this.members.keys()), blocked.extra)) continue;
+        this.blocked.delete(key);
+      }
+      const run: Running = {key, definition: this.identity(c.definition), definitionRef: c.definition, tiers: [tier], epoch: this.epoch, abort: new AbortController()};
       this.running = run;
-      try {Promise.resolve(this.options.provider.build({key: run.key, definition: c.definition, tiers: [tier], loadedSource: entry?.source ?? undefined}, run.abort.signal)).then(result => {
+      try {Promise.resolve(this.options.provider.build({key, definition: c.definition, tiers: run.tiers, loadedSource: entry?.source ?? undefined}, run.abort.signal)).then(async result => {
         if (this.disposed || run.abort.signal.aborted || run.epoch !== this.epoch) {this.stats.stale++; return;}
-        if (composerTypedBytes(result) > this.maxResultBytes) {this.fail(run.key, new Error('Composer build result exceeds budget')); return;}
-        this.pending = {run, result};
-      }).catch(error => {if (!run.abort.signal.aborted && !this.disposed) this.fail(run.key, error);}).finally(() => {
+        const prepared = await this.prepare(run, result);
+        if (this.disposed || run.abort.signal.aborted || run.epoch !== this.epoch) {this.stats.stale++; return;}
+        this.retain(prepared);
+      }).catch(error => {if (!run.abort.signal.aborted && !this.disposed) this.fail(key, error);}).finally(() => {
         if (this.running === run) this.running = null; if (!this.disposed) this.options.onReady?.();
-      });} catch (error) {this.running = null; this.fail(run.key, error);}
+      });} catch (error) {this.running = null; this.fail(key, error);}
       return;
     }
   }
   private trimFullSources(): void {
     for (const [key, entry] of this.entries) if (!this.fullSourceKeys.has(key) && entry.source && (entry.levels.middle || entry.levels.far)) {
-      entry.batches.near?.dispose(); delete entry.batches.near; delete entry.levels.near; entry.source = null;
-      entry.cpuBytes = composerTypedBytes(entry.levels) + (entry.definition.length + key.length) * 2 + JSON.stringify(entry.graph).length * 2;
+      this.revision++; entry.batches.near?.dispose(); delete entry.batches.near; delete entry.levels.near; entry.source = null;
+      this.recount(entry, key);
     }
   }
   private trimFarOnly(): void {
     for (const [key, entry] of this.entries) {
       if (!entry.levels.far || !entry.levels.middle) continue;
-      const members = [...this.desired.values()].filter(c => c.sourceKey === key);
+      const members = this.members.get(key) ?? [];
       if (!members.length || members.some(c => this.candidateTier(c, this.actors.get(c.id)?.tier) !== 'far' || this.actors.get(c.id)?.tier !== 'far')) continue;
-      entry.batches.middle?.dispose(); delete entry.batches.middle; delete entry.levels.middle;
-      entry.cpuBytes = composerTypedBytes({source: entry.source, levels: entry.levels}) + (entry.definition.length + key.length) * 2 + JSON.stringify(entry.graph).length * 2;
+      this.revision++; entry.batches.middle?.dispose(); delete entry.batches.middle; delete entry.levels.middle;
+      this.recount(entry, key);
     }
   }
   private fail(key: string, error: unknown): void {
@@ -288,27 +387,38 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     const entry = this.entries.get(key); if (!entry) return;
     for (const batch of Object.values(entry.batches)) batch.dispose(); this.entries.delete(key);
     for (const [id, actor] of this.actors) if (actor.key === key) {this.releaseMerged(id); this.actors.delete(id);}
-    this.stats.evictions++;
+    this.stats.evictions++; this.revision++;
   }
-  private releaseMerged(id: string): void {const binding = this.mergedBindings.get(id); if (binding) {this.merged.get(binding.tier)!.release(id); this.mergedBindings.delete(id);}}
+  private releaseMerged(id: string): void {
+    const binding = this.mergedBindings.get(id); if (!binding) return;
+    const ownerKey = `${binding.key}\0${binding.tier}`, entry = this.entries.get(binding.key), pool = this.merged.get(binding.tier)!;
+    if (this.levelOwners.get(ownerKey) === id) {
+      const replacement = [...this.mergedBindings].find(([other, b]) => other !== id && b.key === binding.key && b.tier === binding.tier);
+      if (replacement && entry?.levels[binding.tier]) {entry.levels[binding.tier] = pool.residentSkin(replacement[0], entry.levels[binding.tier]!); this.levelOwners.set(ownerKey, replacement[0]);}
+      else {if (entry) delete entry.levels[binding.tier]; this.levelOwners.delete(ownerKey);}
+      if (entry) this.recount(entry, binding.key);
+    }
+    pool.release(id); this.mergedBindings.delete(id); this.revision++;
+  }
   sourceOf(id: string): FaunaComposerSource | null {const actor = this.actors.get(id); return actor ? this.entries.get(actor.key)?.source ?? null : null;}
   poseOf(id: string): ComposerPose | null {return this.actors.get(id)?.pose ?? null;}
   diagnostics() {return {version: FAUNA_COMPOSER_RENDER_VERSION, ...this.stats, capacity: this.capacity, sources: this.entries.size,
     actors: [...this.drawn].map(id => {const actor = this.actors.get(id)!, entry = this.entries.get(actor.key)!; return {id, key: actor.key, tier: actor.tier, bones: entry.graph.bones.length, skin: entry.levels[actor.tier!]!.version};}),
     ownedBytes: this.ownedBytes, maxBytes: this.maxBytes, reservedBytes: this.reservedBytes, workerReserveBytes: this.workerReserveBytes,
     paletteBones: this.paletteBones, paletteCpuBytes: this.paletteData.byteLength, paletteGpuBytes: this.paletteData.byteLength,
+    graphJsonEquivalentBytes: [...this.entries.values()].reduce((n, e) => n + e.graphBytes, 0),
     sourceCpuBytes: [...this.entries.values()].reduce((n, e) => n + e.cpuBytes, 0),
     geometryGpuBytes: [...this.entries.values()].reduce((n, e) => n + Object.values(e.batches).reduce((m, b) => m + b.uploadedGeometryBytes, 0), 0),
     instanceCpuGpuBytes: [...this.entries.values()].reduce((n, e) => n + Object.values(e.batches).reduce((m, b) => m + b.instanceBytes * 2, 0), 0),
-    pendingResultBytes: this.pending ? composerTypedBytes(this.pending.result) : 0,
+    pendingResultBytes: this.stagedBytes, stagedSources: this.ready.size, blockedSources: this.blocked.size, receivingReserveBytes: this.running ? this.maxResultBytes : 0,
     poseCpuBytes: [...this.actors.values()].reduce((n, a) => n + a.poseBytes, 0),
     mergedTiers: Object.fromEntries([...this.merged].map(([tier, batch]) => [tier, batch.diagnostics()])),
     running: this.running?.key ?? null, lastError: this.lastError};}
   dispose(): void {
-    if (this.disposed) return; this.disposed = true; this.epoch++; this.running?.abort.abort(); this.pending = null;
+    if (this.disposed) return; this.disposed = true; this.epoch++; this.running?.abort.abort(); this.ready.clear(); this.blocked.clear();
     for (const key of this.entries.keys()) this.evict(key); this.paletteUniform.value.dispose(); this.options.provider.dispose?.();
-    for (const batch of this.merged.values()) batch.dispose(); this.merged.clear(); this.mergedBindings.clear();
+    for (const batch of this.merged.values()) batch.dispose(); this.merged.clear(); this.mergedBindings.clear(); this.levelOwners.clear(); this.arenaBuffers.clear();
     this.paletteData = new Float32Array(0); this.scratch = new Float32Array(0); this.paletteUniform.value.image.data = this.paletteData;
-    this.actors.clear(); this.desired.clear(); this.drawn.clear(); this.failed.clear(); this.group.removeFromParent();
+    this.actors.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.failed.clear(); this.group.removeFromParent();
   }
 }

@@ -16,12 +16,18 @@ import {installFaunaComposerSourceWorker} from './fauna-composer-worker-provider
 installFaunaComposerSourceWorker(self, buildPlanetComposerSource);
 ```
 
-Only one worker request can run. Abort, errors, timeout and disposal terminate
-the worker. Resident source arrays are copied by structured clone and never
+Only one worker request can run. Successful requests reuse one persistent worker.
+Abort, errors, timeout and disposal terminate it. Resident source arrays are copied by structured clone and never
 detached. A near request returns the original source; reduced requests run the
 anatomically constrained Kit Composer reducer off the render thread. Every LOD
 vertex keeps its original position, normal, bone indices/weights, gloss and all
-four crisp-coat attributes. Adoption validates that mapping. A loaded tier stays
+four crisp-coat attributes. The worker strictly validates every attribute and
+emits a SHA-256 receipt bound to the complete definition, graph, original skin,
+source version and transferred payload. The provider independently hashes the
+actual received arrays; a version tag alone never authorizes adoption. The
+renderer recognizes only results verified by this provider. Custom providers
+retain strict local checking in their completion task. Upgrades must match the
+original graph and skin digests as well as the definition. A loaded tier stays
 visible during a pending finer-tier request. Original sources are retained only
 for the nearest six eligible source keys; derived tiers and their variable graph
 can outlive the full source. Reacquiring an evicted original uses the same complete
@@ -40,28 +46,68 @@ flat per-animal selector; seeds retain all 32 bits, and original float attribute
 remain unquantized. Phenotype roughness and eye gloss remain separate channels.
 The nearest originals keep source instancing. Released index blocks become
 degenerate until reused; diagnostics disclose active and reserved triangles.
-Unused middle levels are discarded for far-only members. Arena buffers and the
-remaining cached source arrays both count toward admission; duplicate CPU data
-has not yet been eliminated.
+Unused middle levels are discarded for far-only members. Reduced attributes
+become views of the arena's exact copied vertices, eliminating duplicate CPU
+position/normal/colour/joint/weight/gloss/coat buffers. Compact local triangle
+indices and original sourceVertex proof remain owned separately. Arena buffers
+are counted once. Invisible cached actors retain their blocks and palette rows;
+LRU source eviction or row pressure releases them. A tier release transfers a
+shared source view to another resident copy, or invalidates that tier before its
+block can be reused. Reacquisition uses the retained original or exact definition.
+
+Geometry copies are sliced at 128 vertices / 768 indices with deadline checks.
+A partial block stays invisible while an existing tier continues to draw. Source
+preparation and integrity hashing happen outside update(); admission uses the
+prepared byte counts. The update reports admission time and actual copy time.
 
 This is a correctness baseline, not a completed planet performance gate. Cold
-animals are explicitly pending, and admission
-failures are reported. Those gaps must be resolved before replacing the normal
+animals are explicitly pending. Every missing source receives a first far job
+before any detail upgrades. Completed results survive brief visibility changes,
+and budget-blocked completed sources remain in a bounded staging LRU. Evicted
+staged sources retain actual byte requirements; a retry requires a resource
+revision and successful preflight, preventing a timed rebuild/discard loop.
+Admission gaps remain reported. Those gaps must be resolved before replacing the normal
 world renderer; this module is not wired into PlanetRenderer yet.
 
 Default resident admission is 32 MiB, with a separate declared 16 MiB worker
 reserve and 8 MiB result ceiling. These are configurable limits, not measured
 worker heap peaks or Quest qualification. CPU typed arrays are counted by unique
 backing buffer; uploaded geometry and palette GPU copies, instance CPU/GPU
-buffers, pose arrays, inverse binds, and serialized graph/definition/key storage
-are reported. JavaScript object overhead is estimated by serialization, not an
-exact heap measurement. Pending payload bytes are separate. A source result may
-cross the 3 ms adoption target; one result is adopted per frame and overruns are
-reported, not hidden. Actual worker heap and GPU timing remain integration gates.
+buffers, pose arrays, inverse binds, and graph/definition/key storage are
+reported. Plain graph objects use their serialized-size equivalent; this is an
+estimate, not exact heap ownership. Staging has a separate 8 MiB ceiling. An active
+request additionally reserves its maximum 8 MiB incoming result; these allocations
+are not concealed inside the declared worker reserve. Deadline overruns are
+reported. Definitions are serialized once per admission/reference, compared again
+at completion, and recursively frozen after admission. No per-frame definition
+stringification or same-source candidate filtering occurs.
 
-Focused tests: `node --test tests/fauna-composer-renderer.test.mjs tests/fauna-composer-merged.test.mjs`.
+The synthetic 289-definition target1000 probe admitted 170 under 64 MiB with a
+174k-vertex/867k-index arena: 48,810,688B arena CPU+GPU, 3,145,728B palette CPU+GPU,
+13,869,840B source/identity/graph, plus poses/writers. The 119 remaining definitions
+were explicitly pending. Actual far vertices ranged 534–665, so 128k vertices
+cannot cover 289 far animals. This demonstrates a budget gap, not acceptance of
+1000-triangle visual fidelity or the real planet distribution. Evidence is under
+Assets/_assetctl/planet-composer-cold-20261011/profile289/.
+
+Focused tests: `node --test tests/fauna-composer-renderer.test.mjs tests/fauna-composer-merged.test.mjs tests/fauna-composer-cold.test.mjs`.
 Paired GPU capture: serve the worktree on port 5194, then run
 `node tests/fauna-composer-merged.browser.mjs` (uses the shared GPU lock).
 The eight-animal/all-pattern paired capture was pixel-identical, including
 directional shadows, and reduced animal draws from eight to one. This does not
 substitute for full-planet timing, cold-arrival coverage or headset checks.
+
+For an actual browser-worker cold-load/heap sample, serve
+`npx vite --config tests/fauna-composer-cold.vite.mjs` then run
+`node tests/fauna-composer-cold.browser.mjs`. The test-only Kit path is explicit;
+production dependency pins are untouched. CDP Runtime.getHeapUsage is sampled
+when the worker accepts commands, so the reported peak is a sampled lower bound,
+not a hard heap limit. Typed-result byte counts are reported separately.
+
+The successful browser24 run (far1500, actual pinned Kit source) measured first
+visible at308ms, all24 at6.363s, zero main long tasks, zero admission overruns and
+maximum geometry-copy slice0.39ms. The persistent worker sampled103 times via CDP
+reached usedSize50,997,728B, totalSize90,673,152B and backingStorage23,669,921B
+(separate peaks). These measurements invalidate the tentative16 MiB worker
+reserve. This change exposes the result; it does not silently raise the planet's
+shared256 MiB budget. Browser evidence: Assets/_assetctl/planet-composer-cold-20261011/browser24/report.json.
