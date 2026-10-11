@@ -56,13 +56,14 @@ export class FaunaComposerInstanceBatch {
   private disposed = false;
   readonly skin: FaunaComposerRenderSkin;
   readonly capacity: number;
-  constructor(skin: FaunaComposerRenderSkin, palette: {value: THREE.DataTexture}, capacity: number) {
+  constructor(skin: FaunaComposerRenderSkin, palette: {value: THREE.DataTexture}, capacity: number, roughness = .82) {
     this.skin = skin; this.capacity = capacity;
     const geometry = faunaComposerGeometry(skin);
     this.actors = new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(THREE.DynamicDrawUsage);
     this.uploadedGeometryBytes = Object.values(geometry.attributes).reduce((n, a) => n + a.array.byteLength, geometry.index!.array.byteLength);
     geometry.setAttribute('composerActor', this.actors);
     const material = skin.coatCrisp ? createComposerCrispCoatMaterial(skin.coatCrisp) : createComposerColouredMaterial();
+    material.roughness = roughness;
     install(material, palette);
     this.mesh = new THREE.InstancedMesh(geometry, material, capacity);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

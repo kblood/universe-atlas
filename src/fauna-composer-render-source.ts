@@ -97,8 +97,10 @@ export function validateComposerRenderLod(source: ComposerSkin, level: FaunaComp
     if (!level.coatLayers) throw new Error('LOD coat layers missing');
     for (const key of ['c0', 'c1', 'c2', 'sample'] as const) arrays.push([source.coatLayers[key], level.coatLayers[key], key === 'sample' ? 4 : 3]);
   }
+  const comparisons = level.sourceVertex === null ? arrays.filter(([a, b]) => a !== b) : arrays;
+  if (!comparisons.length && level.sourceVertex === null) return;
   for (let v = 0; v < n; v++) {
     const sv = level.sourceVertex?.[v] ?? v; if (sv >= original) throw new Error('LOD source vertex outside original animal');
-    for (const [a, b, width] of arrays) for (let k = 0; k < width; k++) if (!Object.is(a[sv * width + k], b[v * width + k])) throw new Error('LOD attribute differs from original Composer animal');
+    for (const [a, b, width] of comparisons) for (let k = 0; k < width; k++) if (!Object.is(a[sv * width + k], b[v * width + k])) throw new Error('LOD attribute differs from original Composer animal');
   }
 }

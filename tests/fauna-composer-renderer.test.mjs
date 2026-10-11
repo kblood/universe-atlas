@@ -78,3 +78,21 @@ test('context/disposal aborts the single outstanding job and rejects stale resul
 test('colour and both shadow shaders use the same variable palette deformation', () => {
   for (const name of ['standard', 'depth', 'distanceRGBA']) {const shader = {vertexShader: THREE.ShaderLib[name].vertexShader}; patchFaunaComposerInstancing(shader); assert.match(shader.vertexShader, /composerSkin\*vec4\(transformed/); assert.match(shader.vertexShader, /texelFetch/);}
 });
+test('controller merges unique reduced sources and keeps the far tier when middle arena is full', async () => {
+  const sources = ['worm', 'turtle'].map(name => source(name)), levels = sources.map(s => buildFaunaComposerLevels(s, [4500, 1500]));
+  const vertices = levels.reduce((n, l) => n + l.far.positions.length / 3, 0), indices = levels.reduce((n, l) => n + l.far.index.length, 0);
+  const p = {build(job) {const i = job.definition.name === 'worm' ? 0 : 1; return Promise.resolve({key: job.key, source: sources[i], levels: levels[i], buildMs: 1});}};
+  let adopted = 0;
+  const r = new FaunaComposerRenderer({provider: p, pose: (g, c) => poseComposer(g, 'walk', c.rigSeconds), capacity: 2,
+    onMeshAdopted: () => adopted++, mergedTiers: {far: {maxVertices: vertices, maxIndices: indices, maxBytes: 4 * 1024 * 1024}, middle: {maxVertices: 1, maxIndices: 3, maxBytes: 10000}}});
+  try {
+    const a = candidate('a', 'worm', 300), b = candidate('b', 'turtle', 310);
+    for (let i = 0; i < 4; i++) {r.update([a, b]); await tick();}
+    assert.equal(r.update([a, b]).size, 2); assert.equal(r.diagnostics().draws, 1); assert.equal(r.diagnostics().mergedTiers.far.records, 2);
+    a.distanceM = 75; b.distanceM = 80;
+    assert.equal(r.update([a, b]).size, 2); assert.ok(r.diagnostics().actors.every(a => a.tier === 'far')); assert.equal(r.diagnostics().draws, 1);
+    assert.equal(adopted, 2, 'only the two arena meshes need lighting attachment');
+    r.update([b]); assert.equal(r.diagnostics().mergedTiers.far.records, 1);
+    r.setContext('new-planet'); assert.equal(r.diagnostics().mergedTiers.far.records, 0);
+  } finally {r.dispose(); assert.equal(r.ownedBytes, 0);}
+});

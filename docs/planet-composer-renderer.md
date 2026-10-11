@@ -33,10 +33,19 @@ share a geometry draw with independent matrix and palette rows. Lit, directional
 spot and point-light shadow shaders use the same deformation. Full crisp material
 instancing needs 15 attributes, checked against the device limit.
 
-This is a correctness baseline, not a completed planet performance gate. Unique
-individuals still produce separate source/tier draw groups. A merged geometry
-atlas for reduced tiers is the next performance step; no low draw-count claim is
-made for unique individuals. Cold animals are explicitly pending, and admission
+`mergedTiers` enables explicitly sized middle/far geometry arenas. Each arena
+draws any mix of unique anatomy and coats in one draw, using an actor-row vertex
+attribute and a root/coat texture. All seven original crisp mask branches use a
+flat per-animal selector; seeds retain all 32 bits, and original float attributes
+remain unquantized. Phenotype roughness and eye gloss remain separate channels.
+The nearest originals keep source instancing. Released index blocks become
+degenerate until reused; diagnostics disclose active and reserved triangles.
+Unused middle levels are discarded for far-only members. Arena buffers and the
+remaining cached source arrays both count toward admission; duplicate CPU data
+has not yet been eliminated.
+
+This is a correctness baseline, not a completed planet performance gate. Cold
+animals are explicitly pending, and admission
 failures are reported. Those gaps must be resolved before replacing the normal
 world renderer; this module is not wired into PlanetRenderer yet.
 
@@ -50,4 +59,9 @@ exact heap measurement. Pending payload bytes are separate. A source result may
 cross the 3 ms adoption target; one result is adopted per frame and overruns are
 reported, not hidden. Actual worker heap and GPU timing remain integration gates.
 
-Focused test: `node --test tests/fauna-composer-renderer.test.mjs`.
+Focused tests: `node --test tests/fauna-composer-renderer.test.mjs tests/fauna-composer-merged.test.mjs`.
+Paired GPU capture: serve the worktree on port 5194, then run
+`node tests/fauna-composer-merged.browser.mjs` (uses the shared GPU lock).
+The eight-animal/all-pattern paired capture was pixel-identical, including
+directional shadows, and reduced animal draws from eight to one. This does not
+substitute for full-planet timing, cold-arrival coverage or headset checks.
