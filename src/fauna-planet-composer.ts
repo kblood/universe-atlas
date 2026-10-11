@@ -25,7 +25,7 @@ export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMe
   onReady:options.onReady,onMeshAdopted:options.onMeshAdopted,capacity:p.capacity,maxBones:p.maxBones,maxSources:p.capacity,
   maxBytes:p.residentBytes,maxResultBytes:p.resultBytes,workerReserveBytes:p.workerReserveBytes,fullSourceCache:p.nearSources,
   nearM:p.nearM,middleM:p.middleM,maxDistanceM:p.visibleM,
-  mergedTiers:{middle:{maxVertices:p.middleVertices,maxIndices:p.middleIndices,maxBytes:5*1024*1024},far:{maxVertices:p.farVertices,maxIndices:p.farIndices,maxBytes:35*1024*1024}},
+  mergedTiers:{middle:{maxVertices:p.middleVertices,maxIndices:p.middleIndices,maxBytes:5*1024*1024,storage:'packed-1'},far:{maxVertices:p.farVertices,maxIndices:p.farIndices,maxBytes:35*1024*1024,storage:'packed-1'}},
  });
  if(options.renderer)renderer.assertCapabilities(options.renderer);
  return renderer;
