@@ -29,6 +29,20 @@ test('all cold animals receive coarse jobs before any near upgrade; identities a
     assert.throws(() => {candidates[0].definition.id = 'changed';}, /read only/);
   } finally {r.dispose();}
 });
+test('bounded near promotions preserve cold coverage and borrow the verified original', async () => {
+  const calls = [], provider = {async build(job) {calls.push(job); return result(job);}};
+  const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 6, coldJobsBeforeNearUpgrade: 2});
+  try {
+    const candidates = ['a','b','c','d','e','f'].map((id, i) => candidate(id, i ? 300 : 5));
+    await pump(r, candidates, 20);
+    assert.deepEqual(calls.slice(0, 4).map(j => [j.key, ...j.tiers]), [['a','far'],['b','far'],['a','near'],['c','far']]);
+    assert.equal(calls[2].loadedSource, source);
+    assert.equal(r.diagnostics().active, 6);
+    assert.equal(r.diagnostics().actors.find(a => a.id === 'a').tier, 'near');
+    assert.equal(calls.filter(j => j.tiers[0] === 'far').length, 6);
+  } finally {r.dispose();}
+});
+
 test('completed offscreen result remains cached and a blocked admission never rebuilds each retry interval', async () => {
   let resolve; const calls = [], provider = {build(job) {calls.push(job); return new Promise(r => {resolve = () => r(result(job));});}};
   const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 2, maxSources: 1});

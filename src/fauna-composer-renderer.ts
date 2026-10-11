@@ -28,6 +28,9 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
   capacity?: number; maxSources?: number; maxBones?: number; maxBytes?: number; maxResultBytes?: number;
   workerReserveBytes?: number; maxDistanceM?: number; nearM?: number; middleM?: number;
   fullSourceCache?: number; adoptionBudgetMs?: number; now?: () => number; onReady?: () => void;
+  /** Interleave one retained-original near upgrade after this many cold jobs.
+   * Omitted preserves strict coarse-first scheduling for component consumers. */
+  coldJobsBeforeNearUpgrade?: number;
 }
 type Entry = {source: FaunaComposerSource | null; graph: ComposerGraph; levels: Partial<Record<FaunaComposerTier, FaunaComposerStoredSkin>>;
   batches: Partial<Record<FaunaComposerTier, FaunaComposerInstanceBatch>>; writer: FaunaComposerPaletteWriter;
@@ -74,6 +77,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private running: Running | null = null;
   private revision = 0;
   private frame = 0; private epoch = 0; private context = ''; private disposed = false;
+  private coldJobs = 0;
   private readonly maxSources: number; private readonly maxBytes: number; private readonly maxResultBytes: number;
   private readonly now: () => number;
   private stats = {builds: 0, failures: 0, evictions: 0, stale: 0, budgetDrops: 0, pending: 0, poseFailures: 0,
@@ -86,6 +90,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     this.maxSources = options.maxSources ?? 512; this.maxBytes = options.maxBytes ?? 32 * 1024 * 1024;
     this.maxResultBytes = options.maxResultBytes ?? 8 * 1024 * 1024; this.workerReserveBytes = options.workerReserveBytes ?? 16 * 1024 * 1024;
     this.now = options.now ?? (() => performance.now());
+    if (options.coldJobsBeforeNearUpgrade !== undefined && !positive(options.coldJobsBeforeNearUpgrade)) throw new Error('Invalid Composer cold job interval');
     if (![this.capacity, this.maxBones, this.maxSources, this.maxBytes, this.maxResultBytes, this.workerReserveBytes].every(positive) ||
         this.capacity > 512 || this.maxBones > COMPOSER_BUDGET.maxBones || this.maxSources > 512 ||
         (options.nearM ?? 35) <= 0 || (options.middleM ?? 140) <= (options.nearM ?? 35) ||
@@ -124,6 +129,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   }
   setContext(context: string): void {
     if (context === this.context) return; this.context = context; this.epoch++;
+    this.coldJobs = 0;
     this.running?.abort.abort(); this.ready.clear(); this.blocked.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.actors.clear(); this.failed.clear(); this.revision++;
     for (const id of this.mergedBindings.keys()) this.releaseMerged(id);
     for (const key of this.entries.keys()) this.evict(key);
@@ -341,12 +347,17 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   }
   private startNext(): void {
     if (this.running || this.disposed) return;
-    // All missing canonical animals receive a first coarse tier before any
-    // near/middle refinement, including a newly arrived member of a known herd.
-    for (const cold of [true, false]) for (const [key, members] of this.members) {
+    // Bounded near refinement prevents a large cold census from leaving the
+    // closest animals coarse for minutes. Only already retained originals qualify;
+    // cold coverage continues between promotions and middle upgrades stay last.
+    const promoteNear = this.coldJobs >= (this.options.coldJobsBeforeNearUpgrade ?? Infinity);
+    const passes = promoteNear ? ['near', 'cold', 'upgrade'] : ['cold', 'upgrade'];
+    for (const pass of passes) for (const [key, members] of this.members) {
+      const cold = pass === 'cold';
       const c = members[0]!, entry = this.entries.get(key);
       if ((!entry || !Object.keys(entry.levels).length) !== cold || this.ready.has(key) || (this.failed.get(key) ?? -Infinity) > this.frame - 120) continue;
       const tier = cold ? 'far' : members.map(c => this.candidateTier(c, this.actors.get(c.id)?.tier)).sort((a, b) => FAUNA_COMPOSER_TIERS.indexOf(a) - FAUNA_COMPOSER_TIERS.indexOf(b))[0]!;
+      if (pass === 'near' && (tier !== 'near' || !entry?.source)) continue;
       if (entry?.levels[tier]) continue;
       const blocked = this.blocked.get(key);
       if (blocked) {
@@ -358,6 +369,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       }
       const run: Running = {key, definition: this.identity(c.definition), definitionRef: c.definition, tiers: [tier], epoch: this.epoch, abort: new AbortController()};
       this.running = run;
+      if (cold) this.coldJobs++; else if (tier === 'near') this.coldJobs = 0;
       try {Promise.resolve(this.options.provider.build({key, definition: c.definition, tiers: run.tiers, loadedSource: entry?.source ?? undefined}, run.abort.signal)).then(async result => {
         if (this.disposed || run.abort.signal.aborted || run.epoch !== this.epoch) {this.stats.stale++; return;}
         const prepared = await this.prepare(run, result);
