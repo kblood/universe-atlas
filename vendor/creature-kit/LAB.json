@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.0",
-    "commit": "1ca52515d1f2266e3913bc4a6a691a789f803530",
+    "version": "0.8.1",
+    "commit": "e422e5a3ecbf8493e8123584c6f846b9401219e2",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -84,24 +84,24 @@
   ],
   "files": [
     {
-      "path": "assets/composer-C5h6LrlL.js",
-      "sha256": "2c8ea70374227f1712f4f5bbf4acc08f1b68c55fae213b60859271ef84aaa041"
-    },
-    {
       "path": "assets/composer-D3gF7lKI.css",
       "sha256": "906bd647a0e5c4d94795891a9d7fe79d44d93f5185d692feea5f001b30c2edff"
+    },
+    {
+      "path": "assets/composer-DHT9gjWD.js",
+      "sha256": "a412b2eedc88bffa136b3e7cdae1a0fc91d9f8626994301596299e4635354ca3"
     },
     {
       "path": "assets/creature-lab-CN8EtKiP.css",
       "sha256": "10aae7fa7b9e0823dd17ab8349668ba0b405462368591d5cf1abb4d90032fda7"
     },
     {
-      "path": "assets/creature-lab-DHp0_Gl9.js",
-      "sha256": "82a4784c32c9cbbf888b755c698d9eaec07fb1710c0e2bc8e7c3511b56b1de75"
+      "path": "assets/creature-lab-Dv8dRz8j.js",
+      "sha256": "287622acdd44c7077c37d2c0050ac142d699daf9750b54f68906a2b44448db5e"
     },
     {
-      "path": "assets/fauna-composer-export-BuzgrmG2.js",
-      "sha256": "3e577e2d3ca4ee809f90854347651ce04dd8212c43cb0c082667c16598ed778f"
+      "path": "assets/fauna-composer-export-Ktk_PZTg.js",
+      "sha256": "09e85de6d223c45bee8613e6d0ee08f21331dbc7fd87ea0d45c47ce3c8d3315d"
     },
     {
       "path": "assets/index-CYUeVSzr.js",
@@ -112,16 +112,16 @@
       "sha256": "d2a32840421496e872ade591618d2fa5c33797605d1aec04301717e5a90757d0"
     },
     {
+      "path": "assets/planet-BHR1BneZ.js",
+      "sha256": "b6e323911f61263a354d44bea2eeecbe7d223e54d869bc9d871371c6e4e9afaa"
+    },
+    {
       "path": "assets/planet-D9wtlwjj.css",
       "sha256": "44773cd98b2830ca74b418bd9c383e58ffc62af1f85bc222cb982e620d5d1b9e"
     },
     {
-      "path": "assets/planet-Mkh7vSDr.js",
-      "sha256": "4c2adf0ee23309400d5068e696fd398d24c46805538c7290cdf10197df080b55"
-    },
-    {
       "path": "creature-lab.html",
-      "sha256": "146578764b63227ca988c4adb53840bc20539eeb18da3c64b1557f5d9a33a607"
+      "sha256": "7c15dcca3079f46375fd28b1fbe2c68d4c4606f13d3e63646ca380c7f3eebf19"
     },
     {
       "path": "index.html",
@@ -129,7 +129,7 @@
     },
     {
       "path": "planet-skin.html",
-      "sha256": "7694c10c447bfc13152a9795e698cb99bbce7aacbb41c3347ee07e2aaa360bfc"
+      "sha256": "34e89888c0d53e3255ffd2cff27f4e31f41b8260dd47d93f281ca6c87198fd53"
     }
   ]
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { poseComposer } from "./fauna-composer-rig.js";
-export const PLANET_COMPOSER_POSE_VERSION = 'planet-composer-pose-2';
+export const PLANET_COMPOSER_POSE_VERSION = 'planet-composer-pose-3';
 const TAU = Math.PI * 2;
 const fraction = (x) => ((x % 1) + 1) % 1;
 const quintic = (x) => x * x * x * (10 + x * (6 * x - 15));
