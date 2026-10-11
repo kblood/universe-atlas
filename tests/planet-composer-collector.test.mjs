@@ -58,3 +58,6 @@ test('JSON string bridge preserves source bytes, graph numbers and text',async()
 
 import {observerMoveIntent} from './helpers/planet-composer-collector.mjs';
 test('observer movement preserves actual near-camera clearance instead of lifting80m',()=>{const camera={position:[100,200,300],heading:[0,0,0,1],clearanceM:8.000007};const intent=observerMoveIntent(camera);assert.deepEqual(intent,{position:[110,200,300],heading:[0,0,0,1],clearanceM:8.000007});assert.deepEqual(camera.position,[100,200,300]);assert.throws(()=>observerMoveIntent({...camera,clearanceM:undefined}));});
+
+import {chooseProjectedSource} from './helpers/planet-composer-collector.mjs';
+test('source hero uses actual posed projection and rejects wholly offscreen near set',()=>{const off={id:'off',x:0,right:-100,y:0,bottom:100},small={id:'small',x:0,right:20,y:0,bottom:20},body={id:'body',x:600,right:900,y:300,bottom:600};assert.equal(chooseProjectedSource([off,small,body]).id,'body');assert.throws(()=>chooseProjectedSource([off]));});
