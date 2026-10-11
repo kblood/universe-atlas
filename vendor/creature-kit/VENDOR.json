@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.1",
-    "commit": "e422e5a3ecbf8493e8123584c6f846b9401219e2",
+    "version": "0.8.2",
+    "commit": "7b7b9c42fe3e0fe5b2f5cc4e6023a619d3744201",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -78,7 +78,7 @@
     },
     {
       "path": "src/planet-composer-pose.ts",
-      "sha256": "d6280e9edf6fb0f39d96715796a005d95c227dadd8ae2b4bc8e583f9decad01b"
+      "sha256": "7457f171619b0126e142e002fc7b7b89a904db7630b363385ae077315f7f3b53"
     },
     {
       "path": "src/planet-composer-measure.ts",
@@ -106,7 +106,7 @@
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "8a017c812ca64d71771bdb0925677381c857a932253ebe608396bf14fb111642"
+      "sha256": "87a2bab89b93734ab57a64a42a3be3ff41b8c6c6d15ee2d479c17a2c96a5e137"
     },
     {
       "path": "src/fauna-composer-species.ts",
@@ -182,7 +182,11 @@
     },
     {
       "path": "tests/planet-composer-terrain-frame.test.mjs",
-      "sha256": "a3ca3412b72b46d59de24fb998453c3537f36ae88c236e341d089fb068748bf4"
+      "sha256": "7f727301b9c9431e65376bb73fc7d14b002833ccf71d11d33e3a39f443e62a36"
+    },
+    {
+      "path": "tests/planet-composer-terrain-reach.test.mjs",
+      "sha256": "7f2719dd614c6529674da0d6f7a9e90ade33801e02a2d67f47e8ba736fa1ca0b"
     },
     {
       "path": "tests/fauna-composer-mesh-stability.test.mjs",
@@ -266,11 +270,15 @@
     },
     {
       "path": "tests/helpers/planet-composer-terrain-regression.mjs",
-      "sha256": "1373ee9f97e785c1befb05c4ea73b0f59ebd1d9a9b041eedbd928d1ce16d0061"
+      "sha256": "f9f0753add2cd787aa81d18a491acf58a8704a7577a2fee2896a8cf7990160d7"
     },
     {
       "path": "tests/fixtures/planet-composer-terrain-32e5fe9d.json",
       "sha256": "502af1fef23567dde08b52125efb7d4104e450aea693d7872d9cdb8b2fc52f86"
+    },
+    {
+      "path": "tests/fixtures/planet-composer-terrain-reach-eight.json",
+      "sha256": "116f167cff56ab8c9eeb00a7f55b310f56ca3edf8408fb2d4d8c882f7a034496"
     },
     {
       "path": "tests/helpers/planet-core-corpus.mjs",

@@ -30,6 +30,9 @@ export interface ComposerPoseEnvironment {
     idleWeight?: number;
     rootHeight?: number;
     rootRotation?: Quat;
+    /** Fit vertical support to the exact two-bone reach intervals of all requested
+     * leg targets. Leaves the caller's X/Z anchor and every foot target intact. */
+    supportHeight?: 'reachable-1';
     ground?: (x: number, z: number) => number;
     contact?: (limb: ComposerLimb, phase: number, stance: boolean, target: Vec3) => ComposerGroundContact;
 }
@@ -204,6 +207,14 @@ export interface ComposerPose {
         minSwingClearance: number;
         minBodyClearance: number;
         jointCount: number;
+        supportHeight?: {
+            version: 'composer-support-height-1';
+            requested: number;
+            applied: number;
+            delta: number;
+            feasible: boolean;
+            intervals: [number, number][];
+        };
     };
 }
 /** Stance legs never exceed this fraction of upper+lower length, so planted feet are always reachable. */
