@@ -22,3 +22,11 @@ test('stored LOD evidence checks actual positions, colour, joints and retained s
  assert.throws(()=>auditStoredSourceMap({...skin,sourceVertex:[9]},source));
  assert.equal(auditStoredSourceMap({...skin,positions:[1.02,2,3]},source).positionError,.020000000000000018);
 });
+
+test('packed crisp coat preserves the 0–2 domain and exact sample coordinates',()=>{
+ const source={positions:[0,0,0],colors:[1.6,1.6,1.6],skinIndex:[0,0,0,0],skinWeight:[1,0,0,0],gloss:[.5],coatLayers:{c0:[1.6,1.6,1.6],c1:[1.6,1.6,1.6],c2:[1.6,1.6,1.6],sample:[1.2,-.4,.7,0]}};
+ const skin={...source,storage:{version:'composer-arena-packed-1'},colors:[52428,52428,52428],skinWeight:[65535,0,0,0],gloss:[128],coatLayers:{c0:[52428,52428,52428],c1:[52428,52428,52428],c2:[52428,52428,52428],sample:[1.2,-.4,.7,0]}};
+ assert.equal(auditStoredSourceMap(skin,source).coatLayerError,0);
+ const layer=structuredClone(skin);layer.coatLayers.c1[0]=50000;assert.throws(()=>auditStoredSourceMap(layer,source));
+ const sample=structuredClone(skin);sample.coatLayers.sample[0]+=1e-6;assert.throws(()=>auditStoredSourceMap(sample,source));
+});
