@@ -61,3 +61,9 @@ test('observer movement preserves actual near-camera clearance instead of liftin
 
 import {chooseProjectedSource} from './helpers/planet-composer-collector.mjs';
 test('source hero uses actual posed projection and rejects wholly offscreen near set',()=>{const off={id:'off',x:0,right:-100,y:0,bottom:100},small={id:'small',x:0,right:20,y:0,bottom:20},body={id:'body',x:600,right:900,y:300,bottom:600};assert.equal(chooseProjectedSource([off,small,body]).id,'body');assert.throws(()=>chooseProjectedSource([off]));});
+
+import {openOrdinaryAnimalFinder} from './helpers/planet-composer-collector.mjs';
+test('planet revisit reaches galaxy breadcrumb before ordinary Finder',async()=>{
+ const events=[],page={locator:selector=>({isVisible:async()=>false,click:async()=>events.push(selector)}),waitForFunction:async()=>events.push('wait')};
+ await openOrdinaryAnimalFinder(page);assert.deepEqual(events,['#breadcrumbs [data-level="galaxy"]','wait','#find-animal-worlds','wait']);
+});
