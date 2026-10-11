@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {browserContentDigest} from './helpers/planet-browser-digest.mjs';
+import {composerContentDigest} from '../src/fauna-composer-build-receipt.ts';
 import {contentDigest,decodeStored,auditStoredSourceMap} from './helpers/planet-composer-collector.mjs';
 
 test('content receipt binds typed-array type and actual view bytes',()=>{
@@ -33,3 +34,8 @@ test('packed crisp coat preserves the 0–2 domain and exact sample coordinates'
 });
 
 test('browser typed descriptor hashing matches recursively canonical receipt',async()=>{const payload={z:new Float32Array([1,2,3]),a:{weights:new Uint16Array([32768,32767])}};assert.equal(await browserContentDigest(payload),contentDigest(payload));});
+test('declared production digest ignores key order and detects one changed byte',async()=>{
+ const buffer=new Uint8Array([9,1,2,3,4,9]),payload={z:buffer.subarray(1,5),a:new Float32Array([1,2,3])},reordered={a:payload.a,z:payload.z};
+ const expected=await composerContentDigest(payload);assert.equal(expected,contentDigest(payload));assert.equal(await browserContentDigest(payload),expected);assert.equal(await browserContentDigest(reordered),expected);
+ const changed={...payload,z:Uint8Array.from(payload.z)};changed.z[2]^=1;assert.notEqual(await browserContentDigest(changed),expected);assert.equal(await browserContentDigest(changed),await composerContentDigest(changed));
+});
