@@ -37,7 +37,9 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
 }
 type Entry = {source: FaunaComposerSource | null; graph: ComposerGraph; levels: Partial<Record<FaunaComposerTier, FaunaComposerStoredSkin>>;
   batches: Partial<Record<FaunaComposerTier, FaunaComposerInstanceBatch>>; writer: FaunaComposerPaletteWriter;
-  definition: string; graphIdentity: string; skinIdentity: string; graphBytes: number; used: number; cpuBytes: number};
+  definition: string; graphIdentity: string; skinIdentity: string; graphBytes: number; used: number; cpuBytes: number;
+  /** Retain measured size after discarding an unused tier, preventing budget retry loops. */
+  middleFootprint?: {vertices: number; indices: number}};
 type Actor = {key: string; row: number; poseKey?: string; tier?: FaunaComposerTier; pose: ComposerPose | null; poseBytes: number};
 type Running = {key: string; definition: string; definitionRef: unknown; tiers: readonly FaunaComposerTier[]; epoch: number; abort: AbortController};
 type Prepared = {run: Running; source: FaunaComposerSource | null; graph: ComposerGraph; graphIdentity: string; skinIdentity: string; graphBytes: number;
@@ -156,10 +158,20 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     this.fullSourceKeys.clear();
     for (const c of this.desired.values()) if (c.distanceM < (this.options.nearM ?? 35) * 1.1 && this.fullSourceKeys.size < (this.options.fullSourceCache ?? 6)) this.fullSourceKeys.add(c.sourceKey);
     this.middleSourceKeys.clear();
+    let middleVertices = 0, middleIndices = 0;
+    const middleArena = this.options.middleSourceCache === undefined ? undefined : this.options.mergedTiers?.middle;
     for (const c of this.desired.values()) {
       const tier = this.tier(c.distanceM, this.actors.get(c.id)?.tier);
       if (tier === 'far' || tier === 'near' && this.fullSourceKeys.has(c.sourceKey)) continue;
-      if (this.middleSourceKeys.size < (this.options.middleSourceCache ?? this.maxSources)) this.middleSourceKeys.add(c.sourceKey);
+      if (this.middleSourceKeys.has(c.sourceKey) || this.middleSourceKeys.size >= (this.options.middleSourceCache ?? this.maxSources)) continue;
+      const footprint = this.entries.get(c.sourceKey)?.middleFootprint;
+      const instances = this.members.get(c.sourceKey)!.filter(m => {
+        const t = this.tier(m.distanceM, this.actors.get(m.id)?.tier);
+        return t !== 'far' && !(t === 'near' && this.fullSourceKeys.has(m.sourceKey));
+      }).length;
+      const vertices = (footprint?.vertices ?? 0) * instances, indices = (footprint?.indices ?? 0) * instances;
+      if (middleArena && (middleVertices + vertices > middleArena.maxVertices || middleIndices + indices > middleArena.maxIndices)) continue;
+      this.middleSourceKeys.add(c.sourceKey); middleVertices += vertices; middleIndices += indices;
     }
     this.trimFullSources(); this.adoptPending(keys);
     for (const entry of this.entries.values()) for (const batch of Object.values(entry.batches)) batch.beginFrame();
@@ -350,7 +362,9 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
         if (!this.room(added, new Set([...keys, key]), !prior)) {this.stats.blockedAdmissions++; this.lastError = 'Composer resident source budget full; completed source retained'; p.attempt = this.revision; continue;}
         if (width !== this.paletteBones) this.resizePalette(width);
         this.identity(p.run.definitionRef, true); for (const c of this.members.get(key) ?? []) this.identity(c.definition, true);
-        this.entries.set(key, {source, graph: p.graph, graphIdentity: p.graphIdentity, skinIdentity: p.skinIdentity, graphBytes: p.graphBytes, levels, writer, definition: p.run.definition, batches: prior?.batches ?? {}, used: this.frame, cpuBytes});
+        const middle = p.levels.middle;
+        this.entries.set(key, {source, graph: p.graph, graphIdentity: p.graphIdentity, skinIdentity: p.skinIdentity, graphBytes: p.graphBytes, levels, writer, definition: p.run.definition, batches: prior?.batches ?? {}, used: this.frame, cpuBytes,
+          middleFootprint: middle ? {vertices: middle.positions.length / 3, indices: middle.index.length} : prior?.middleFootprint});
         this.ready.delete(key); this.blocked.delete(key); this.failed.delete(key); this.stats.builds++; this.stats.buildMs += p.buildMs;
         if (!keys.has(key)) this.stats.completedOutOfView++;
         this.revision++;

@@ -63,6 +63,22 @@ test('bounded middle refinement preserves all canonical members and settles with
   } finally {r.dispose();}
 });
 
+test('measured middle arena limits settle to source-derived far without repeated reduction', async () => {
+  const calls = [], provider = {async build(job) {calls.push(job); return result(job);}};
+  const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 3, middleSourceCache: 3,
+    mergedTiers: {middle: {maxVertices: levels.middle.positions.length / 3, maxIndices: levels.middle.index.length, maxBytes: 4e6}}});
+  try {
+    const candidates = ['a','b','c'].map(id => candidate(id, 70));
+    await pump(r, candidates, 20);
+    assert.equal(r.diagnostics().active, 3);
+    assert.equal(r.diagnostics().upgradesPending, 0);
+    assert.equal(r.diagnostics().actors.filter(a => a.tier === 'middle').length, 1);
+    const built = calls.length;
+    await pump(r, candidates, 10); assert.equal(calls.length, built, 'known oversized refinements do not rebuild');
+    assert.equal(r.diagnostics().failures, 0);
+  } finally {r.dispose();}
+});
+
 test('completed offscreen result remains cached and a blocked admission never rebuilds each retry interval', async () => {
   let resolve; const calls = [], provider = {build(job) {calls.push(job); return new Promise(r => {resolve = () => r(result(job));});}};
   const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 2, maxSources: 1});
