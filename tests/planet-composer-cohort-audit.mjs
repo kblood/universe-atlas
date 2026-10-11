@@ -1,0 +1,15 @@
+/** CPU-only validation of saved actual browser inputs; no renderer replacement. */
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
+import {canonicalControl} from './helpers/planet-composer-collector.mjs';
+import {faunaGroundHeight} from '../src/fauna-ground.ts';
+const path=resolve(process.env.PLANET_COMPOSER_COHORT),bytes=await readFile(path),data=JSON.parse(bytes),core=await import(pathToFileURL(resolve(process.env.PLANET_COMPOSER_KIT,'src/planet-composer.ts')).href),control=canonicalControl(data),expected=new Map(control.members.map(x=>[x.id,x.member])),differences=[];
+const compare=(a,b,path)=>{if(Object.is(a,b))return;if(typeof a==='number'&&typeof b==='number'){differences.push({path,actual:a,expected:b,absoluteDifference:Math.abs(a-b),scaledEpsilon:Math.abs(a-b)/(Number.EPSILON*Math.max(1,Math.abs(a),Math.abs(b)))});return;}assert.equal(typeof a,typeof b,path);assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort(),path);for(const k of Object.keys(a))compare(a[k],b[k],path+'.'+k);};
+const members=data.residents.flatMap(x=>x.members);assert.equal(new Set(members.map(x=>x.id)).size,expected.size);for(const m of members)compare(m,expected.get(m.id),m.id);
+for(const c of data.candidates){assert(expected.has(c.id));compare(c.member,expected.get(c.id),'candidate.'+c.id);compare(c.activity,control.members.find(m=>m.id===c.id).activity,'activity.'+c.id);assert.equal(core.planetComposerSourceIdentity(c.definition,{presentation:'realism-1',codePin:data.kitCommit}).key,c.sourceKey);assert(c.matrix.length===16&&c.matrix.every(Number.isFinite));}
+let maxGroundDifferenceM=0;for(const p of data.groundProfiles)for(const s of p.samples)maxGroundDifferenceM=Math.max(maxGroundDifferenceM,Math.abs(faunaGroundHeight(Float64Array.from(p.rawGrid),s.x,s.z)*p.relief-s.heightM));
+const report={schema:'actual-cohort-input-audit-1',scope:'saved actual definitions/identity/canonical numeric deltas/ground sampler only; NOT geometry/resource/render acceptance',path,sha256:createHash('sha256').update(bytes).digest('hex'),sourceBuild:data.sourceBuild,kitCommit:data.kitCommit,worldNs:data.worldNs,candidates:data.candidates.length,canonicalResidents:expected.size,groundProfiles:data.groundProfiles.length,sourceKeysExact:true,canonicalStringsGenomesExact:true,numericDifferences:differences.length,maxNumericAbsoluteDifference:Math.max(0,...differences.map(x=>x.absoluteDifference)),maxNumericScaledEpsilon:Math.max(0,...differences.map(x=>x.scaledEpsilon)),numericDifferencePaths:[...new Set(differences.map(x=>x.path.split('.').at(-1)))],examples:differences.slice(0,20),maxGroundDifferenceM,strictCanonicalAllNumbersExact:differences.length===0};
+await writeFile(resolve(path,'../input-audit.json'),JSON.stringify(report,null,2));await writeFile(resolve(path,'../numeric-differences.json'),JSON.stringify(differences,null,2));console.log(JSON.stringify({...report,examples:undefined}));

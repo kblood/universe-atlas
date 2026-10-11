@@ -1,0 +1,21 @@
+/** Independently pinned PUBLIC Kit modules, evaluated by the same Chromium.
+ * Static loopback allowlist only: no app worker, renderer, source adapter or
+ * caller-selected filesystem paths. This page creates no WebGL renderer. */
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+export async function startPinnedKitReference(context,{kitRoot,receiptPath}){
+ const receipt=JSON.parse(await readFile(receiptPath,'utf8')),commit=execFileSync('git',['rev-parse','HEAD'],{cwd:kitRoot,encoding:'utf8'}).trim();assert.equal(commit,receipt.kit.commit,'independent checked-out Kit matches public package pin');
+ const routes=new Map(),manifest=[];for(const file of receipt.files.filter(x=>x.path.startsWith('dist/')&&x.path.endsWith('.js'))){const bytes=await readFile(resolve(kitRoot,file.path));assert.equal(sha(bytes),file.sha256,'independent built public file '+file.path);routes.set('/kit/'+file.path.slice(5),bytes);manifest.push({path:'/kit/'+file.path.slice(5),sha256:file.sha256,bytes:bytes.length});}
+ for(const name of ['three.module.js','three.core.js']){const bytes=await readFile(resolve(kitRoot,'node_modules/three/build',name));routes.set('/peer/'+name,bytes);manifest.push({path:'/peer/'+name,sha256:sha(bytes),bytes:bytes.length});}
+ const metadata={schema:'independent-public-kit-browser-reference-1',kit:receipt.kit,entrypoint:'/kit/planet-v1/index.js',files:manifest,served:[]};
+ const html=Buffer.from('<!doctype html><meta charset="utf-8"><title>Independent pinned Kit reference</title><script type="importmap">{"imports":{"three":"/peer/three.module.js"}}</script><script type="module">window.__qaKit=await import("/kit/planet-v1/index.js");window.__qaKitReady=true;</script>');
+ const server=createServer((req,res)=>{const path=new URL(req.url,'http://127.0.0.1').pathname;if(req.method!=='GET'){res.writeHead(405);res.end();return;}const bytes=path==='/'?html:routes.get(path);if(!bytes){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',path==='/'?'text/html;charset=utf-8':'text/javascript;charset=utf-8');res.setHeader('Cache-Control','no-store');if(path!=='/')metadata.served.push({path,sha256:sha(bytes)});res.end(bytes);});
+ await new Promise((done,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',done);});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));try{await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.__qaKitReady);assert.deepEqual(errors,[]);}catch(error){await page.close();await new Promise(done=>server.close(done));throw error;}
+ return {metadata,page,async build(definition,id){return page.evaluate(async({definition,id})=>{const core=window.__qaKit,source=core.buildPlanetComposerSource(definition),hex=b=>Array.from(new Uint8Array(b)).map(v=>v.toString(16).padStart(2,'0')).join(''),hash=async bytes=>hex(await crypto.subtle.digest('SHA-256',bytes)),describe=async v=>{if(ArrayBuffer.isView(v))return {typed:v.constructor.name,bytes:v.byteLength,sha256:await hash(new Uint8Array(v.buffer,v.byteOffset,v.byteLength))};if(Array.isArray(v))return Promise.all(v.map(describe));if(v&&typeof v==='object'){const out={};for(const key of Object.keys(v).sort())out[key]=await describe(v[key]);return out;}return v;},digest=async v=>hash(new TextEncoder().encode(JSON.stringify(await describe(v)))),copy=v=>ArrayBuffer.isView(v)?Array.from(v):Array.isArray(v)?v.map(copy):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,copy(x)])):v;
+ return {id,generator:'composer',layout:definition.recipe.layout,definition,recipeText:JSON.stringify(definition.recipe),individual:definition.phenotype.identity,versions:{source:source.sourceVersion,graph:source.graph.version,skin:source.skin.version},sourceBufferDigests:{skin:await digest(source.skin),graph:await digest(source.graph)},boundBoneNames:source.graph.bones.map(x=>x.name),source:copy(source)};},{definition,id});},async close(){await page.close();await new Promise(done=>server.close(done));}};
+}
