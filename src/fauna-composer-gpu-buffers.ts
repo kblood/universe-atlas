@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {composerStorageCodec, type ComposerStoredArray} from './fauna-composer-storage.ts';
 
 export const COMPOSER_ARENA_ATTRIBUTES = [['position',3],['normal',3],['color',3],['skinWeight',4],['composerGloss',1],['coatL0',3],['coatL1',3],['coatL2',3],['coatSample',4],['composerActor',1],['skinIndex',4]] as const;
+export const COMPOSER_COMPACTION_SCRATCH_BYTES = 2048;
 type ArrayType = typeof Float32Array|typeof Int16Array|typeof Uint16Array|typeof Uint8Array;
 export function composerArenaArrayType(name:string,packed:boolean):ArrayType {
   return !packed ? (name==='skinIndex'?Uint16Array:Float32Array) : name==='normal'?Int16Array : name==='composerGloss'||name==='skinIndex'?Uint8Array : composerStorageCodec(name)||name==='composerActor'?Uint16Array:Float32Array;
@@ -16,6 +17,7 @@ export class FaunaComposerGpuBuffers {
   readonly cpuBytes:number;
   readonly gpuBytes:number;
   private indexBuffer!:WebGLBuffer;
+  private moveBuffer!:WebGLBuffer;
   private indexAttribute!:THREE.GLBufferAttribute;
   private disposed=false;
   readonly gl:WebGL2RenderingContext;
@@ -24,7 +26,7 @@ export class FaunaComposerGpuBuffers {
   constructor(gl:WebGL2RenderingContext,geometry:THREE.BufferGeometry,vertices:number,indices:number,packed:boolean) {
     this.gl=gl;this.indices=indices;this.packed=packed;
     if(typeof gl.copyBufferSubData!=='function'||typeof gl.getBufferSubData!=='function')throw new Error('GPU-owned Composer arenas require WebGL2');
-    let cpu=this.indexScratch.byteLength,gpu=indices*4;
+    let cpu=this.indexScratch.byteLength,gpu=indices*4+COMPOSER_COMPACTION_SCRATCH_BYTES;
     try {
       for(const [name,width] of COMPOSER_ARENA_ATTRIBUTES){
         const ArrayType=composerArenaArrayType(name,packed),scratch=new ArrayType(128*width),bytes=vertices*width*ArrayType.BYTES_PER_ELEMENT;
@@ -39,6 +41,7 @@ export class FaunaComposerGpuBuffers {
       this.indexAttribute=new THREE.GLBufferAttribute(this.indexBuffer,gl.UNSIGNED_INT,1,4,indices);
       // Three supports GLBufferAttribute indices at runtime; its index type is narrower.
       geometry.setIndex(this.indexAttribute as unknown as THREE.BufferAttribute);
+      this.moveBuffer=this.allocate(COMPOSER_COMPACTION_SCRATCH_BYTES);
     }catch(error){this.dispose();throw error;}
     this.cpuBytes=cpu;this.gpuBytes=gpu;
   }
@@ -80,6 +83,33 @@ export class FaunaComposerGpuBuffers {
     }
     gl.bindBuffer(gl.COPY_READ_BUFFER,null);gl.bindBuffer(gl.COPY_WRITE_BUFFER,null);
   }
+  /** Overlapping VBO copies are illegal in WebGL2. Two bounded copies through
+   * independent scratch implement memmove, including palette-row ownership. */
+  moveVertices(from:number,to:number,count:number):void {
+    if(from===to)return;
+    const gl=this.gl,read=gl.getParameter(gl.COPY_READ_BUFFER_BINDING),write=gl.getParameter(gl.COPY_WRITE_BUFFER_BINDING);
+    const completed:Attribute[]=[];
+    const move=(a:Attribute,source:number,destination:number,vertices:number)=>{
+      const stride=a.width*a.ArrayType.BYTES_PER_ELEMENT,chunk=Math.floor(COMPOSER_COMPACTION_SCRATCH_BYTES/stride);
+      let copied=0;
+      const copy=(start:number,n:number,s:number,d:number)=>{
+        gl.bindBuffer(gl.COPY_READ_BUFFER,a.buffer);gl.bindBuffer(gl.COPY_WRITE_BUFFER,this.moveBuffer);
+        gl.copyBufferSubData(gl.COPY_READ_BUFFER,gl.COPY_WRITE_BUFFER,(s+start)*stride,0,n*stride);
+        gl.bindBuffer(gl.COPY_READ_BUFFER,this.moveBuffer);gl.bindBuffer(gl.COPY_WRITE_BUFFER,a.buffer);
+        gl.copyBufferSubData(gl.COPY_READ_BUFFER,gl.COPY_WRITE_BUFFER,0,(d+start)*stride,n*stride);
+      };
+      try {while(copied<vertices){const n=Math.min(chunk,vertices-copied),start=destination<source?copied:vertices-copied-n;copy(start,n,source,destination);copied+=n;}}
+      catch(error){
+        // JS/API exceptions occur before that copy writes. Restore completed
+        // chunks in reverse order; a lost context has no surviving allocation.
+        if(!gl.isContextLost())while(copied){const n=Math.min(chunk,copied),start=destination<source?copied-n:vertices-copied;copy(start,n,destination,source);copied-=n;}
+        throw error;
+      }
+    };
+    try {for(const a of this.attributes.values()){move(a,from,to,count);completed.push(a);}}
+    catch(error){if(!gl.isContextLost())for(const a of completed.reverse())move(a,to,from,count);throw error;}
+    finally{gl.bindBuffer(gl.COPY_READ_BUFFER,read);gl.bindBuffer(gl.COPY_WRITE_BUFFER,write);}
+  }
   /** Explicit inspection only. No draw/admission/pose path performs readback. */
   read(name:string,vertex:number,count:number):ComposerStoredArray {
     const gl=this.gl,a=this.attributes.get(name)!,out=new a.ArrayType(count*a.width);
@@ -91,19 +121,22 @@ export class FaunaComposerGpuBuffers {
   restore():void {
     // Lost-context WebGL objects are already destroyed. Passing those old
     // generation handles to deleteBuffer in a restored context is invalid.
-    const pending:[Attribute,WebGLBuffer][]=[];let index:WebGLBuffer|null=null;
+    const pending:[Attribute,WebGLBuffer][]=[];let index:WebGLBuffer|null=null,move:WebGLBuffer|null=null;
     try {
       for(const a of this.attributes.values())pending.push([a,this.allocate(a.bytes)]);
       index=this.allocate(this.indices*4,true);
-    }catch(error){for(const [,buffer]of pending)this.gl.deleteBuffer(buffer);if(index)this.gl.deleteBuffer(index);throw error;}
+      move=this.allocate(COMPOSER_COMPACTION_SCRATCH_BYTES);
+    }catch(error){for(const [,buffer]of pending)this.gl.deleteBuffer(buffer);if(index)this.gl.deleteBuffer(index);if(move)this.gl.deleteBuffer(move);throw error;}
     // Publish a restored generation only after every buffer has real storage.
     for(const [a,buffer]of pending){a.buffer=buffer;a.attribute.setBuffer(buffer);a.attribute.needsUpdate=true;}
     this.indexBuffer=index;this.indexAttribute.setBuffer(index);this.indexAttribute.needsUpdate=true;
+    this.moveBuffer=move;
   }
   dispose():void {
     if(this.disposed)return;this.disposed=true;
     // Also delete buffers never registered by a draw; geometry.dispose alone cannot.
     for(const a of this.attributes.values())this.gl.deleteBuffer(a.buffer);
     if(this.indexBuffer)this.gl.deleteBuffer(this.indexBuffer);
+    if(this.moveBuffer)this.gl.deleteBuffer(this.moveBuffer);
   }
 }
