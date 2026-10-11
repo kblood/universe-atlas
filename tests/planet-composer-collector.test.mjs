@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {browserContentDigest} from './helpers/planet-browser-digest.mjs';
-import {composerContentDigest} from '../src/fauna-composer-build-receipt.ts';
+import {existsSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+const localReceipt=new URL('../src/fauna-composer-build-receipt.ts',import.meta.url),receiptModule=existsSync(localReceipt)?localReceipt:pathToFileURL(resolve(process.env.PLANET_COMPOSER_PRODUCTION_ROOT??'C:/LLM/IWSDK/universe-atlas-wt/planet-composer-integration','src/fauna-composer-build-receipt.ts'));
+const {composerContentDigest}=await import(receiptModule.href);
 import {contentDigest,decodeStored,auditStoredSourceMap} from './helpers/planet-composer-collector.mjs';
 
 test('content receipt binds typed-array type and actual view bytes',()=>{
