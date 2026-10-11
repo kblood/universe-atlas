@@ -172,7 +172,11 @@ export class FaunaComposerMergedBatch {
   private compact(skin:FaunaComposerStoredSkin,deadline:number,now:()=>number):'ready'|'pending'|'full' {
     if(this.freeVertices.reduce((n,b)=>n+b.count,0)<composerStoredVertices(skin)||this.freeIndices.reduce((n,b)=>n+b.count,0)<skin.index.length)return 'full';
     if(this.copying.size)return 'pending';
-    for(const axis of ['vertex','index'] as const){let at=0;
+    for(const axis of ['vertex','index'] as const){
+      const free=axis==='vertex'?this.freeVertices:this.freeIndices,required=axis==='vertex'?composerStoredVertices(skin):skin.index.length;
+      // Fragmentation in one arena must not relocate an already-fitting arena.
+      if(free.some(block=>block.count>=required))continue;
+      let at=0;
       for(const r of [...this.records.values()].sort((a,b)=>a[axis]-b[axis])){
         const old=r[axis],count=axis==='vertex'?r.vertices:r.indices;
         if(old!==at){const start=now();if(start>=deadline)return 'pending';

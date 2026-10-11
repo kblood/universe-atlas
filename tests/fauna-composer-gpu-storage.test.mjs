@@ -116,6 +116,27 @@ for(const mode of ['float','packed','gpu'])test(`vertex and index allocation ord
  }finally{t.dispose();}
 });
 
+for(const mode of ['float','packed','gpu'])for(const shortage of ['index','vertex'])test(`single-axis shortage preserves the already-fitting allocation axis (${mode}/${shortage})`,()=>{
+ const t=relocationPool(mode,48,90),{pool,gl}=t;
+ try{
+  const sources=new Map(),put=(id,v,n,row)=>{const skin=relocationSkin(v,n,row);sources.set(id,skin);assert.ok(pool.register(id,skin,row));};
+  put('a',12,6,0);put('b',12,12,1);put('c',6,18,2);put('d',12,12,3);pool.release('a');pool.release('c');put('x',10,15,4);put('y',5,6,5);
+  assert.deepEqual(pool.freeVertices,[{start:10,count:2},{start:29,count:1},{start:42,count:6}]);
+  assert.deepEqual(pool.freeIndices,[{start:33,count:3},{start:48,count:42}]);
+  const retained=new Map([...pool.records].map(([id,record])=>{const receipt=pool.residentSkin(id,sources.get(id)),second=pool.residentSkin(id,receipt);
+   return[id,{record,receipt,second,before:structuredClone(FaunaComposerMergedBatch.snapshotSkin(receipt)),vertex:record.vertex,index:record.index}];}));
+  const request=shortage==='index'?relocationSkin(4,45,6):relocationSkin(8,12,6),copies=gl?.inspect().copies,reads=gl?.inspect().reads,bytes=pool.diagnostics().ownedBytes;
+  assert.equal(pool.freeVertices.some(b=>b.count>=request.positions.length/3),shortage==='index');
+  assert.equal(pool.freeIndices.some(b=>b.count>=request.index.length),shortage==='vertex');
+  assert.equal(pool.registerSlice('request',request,6,.82,Infinity),'ready');
+  if(gl){assert.equal(gl.inspect().reads,reads,'no relocation readback');if(shortage==='index')assert.equal(gl.inspect().copies,copies,'index-only shortage issues zero vertex copies');}
+  const untouched=shortage==='index'?'vertex':'index';
+  for(const {record,...before}of retained.values())assert.equal(record[untouched],before[untouched],'already-fitting axis has zero relocated records');
+  assert.ok([...retained.values()].some(before=>before.record[shortage]!==before[shortage]),'the fragmented axis actually moves');
+  assertRetained(pool,retained);assert.equal(pool.diagnostics().ownedBytes,bytes);
+ }finally{t.dispose();}
+});
+
 test('GPU relocation rolls back one-shot copy and index-write failures without publishing partial moves',()=>{
  for(const kind of ['copy-first','copy-destination','copy-later-attribute','index-rebase']){
   let fail=0;const options=kind==='index-rebase'?{upload(n){if(n===fail)throw new Error('injected relocation failure');}}:{copy(n){if(n===fail)throw new Error('injected relocation failure');}};
