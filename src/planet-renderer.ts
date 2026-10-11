@@ -7,6 +7,7 @@ import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-ae
 import { AU, type Body, type V3 } from './catalog.ts';
 import { children, tileDirection, closestTileDirection, tileKey, tileCode, directionTile, directionCoordinates, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
 import {terrainSampler, DEFAULT_SURFACE_AGE_MYR} from './terrain.ts';
+import {residentTerrainFrontier,stepResidentTerrainFrontier,terrainParent} from './terrain-residency.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {RiverWater} from './river-water.ts';
 import {LakeReflection} from './lake-reflection.ts';
@@ -44,7 +45,7 @@ import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
 import {temperateHabitat} from './surface-climate.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
-import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,TERRAIN_BUDGET_BYTES,PENDING_TILE_BYTES,TERRAIN_PRESSURE_ENTER_FRACTION,TERRAIN_PRESSURE_EXIT_FRACTION,rendererMemoryAccounting,terrainAdmission} from './renderer-memory.ts';
+import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,WATER_ENVIRONMENT_RESERVE_BYTES,PENDING_TILE_BYTES,TERRAIN_PRESSURE_ENTER_FRACTION,TERRAIN_PRESSURE_EXIT_FRACTION,rendererMemoryAccounting,terrainAdmission,terrainBudgetForReservations} from './renderer-memory.ts';
 import type {RockGate} from './rock-field.ts';
 import {PLANET_DETAIL,altitudeGate} from './planet-detail.ts';
 import type {Species} from './biosphere-model.ts';
@@ -488,7 +489,10 @@ export class PlanetRenderer {
   // cloud target allocation. High-resolution clouds cannot consume collision
   // admission space or force the captured ground to become blurry on descent.
   private immersiveBudget=false;
-  private get terrainBudgetBytes(){return TERRAIN_BUDGET_BYTES-(this.immersiveBudget?(this.clouds?.allocatedBytes??0):0);}
+  // These owners are constructed synchronously in the constructor and never
+  // installed later. Hidden/idle owners retain the full lifetime reservation.
+  private get waterEnvironmentReserveBytes(){return this.river||this.environment?WATER_ENVIRONMENT_RESERVE_BYTES:this.body.water?SHARED_WATER_NORMAL_ATLAS_BYTES:0;}
+  private get terrainBudgetBytes(){return terrainBudgetForReservations(this.waterEnvironmentReserveBytes,this.immersiveBudget?(this.clouds?.allocatedBytes??0):0);}
   readonly group = new THREE.Group();
   private workers:{worker:Worker;generation:number;restarts:number}[]=[];
   private nextWorker=0;
@@ -508,6 +512,9 @@ export class PlanetRenderer {
   private leafRecordByCode=new Map<number,LeafRecord>();
   private previousLeafByCode=new Map<number,LeafRecord>();
   private leafProtected=new Set<string>();
+  private residentFrontier=new Map<number,LeafRecord>();
+  private residentNeeded=new Set<string>();
+  private residencyProtected=new Set<string>();
   private patchVersion=0;
   private leafLoopPatchVersion=-1;
   private leafLoopDirty=true;
@@ -1341,10 +1348,11 @@ export class PlanetRenderer {
     const groundDirection=eye.clone().normalize().toArray() as V3;
     const eyeSurface=this.sample(groundDirection),groundHeight=eyeSurface.visibleHeightM;
     const altitudeM=(distance-1)*this.body.radiusM-groundHeight;
-    // Byte-blocked refinement (render-bounds-1) runs only on a seabed dive:
-    // everywhere else the streaming frontier is the established one.
     const seabedDive=renderSeabedDive(this.body,(distance-1)*this.body.radiusM,eyeSurface.groundHeightM,snappedWaterLevelM);
     this.lowFlightDetail=!immersive&&altitudeM<PLANET_DETAIL.flightDetailAltitudeM;
+    // A byte-saturated visual frontier must also yield to close dry ground.
+    // Otherwise it stops below pressure entry forever, burying canonical fauna.
+    const reallocateForNearGround=seabedDive||!!contact||this.lowFlightDetail;
     // 390 active walking leaves plus their protected ancestors fit beneath the
     // terrain reserve while leaving admission headroom for newly requested
     // contact chunks. A 512-leaf full quadtree can consume that headroom.
@@ -1471,6 +1479,13 @@ export class PlanetRenderer {
       const result={visible,contactNear,waterPriority,finePriority,score:finePriority?1e12/((t.level+1)*(1+contactNear)):contactPriority?1e10/(t.level+1):waterPriority?1e7/(t.level+1):visible ? span * pixels / near : 0};
       projectionCache.set(key,result);return result;
     };
+    const sparseTerrain=this.faunaUsesComposer;
+    const requiredTerrain=(tile:Tile)=>{
+      if(projected(tile).visible)return true;
+      if(!contactDirection||!contact)return false;
+      const nearest=closestTileDirection(tile,contact.toArray() as V3);
+      return contactDirection.distanceTo(new THREE.Vector3(...nearest))*this.body.radiusM<40;
+    };
     // Contact re-ranks the full balanced frontier so distant visual leaves
     // cannot starve the capsule's mandatory support ring.
     // Only a selection pass (or the first frame) needs a mutable copy of the
@@ -1542,7 +1557,7 @@ export class PlanetRenderer {
         // On a seabed dive a pass whose splits were byte-blocked is pressure
         // too (render-bounds-1): a frontier at the split ceiling below the
         // leaf-count trigger otherwise never refines toward the seabed.
-        const pressure=leaves.length>drawLimit-60||this.terrainPressure||(seabedDive&&this.splitsBlockedByBytes>0);
+        const pressure=leaves.length>drawLimit-60||this.terrainPressure||(reallocateForNearGround&&this.splitsBlockedByBytes>0);
         if(score>(immersive?210:160)&&!(pressure&&score<urgent/4))continue;
         if([0,1,2,3].some(e=>(deepest.get(tileKey(tileNeighbour(parent,e)))??0)>parent.level+1))continue;
         if(!this.patches.has(key))continue;
@@ -1558,7 +1573,7 @@ export class PlanetRenderer {
       // below the split ceiling (mandatory contact support: the admission
       // ceiling). Under pressure only mandatory support may split.
       const plannedKeys=new Set<string>();
-      this.splitsBlockedByBytes=0;
+      const previouslyByteBlocked=this.splitsBlockedByBytes>0;this.splitsBlockedByBytes=0;
       for (let iteration = 0; iteration < iterations; iteration++) {
         if(iteration>0&&performance.now()-selectionStarted>3){this.selectionDirty=true;break;}
         const index=new Map(leaves.map(t=>[tileKey(t),t]));
@@ -1614,6 +1629,10 @@ export class PlanetRenderer {
         }
         if (!split) break;
       }
+      // One retry lets the merge pass see newly discovered byte pressure.
+      // Successful merges schedule subsequent work themselves; an impossible
+      // frontier does not spin a selection pass forever while stationary.
+      if(reallocateForNearGround&&this.splitsBlockedByBytes>0&&!previouslyByteBlocked)this.selectionDirty=true;
     }
     // Leaf loop (docs/terrain-budget-2026-09-29.md). Output-identical to the
     // former per-frame rebuild (tests/terrain-leaf-loop-digest.test.mjs):
@@ -1650,9 +1669,44 @@ export class PlanetRenderer {
     if(this.waterRegionActive&&minimumWaterLevel!==null)for(const record of this.leafRecords)if(record.tile.level<minimumWaterLevel&&this.intersectsWaterRegion(record.tile))underresolved++;
     this.underresolvedWaterTiles=underresolved;
     const patchesChanged=this.patchVersion!==this.leafLoopPatchVersion;
-    const dirty=leafSetChanged||patchesChanged||this.morphingLeaves>0,restitch=dirty||this.leafLoopDirty;
+    const dirty=leafSetChanged||patchesChanged||this.morphingLeaves>0;let restitch=dirty||this.leafLoopDirty;
     this.leafLoopDirty=dirty;this.leafLoopPatchVersion=this.patchVersion;
-    const sameFrame=this.leafFrameMatches(eye,frusta.length,retainedFrusta)&&!leafSetChanged&&!patchesChanged;
+    let sameFrame=this.leafFrameMatches(eye,frusta.length,retainedFrusta)&&!leafSetChanged&&!patchesChanged;
+    // Residency follows conservative camera/shadow bounds and the contact ring;
+    // the full balanced logical tree remains in leafIndex for selection.
+    let frameRecords=this.leafRecords,frameCurrent=this.leafRecordByCode,framePrevious=this.previousLeafByCode;
+    let residencyReversing=new Set<string>(),residencyMerged=new Set<string>(),residencySplit=new Set<string>();
+    if(sparseTerrain){
+      if(!sameFrame||this.continuity&&this.morphingLeaves>0){
+        framePrevious=this.residentFrontier;
+        const transition=this.continuity?stepResidentTerrainFrontier([...framePrevious.values()].map(r=>r.tile),this.leafTiles,this.patches,
+          t=>this.patches.get(tileKey(t))?.morph.value===1,t=>this.patches.get(tileKey(t))?.morph.value===0,requiredTerrain)
+          :{tiles:residentTerrainFrontier(this.leafTiles,this.patches,requiredTerrain),reversing:new Set<string>(),merged:new Set<string>(),split:new Set<string>(),needed:new Set<string>(),requests:[]};
+        const tiles=transition.tiles;residencyReversing=transition.reversing;residencyMerged=transition.merged;residencySplit=transition.split;
+        this.residentNeeded=transition.needed;
+        const laterRequests=[...wanted];wanted.clear();
+        for(const tile of transition.requests)request(tile);
+        for(const [key,tile]of laterRequests)if(!wanted.has(key))wanted.set(key,tile);
+        frameCurrent=new Map(tiles.map(t=>{const code=tileCode(t);return [code,this.leafRecordByCode.get(code)??this.leafRecord(t,code)];}));
+        const cutChanged=frameCurrent.size!==framePrevious.size||[...frameCurrent.keys()].some(code=>!framePrevious.has(code));
+        if(cutChanged){restitch=true;this.leafLoopDirty=true;sameFrame=false;}
+        this.residentFrontier=frameCurrent;this.residencyProtected=new Set(ROOTS.map(tileKey));
+        for(const record of this.leafRecords)if(requiredTerrain(record.tile)){
+          request(record.tile);this.residencyProtected.add(record.key);
+          if(!this.continuity){let t=record.tile;while(t.level){t=terrainParent(t);this.residencyProtected.add(tileKey(t));}}
+          // Keep the split's complete sibling group. A turn can make the next
+          // sibling visible without forcing a resident visible sibling back to
+          // an unmorphed ancestor merely because that neighbour was evicted.
+          if(record.tile.level)for(const sibling of children(terrainParent(record.tile))){request(sibling);this.residencyProtected.add(tileKey(sibling));}
+        }
+        for(const record of frameCurrent.values())if(this.continuity||requiredTerrain(record.tile)){
+          this.residencyProtected.add(record.key);
+          if(this.continuity&&record.tile.level){const parent=terrainParent(record.tile);request(parent);this.residencyProtected.add(tileKey(parent));}
+        }
+        for(const tile of transition.requests)this.residencyProtected.add(tileKey(tile));
+      }else frameCurrent=framePrevious=this.residentFrontier;
+      frameRecords=[...frameCurrent.values()];
+    }
     const radiusM=this.body.radiusM,fullSkirt=PATCH_SEGMENTS*PATCH_SEGMENTS*6;
     // The same horizon/frustum bounds as `projected` (render-bounds-1).
     const horizonMargin=renderHeightBoundM(this.body).maxM*this.relief/radiusM;
@@ -1661,36 +1715,43 @@ export class PlanetRenderer {
       for(const p of this.shownPatches){p.mesh.visible=false;if(p.ocean)p.ocean.visible=false;}
       this.shownPatches.length=0;this.active.clear();
     }
-    const current=this.leafRecordByCode,previous=this.previousLeafByCode;
+    const current=frameCurrent,previous=framePrevious;
     const settled=(code:number)=>{if(!previous.has(code))return false;const record=current.get(code);return !!record&&this.patches.get(record.key)?.morph.value===1;};
     const ocean=this.oceanFrameScratch;ocean.sunDirection=this.sunUniform.value;ocean.oceanPhaseS=oceanPhaseS;
-    const oceanLeafKeys=restitch&&this.body.water?new Set(this.leafRecords.map(r=>r.key)):null;
+    const oceanLeafKeys=restitch&&this.body.water?new Set(frameRecords.map(r=>r.key)):null;
     let morphing=0;
     // presentationContinuity: every leaf's morph is advanced before the loop
     // below, so the fractional edge locks read this frame's neighbour morphs.
-    if(this.continuity)for(const record of this.leafRecords){
+    const morphRecords=sparseTerrain&&this.continuity?[...new Map([...this.leafRecordByCode,...frameCurrent]).values()]:frameRecords;
+    if(this.continuity)for(const record of morphRecords){
       const key=record.key,p=this.patches.get(key);
       if(!p)continue;
+      const morphPrevious=sparseTerrain&&this.leafRecordByCode.has(record.code)?this.previousLeafByCode:previous;
       // A parent whose children finished morphing back enters at its own shape.
-      if(!previous.has(record.code))p.clock=this.mergedParents.has(key)||!record.tile.level?1:0;
-      if(!this.debug.freezeMorph)p.clock=this.reversingKids.has(key)?Math.max(0,p.clock-dt/.22):Math.min(1,p.clock+dt/.22);
+      if(!morphPrevious.has(record.code))p.clock=this.mergedParents.has(key)||!record.tile.level?1:0;
+      if(residencyMerged.has(key))p.clock=1;
+      if(residencySplit.has(key))p.clock=0;
+      if(!this.debug.freezeMorph)p.clock=this.reversingKids.has(key)||residencyReversing.has(key)?Math.max(0,p.clock-dt/.22):Math.min(1,p.clock+dt/.22);
       p.morph.value=easeTerrainMorph(p.clock);
     }
-    for (const record of this.leafRecords) {
+    for (const record of frameRecords) {
       const key=record.key,p=this.patches.get(key);
       // A retained frontier can stop refining while its baked water bucket is
       // stale. Request freshness independently of camera/LOD selection changes.
       // The previous complete tile stays visible until its replacement lands.
-      if(!(p&&p.waterBucket===waterBucket)&&!this.pending.has(key)&&!this.failures.has(key)&&(this.retryAfter.get(key)||0)<=this.frame&&!wanted.has(key))wanted.set(key,record.tile);
+      if((!sparseTerrain||this.residencyProtected.has(key))&&!(p&&p.waterBucket===waterBucket)&&!this.pending.has(key)&&!this.failures.has(key)&&(this.retryAfter.get(key)||0)<=this.frame&&!wanted.has(key))wanted.set(key,record.tile);
       if (!p) continue;
-      p.touched = this.frame;
+      if(!sparseTerrain||this.residencyProtected.has(key))p.touched = this.frame;
       if(!this.continuity){
         if (!previous.has(record.code)) p.morph.value = record.tile.level ? 0 : 1;
         if(!this.debug.freezeMorph)p.morph.value = Math.min(1, p.morph.value + dt / .22);
       }
       if(!sameFrame){
         const sphere=this.leafSphere(record,p,horizonMargin),bounds=renderTileBounds(record.tile,record.center,record.bound,p,this.patches,this.body,this.relief,snappedWaterLevelM,distance,direction);
-        const visible=bounds.horizon&&(!frusta.length||retainedFrusta.some(f=>f.intersectsSphere(bounds.sphere)))&&this.rootsReady;
+        // A coarse off-screen fallback can have a much wider bound than its
+        // logical descendants. Visibility still comes from their conservative
+        // camera/shadow tests; do not resurrect an otherwise invisible branch.
+        const visible=(!sparseTerrain||!this.continuity||this.residentNeeded.has(key))&&bounds.horizon&&(!frusta.length||retainedFrusta.some(f=>f.intersectsSphere(bounds.sphere)))&&this.rootsReady;
         p.mesh.visible=visible;
         if(visible){this.active.add(key);this.shownPatches.push(p);}
         p.localEye.value.copy(eye).sub(p.mesh.position).multiplyScalar(radiusM);
@@ -1710,6 +1771,7 @@ export class PlanetRenderer {
           // draw the edge at morph x morph. Settled neighbours give 0 or 1 as before.
           const lock=(e:number)=>{
             if(current.has(parents[e]!))return 1;
+            if(sparseTerrain){let neighbour=tileNeighbour(record.tile,e);while(neighbour.level>0){neighbour=terrainParent(neighbour);if(current.has(tileCode(neighbour)))return 1;}}
             const r=current.get(n[e]!),q=r&&this.patches.get(r.key);
             return q?1-q.morph.value:0;
           };
@@ -1764,11 +1826,12 @@ export class PlanetRenderer {
     // Seabed dive (render-bounds-1): room for one whole split (4 children),
     // the unit selection requests; room for one tile let residency settle
     // where every split toward the seabed is blocked.
-    const overLimit=()=>this.patches.size+this.pending.size>=cacheLimit-2||this.residentBytes+(this.pending.size+(seabedDive?4:1))*PENDING_TILE_BYTES>splitCeiling||
+    const overLimit=()=>this.patches.size+this.pending.size>=cacheLimit-2||this.residentBytes+(this.pending.size+(reallocateForNearGround?4:1))*PENDING_TILE_BYTES>splitCeiling||
       (this.terrainPressure&&this.residentBytes>=terrainBudget*TERRAIN_PRESSURE_EXIT_FRACTION);
     if(overLimit())for (const p of [...this.patches.values()].sort((a,b) => a.touched - b.touched)) {
       if (!overLimit()) break;
-      if (!protectedKeys.has(p.key)&&!this.leafProtected.has(p.key)) { this.release(p); this.patches.delete(p.key); }
+      const transitioning=this.continuity&&((p.clock>0&&p.clock<1&&(this.leafIndex.has(p.key)||this.residentFrontier.has(tileCode(p.tile))))||this.reversingKids.has(p.key));
+      if (!transitioning&&!protectedKeys.has(p.key)&&!(sparseTerrain?this.residencyProtected:this.leafProtected).has(p.key)) { this.release(p); this.patches.delete(p.key); }
     }
     const unique = wanted;
     deferUndrawnRefreshes(unique,this.patches);
@@ -2473,7 +2536,7 @@ export class PlanetRenderer {
     for(const x of offsets)for(const y of offsets){
       const d=new THREE.Vector3(...point).addScaledVector(east,x).addScaledVector(north,y).toArray() as V3;
       const key=tileKey(directionTile(d,level)),p=this.patches.get(key);
-      if(!this.leafIndex.has(key)){sampleKey??=key;missingLeaf++;continue;}
+      if(!this.leafIndex.has(key)||(this.faunaUsesComposer&&!this.residentFrontier.has(tileCode(directionTile(d,level))))){sampleKey??=key;missingLeaf++;continue;}
       if(!p){sampleKey??=key;missingResident++;continue;}
       // Contact geometry mirrors 0/1 edge locks only (terrain-contact.ts), so a
       // fractional lock (presentationContinuity) also waits for the neighbour.
@@ -2515,8 +2578,8 @@ export class PlanetRenderer {
         lifeReserveBytes:LIFE_RESERVE_BYTES,withinLifeReserve:floraBytes+faunaBytes+forestBytes-(lod.workerCurrentTypedBytes??0)+lod.workerReservedBytes<=LIFE_RESERVE_BYTES,
         basis:'CPU typed arrays + estimated GPU buffers/images; indices included; cold clone/build reserve separate; ordinary JS/driver overhead excluded'}};
     })():{};
-    const lodSession={faunaBodyPresentation:this.faunaEffectiveBodyPresentation,...(this.faunaLodFactory?{faunaLodSession:{enabled:!!this.faunaLod,xrSuspended:this.immersiveBudget,transitions:this.faunaLodTransitions,providerLazy:true,initializationError:this.faunaLodInitError}}:{})};
-    const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:rocks.bytes.total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
+    const lodSession={faunaBodyPresentation:this.faunaUsesComposer?'realism-1':this.faunaEffectiveBodyPresentation,...(this.faunaLodFactory?{faunaLodSession:{enabled:!!this.faunaLod,xrSuspended:this.immersiveBudget,transitions:this.faunaLodTransitions,providerLazy:true,initializationError:this.faunaLodInitError}}:{})};
+    const memory=rendererMemoryAccounting({waterEnvironmentReserveBytes:this.waterEnvironmentReserveBytes,residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:rocks.bytes.total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
     return {...lodResources,...lodSession,projection: 'cube-sphere',localAerial,rocks,renderBounds:RENDER_BOUNDS_VERSION,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
@@ -2536,7 +2599,7 @@ export class PlanetRenderer {
           terrainReservedBytes:this.residentBytes+this.pending.size*PENDING_TILE_BYTES,terrainPressure:this.terrainPressure,terrainPressureEntries:this.terrainPressureEntries,
           blockedRefreshes:this.blockedRefreshes,blockedAdmissions:this.blockedAdmissions,blockedRefreshesTotal:this.blockedRefreshesTotal,blockedAdmissionsTotal:this.blockedAdmissionsTotal,splitsBlockedByBytes:this.splitsBlockedByBytes};})(),
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus||this.lowFlightDetail?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:memory.accountedBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,rockOwnedBytes:rocks.bytes.total,rockPeakBytes:rocks.bytes.peak,rockReserveBytes:ROCK_RESERVE_BYTES,rockAccounting:'rock-owned (textures excluded) in accountedBytes; ROCK_RESERVE_BYTES in reservedCombinedBytes',cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:memory.reservedCombinedBytes,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once',oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear?.diagnostics().active??0,faunaRepresentation:this.faunaUsesComposer?FAUNA_PLANET_COMPOSER_VERSION:'archive-quadruped',faunaComposer:this.faunaComposer?.diagnostics()??null,faunaGenerator:this.faunaUsesComposer?'composer':'archive-quadruped',faunaNear:this.faunaNear?.diagnostics()??null,faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:(this.faunaRenderer?.allocatedBytes??0)+(this.faunaNear?.allocatedBytes??0)+faunaExtraBytes+(this.faunaComposer?.ownedBytes??0),faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
+      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:memory.accountedBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,waterEnvironmentReserveBytes:this.waterEnvironmentReserveBytes,rockOwnedBytes:rocks.bytes.total,rockPeakBytes:rocks.bytes.peak,rockReserveBytes:ROCK_RESERVE_BYTES,rockAccounting:'rock-owned (textures excluded) in accountedBytes; ROCK_RESERVE_BYTES in reservedCombinedBytes',cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:memory.reservedCombinedBytes,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once',oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear?.diagnostics().active??0,faunaRepresentation:this.faunaUsesComposer?FAUNA_PLANET_COMPOSER_VERSION:'archive-quadruped',faunaComposer:this.faunaComposer?.diagnostics()??null,faunaGenerator:this.faunaUsesComposer?'composer':'archive-quadruped',faunaNear:this.faunaNear?.diagnostics()??null,faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:(this.faunaRenderer?.allocatedBytes??0)+(this.faunaNear?.allocatedBytes??0)+faunaExtraBytes+(this.faunaComposer?.ownedBytes??0),faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
       faunaHerdCount:this.faunaHerdCount,faunaVisibleCount:this.faunaVisibleCount,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
         detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
@@ -2574,7 +2637,7 @@ export class PlanetRenderer {
   }
   private memoryForProfiling(){
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:this.rocks.ownedBytes().total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
+    const memory=rendererMemoryAccounting({waterEnvironmentReserveBytes:this.waterEnvironmentReserveBytes,residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:this.rocks.ownedBytes().total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
     return {accountedBytes:memory.accountedBytes,reservedCombinedBytes:memory.reservedCombinedBytes,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES)};
   }
   private rocksDrawnForProfiling(){

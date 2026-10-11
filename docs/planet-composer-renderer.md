@@ -204,3 +204,37 @@ drawn/canonical height samples, and compiled shader uniforms/sources. Set
 is functional evidence, not a frame-time measurement. The original captures and
 measurements are preserved under
 Assets/_assetctl/planet-composer-migration-20261011/world-diagnostic/.
+
+Normal Composer planets now keep the complete logical balanced terrain tree
+separate from GPU mesh residency. Camera and shadow bounds plus a 40 m contact
+ring protect needed leaves. Off-screen balance leaves and inactive intermediate
+ancestors may release their meshes. The resident draw cut retains complete
+parents until all four children load, advances one generation per transition,
+and reverse-morphs children before replacing them by a parent. It protects the
+actual cut, immediate merge parents and roots rather than the entire logical
+tree. Coarse fallback visibility uses the logical descendants' camera/shadow
+demand, so a wide coarse bound cannot resurrect an otherwise culled branch.
+Cut changes trigger edge stitching even when the logical tree did not change;
+edge locks recognize more distant off-screen ancestors too. Contact readiness
+checks the actual resident draw cut. The CPU replay verifies its settled visible
+2:1 edges and complete, nonoverlapping coverage; the existing per-frame morph,
+reverse-merge and rebuilt-patch continuity tests pass unchanged.
+
+The normal inland-water owners are absent, so they no longer reserve 28 MiB.
+These owners are constructor-only; an existing hidden owner still reserves its
+full lifetime ceiling. Ocean worlds retain the 174,760 B shared normal atlas.
+The full 152 MiB life and 28 MiB rock ceilings remain reserved; the core ceiling
+remains 256 MiB. Byte-blocked close ground can reallocate low-priority terrain
+instead of staying forever below the pressure-entry threshold.
+
+The fixed actual Daunune normal-depth capture shows three Composer bodies,
+their legs and terrain shadows, and surrounding plants. The selected animal is
+the original near source. Its sampled geometry spans -0.803 mm to +2.851 m above
+the actual level-18 terrain. Terrain residency is 67,172,244 B under 73,312,940 B;
+the core reservation is 262,294,760 B after separating the existing desktop cloud
+allocation, below 268,435,456 B. The CPU replay also verifies a ready contact ring
+and a 7.3 micrometre drawn/canonical height difference at the target. Evidence:
+Assets/_assetctl/planet-composer-migration-20261011/world-terrain-fixed-normalized/.
+The preserved early diagnostic remains a failure: it was captured before terrain
+refinement completed. These visibility results do not qualify cold population
+coverage, performance or XR; 159 animals were still pending in the fixed capture.

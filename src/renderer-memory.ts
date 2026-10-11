@@ -20,6 +20,12 @@ export const ROCK_RESERVE_BYTES=ROCK_BUDGET_BYTES;
 // renderer reserves their full mip-chain cost so its local budget remains safe
 // if its lifetime outlasts the lease that first initiated the shared load.
 export const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-LIFE_RESERVE_BYTES-ROCK_RESERVE_BYTES-GROUND_RESOURCE_BYTES;
+/** Reserve only resources whose owners exist. Ocean-only worlds still retain
+ * their shared normal atlas; they cannot allocate an absent river/environment. */
+export function terrainBudgetForReservations(waterEnvironmentReserveBytes=WATER_ENVIRONMENT_RESERVE_BYTES,cloudAllocatedBytes=0){
+  if(!Number.isFinite(waterEnvironmentReserveBytes)||waterEnvironmentReserveBytes<0||waterEnvironmentReserveBytes>WATER_ENVIRONMENT_RESERVE_BYTES||!Number.isFinite(cloudAllocatedBytes)||cloudAllocatedBytes<0)throw new Error('Invalid terrain resource reservation');
+  return TOTAL_BUDGET_BYTES-waterEnvironmentReserveBytes-LIFE_RESERVE_BYTES-ROCK_RESERVE_BYTES-GROUND_RESOURCE_BYTES-cloudAllocatedBytes;
+}
 // n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
 // map with the existing conservative 7/3 mip allocation.
 export const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3);
@@ -54,7 +60,8 @@ export const RENDERER_MEMORY_BUDGET=Object.freeze({coreBytes:TOTAL_BUDGET_BYTES,
  *   fixed reserves (water environment, life, rocks), allocated cloud targets
  *   and pending tile reservations. Terrain admission keeps it within the core
  *   budget. */
-export function rendererMemoryAccounting(p:{residentBytes:number;oceanNormalBytes:number;rockOwnedBytes:number;cloudAllocatedBytes:number;pendingTiles:number}){
+export function rendererMemoryAccounting(p:{residentBytes:number;oceanNormalBytes:number;rockOwnedBytes:number;cloudAllocatedBytes:number;pendingTiles:number;waterEnvironmentReserveBytes?:number}){
+  const waterReserve=p.waterEnvironmentReserveBytes??WATER_ENVIRONMENT_RESERVE_BYTES;
   return {accountedBytes:p.residentBytes+GROUND_RESOURCE_BYTES+p.oceanNormalBytes+p.rockOwnedBytes,
-    reservedCombinedBytes:p.residentBytes+GROUND_RESOURCE_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+LIFE_RESERVE_BYTES+ROCK_RESERVE_BYTES+p.cloudAllocatedBytes+p.pendingTiles*PENDING_TILE_BYTES};
+    reservedCombinedBytes:p.residentBytes+GROUND_RESOURCE_BYTES+waterReserve+LIFE_RESERVE_BYTES+ROCK_RESERVE_BYTES+p.cloudAllocatedBytes+p.pendingTiles*PENDING_TILE_BYTES};
 }
