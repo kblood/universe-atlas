@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.4",
-    "commit": "b5ee50f6c6a27cfc98e2b800bdf9a3f55a661636",
+    "version": "0.8.5",
+    "commit": "12ba0b156dc74355c7abbea3fed49593c9999c42",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -84,12 +84,12 @@
   ],
   "files": [
     {
-      "path": "assets/composer-D3gF7lKI.css",
-      "sha256": "906bd647a0e5c4d94795891a9d7fe79d44d93f5185d692feea5f001b30c2edff"
+      "path": "assets/composer-C77YRCDd.js",
+      "sha256": "ca176f97142eab33c77ca6b7afac81b72319da918dbbabfc291b3cfe00040d90"
     },
     {
-      "path": "assets/composer-aEUXiqf_.js",
-      "sha256": "677d1f51990eaafd517dfecfed13c3a6722613c2e709797c87173cdfa824a93c"
+      "path": "assets/composer-D3gF7lKI.css",
+      "sha256": "906bd647a0e5c4d94795891a9d7fe79d44d93f5185d692feea5f001b30c2edff"
     },
     {
       "path": "assets/creature-lab-CN8EtKiP.css",
@@ -100,8 +100,8 @@
       "sha256": "064eb70f5082536bc66f312e76844857d5751a6e5e16a46fd0d34e355e2ce24f"
     },
     {
-      "path": "assets/fauna-composer-export-C7BoHKmj.js",
-      "sha256": "00c66560b8d8fe7a7e354359f7e044d905f189ae17c300bf96ffbf4f0887adc6"
+      "path": "assets/fauna-composer-export-KC4w_SSH.js",
+      "sha256": "14edb908fb417b456b78f45c6cfc24cf7cec0ca0302d18462bcd36fdbc6d3046"
     },
     {
       "path": "assets/index-CYUeVSzr.js",
@@ -121,7 +121,7 @@
     },
     {
       "path": "creature-lab.html",
-      "sha256": "e790c6c23842bb62fae64def45fe7fb6f3f6a7f4bc083a4a5f54a049ef149c27"
+      "sha256": "bd6d80618fefd6d8f99a003ff6d4864ef24fd63fbc55172aca85c068a375439d"
     },
     {
       "path": "index.html",

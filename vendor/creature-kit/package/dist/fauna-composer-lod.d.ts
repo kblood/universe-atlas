@@ -27,9 +27,9 @@
  */
 export declare const COMPOSER_LOD_VERSION = "fauna-composer-lod-1";
 /** Additive opt-in constraints; absent options preserve the original reducer. */
-export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-3";
+export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-4";
 export declare const COMPOSER_FOOT_LOD_VERSION = "fauna-composer-foot-lod-1";
-export declare const COMPOSER_ANATOMY_LOD_VERSION = "fauna-composer-anatomy-lod-2";
+export declare const COMPOSER_ANATOMY_LOD_VERSION = "fauna-composer-anatomy-lod-3";
 /** Default attribute weights (dimensionless; multiplied by the body diagonal) and the largest allowed face turn. */
 export declare const COMPOSER_LOD_DEFAULTS: Readonly<{
     colour: 0.02;
@@ -78,6 +78,7 @@ export interface ComposerLodAnatomyGraph {
         trunk: readonly number[];
         torso?: readonly number[];
         neck?: readonly number[];
+        tail?: readonly number[];
     };
     limbs?: readonly {
         kind: string;

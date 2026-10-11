@@ -28,9 +28,9 @@
 import { applyComposerVolumeConstraints } from "./fauna-composer-lod-volume.js";
 export const COMPOSER_LOD_VERSION = 'fauna-composer-lod-1';
 /** Additive opt-in constraints; absent options preserve the original reducer. */
-export const COMPOSER_LOD_CONSTRAINTS_VERSION = 'fauna-composer-lod-constraints-3';
+export const COMPOSER_LOD_CONSTRAINTS_VERSION = 'fauna-composer-lod-constraints-4';
 export const COMPOSER_FOOT_LOD_VERSION = 'fauna-composer-foot-lod-1';
-export const COMPOSER_ANATOMY_LOD_VERSION = 'fauna-composer-anatomy-lod-2';
+export const COMPOSER_ANATOMY_LOD_VERSION = 'fauna-composer-anatomy-lod-3';
 /** Default attribute weights (dimensionless; multiplied by the body diagonal) and the largest allowed face turn. */
 export const COMPOSER_LOD_DEFAULTS = Object.freeze({ colour: 0.02, gloss: 0.05, skin: 0.08, boundary: 10, minFaceCosine: 0.3 });
 /** Skin-6's joined ankles no longer have separate closed foot components to

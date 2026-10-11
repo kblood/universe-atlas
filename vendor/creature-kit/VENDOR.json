@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.4",
-    "commit": "b5ee50f6c6a27cfc98e2b800bdf9a3f55a661636",
+    "version": "0.8.5",
+    "commit": "12ba0b156dc74355c7abbea3fed49593c9999c42",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -58,11 +58,11 @@
     },
     {
       "path": "src/fauna-composer-lod.ts",
-      "sha256": "0fed91c6226c803bb8ce5083602a1f0659649e1e17c91f5d8e36d72090697dca"
+      "sha256": "ea02ef349ef403081e3f64de77a72296d882fb1bd4a58e9de3fdedf5e6037cd8"
     },
     {
       "path": "src/fauna-composer-lod-volume.ts",
-      "sha256": "18a041bcf0c424b7ad762cf121ff35407e77fc525e97ee7f5431cf60184b4a23"
+      "sha256": "03dc7a9f6d8a01b5e8168693a852a93a357cfb241358504d4f8a07d3467b8163"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -182,11 +182,15 @@
     },
     {
       "path": "tests/fauna-composer-lod-anatomy.test.mjs",
-      "sha256": "a5004ab2cceb1e2b44e7556044811774ae2f5b7df2940c8a031d3d094788b4d2"
+      "sha256": "13707538c62f488a14bf11841d31eff1e5154d82d1c98cc0f9625cd2352fa04e"
     },
     {
       "path": "tests/fauna-composer-lod-volume.test.mjs",
       "sha256": "00c99704e60512968c8daae0fe6b0041815ea6f029c5e5e2d8e21aecd2ac3765"
+    },
+    {
+      "path": "tests/fauna-composer-lod-attachments.test.mjs",
+      "sha256": "ac64de01f7104eb62906a591b3a17a75635dcf9d45bf0fae16eedf3f4bb8d479"
     },
     {
       "path": "tests/planet-composer-terrain-frame.test.mjs",
@@ -279,6 +283,10 @@
     {
       "path": "tests/helpers/composer-lod-volume.mjs",
       "sha256": "5167968949f62271a685d7159ad5c9a836874d5863406ed629ea0eb0cfd5bcc2"
+    },
+    {
+      "path": "tests/helpers/composer-lod-attachments.mjs",
+      "sha256": "58fd992e58279aef60e5c8363fd7e9ba4c377ce157b82c18ae6e3d24c271f87d"
     },
     {
       "path": "tests/helpers/planet-composer-terrain-regression.mjs",
