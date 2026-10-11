@@ -13,7 +13,7 @@ const require=createRequire(resolve(kit,'package.json')),THREE=require('three');
 const [core,poser]=await Promise.all([import(pathToFileURL(resolve(kit,'src/planet-composer.ts')).href),import(pathToFileURL(resolve(kit,'src/planet-composer-pose.ts')).href)]);
 const fixtures=JSON.parse(await readFile(new URL('./fixtures/planet-composer-migration-scenarios.json',import.meta.url),'utf8'));
 const out=resolve(process.env.ATLAS_RESULTS||'C:/LLM/IWSDK/Assets/_assetctl/planet-composer-migration-20261011/independent-geometry');await mkdir(out,{recursive:true});
-const member={id:'controlled-reference',anchorOffsetX:1,anchorOffsetZ:-2,orbitRadiusM:6,orbitAngularSpeed:.1,orbitPhase:.37,gaitPeriodS:1},revolutionS=2*Math.PI/.1;
+const member={id:'controlled-reference',anchorOffsetX:1,anchorOffsetZ:-2,orbitRadiusM:6,orbitAngularSpeed:.1,orbitPhase:.37,gaitPeriodS:16},revolutionS=2*Math.PI/.1;
 const activity=(travel,gait='walk',stateS=.7)=>{const angle=member.orbitPhase+travel*2*Math.PI;return {pose:{x:1+Math.cos(angle)*6,z:-2+Math.sin(angle)*6,yaw:angle+Math.PI/2,gait},travel,revolutionS:gait==='walk'?revolutionS:Infinity,stateS};};
 const terrain={ramp:(x,z)=>.08*x-.06*z,nonlinear:(x,z)=>.07*x+.05*z+.035*Math.sin(x*1.2)*Math.cos(z*.9)};
 function palette(graph,pose){return graph.bones.map((b,i)=>new THREE.Matrix4().compose(new THREE.Vector3().fromArray(pose.positions,i*3),new THREE.Quaternion().fromArray(pose.quaternions,i*4),new THREE.Vector3(1,pose.radialScale[i],pose.radialScale[i]*pose.chordScale[i])).multiply(new THREE.Matrix4().compose(new THREE.Vector3(...b.restPosition),new THREE.Quaternion(...b.restQuaternion),new THREE.Vector3(1,1,1)).invert()));}
@@ -37,7 +37,7 @@ try{
     let observations=0,stance=0,swing=0,minGround=Infinity,maxStanceGap=0,maxDrift=0,maxBoundaryJump=0;
     const measure=(a,t)=>{const pose=poser.posePlanetComposer(source.graph,{...member,id:row.id},a,ground,t),matrices=palette(source.graph,pose);return {pose,matrices};};
     for(let frame=0;frame<32;frame++){
-     const a=activity(.18+frame*.0012),b=activity(a.travel+1e-6),p=measure(a,1000+frame*.02),q=measure(b,1000+frame*.02+.001);
+     const elapsed=frame*.0012*revolutionS,delta=1e-6*revolutionS,a=activity(.18+frame*.0012,'walk',2+elapsed),b=activity(a.travel+1e-6,'walk',2+elapsed+delta),p=measure(a,1000+elapsed),q=measure(b,1000+elapsed+delta);
      for(const foot of feet){const contact=p.pose.contacts.find(c=>c.limb===foot.limb.index),next=q.pose.contacts.find(c=>c.limb===foot.limb.index);let low=Infinity,lowest;
       for(const v of foot.ids){const w=world(vertex(source.skin,v,p.matrices),a,ground),gap=w[1]-ground(w[0],w[2]);if(gap<low){low=gap;lowest={v,w};}}
       assert(low>=-policy.maxPenetrationM,`${row.id}/${name}: actual source sole penetrates ${low}`);minGround=Math.min(minGround,low);if(contact.stance){stance++;maxStanceGap=Math.max(maxStanceGap,low);assert(low<=policy.maxStanceGapM,`${row.id}/${name}: source sole floats ${low}`);}else swing++;
@@ -48,7 +48,7 @@ try{
     const at=.321,first=measure(activity(at),19000).pose;measure(activity(.8),900000);assert.deepEqual(measure(activity(at),19000).pose,first,'exact A-B-A pose');
     // Same root at each side of the gait boundary isolates representation
     // changes from canonical travel. Measure actual foot vertices, not labels.
-    for(const [left,right] of [[activity(at,'idle',1),activity(at,'walk',1e-9)],[activity(at,'walk',1),activity(at,'idle',1e-9)]]){const p=measure(left,1000),q=measure(right,1000+1e-9);for(const foot of feet)for(const v of foot.ids){const a=world(vertex(source.skin,v,p.matrices),left,ground),b=world(vertex(source.skin,v,q.matrices),right,ground);maxBoundaryJump=Math.max(maxBoundaryJump,Math.hypot(...b.map((x,k)=>x-a[k])));}}
+    for(const [left,right] of [[activity(at,'idle',16-1e-9),activity(at+1e-9/revolutionS,'walk',1e-9)],[activity(at-1e-9/revolutionS,'walk',16-1e-9),activity(at,'idle',1e-9)]]){const p=measure(left,1000),q=measure(right,1000+2e-9);for(const foot of feet)for(const v of foot.ids){const a=world(vertex(source.skin,v,p.matrices),left,ground),b=world(vertex(source.skin,v,q.matrices),right,ground);maxBoundaryJump=Math.max(maxBoundaryJump,Math.hypot(...b.map((x,k)=>x-a[k])));}}
     assert(maxBoundaryJump<=policy.maxBoundaryVertexJumpM,`${row.id}/${name}: idle/walk vertex jump ${maxBoundaryJump}`);assert(stance>0&&swing>0);result.terrain.push({name,observations,stance,swing,minGround,maxStanceGap,maxDrift,maxBoundaryJump});
    }
    report.rows.push(result);
