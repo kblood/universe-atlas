@@ -82,7 +82,7 @@ async function sourcePixels(page,id){
 }
 
 export async function collect(page,scenario,policy){
- await settled(page);await ensureBrowserReference(page);const raw=await rawSnapshot(page),control=canonicalControl(raw),expected=new Map(control.members.map(x=>[x.id,x]));
+ await settled(page);await ensureBrowserReference(page);const raw=await rawSnapshot(page),control=await browserReference.canonical(raw),expected=new Map(control.members.map(x=>[x.id,x]));
  // Complete resident activities come from production's actual pose cache.
  const canonicalMembers=await page.evaluate(()=>{const p=window.__atlas.renderDebug().planet,out=[];for(const resident of p.lifeResidents.values()){const cached=p.faunaPoseCache.get(resident);if(!cached||cached.ns!==p.faunaTraceNs)continue;for(let j=0;j<cached.members.length;j++){const member=cached.members[j],activity=cached.activity[j];if(activity)out.push({id:member.id,member,position:activity.pose,activity});}}return out;});
  const packed=new Map(canonicalMembers.map(x=>[x.id,x]));const censusMembers=raw.canonicalMembers.map(x=>{const cached=packed.get(x.id);if(cached)return {...cached,activityEvidence:'production-pose-cache'};return {id:x.id,member:x.member,position:null,activity:null,activityEvidence:'not-submitted'};});
