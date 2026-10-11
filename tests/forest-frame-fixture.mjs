@@ -98,13 +98,15 @@ export function familyLoader(m){
       setDate(){},
       createBatch(lod,capacity){
         const W=28,data=new Float64Array(capacity*W);
-        const batch={lod,capacity,kind,group:new m.THREE.Group(),data,W,count:0,initialized:0,writes:0,
+        const batch={lod,capacity,kind,group:new m.THREE.Group(),data,W,count:0,cameraCount:0,initialized:0,writes:0,
           setInstance(i,matrix,heightM,phase,variant=0,allometry={crownRatio:1,trunkRatio:1}){
             if(i>batch.initialized)throw new Error(`batch slot gap ${i}`);if(i===batch.initialized)batch.initialized++;
             batch.count=Math.max(batch.count,i+1);data.set(matrix.elements,i*W);data.set([heightM,phase,variant,allometry.crownRatio,allometry.trunkRatio],i*W+16);batch.writes++;},
           setAppearance(i,bark,foliage){data.set([...bark,...foliage],i*W+21);batch.writes++;},
           setCoverage(i,coverage,seed){if(data[i*W+27]!==coverage||data[i*W+20]!==seed+1){data[i*W+27]=coverage;data[i*W+20]=seed+1;batch.writes++;}},
-          setCount(count){if(count>batch.initialized)throw new Error('batch count exceeds initialized slots');batch.count=count;},
+          setCount(count){if(count>batch.initialized)throw new Error('batch count exceeds initialized slots');batch.count=count;batch.cameraCount=count;},
+          setCameraCount(count){batch.cameraCount=count;},setViewCameras(){},passCounts(){return {camera:batch.cameraCount,shadow:batch.count};},
+          swapInstances(a,b){for(let k=0;k<W;k++){const value=data[a*W+k];data[a*W+k]=data[b*W+k];data[b*W+k]=value;}batch.writes+=2;},
           dispose(){batch.group.removeFromParent();}};
         batches.push(batch);return batch;
       },dispose(){}};
@@ -251,7 +253,7 @@ const unordered=ids=>{let sum=0,xor=0;for(const id of ids){const h=hashText(0x81
  * count, visibility), detailed family pools and batch data, the far canopy's
  * ownership and static channels, retained hysteresis sets, and the
  * non-timing diagnostics. Timing fields are excluded. */
-export function forestDigest(forest,batches,{detail=false}={}){
+export function forestDigest(forest,batches,{detail=false,canonicalDetailed=false}={}){
   const parts={};
   const attr=a=>{let h=hashWords(0x811c9dc5,a.array,a.array.length);return `${h.toString(16)}|${a.version}|${JSON.stringify(a.updateRanges)}`;};
   const meshes=[...forest.meshes,forest.canopy];
@@ -262,6 +264,15 @@ export function forestDigest(forest,batches,{detail=false}={}){
   });
   parts.detailed=[...forest.assets.entries.values()].map(entry=>entry.pools.map((pool,lod)=>{
     const b=entry.batches[lod];
+    // Pass partitioning deliberately changes row order. Historical parity
+    // compares every complete row by canonical identity; strict slot-order
+    // digests remain available to frame/allocation benchmarks by default.
+    if(canonicalDetailed){
+      const rows=pool.items.map((item,index)=>({id:item.cell.id,index})).sort((a,b)=>a.id.localeCompare(b.id));
+      let hash=0x811c9dc5;
+      for(const {index} of rows)hash=hashWords(hash,b.data.subarray(index*b.W,(index+1)*b.W),b.W);
+      return [entry.kind,lod,b.group.visible,b.count,rows.map(row=>row.id).join(','),hash.toString(16)].join(' ');
+    }
     return [entry.kind,lod,b.group.visible,b.count,pool.items.map(x=>x.cell.id).join(','),hashWords(0x811c9dc5,b.data,b.count*b.W).toString(16)].join(' ');
   }));
   const c=forest.fullCanopy;

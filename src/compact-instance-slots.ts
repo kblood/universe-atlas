@@ -12,6 +12,24 @@ export class CompactInstanceSlots<T,S> {
     if(!Number.isSafeInteger(capacity)||capacity<0)throw new Error('Invalid slot capacity');
     this.capacity=capacity;this.key=key;
   }
+  /** Partition retained identities without changing demand/capacity winners.
+   * swapRows must validate before mutating and swap the complete GPU row.
+   * A stable partition needs no writes; only misplaced pairs are exchanged. */
+  partition(selected:(item:T)=>boolean,swapRows:(a:number,b:number)=>void):number{
+    let front=0,back=this.items.length-1;
+    while(front<=back){
+      if(selected(this.items[front])){front++;continue;}
+      while(back>front&&!selected(this.items[back]))back--;
+      if(back===front)break;
+      swapRows(front,back);
+      const item=this.items[front],state=this.states[front];
+      this.items[front]=this.items[back];this.states[front]=this.states[back];
+      this.items[back]=item;this.states[back]=state;
+      this.indices.set(this.key(this.items[front]),front);this.indices.set(this.key(item),back);
+      front++;back--;
+    }
+    return front;
+  }
   reconcile(items:readonly T[],write:(index:number,item:T,previous:S|undefined)=>S):number{
     if(items.length>this.capacity)throw new Error('Compact instance capacity exceeded');
     this.wanted.clear();

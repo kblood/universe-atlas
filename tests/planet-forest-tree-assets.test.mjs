@@ -35,11 +35,14 @@ function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentat
         ...(variants?{structuralVariants:received.structuralVariants,foliageProjectedAreaM2:[0,40,60,20],trunk:{heightM:14,baseRadiusM:.3,topRadiusM:.2}}:{})},
       setDate(date){dates.push(date);},
       createBatch(lod,capacity){
-        const batch={lod,capacity,group:new THREE.Group(),instances:new Map(),coverage:new Map(),appearances:new Map(),count:0,initialized:0,disposed:0,
+        const batch={lod,capacity,group:new THREE.Group(),instances:new Map(),coverage:new Map(),appearances:new Map(),count:0,cameraCount:0,initialized:0,disposed:0,swaps:0,
           setInstance(i,matrix,heightM,phase,variant=0,allometry={crownRatio:1,trunkRatio:1}){if(i>batch.count)throw new Error(`batch slot gap ${i} > ${batch.count}`);if(i===batch.initialized)batch.initialized++;batch.count=Math.max(batch.count,i+1);batch.instances.set(i,{matrix:matrix.clone(),heightM,phase,variant,allometry:{...allometry}});},
           setAppearance(i,bark,foliage){batch.appearances.set(i,{bark:[...bark],foliage:[...foliage]});},
           setCoverage(i,coverage,seed){batch.coverage.set(i,{coverage,seed});},
-          setCount(count){if(count>batch.initialized)throw new Error(`batch count ${count} exceeds initialized slots ${batch.initialized}`);batch.count=count;},dispose(){batch.disposed++;batch.group.removeFromParent();}};
+          setCount(count){if(count>batch.initialized)throw new Error(`batch count ${count} exceeds initialized slots ${batch.initialized}`);batch.count=count;batch.cameraCount=count;},
+          setCameraCount(count){batch.cameraCount=count;},setViewCameras(){},passCounts(){return {camera:batch.cameraCount,shadow:batch.count};},
+          swapInstances(a,b){for(const rows of [batch.instances,batch.coverage,batch.appearances]){const value=rows.get(a);rows.set(a,rows.get(b));rows.set(b,value);}batch.swaps++;},
+          dispose(){batch.disposed++;batch.group.removeFromParent();}};
         batches.push(batch);return batch;
       },dispose(){family.disposed=(family.disposed||0)+1;}};
     families.push(family);return family;
@@ -60,6 +63,32 @@ function fixture(opts={}){
   return {f,h,eye,cells,step};
 }
 const load=async(f)=>f.loadTreeAssets(new ArrayBuffer(8),new ArrayBuffer(8));
+
+test('detailed trees partition camera demand while preserving union identities, rows and shadow-only coverage',async()=>{
+  const {f,h,eye,cells,step}=fixture({variants:true});
+  for(let i=0;i<cells.length;i++){const angle=(i*20+5)/body.radiusM;cells[i].direction=[Math.sin(angle),0,Math.cos(angle)];}
+  try{
+    await load(f);step();
+    const entry=f.assets.entries.get('branching'),pool=entry.pools[0],batch=h.batches[0];
+    const row=i=>({instance:batch.instances.get(i),appearance:batch.appearances.get(i),coverage:batch.coverage.get(i)});
+    const expected=new Map(pool.items.map((r,i)=>[r.cell.id,structuredClone(row(i))]));
+    const wantedIds=pool.items.map(r=>r.cell.id).sort();
+    const shadow={intersectsSphere:()=>true},none={intersectsSphere:()=>false};
+    const update=frustum=>f.update(eye,[0,0,1],20,true,0,false,[frustum],123n,[species()],shadow);
+    for(const select of [x=>x>25/body.radiusM,x=>x<25/body.radiusM,()=>false,()=>true]){
+      const view={intersectsSphere:sphere=>select(sphere.center.x)};update(view);
+      assert.deepEqual(pool.items.map(r=>r.cell.id).sort(),wantedIds);
+      assert.equal(batch.count,3);assert.equal(batch.cameraCount,pool.items.filter(r=>select(r.bx)).length);assert.equal(batch.group.visible,true);
+      pool.items.forEach((r,i)=>{assert.equal(r.detailSlots[0],i);assert.equal(select(r.bx),i<batch.cameraCount);assert.deepEqual(structuredClone(row(i)),expected.get(r.cell.id));});
+      const swaps=batch.swaps;update(view);assert.equal(batch.swaps,swaps,'unchanged camera produces no row swaps');
+      assert.equal(f.presentationCensus().families[0].lods[0].shadowSubmitted,3);
+      assert.equal(f.presentationCensus().families[0].lods[0].submitted,batch.cameraCount);
+    }
+    f.update(eye,[0,0,1],20,true,0,false,[none],123n,[species()],none);
+    assert.equal(batch.count,0);assert.equal(batch.group.visible,false);
+    step();assert.equal(batch.count,3);assert.equal(batch.cameraCount,3,'empty demand can regrow all initialized rows');
+  }finally{f.dispose();}
+});
 
 test('a no-sidecar diagnostic family keeps both near and far game presentation on legacy fallback',async()=>{
   const {f,step,cells}=fixture({presentationEnabled:false});

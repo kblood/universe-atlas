@@ -50,7 +50,7 @@ test('eligible dated enable, near/far movement and replay preserve historical fo
       const f=scene.frame(poses[0]);scene.forest.update(f.eye,f.groundDirection,f.altitudeM,false,f.water,false,f.frusta,f.date,[],f.shadow);
       assert.equal(scene.forest.group.visible,false);assert.ok(scene.forest.diagnostics().allocatedBytes>20_000_000,'eligible resources remain ready for dated enable');
       await scene.settle(poses[0],160);const digests=[];
-      for(const pose of poses){await scene.step(pose);digests.push(forestDigest(scene.forest,scene.batches));}
+      for(const pose of poses){await scene.step(pose);digests.push(forestDigest(scene.forest,scene.batches,{canonicalDetailed:true}));}
       assert.ok(scene.forest.diagnostics().visible>0,'actual eligible scene draws trees');return digests;
     }finally{scene.dispose();await cleanup();}
   }

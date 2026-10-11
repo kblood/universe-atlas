@@ -2839,7 +2839,7 @@ function updatePlanetTiles(dt: number) {
   // planet/moon resolves it from the SAME lifecycle pair `prepareLanding`
   // already uses (`bodyEntry.lc`/`bodyEntry.starLc`), never a fresh query.
   const waterLevelM = waterLevelFor(state.body!);
-  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, forestLife, waterLevelM,shadowFrustum);
+  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, forestLife, waterLevelM,shadowFrustum,views);
   if (!renderer.xr.isPresenting && state.body) {
     // Keep metre-scale depth precision without clipping the distant system.
     const near = (walker||landing ? .03:Math.max(.03, Math.min(1000, clearance.terrainClearance * .005))) * systemUnit;

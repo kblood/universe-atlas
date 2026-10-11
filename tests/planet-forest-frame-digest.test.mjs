@@ -24,7 +24,7 @@ async function run(sources,poses){
     const digests=[];
     for(const pose of poses){
       await scene.step({...pose,water:base+(pose.waterDelta??0)});
-      digests.push(forestDigest(scene.forest,scene.batches));
+      digests.push(forestDigest(scene.forest,scene.batches,{canonicalDetailed:true}));
     }
     return {settled,digests,final:scene.forest.diagnostics()};
   }finally{scene.dispose();await cleanup();}
@@ -36,11 +36,11 @@ async function firstDifference(sources,poses,index){
   try{
     const base=scene.world.water;await scene.settle({clearanceM:1.7},1500);
     for(let i=0;i<=index;i++)await scene.step({...poses[i],water:base+(poses[i].waterDelta??0)});
-    return forestDigest(scene.forest,scene.batches,{detail:true}).parts;
+    return forestDigest(scene.forest,scene.batches,{detail:true,canonicalDetailed:true}).parts;
   }finally{scene.dispose();await cleanup();}
 }
 
-test('forest frame outputs are identical to the reference forest for a fixed pose/date sequence',async t=>{
+test('forest canonical rows and all non-partitioned outputs match the reference for a fixed pose/date sequence',async t=>{
   const sources={};
   for(const path of FILES){const text=gitSource(REFERENCE,path);if(text===null){t.skip(`git object ${REFERENCE}:${path} unavailable`);return;}sources[path]=text;}
   const poses=digestPoses();

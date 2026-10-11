@@ -1294,7 +1294,7 @@ export class PlanetRenderer {
   // job dispatched this frame, and `this.sample`/`this.classify` whenever the
   // bucket changes, use the SAME snapped value, so any two tiles that share a
   // bucket are bit-identical at their shared edge by construction.
-  update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = [], worldNs: bigint = CATALOGUE_EPOCH_NS, life: LifeGateContext | null = this.lifeContext, waterLevelM: number = 0,shadowFrustum:THREE.Frustum|null=null) {
+  update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = [], worldNs: bigint = CATALOGUE_EPOCH_NS, life: LifeGateContext | null = this.lifeContext, waterLevelM: number = 0,shadowFrustum:THREE.Frustum|null=null,viewCameras:readonly THREE.Camera[]=[]) {
     if (this.disposed) return;
     this.immersiveBudget=immersive;
     this.lifeContext = life;
@@ -1407,6 +1407,7 @@ export class PlanetRenderer {
     // View direction may inform future prefetch, never population coverage:
     // moving this focus ahead made turning in place replace dense forest.
     const forestStarted=systemTimer.start();
+    this.forest.setViewCameras(viewCameras);
     this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies,shadowFrustum);
     systemTimer.stop('forestTotal',forestStarted);
     this.lastEye.copy(eye);

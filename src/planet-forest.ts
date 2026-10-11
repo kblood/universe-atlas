@@ -36,7 +36,7 @@ type Resident={cell:PopulationCell;height:number;present:boolean;water:number;pa
   stale:boolean;
   epoch:number;invariantHeight:number;dims:ForestTreeDimensions|null;detail:ForestTreeFamilyEntry<Resident,AssetSlot>|undefined;
   /** Root position and view/shadow bound sphere, planet-radius units. */
-  px:number;py:number;pz:number;bx:number;by:number;bz:number;br:number;
+  px:number;py:number;pz:number;bx:number;by:number;bz:number;br:number;cameraVisible:boolean;
   /** Expected far presentation (code, drawn height, ratio code). */
   expCode:number;expHeightM:number;expRatio:number;
   slotVersion:number;slot:number;slotInstall:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean;
@@ -61,7 +61,7 @@ class ResidentCache extends Map<string,Resident>{
 }
 const planar=(frustum:THREE.Frustum)=>Array.isArray(frustum.planes)&&frustum.planes.length===6;
 const residentOf=(cell:PopulationCell,height:number,present:boolean,water:number):Resident=>({cell,height,present,water,patchKey:undefined,stale:false,
-  epoch:-1,invariantHeight:NaN,dims:null,detail:undefined,px:0,py:0,pz:0,bx:0,by:0,bz:0,br:0,expCode:0,expHeightM:0,expRatio:0,
+  epoch:-1,invariantHeight:NaN,dims:null,detail:undefined,px:0,py:0,pz:0,bx:0,by:0,bz:0,br:0,cameraVisible:true,expCode:0,expHeightM:0,expRatio:0,
   slotVersion:-1,slot:-1,slotInstall:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false,
   wantPass:-1,wantBatch:-1,wantCoverage:0,poolPass:-1,selectionPass:-1,legacySlots:undefined,detailSlots:undefined});
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -166,6 +166,13 @@ export class PlanetForest {
   private catalogueError='';
   private assets:ForestTreeFamilyLibrary<Resident,AssetSlot>;
   private assetCounts=[0,0];
+  private viewCameras:readonly THREE.Camera[]=[];
+  /** Only these actual view cameras use the prefix. Auxiliary scene captures
+   * preserve the selected union, and shadow cameras always draw that union. */
+  setViewCameras(cameras:readonly THREE.Camera[]){
+    this.viewCameras=cameras;
+    for(const entry of this.assets.entries.values())for(const batch of entry.batches)batch.setViewCameras(cameras);
+  }
   private catalogue=forestTreeCatalogue([]);
   private catalogueInput:readonly Species[]|undefined;
   private catalogueVersion=0;
@@ -405,7 +412,8 @@ export class PlanetForest {
           variants[variant]=(variants[variant]??0)+1;
         }
         const text=records.sort().join('\n');
-        return {owned:pool.items.length,submitted:this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0,unbound,
+        return {owned:pool.items.length,submitted:this.group.visible&&entry.batches[lod].group.visible?entry.batches[lod].passCounts().camera:0,
+          shadowSubmitted:this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0,unbound,
           variantHistogram:variants,digest:hash(text,0x811c9dc5)+hash(text,0x9747b28c)};
       })}))};
   }
@@ -606,7 +614,14 @@ export class PlanetForest {
         const count=entry.pools[batch].reconcileMarked(wanted,(index,resident,previous)=>this.writeDetailed(entry,batch,index,resident,previous),
           resident=>{const current=this.currentOf(resident);return !!current&&current.wantPass===this.wantPass&&current.wantBatch===batch&&this.detailEntry(current)===entry;},
           resident=>resident.detailSlots?.[batch]??-1);
-        entry.batches[batch].setCount(count);entry.batches[batch].group.visible=count>0;
+        const asset=entry.batches[batch],pool=entry.pools[batch];
+        asset.setCount(count);asset.setViewCameras(this.viewCameras);
+        // Keep the selected camera/shadow union and every original row, but
+        // submit only the camera prefix in the main pass. Shadow callbacks
+        // restore the complete union, including zero-camera batches.
+        const cameraCount=pool.partition(resident=>resident.cameraVisible,(a,b)=>asset.swapInstances(a,b));
+        for(let index=0;index<count;index++)pool.items[index].detailSlots![batch]=index;
+        asset.setCameraCount(cameraCount);asset.group.visible=count>0;
         this.assetCounts[batch]+=count;
       }
     }
@@ -866,12 +881,15 @@ export class PlanetForest {
       // properties are refreshed. The current bucket sampler remains authority.
       if(resident.water!==water&&this.body.water>0&&resident.height<=water){if(slotted)canopy!.ownSlot(resident.slot,1);else canopy?.own(cell.id,1);continue;}
       // View and shadow culling use the individual's rendered dimensions.
+      resident.cameraVisible=true;
       if(views&&!inline){
         this.bounds.center.set(resident.bx,resident.by,resident.bz);this.bounds.radius=resident.br;
-        if(!frusta.some(f=>f.intersectsSphere(this.bounds))&&!shadowFrustum?.intersectsSphere(this.bounds))continue;
+        resident.cameraVisible=frusta.some(f=>f.intersectsSphere(this.bounds));
+        if(!resident.cameraVisible&&!shadowFrustum?.intersectsSphere(this.bounds))continue;
       }else if(views){
         const negRadius=-resident.br;let visible=false;
         for(let f=0;f<views&&!visible;f++)visible=inside(f,resident.bx,resident.by,resident.bz,negRadius);
+        resident.cameraVisible=visible;
         if(!visible&&!(shadowFrustum&&inside(views,resident.bx,resident.by,resident.bz,negRadius)))continue;
       }
       const ex=resident.px-eye.x,ey=resident.py-eye.y,ez=resident.pz-eye.z,distance=Math.sqrt(ex*ex+ey*ey+ez*ez)*r;
@@ -1011,7 +1029,8 @@ export class PlanetForest {
         families:[...this.farAtlases.values()].map(atlas=>atlas.diagnostics())},presentationKey:this.canopyPresentationKey,instanceSlots:'compact-per-family',
       structuralVariantVersion:FOREST_VARIANT_VERSION,
       families:[...this.assets.entries.values()].map(entry=>({kind:entry.kind,
-        submitted:entry.pools.map((pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0),
+        submitted:entry.pools.map((_pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?entry.batches[lod].passCounts().camera:0),
+        shadowSubmitted:entry.pools.map((pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0),
         retainedSlots:entry.pools.map(pool=>pool.items.length),capacities:entry.pools.map(pool=>pool.capacity),foliageMipmaps:entry.family.foliageMipmaps??null,
         structuralVariants:entry.family.structuralVariantCount??0,lod1CardScale:entry.family.lod1CardScale??1,lodCoverage:entry.family.lodCoverage??null,
         foliageLodCutoff:entry.family.foliageLodCutoff?{version:entry.family.foliageLodCutoff.version,step:entry.family.foliageLodCutoff.step,cutoffs:entry.family.foliageLodCutoff.cutoffs,
@@ -1038,5 +1057,5 @@ export class PlanetForest {
   backlog(){return {forestPending:this.queue.length,forestSelectionPending:this.selecting,forestVisible:this.visibleTrees,forestNear:this.nearTrees,
     forestFarTrees:!this.group.visible?0:(this.canopy?.visible?this.canopy.count:0)+(this.fullCanopy?.group.visible?this.fullCanopy.diagnostics().trees:0),forestOriginVersion:this.originVersion,
     forestMatrixWrites:this.matrixWrites,forestColorWrites:this.colorWrites,forestCoverageWrites:this.coverageWrites,forestSelectionApplyMs:this.selectionApplyMs,forestUpdateMs:this.updateMs};}
-  dispose(){if(this.disposed)return;this.disposed=true;this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of this.legacyMeshes){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
+  dispose(){if(this.disposed)return;this.disposed=true;this.viewCameras=[];this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of this.legacyMeshes){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
 }

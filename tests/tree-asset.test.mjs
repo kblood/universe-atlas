@@ -6,6 +6,80 @@ import {join,resolve} from 'node:path';
 import * as THREE from 'three';
 import {prepareTreeLODPair,treeVertexMeters,treeWindPhase,TREE_REFERENCE_HEIGHT_M,TREE_WIND_PERIOD_NS} from '../src/tree-asset.ts';
 import {UNIVERSE_END_NS} from '../src/world-time.ts';
+import {TreeInstancePasses,TreeInstanceRows} from '../src/tree-instance-passes.ts';
+import {CompactInstanceSlots} from '../src/compact-instance-slots.ts';
+
+test('tree camera prefix and full shadow union preserve callbacks, materials and zero-camera casters',()=>{
+  const meshes=[0,1].map(()=>new THREE.InstancedMesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial(),8));
+  const calls=[],original=[],camera=new THREE.PerspectiveCamera(),reflection=new THREE.PerspectiveCamera();
+  for(const mesh of meshes){
+    mesh.count=0;mesh.castShadow=true;mesh.frustumCulled=false;
+    mesh.customDepthMaterial=new THREE.MeshDepthMaterial();mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial();
+    for(const name of ['onBeforeRender','onAfterRender','onBeforeShadow','onAfterShadow'])mesh[name]=function(...args){assert.equal(this,mesh);calls.push({mesh,name,args,count:mesh.count});};
+    original.push([mesh.onBeforeRender,mesh.onAfterRender,mesh.onBeforeShadow,mesh.onAfterShadow]);
+  }
+  const passes=new TreeInstancePasses(meshes);passes.grow(6);passes.setCameraCount(2);passes.setViewCameras([camera]);
+  for(const mesh of meshes){
+    for(const material of [mesh.customDepthMaterial,mesh.customDistanceMaterial]){
+      const args=[{},mesh,{}, {},mesh.geometry,material,null];
+      mesh.onBeforeShadow(...args);assert.equal(mesh.count,6);assert.deepEqual(calls.at(-1).args,args);
+      mesh.onAfterShadow(...args);assert.equal(mesh.count,2);
+    }
+    const args=[{}, {},camera,mesh.geometry,mesh.material,null];mesh.onBeforeRender(...args);assert.equal(mesh.count,2);assert.deepEqual(calls.at(-1).args,args);mesh.onAfterRender(...args);
+    const reflected=[...args];reflected[2]=reflection;mesh.onBeforeRender(...reflected);assert.equal(mesh.count,6);mesh.onAfterRender(...reflected);assert.equal(mesh.count,2);
+  }
+  passes.setCameraCount(0);
+  for(const mesh of meshes){assert.equal(mesh.visible,true);mesh.onBeforeShadow();assert.equal(mesh.count,6);mesh.onAfterShadow();assert.equal(mesh.count,0);}
+  const eyes=[new THREE.PerspectiveCamera(),new THREE.PerspectiveCamera()];passes.setViewCameras(eyes);passes.setCameraCount(2);
+  for(const mesh of meshes)for(const view of [...eyes,camera,reflection]){
+    const args=[{}, {},view,mesh.geometry,mesh.material,null];mesh.onBeforeRender(...args);assert.equal(mesh.count,eyes.includes(view)?2:6);mesh.onAfterRender(...args);assert.equal(mesh.count,2);
+  }
+  passes.grow(7);assert.equal(passes.initializedCount,7);passes.setCount(3);assert.equal(passes.cameraCount,3);
+  for(const operation of [()=>passes.setCameraCount(4),()=>passes.setCount(4),()=>passes.grow(9)])assert.throws(operation);
+  assert.equal(passes.initializedCount,3);assert.ok(meshes.every(m=>m.count===3));
+  passes.dispose();passes.dispose();meshes.forEach((mesh,i)=>assert.deepEqual([mesh.onBeforeRender,mesh.onAfterRender,mesh.onBeforeShadow,mesh.onAfterShadow],original[i]));
+  assert.throws(()=>passes.setCount(0),/truncate/);
+  for(const mesh of meshes){mesh.geometry.dispose();mesh.material.dispose();mesh.customDepthMaterial.dispose();mesh.customDistanceMaterial.dispose();mesh.dispose();}
+});
+
+test('tree pass callback failures restore camera counts and keep errors observable',()=>{
+  for(const failing of ['onBeforeRender','onAfterRender','onBeforeShadow','onAfterShadow']){
+    const mesh=new THREE.InstancedMesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial(),4),error=new Error(failing);
+    mesh[failing]=()=>{mesh.count=99;throw error;};
+    const passes=new TreeInstancePasses([mesh]);passes.grow(4);passes.setCameraCount(1);
+    if(failing==='onAfterShadow')mesh.onBeforeShadow();
+    assert.throws(()=>mesh[failing](),e=>e===error);assert.equal(mesh.count,1);
+    passes.dispose();mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();
+  }
+});
+
+test('camera partition preserves every typed tree row, canonical state and topology through visibility churn',()=>{
+  const capacity=24,attributes=[16,16,3,3,4,2,2].map((size,n)=>{
+    const attribute=new THREE.InstancedBufferAttribute(new Float32Array(capacity*size),size);
+    for(let row=0;row<capacity;row++)for(let k=0;k<size;k++)attribute.array[row*size+k]=n*10000+row*100+k+.125;
+    return attribute;
+  });
+  const before=attributes.map(a=>a.array.slice()),buffers=attributes.map(a=>a.array.buffer),rows=new TreeInstanceRows([...attributes,attributes[4]]);
+  const pool=new CompactInstanceSlots(capacity,x=>String(x.id)),items=Array.from({length:capacity},(_,id)=>({id}));
+  pool.reconcile(items,(_i,item)=>({owner:item}));let swaps=0;
+  const swap=(a,b)=>{rows.swap(a,b,pool.items.length);swaps++;};
+  for(let frame=0;frame<80;frame++){
+    const selected=item=>(item.id*7+frame)%11<5,count=pool.partition(selected,swap);
+    assert.equal(count,items.filter(selected).length);
+    pool.items.forEach((item,row)=>{
+      assert.equal(selected(item),row<count);assert.equal(pool.states[row].owner,item);
+      attributes.forEach((attribute,n)=>assert.deepEqual(attribute.array.slice(row*attribute.itemSize,(row+1)*attribute.itemSize),before[n].slice(item.id*attribute.itemSize,(item.id+1)*attribute.itemSize)));
+    });
+    const versions=attributes.map(a=>a.version),previous=swaps;
+    assert.equal(pool.partition(selected,swap),count);assert.equal(swaps,previous);assert.deepEqual(attributes.map(a=>a.version),versions,'same visibility schedules no uploads');
+    assert.deepEqual(attributes.map(a=>a.array.buffer),buffers,'no mirror or replacement allocation');
+    assert.ok(attributes.every(a=>a.updateRanges.length<=8),'bounded pending upload ranges');
+    const retained=[...pool.items];pool.reconcile([...items].reverse(),(_i,item,state)=>{assert.equal(state.owner,item);return state;});assert.deepEqual(pool.items,retained,'identity map follows swaps');
+  }
+  const snapshot=attributes.map(a=>a.array.slice()),identities=[...pool.items];
+  assert.throws(()=>pool.partition(item=>item!==pool.items[0],()=>rows.swap(0,capacity,capacity)),/swap/);
+  assert.deepEqual(pool.items,identities);attributes.forEach((a,i)=>assert.deepEqual(a.array,snapshot[i]));
+});
 
 const root=process.env.ATLAS_TREE_CANDIDATE?resolve(process.env.ATLAS_TREE_CANDIDATE):null;
 const lod0Path=process.env.ATLAS_TREE_LOD0??(root?join(root,'atlas-branching-v1.glb'):null);

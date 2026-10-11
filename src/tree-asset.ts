@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {TreeInstancePasses,TreeInstanceRows} from './tree-instance-passes.ts';
 import type {TreeBarkTexturePool,TreeBarkTextureLease} from './tree-bark-texture-pool.ts';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {phaseFromPeriod} from './world-time.ts';
@@ -474,19 +475,24 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
           if(foliageLodCutoff&&part===1){installTreeFoliageLodCutoff(mesh.customDepthMaterial,foliageLodCutoff);installTreeFoliageLodCutoff(mesh.customDistanceMaterial,foliageLodCutoff);}
           group.add(mesh);return mesh;
         });
+        const passes=new TreeInstancePasses(meshes);
+        const rows=new TreeInstanceRows([tree,shape,...(forest?[forest]:[]),...meshes.flatMap(mesh=>[mesh.instanceMatrix,mesh.instanceColor!])]);
         activeBatches++;let batchDisposed=false;
         return {group,meshes,
           setCount(count:number){
-            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
-            for(const mesh of meshes)mesh.count=count;
+            passes.setCount(count);
           },
+          setCameraCount(count:number){passes.setCameraCount(count);},
+          setViewCameras(cameras:readonly THREE.Camera[]){passes.setViewCameras(cameras);},
+          passCounts(){return {camera:passes.cameraCount,shadow:passes.initializedCount};},
+          swapInstances(a:number,b:number){if(batchDisposed)throw new Error('Tree batch is disposed');rows.swap(a,b,passes.initializedCount);},
           /** Matrix contains yaw/translation and metres-to-scene-units only.
            * Rendered height and crown/trunk ratios are applied in the shader so
            * leaves retain their size. `variant` 0 keeps the authored structure;
            * k selects pool member k-1. */
           setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0,variant=0,allometry:TreeInstanceAllometry=IDENTITY_ALLOMETRY){
             const [minH,maxH]=TREE_FAMILY_ALLOMETRY_ENVELOPE.heightM;
-            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<minH||heightM>maxH||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>passes.initializedCount||!Number.isFinite(heightM)||heightM<minH||heightM>maxH||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
             if(!validInstanceAllometry(allometry)||!canopyPresentation.allometry&&(allometry.crownRatio!==1||allometry.trunkRatio!==1))throw new Error('Tree allometry is outside the family envelope');
             if(!Number.isInteger(variant)||variant<0||variant>variants.length)throw new Error('Tree structural variant is outside the loaded pool');
             const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
@@ -497,7 +503,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
             const scale=Math.fround(heightM/TREE_REFERENCE_HEIGHT_M),offset=Math.fround(phaseOffset);
             const crown=Math.fround(allometry.crownRatio),trunk=Math.fround(allometry.trunkRatio);
-            const newSlot=index===meshes[0].count;
+            const newSlot=index===passes.initializedCount;
             if(newSlot&&forest&&(forest.getX(index)!==1||forest.getY(index)!==0)){
               forest.setXY(index,1,0);forestUpdates.include(index,2);forestUpdates.flush(forest);
             }
@@ -514,8 +520,8 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
               if(matrix.elements.some((value,component)=>values[base+component]!==Math.fround(value))){
                 mesh.setMatrixAt(index,matrix);matrixUpdates[part].include(index,16);matrixUpdates[part].flush(mesh.instanceMatrix);
               }
-              mesh.count=Math.max(mesh.count,index+1);
             }
+            passes.grow(Math.max(passes.initializedCount,index+1));
           },
           /** Linear RGB multipliers over the authored bark and leaf textures.
            * Each part keeps its shared material; only this slot's color changes.
@@ -523,7 +529,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
            * transform/rebase updates deliberately retain its current colors. */
           setAppearance(index:number,bark:readonly[number,number,number],foliage:readonly[number,number,number]){
             const colors=[bark,foliage];
-            if(batchDisposed||!Number.isInteger(index)||index<0||index>=meshes[0].count||colors.some(color=>!Array.isArray(color)||color.length!==3||[0,1,2].some(i=>!Number.isFinite(color[i])||color[i]<0||color[i]>2)))throw new Error('Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]');
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=passes.initializedCount||colors.some(color=>!Array.isArray(color)||color.length!==3||[0,1,2].some(i=>!Number.isFinite(color[i])||color[i]<0||color[i]>2)))throw new Error('Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]');
             for(const [part,mesh] of meshes.entries()){
               const attribute=mesh.instanceColor!,color=colors[part],base=index*3;
               if(color.some((value,component)=>attribute.array[base+component]!==Math.fround(value))){
@@ -532,11 +538,11 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             }
           },
           setCoverage(index:number,coverage:number,seed:number){
-            if(batchDisposed||!forest||!Number.isInteger(index)||index<0||index>=meshes[0].count||!Number.isFinite(coverage)||coverage<0||coverage>1||!Number.isInteger(seed)||seed<0||seed>255)throw new Error('Invalid canonical forest coverage');
+            if(batchDisposed||!forest||!Number.isInteger(index)||index<0||index>=passes.initializedCount||!Number.isFinite(coverage)||coverage<0||coverage>1||!Number.isInteger(seed)||seed<0||seed>255)throw new Error('Invalid canonical forest coverage');
             const value=quantizeForestCoverage(coverage)/256;
             if(forest.getX(index)!==value||forest.getY(index)!==seed){forest.setXY(index,value,seed);forestUpdates.include(index,2);forestUpdates.flush(forest);}
           },
-          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+          dispose(){if(batchDisposed)return;batchDisposed=true;passes.dispose();activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
         };
       },
       /** Capture-only batch for the far atlas. Cloned materials share this
