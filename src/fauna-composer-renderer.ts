@@ -3,6 +3,7 @@ import {COMPOSER_BUDGET, type ComposerGraph, type ComposerPose} from './fauna-co
 import {FaunaComposerPaletteWriter} from './fauna-composer-palette.ts';
 import {FaunaComposerInstanceBatch, FAUNA_COMPOSER_REQUIRED_ATTRIBUTES} from './fauna-composer-instance-batch.ts';
 import {FaunaComposerMergedBatch} from './fauna-composer-merged-batch.ts';
+import {isPackedComposerSkin, type FaunaComposerStoredSkin, type FaunaComposerArenaStorage} from './fauna-composer-storage.ts';
 import {canonicalComposerJson, composerContentDigest, freezeComposerDefinition, isVerifiedComposerBuild} from './fauna-composer-build-receipt.ts';
 import {FAUNA_COMPOSER_TIERS, FAUNA_COMPOSER_RENDER_VERSION, composerTypedBytes, validateComposerRenderSkin, validateComposerRenderLod,
   type FaunaComposerSource, type FaunaComposerSourceProvider, type FaunaComposerBuildResult, type FaunaComposerRenderSkin, type FaunaComposerTier} from './fauna-composer-render-source.ts';
@@ -23,12 +24,12 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
   onMeshAdopted?: (mesh: THREE.Mesh) => void;
   /** Explicitly sized arenas: unique reduced animals share one draw per tier.
    * Arena CPU+GPU allocations count against maxBytes before accepting sources. */
-  mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number}>>;
+  mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number; storage?: FaunaComposerArenaStorage}>>;
   capacity?: number; maxSources?: number; maxBones?: number; maxBytes?: number; maxResultBytes?: number;
   workerReserveBytes?: number; maxDistanceM?: number; nearM?: number; middleM?: number;
   fullSourceCache?: number; adoptionBudgetMs?: number; now?: () => number; onReady?: () => void;
 }
-type Entry = {source: FaunaComposerSource | null; graph: ComposerGraph; levels: Partial<Record<FaunaComposerTier, FaunaComposerRenderSkin>>;
+type Entry = {source: FaunaComposerSource | null; graph: ComposerGraph; levels: Partial<Record<FaunaComposerTier, FaunaComposerStoredSkin>>;
   batches: Partial<Record<FaunaComposerTier, FaunaComposerInstanceBatch>>; writer: FaunaComposerPaletteWriter;
   definition: string; graphIdentity: string; skinIdentity: string; graphBytes: number; used: number; cpuBytes: number};
 type Actor = {key: string; row: number; poseKey?: string; tier?: FaunaComposerTier; pose: ComposerPose | null; poseBytes: number};
@@ -77,7 +78,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private readonly now: () => number;
   private stats = {builds: 0, failures: 0, evictions: 0, stale: 0, budgetDrops: 0, pending: 0, poseFailures: 0,
     buildMs: 0, adoptionMs: 0, adoptionOverruns: 0, preparationMs: 0, geometryCopyMs: 0, copySliceMaxMs: 0, verificationOnMain: 0, completedOutOfView: 0,
-    stagedEvictions: 0, blockedAdmissions: 0, active: 0, draws: 0, triangles: 0, poseBuilds: 0, uploadBytes: 0};
+    stagedEvictions: 0, blockedAdmissions: 0, upgradesPending: 0, active: 0, draws: 0, triangles: 0, poseBuilds: 0, uploadBytes: 0};
   private lastError: string | null = null;
 
   constructor(options: FaunaComposerRendererOptions<D, C>) {
@@ -148,9 +149,11 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     for (const [id, actor] of this.actors) if (this.desired.has(id) && this.desired.get(id)!.sourceKey !== actor.key) {this.releaseMerged(id); this.actors.delete(id);}
     const rows = new Set([...this.actors.values()].map(a => a.row));
     this.stats.geometryCopyMs = 0;
-    const copy = (pool: FaunaComposerMergedBatch, id: string, skin: FaunaComposerRenderSkin, row: number, roughness: number) => {
+    const copy = (pool: FaunaComposerMergedBatch, id: string, skin: FaunaComposerStoredSkin, row: number, roughness: number) => {
       const start = this.now(), deadline = start + Math.max(0, (this.options.adoptionBudgetMs ?? 3) - this.stats.adoptionMs - this.stats.geometryCopyMs);
-      const status = pool.registerSlice(id, skin, row, roughness, deadline, this.now);
+      let status: 'ready'|'pending'|'full';
+      try {status = pool.registerSlice(id, skin, row, roughness, deadline, this.now);}
+      catch(error) {pool.release(id);this.lastError=String(error);this.stats.failures++;status='full';}
       const elapsed = this.now() - start; this.stats.geometryCopyMs += elapsed; this.stats.copySliceMaxMs = Math.max(this.stats.copySliceMaxMs, elapsed); return status;
     };
     let dirty = false; this.stats.active = 0; this.stats.draws = 0; this.stats.triangles = 0; this.stats.uploadBytes = 0;
@@ -212,6 +215,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     for (const entry of this.entries.values()) for (const batch of Object.values(entry.batches)) {batch.endFrame(); if (batch.mesh.count) this.stats.draws++;}
     for (const batch of this.merged.values()) {batch.endFrame(); this.stats.draws += batch.diagnostics().draws;}
     if (dirty) {this.paletteUniform.value.needsUpdate = true; this.stats.uploadBytes = this.paletteData.byteLength;}
+    this.stats.upgradesPending=0;for(const c of this.desired.values())if(this.actors.get(c.id)?.tier!==this.candidateTier(c,this.actors.get(c.id)?.tier))this.stats.upgradesPending++;
     this.trimFarOnly(); this.startNext(); return this.drawn;
   }
   private tier(distance: number, previous?: FaunaComposerTier): FaunaComposerTier {
@@ -245,6 +249,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private batch(entry: Entry, tier: FaunaComposerTier, protectedKeys: ReadonlySet<string>, instances: number): FaunaComposerInstanceBatch | null {
     const existing = entry.batches[tier]; if (existing && existing.capacity >= instances) return existing;
     const skin = entry.levels[tier]!;
+    if (isPackedComposerSkin(skin)) return null; // Packed storage is an explicit arena representation only.
     // sourceVertex is not uploaded. This upper bound also counts it and safely over-reserves admission.
     const bytes = (existing ? 0 : composerTypedBytes(skin)) + instances * 68 * 2 - (existing?.instanceBytes ?? 0) * 2;
     if (!this.room(bytes, protectedKeys, false)) return null;

@@ -86,7 +86,7 @@ stringification or same-source candidate filtering occurs.
 The synthetic 289-definition target1000 probe admitted 170 under 64 MiB with a
 174k-vertex/867k-index arena: 48,810,688B arena CPU+GPU, 3,145,728B palette CPU+GPU,
 13,869,840B source/identity/graph, plus poses/writers. The 119 remaining definitions
-were explicitly pending. Actual far vertices ranged 534–665, so 128k vertices
+were explicitly pending. Actual far vertices ranged 534â€“665, so 128k vertices
 cannot cover 289 far animals. This demonstrates a budget gap, not acceptance of
 1000-triangle visual fidelity or the real planet distribution. Evidence is under
 Assets/_assetctl/planet-composer-cold-20261011/profile289/.
@@ -124,3 +124,61 @@ sampled one-job committed total, but no shared world budget is increased here;
 root integration must approve that allocation and broader hardware coverage.
 Evidence: browser24-jobs1/report.json and browser24-jobs4/report.json in the same
 review directory. Set COMPOSER_WORKER_JOBS to reproduce either cap.
+
+Merged arenas may explicitly opt into `storage: 'packed-1'`; float storage
+remains the default. Packed runtime data has its own
+`composer-arena-packed-1` representation and `composer-quantization-proof-1`.
+It is never supplied to raw-source/GLB export or declared equal to original
+floats. The original worker source and LOD sourceVertex proof remain exact.
+
+| Attribute | Arena representation |
+| --- | --- |
+| Position / coat noise sample | Float32, unchanged |
+| Normal | normalized Int16 |
+| Colour / three coat colour layers | normalized Uint16, fixed linear RGB 0..2 domain decoded in shader |
+| Bone indices / gloss | Uint8 / normalized Uint8 |
+| Bone weights | normalized Uint16; all lit/shadow shaders renormalize the four decoded weights |
+| Actor row | Uint16 |
+| Local triangle indices / original sourceVertex | Uint32, unchanged |
+
+The colour domain deliberately preserves existing values above 1 (a tested
+giraffe coat layer is 1.014506); values are not clipped to display white. Each
+bounded copy slice checks quantization against its raw input, and ownership is
+published only after the complete error proof passes. Packed-to-packed copies
+retain encoded bytes and their original proof. The independent validator checks
+actual decoded arrays against raw source; raw validators cannot accept packed
+integer arrays by pretending they are original floats.
+
+Vertex storage is 73 B versus 120 B (39.17% less). The normalized-size twelve-preset,
+eight-pattern GPU pair measured maximum channel difference 1/255 and mean
+0.0000299043/255, with no channel differing by more than 2. Identical 184,312 animal
+triangles were rendered; animal draws fell from 12 to 1. The test includes eyes,
+horns, trunks, limbless and many-legged layouts, directional shadows, and a raised
+instance. Lit, depth and distance shader paths share the weight decode.
+
+An independent actual Kit source 2 / planet pose 2 CPU probe sampled 24 definitions
+on a sloping ground plane over 12 dated phases: 17,961 deformed stance-sole vertex
+observations, maximum packed foot-height change 0 m, maximum body-vertex change
+6.95 micrometres. Existing maximum stance gap 0.658 mm was unchanged. These are
+source-vertex measurements, not contact-marker substitutes. Evidence:
+Assets/_assetctl/planet-composer-packed-20261011/{paired-normalized,world-feet}.
+
+The far-only 289-definition probe with Kit compact identity keys and target 1000
+admitted all 289 under 64 MiB: 59,954,740 B accounted resident, 32,454,688 B packed
+arena, zero pending/drops/failures, one draw and 288,900 triangles.
+
+The mixed 289-definition probe admitted 6 original near animals, 6 middle animals
+and 277 far animals under 80 MiB: 76,226,186 B resident, 8 draws, 399,770 active
+triangles, zero pending upgrades/drops/failures. Far arena 174k vertices/867k
+indices; middle arena 16k vertices/96k indices; actor/source capacity remains 512,
+full-source cache remains 6. All coarse animals were built first; 12 upgrades then
+used the same definition and original source. The source-plus-LOD jobs total 301.
+The standalone CPU probe retains the old declared worker reserve field; it is
+not a worker-heap measurement or approval of that 16 MiB value. Root integration
+owns the measured 40 MiB worker allowance and the shared 256 MiB total.
+
+These results are not Quest qualification: the triangle totals exceed the broader
+150k Quest scene target. Geometry typed allocations are exact; plain JavaScript
+object overhead (including small quantization-proof records) still needs
+whole-process heap measurement, as described above. Profiles are under
+Assets/_assetctl/planet-composer-packed-20261011/{profile289,mixed289}.
