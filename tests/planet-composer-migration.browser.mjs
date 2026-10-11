@@ -18,6 +18,7 @@ const policy=requirePlanetComposerPins(JSON.parse(await readFile(resolve(process
 const collector=await import(pathToFileURL(resolve(process.env.PLANET_COMPOSER_COLLECTOR)).href);
 for(const name of ['enterOrdinaryHabitat','collect','independentKitSource','replaySeeks','moveObserver','sessionTransition','disposeAndRevisit'])assert.equal(typeof collector[name],'function','missing actual collector method: '+name);
 const fixtures=JSON.parse(await readFile(new URL('./fixtures/planet-composer-migration-scenarios.json',import.meta.url),'utf8'));
+const requestedWorlds=new Set((process.env.PLANET_COMPOSER_WORLD_INDICES??fixtures.worlds.map(x=>x.index).join(',')).split(',').map(Number)),worlds=fixtures.worlds.filter(x=>requestedWorlds.has(x.index));assert(worlds.length>0,'requested preserved world fixture exists');
 const out=resolve(process.env.ATLAS_RESULTS||'C:/LLM/IWSDK/Assets/_assetctl/planet-composer-migration-20261011/independent-runtime');await mkdir(out,{recursive:true});
 const require=createRequire('C:/LLM/IWSDK/universe-atlas/package.json'),{chromium}=require('playwright');
 const report={scope:'functional/source/ground/ownership/owned-resource gates only; no timing or physical headset claim',class:'HARD+CONTRACT',policy,checks:[],worlds:[],errors:[],ok:false};let server,lock,browser,page;
@@ -33,7 +34,7 @@ try{
  server=process.env.ATLAS_URL?{base:process.env.ATLAS_URL}:await startDistPreview({root:process.env.ATLAS_BUILD_ROOT||'.',dist:process.env.ATLAS_DIST||'dist'});
  report.build=await(await fetch(new URL('build-info.json',server.base))).json();assert.equal(report.build.commit,process.env.ATLAS_EXPECT_SHA,'frozen candidate build');assert.equal(report.build.dirty,false);
  lock=await acquireGpuLock({owner:'independent planet Composer migration gates',capture:true,retryMs:10000,timeoutMs:60000});browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});page=await browser.newPage({viewport:{width:1440,height:1000}});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
- for(const scenario of fixtures.worlds){
+ for(const scenario of worlds){
   const arrival=await collector.enterOrdinaryHabitat(page,server.base,scenario,policy);assert(arrival.ordinaryUiUsed===true&&arrival.airborne===true,'no forced query, landing or walking prerequisite');if(arrival.mappingOnly){report.worlds.push({bodyId:scenario.bodyId,arrival});await page.screenshot({path:out+'/mapping-only.png'});report.mappingComplete=true;break;}
   const initial=await collector.collect(page,scenario,policy),control=initial.control;assert(control,'legacy canonical control collected independently');
   const world={bodyId:scenario.bodyId,arrival,initialAudit:await audit(initial,control),snapshots:[initial]};report.worlds.push(world);await page.screenshot({path:out+'/world-'+scenario.index+'-arrival.png'});
