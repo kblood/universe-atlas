@@ -7,7 +7,7 @@ export function requirePlanetComposerPins(policy){
  assert.equal(policy.ownerApproved,true,'coordinator-approved numeric pins required');
  assert(typeof policy.approvedBy==='string'&&policy.approvedBy.trim());
  assert(Array.isArray(policy.approvedLayouts)&&policy.approvedLayouts.length>0);
- for(const field of ['maxActors','maxBonesPerActor','maxFrameTriangles','maxFrameDrawCalls','maxResidentTypedBytes','maxTransientTypedBytes','maxWorkerTypedBytes','maxGpuAllocatedBytes','maxConcurrentWorkers'])assert(Number.isFinite(policy[field])&&policy[field]>0,`missing numeric pin: ${field}`);
+ for(const field of ['maxActors','maxBonesPerActor','maxFrameTriangles','maxFrameDrawCalls','maxResidentTypedBytes','maxTransientTypedBytes','maxWorkerTypedBytes','maxGpuAllocatedBytes','maxConcurrentWorkers','maxFaunaResidentCombinedBytes','maxCoreReservedBytes'])assert(Number.isFinite(policy[field])&&policy[field]>0,`missing numeric pin: ${field}`);
  for(const field of ['maxPenetrationM','maxStanceGapM','maxDecodedPositionErrorM'])assert(Number.isFinite(policy[field])&&policy[field]>=0,`missing error pin: ${field}`);
  assert(Number.isFinite(policy.minGroundReliefM)&&policy.minGroundReliefM>0,'nonflat ground evidence needs an approved relief pin');
  return policy;
@@ -61,5 +61,5 @@ export function auditPlanetComposerFeet(evidence,policy){
 export function auditPlanetComposerBudgets(measured,policy){
  requirePlanetComposerPins(policy);assert.equal(measured.geometryScope,'actual-main-camera-submissions');assert.equal(measured.memoryScope,'owned-typed-and-gpu-allocations-with-transients');
  for(const [value,pin] of [['actors','maxActors'],['frameTriangles','maxFrameTriangles'],['frameDrawCalls','maxFrameDrawCalls'],['residentTypedBytes','maxResidentTypedBytes'],['transientTypedBytes','maxTransientTypedBytes'],['workerTypedBytes','maxWorkerTypedBytes'],['gpuAllocatedBytes','maxGpuAllocatedBytes'],['concurrentWorkers','maxConcurrentWorkers']]){assert(Number.isFinite(measured[value])&&measured[value]>=0,`missing measurement: ${value}`);assert(measured[value]<=policy[pin],`${value}: owner pin exceeded`);}
- return {withinPins:true,scope:'geometry/owned allocation contracts; no frame-time or physical device conclusion'};
+ assert(measured.residentTypedBytes+measured.gpuAllocatedBytes<=policy.maxFaunaResidentCombinedBytes,'combined fauna CPU+GPU resident ceiling');assert(Number.isFinite(measured.coreReservedBytes)&&measured.coreReservedBytes>=0&&measured.coreReservedBytes<=policy.maxCoreReservedBytes,'whole core reserved ceiling');assert.equal(measured.coreBudgetBytes,policy.maxCoreReservedBytes,'whole core budget must not increase');assert(Number.isFinite(measured.cloudAllocatedBytes)&&measured.cloudAllocatedBytes>=0,'separate actual cloud allocation');return {withinPins:true,scope:'geometry/owned allocation contracts; no frame-time or physical device conclusion'};
 }
