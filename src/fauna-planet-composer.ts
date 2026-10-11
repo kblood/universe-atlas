@@ -15,7 +15,7 @@ export function faunaPlanetComposerDefinition(genome:CreatureGenome,member:Fauna
  if(!member.speciesId)throw new Error('Planet Composer requires the original species ID');
  const definition=planetComposerWorldDefinition(genome,{individualId:member.id,speciesId:member.speciesId});
  const identity=planetComposerSourceIdentity(definition,{presentation:'realism-1',codePin:receipt.kit.commit});
- return {definition,key:identity.key};
+ return {definition,key:identity.key,canonical:identity.canonical};
 }
 export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMeshAdopted:(mesh:THREE.Mesh)=>void;renderer?:THREE.WebGLRenderer}):FaunaPlanetComposerRenderer {
  const p=FAUNA_PLANET_COMPOSER_POLICY;

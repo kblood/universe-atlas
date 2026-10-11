@@ -33,7 +33,7 @@ import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBan
 import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, faunaGroundedTransformInto, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
 import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fauna-near-rig.ts';
-import {createFaunaPlanetComposerRenderer,faunaPlanetComposerDefinition,FAUNA_PLANET_COMPOSER_VERSION,type FaunaPlanetComposerRenderer,type FaunaPlanetComposerCandidate} from './fauna-planet-composer.ts';
+import {createFaunaPlanetComposerRenderer,faunaPlanetComposerDefinition,FAUNA_PLANET_COMPOSER_VERSION,FAUNA_PLANET_COMPOSER_POLICY,type FaunaPlanetComposerRenderer,type FaunaPlanetComposerCandidate} from './fauna-planet-composer.ts';
 import type {PlanetComposerDefinition} from '#creature-kit/planet';
 import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M} from './fauna-ground.ts';
 import {floraFineDemand,floraFineCoverage} from './flora-streaming.ts';
@@ -741,7 +741,7 @@ export class PlanetRenderer {
   private readonly faunaUsesComposer:boolean;
   private readonly faunaWebGLRenderer:THREE.WebGLRenderer|undefined;
   private faunaComposer:FaunaPlanetComposerRenderer|null=null;
-  private readonly faunaComposerDefinitions=new Map<string,{genome:CreatureGenome;definition:PlanetComposerDefinition;key:string}>();
+  private readonly faunaComposerDefinitions=new Map<string,{genome:CreatureGenome;definition:PlanetComposerDefinition;key:string;canonical:string}>();
   private readonly faunaComposerPool:FaunaPlanetComposerCandidate[]=[];
   private readonly faunaComposerList:FaunaPlanetComposerCandidate[]=[];
   private faunaBodyPresentation:'legacy-v4'|'sculpted-v1'='legacy-v4';
@@ -2475,7 +2475,14 @@ export class PlanetRenderer {
   private submitComposerFauna(rigTime:number):void {
     const list=this.faunaComposerList,pool=this.faunaComposerPool;list.length=0;
     this.faunaVisibleCount=0;this.faunaBudgetDrops=0;this.faunaDrawnCount=0;this.faunaDrawnList=null;
-    if(!this.faunaVisibleList.length){this.faunaComposer?.update([],this.lifeOrigin);this.faunaRigged=new Set();return;}
+    const inRange=this.faunaVisibleList.filter(item=>item.distance<=FAUNA_PLANET_COMPOSER_POLICY.visibleM);
+    const eligible=inRange.slice(0,FAUNA_FIELD_CAPACITY);this.faunaBudgetDrops=inRange.length-eligible.length;
+    // Only the current bounded submission set owns authoring definitions. The
+    // renderer retains its independently bounded out-of-view source cache;
+    // revisiting an evicted definition reconstructs the same canonical animal.
+    const retainedIds=new Set(eligible.map(item=>item.member.id));
+    for(const id of this.faunaComposerDefinitions.keys())if(!retainedIds.has(id))this.faunaComposerDefinitions.delete(id);
+    if(!eligible.length){pool.length=0;this.faunaComposer?.update([],this.lifeOrigin);this.faunaRigged=new Set();return;}
     if(!this.faunaComposer){
       this.faunaComposer=createFaunaPlanetComposerRenderer({renderer:this.faunaWebGLRenderer,
         onReady:()=>{this.faunaFrameKeyValid=false;},
@@ -2483,19 +2490,20 @@ export class PlanetRenderer {
       this.faunaComposer.setContext(this.body.id+'/'+this.lifeSignature);this.faunaGroup.add(this.faunaComposer.group);
     }
     const radiusM=this.body.radiusM;this.faunaProxyScale.setScalar(1/radiusM);
-    for(const item of this.faunaVisibleList){
+    for(const item of eligible){
       if(list.length>=FAUNA_FIELD_CAPACITY){this.faunaBudgetDrops++;continue;}
       const genome=this.faunaGenomeOf(item.member);
       let defined=this.faunaComposerDefinitions.get(item.member.id);
       if(!defined||defined.genome!==genome){defined={genome,...faunaPlanetComposerDefinition(genome,item.member)};this.faunaComposerDefinitions.set(item.member.id,defined);}
       let c=pool[list.length];
       if(!c)pool.push(c={id:item.member.id,definition:defined.definition,sourceKey:defined.key,matrix:new THREE.Matrix4(),distanceM:item.distance,cameraVisible:item.cameraVisible,rigSeconds:rigTime,member:item.member,activity:item.activity,ground:()=>0,groundRevision:0});
-      c.id=item.member.id;c.definition=defined.definition;c.sourceKey=defined.key;c.member=item.member;c.activity=item.activity;
+      c.id=item.member.id;c.definition=defined.definition;c.canonicalDefinition=defined.canonical;c.sourceKey=defined.key;c.member=item.member;c.activity=item.activity;
       c.distanceM=item.distance;c.cameraVisible=item.cameraVisible;c.shadowVisible=!item.cameraVisible;c.rigSeconds=rigTime;
       c.ground=this.faunaPoseCache.get(this.faunaSurfaces[item.anchor])!.ground;c.groundRevision=this.lifePackBuilds;
       c.poseKey=`${this.faunaTraceNs}:${this.lifePackBuilds}`;
       c.matrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);list.push(c);
     }
+    pool.length=list.length;
     const drawn=this.faunaComposer.update(list,this.lifeOrigin);
     this.faunaRigged=new Set(drawn);this.faunaVisibleCount=drawn.size;
     for(const item of this.faunaVisibleList)if(drawn.has(item.member.id)){
