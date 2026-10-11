@@ -35,3 +35,9 @@ test('correctly discarded late results pass but post-dispose admission or resour
  assert.equal(auditDisposedComposer(receipt).postDisposeAdoptions,0);
  for(const mutate of [x=>x.after.acceptedBuilds++,x=>x.after.entries=1,x=>x.after.mergedBindings=1,x=>x.after.ownedBytes=16,x=>x.after.ownedLiveWorkers=1,x=>x.after.running=true]){const bad=copy(receipt);mutate(bad);assert.throws(()=>auditDisposedComposer(bad));}
 });
+
+test('large real-foot corpus extrema avoid JavaScript argument limits without changing pins',()=>{
+ const sample={id:'large',foot:'sole',stance:true,vertexIndices:Array.from({length:200000},(_,i)=>i),signedGroundDistancesM:Array(200000).fill(.001),groundHeightsM:Array.from({length:200000},(_,i)=>i/100000)};
+ const evidence={kind:'deformed-production-mesh-vertices',samples:[sample,{...sample,stance:false}]};const result=auditPlanetComposerFeet(evidence,pins);assert.equal(result.groundReliefM,1.99999);assert.equal(result.maxStanceGapM,.001);
+ sample.signedGroundDistancesM[199999]=-.006;assert.throws(()=>auditPlanetComposerFeet(evidence,pins),/penetrates/);
+});
