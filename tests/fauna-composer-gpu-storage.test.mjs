@@ -5,9 +5,45 @@ import {composerPreset} from '../src/fauna-composer-recipe.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
 import {FaunaComposerMergedBatch} from '../src/fauna-composer-merged-batch.ts';
 import {FaunaComposerRenderer} from '../src/fauna-composer-renderer.ts';
+import {FaunaComposerGpuBuffers} from '../src/fauna-composer-gpu-buffers.ts';
+import {createFaunaPlanetComposerRenderer,FAUNA_PLANET_COMPOSER_POLICY} from '../src/fauna-planet-composer.ts';
 import {composerRenderSkin,composerTypedBytes} from '../src/fauna-composer-render-source.ts';
 import {isGpuComposerSkin,validatePackedComposerSkin} from '../src/fauna-composer-storage.ts';
 import {composerFakeGl} from './helpers/composer-fake-gl.mjs';
+
+test('GPU storage rejects short, zero and thrown allocations atomically and restores caller bindings',()=>{
+ for(const mode of ['zero','short','throw'])for(const failAt of [1,6,12]){
+  const gl=composerFakeGl({allocate(bytes,n){if(n!==failAt)return bytes;if(mode==='throw')throw new Error('injected allocation failure');return mode==='zero'?0:bytes-1;}});
+  const copy=gl.createBuffer(),defaultElement=gl.createBuffer(),element=gl.createBuffer(),vao={};
+  gl.bindBuffer(gl.COPY_WRITE_BUFFER,copy);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,defaultElement);gl.bindVertexArray(vao);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,element);
+  const geometry=new THREE.BufferGeometry();
+  assert.throws(()=>new FaunaComposerGpuBuffers(gl,geometry,24,36,true),/allocation fail/);
+  assert.equal(gl.inspect().buffers,3,`${mode}/${failAt}: no partial buffer survives`);
+  assert.equal(gl.inspect().bytes,0);assert.equal(gl.getParameter(gl.COPY_WRITE_BUFFER_BINDING),copy);assert.equal(gl.getParameter(gl.VERTEX_ARRAY_BINDING),vao);assert.equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING),element);
+  gl.bindVertexArray(null);assert.equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING),defaultElement);geometry.dispose();
+ }
+});
+
+test('GPU restoration publishes all verified buffers together and releases a failed generation',()=>{
+ let failAt=0;
+ const gl=composerFakeGl({allocate(bytes,n){return n===failAt?0:bytes;}}),geometry=new THREE.BufferGeometry(),gpu=new FaunaComposerGpuBuffers(gl,geometry,24,36,true);
+ const old=[...Object.values(geometry.attributes),geometry.index].map(a=>a.buffer),expected=gpu.gpuBytes;
+ gl.contextLost();gl.contextRestored();failAt=18;
+ assert.throws(()=>gpu.restore(),/storage allocation failed/);assert.equal(gl.inspect().buffers,0);
+ assert.deepEqual([...Object.values(geometry.attributes),geometry.index].map(a=>a.buffer),old,'failed generation cannot replace any attribute handle');
+ failAt=0;gpu.restore();assert.equal(gl.inspect().buffers,12);assert.equal(gl.inspect().bytes,expected);
+ assert.ok([...Object.values(geometry.attributes),geometry.index].every((a,i)=>a.buffer!==old[i]));gpu.dispose();geometry.dispose();assert.equal(gl.inspect().buffers,0);
+});
+
+test('production Composer factory checks all default GPU arena bytes without changing the policy',()=>{
+ const gl=composerFakeGl(),p=FAUNA_PLANET_COMPOSER_POLICY,renderer=createFaunaPlanetComposerRenderer({renderer:{getContext:()=>gl,capabilities:{maxAttributes:16,maxVertexTextures:16,maxTextureSize:16384}},onReady(){},onMeshAdopted(){}});
+ try{
+  const bytes=73*(p.middleVertices+p.farVertices)+4*(p.middleIndices+p.farIndices),d=renderer.diagnostics();
+  assert.equal(gl.inspect().buffers,24);assert.equal(gl.inspect().bytes,bytes);assert.equal(gl.inspect().reads,0);
+  assert.equal(d.mergedTiers.middle.gpuBytes+d.mergedTiers.far.gpuBytes,bytes+2*p.capacity*112);
+  assert.equal(d.maxBytes,80*1024*1024);assert.equal(d.capacity,512);assert.ok(d.ownedBytes<d.maxBytes);
+ }finally{renderer.dispose();}assert.equal(gl.inspect().buffers,0);
+});
 
 test('GPU-owned storage copies actual packed bytes without CPU mirrors or implicit readback; released receipts cannot alias new occupants',()=>{
  const gl=composerFakeGl(),creature=createComposerCreature({...composerPreset('trunked-centipede'),pattern:'bands'},{presentation:'realism-1'}),source=composerRenderSkin(creature.skin),bones={value:new THREE.DataTexture(new Float32Array(160*16*2),640,2)};

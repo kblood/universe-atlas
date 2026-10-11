@@ -43,15 +43,21 @@ export class FaunaComposerGpuBuffers {
     this.cpuBytes=cpu;this.gpuBytes=gpu;
   }
   private allocate(bytes:number,index=false):WebGLBuffer {
-    const gl=this.gl,buffer=gl.createBuffer();if(!buffer)throw new Error('Composer GPU buffer allocation failed');
-    if(index){
-      // WebGL tags an index buffer on its FIRST binding. COPY_WRITE first would
-      // tag it as vertex data and reject the later ELEMENT_ARRAY_BUFFER draw.
-      // Use the default VAO temporarily without changing Three's bound VAO.
-      const vao=gl.getParameter(gl.VERTEX_ARRAY_BINDING);gl.bindVertexArray(null);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,buffer);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,bytes,gl.DYNAMIC_DRAW);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,null);gl.bindVertexArray(vao);
-    }else{gl.bindBuffer(gl.COPY_WRITE_BUFFER,buffer);gl.bufferData(gl.COPY_WRITE_BUFFER,bytes,gl.DYNAMIC_DRAW);gl.bindBuffer(gl.COPY_WRITE_BUFFER,null);}
-    return buffer;
+    const gl=this.gl,target=index?gl.ELEMENT_ARRAY_BUFFER:gl.COPY_WRITE_BUFFER;
+    // Index buffers must FIRST bind as element data. Preserve both Three's VAO
+    // and the default VAO's element binding, including on allocation failure.
+    const vao=index?gl.getParameter(gl.VERTEX_ARRAY_BINDING):null;
+    if(index)gl.bindVertexArray(null);
+    const previous=gl.getParameter(index?gl.ELEMENT_ARRAY_BUFFER_BINDING:gl.COPY_WRITE_BUFFER_BINDING);
+    let buffer:WebGLBuffer|null=null;
+    try {
+      buffer=gl.createBuffer();if(!buffer)throw new Error('Composer GPU buffer allocation failed');
+      gl.bindBuffer(target,buffer);gl.bufferData(target,bytes,gl.DYNAMIC_DRAW);
+      const allocated=gl.getBufferParameter(target,gl.BUFFER_SIZE);
+      if(allocated!==bytes)throw new Error(`Composer GPU buffer storage allocation failed: requested ${bytes}, allocated ${allocated}`);
+      return buffer;
+    }catch(error){if(buffer)gl.deleteBuffer(buffer);throw error;}
+    finally{gl.bindBuffer(target,previous);if(index)gl.bindVertexArray(vao);}
   }
   scratch(name:string):ComposerStoredArray{return this.attributes.get(name)!.scratch;}
   upload(name:string,vertex:number,count:number):void {
@@ -85,8 +91,14 @@ export class FaunaComposerGpuBuffers {
   restore():void {
     // Lost-context WebGL objects are already destroyed. Passing those old
     // generation handles to deleteBuffer in a restored context is invalid.
-    for(const a of this.attributes.values()){a.buffer=this.allocate(a.bytes);a.attribute.setBuffer(a.buffer);a.attribute.needsUpdate=true;}
-    this.indexBuffer=this.allocate(this.indices*4,true);this.indexAttribute.setBuffer(this.indexBuffer);this.indexAttribute.needsUpdate=true;
+    const pending:[Attribute,WebGLBuffer][]=[];let index:WebGLBuffer|null=null;
+    try {
+      for(const a of this.attributes.values())pending.push([a,this.allocate(a.bytes)]);
+      index=this.allocate(this.indices*4,true);
+    }catch(error){for(const [,buffer]of pending)this.gl.deleteBuffer(buffer);if(index)this.gl.deleteBuffer(index);throw error;}
+    // Publish a restored generation only after every buffer has real storage.
+    for(const [a,buffer]of pending){a.buffer=buffer;a.attribute.setBuffer(buffer);a.attribute.needsUpdate=true;}
+    this.indexBuffer=index;this.indexAttribute.setBuffer(index);this.indexAttribute.needsUpdate=true;
   }
   dispose():void {
     if(this.disposed)return;this.disposed=true;
