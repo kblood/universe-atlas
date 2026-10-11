@@ -43,3 +43,5 @@ test('declared production digest ignores key order and detects one changed byte'
  const expected=await composerContentDigest(payload);assert.equal(expected,contentDigest(payload));assert.equal(await browserContentDigest(payload),expected);assert.equal(await browserContentDigest(reordered),expected);
  const changed={...payload,z:Uint8Array.from(payload.z)};changed.z[2]^=1;assert.notEqual(await browserContentDigest(changed),expected);assert.equal(await browserContentDigest(changed),await composerContentDigest(changed));
 });
+
+test('receipt accepts repeated plain references without classifying them as cycles',async()=>{const shared={coefficient:2,view:new Uint8Array([1,2])},payload=[shared,shared];assert.equal(await browserContentDigest(payload),await composerContentDigest(payload));});
