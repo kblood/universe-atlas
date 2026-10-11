@@ -6,6 +6,8 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
 import {execFileSync} from 'node:child_process';
+import {faunaMemberActivityAtWorldNs,faunaRigSecondsAt} from '../src/fauna-runtime.ts';
+import {CATALOGUE_EPOCH_NS,NS} from '../src/world-time.ts';
 assert.equal(process.env.PLANET_COMPOSER_GEOMETRY_START,'1','NOT RUN: frozen merged core/pose and approved geometry pins required');
 assert(process.env.PLANET_COMPOSER_KIT&&process.env.PLANET_COMPOSER_GEOMETRY_POLICY);
 const kit=resolve(process.env.PLANET_COMPOSER_KIT),policy=JSON.parse(await readFile(process.env.PLANET_COMPOSER_GEOMETRY_POLICY,'utf8'));assert.equal(policy.ownerApproved,true);
@@ -15,7 +17,11 @@ const [core,poser]=await Promise.all([import(pathToFileURL(resolve(kit,'src/plan
 const fixtures=JSON.parse(await readFile(new URL('./fixtures/planet-composer-migration-scenarios.json',import.meta.url),'utf8'));
 const out=resolve(process.env.ATLAS_RESULTS||'C:/LLM/IWSDK/Assets/_assetctl/planet-composer-migration-20261011/independent-geometry');await mkdir(out,{recursive:true});
 const member={id:'controlled-reference',anchorOffsetX:1,anchorOffsetZ:-2,orbitRadiusM:6,orbitAngularSpeed:.1,orbitPhase:.37,gaitPeriodS:16},revolutionS=2*Math.PI/.1;
-const activity=(travel,gait='walk',stateS=.7)=>{const angle=member.orbitPhase+travel*2*Math.PI;return {pose:{x:1+Math.cos(angle)*6,z:-2+Math.sin(angle)*6,yaw:angle+Math.PI/2,gait},travel,revolutionS:gait==='walk'?revolutionS:Infinity,stateS};};
+const clock=ns=>({activity:faunaMemberActivityAtWorldNs(member,ns),rigSeconds:faunaRigSecondsAt(ns)});
+// Locate the actual caller's schedule transitions, then sample the exact dates.
+const boundaries=[];let previous=CATALOGUE_EPOCH_NS,previousGait=clock(previous).activity.pose.gait;
+for(let second=1;second<=100&&boundaries.length<3;second++){const now=CATALOGUE_EPOCH_NS+BigInt(second)*NS,gait=clock(now).activity.pose.gait;if(gait!==previousGait){let lo=previous,hi=now;while(hi-lo>1n){const mid=(lo+hi)/2n;if(clock(mid).activity.pose.gait===previousGait)lo=mid;else hi=mid;}boundaries.push({ns:hi,from:previousGait,to:gait});}previous=now;previousGait=gait;}
+const walkStart=boundaries.find(b=>b.to==='walk').ns;
 const terrain={ramp:(x,z)=>.08*x-.06*z,nonlinear:(x,z)=>.07*x+.05*z+.035*Math.sin(x*1.2)*Math.cos(z*.9)};
 function palette(graph,pose){return graph.bones.map((b,i)=>new THREE.Matrix4().compose(new THREE.Vector3().fromArray(pose.positions,i*3),new THREE.Quaternion().fromArray(pose.quaternions,i*4),new THREE.Vector3(1,pose.radialScale[i],pose.radialScale[i]*pose.chordScale[i])).multiply(new THREE.Matrix4().compose(new THREE.Vector3(...b.restPosition),new THREE.Quaternion(...b.restQuaternion),new THREE.Vector3(1,1,1)).invert()));}
 function vertex(skin,v,matrices){const p=new THREE.Vector3().fromArray(skin.positions,v*3),q=new THREE.Vector3(),out=new THREE.Vector3();for(let k=0;k<4;k++){const w=skin.skinWeight[v*4+k];if(w)out.addScaledVector(q.copy(p).applyMatrix4(matrices[skin.skinIndex[v*4+k]]),w);}return out;}
@@ -23,7 +29,7 @@ function vertex(skin,v,matrices){const p=new THREE.Vector3().fromArray(skin.posi
 // does not reuse the solver's contact/ground implementation.
 function world(p,a,ground){const c=Math.cos(a.pose.yaw),s=Math.sin(a.pose.yaw);return [a.pose.x+c*p.x+s*p.z,ground(a.pose.x,a.pose.z)+p.y,a.pose.z+s*p.x-c*p.z];}
 const idsOf=(skin,part)=>[...new Set(skin.index.slice(part.firstTriangle*3,(part.firstTriangle+part.triangles)*3))];
-const report={scope:'four preserved mapped phenotypes; shared Kit actual source vertices on nonlinear terrain and boundaries; not production renderer/device/performance acceptance',kit,actualKitCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:kit,encoding:'utf8'}).trim(),policy,rows:[],violations:[],ok:false};
+const report={scope:'four preserved mapped phenotypes; shared Kit actual source vertices on nonlinear terrain and boundaries; not production renderer/device/performance acceptance',kit,actualKitCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:kit,encoding:'utf8'}).trim(),policy,clockSource:'actual Atlas faunaMemberActivityAtWorldNs and faunaRigSecondsAt',actualBoundaries:boundaries.map(b=>({...b,ns:String(b.ns)})),rows:[],violations:[],ok:false};
 try{
  for(const index of fixtures.initialControlledIndices){
   const row=fixtures.controlledSourceInputs.find(r=>r.index===index),original=structuredClone(row.genome),definition=core.planetComposerDefinition(row.genome,{individualId:row.id}),source=core.buildPlanetComposerSource(definition),actor=core.createPlanetComposerAnimal(definition);
@@ -37,19 +43,19 @@ try{
    for(const [name,ground] of Object.entries(terrain)){
     let observations=0,stance=0,swing=0,minGround=Infinity,maxStanceGap=0,maxDrift=0,maxContactDrift=0,maxBoundaryJump=0,maxBoundaryJointJump=0,maxBoundaryContactJump=0;const anchors=new Map();
     const measure=(a,t)=>{const pose=poser.posePlanetComposer(source.graph,{...member,id:row.id},a,ground,t),matrices=palette(source.graph,pose);return {pose,matrices};};
-    const cycles=measure(activity(.18),1000).pose.planet.cyclesPerRevolution,frames=Math.max(32,Math.ceil(2/(cycles*.0012))+1);
+    const start=clock(walkStart+2n*NS),cycles=measure(start.activity,start.rigSeconds).pose.planet.cyclesPerRevolution,frames=Math.max(32,Math.ceil(2/(cycles*.0012))+1);
     for(let frame=0;frame<frames;frame++){
-     const elapsed=frame*.0012*revolutionS,a=activity(.18+frame*.0012,'walk',2+elapsed),p=measure(a,1000+elapsed);
+     const elapsed=frame*.0012*revolutionS,c=clock(walkStart+2n*NS+BigInt(Math.round(elapsed*1e9))),a=c.activity,p=measure(a,c.rigSeconds);assert.equal(a.pose.gait,'walk');
      for(const foot of feet){const contact=p.pose.contacts.find(c=>c.limb===foot.limb.index);let low=Infinity,lowest;
       for(const v of foot.ids){const w=world(vertex(source.skin,v,p.matrices),a,ground),gap=w[1]-ground(w[0],w[2]);if(gap<low){low=gap;lowest={v,w};}}
       minGround=Math.min(minGround,low);if(contact.stance){stance++;maxStanceGap=Math.max(maxStanceGap,low);const key=foot.part.label,anchor=anchors.get(key);if(!anchor)anchors.set(key,{v:lowest.v,world:lowest.w,contact:[...contact.world],firstFrame:frame});else{const w=world(vertex(source.skin,anchor.v,p.matrices),a,ground);maxDrift=Math.max(maxDrift,Math.hypot(...w.map((x,k)=>x-anchor.world[k])));maxContactDrift=Math.max(maxContactDrift,Math.hypot(...contact.world.map((x,k)=>x-anchor.contact[k])));}}else{swing++;anchors.delete(foot.part.label);}
       observations++;
      }
     }
-    const at=.321,first=measure(activity(at),19000).pose;measure(activity(.8),900000);assert.deepEqual(measure(activity(at),19000).pose,first,'exact A-B-A pose');
+    const seekA=clock(walkStart+5n*NS),seekB=clock(CATALOGUE_EPOCH_NS+900000n*NS),first=measure(seekA.activity,seekA.rigSeconds).pose;measure(seekB.activity,seekB.rigSeconds);const seekAgain=clock(walkStart+5n*NS);assert.deepEqual(measure(seekAgain.activity,seekAgain.rigSeconds).pose,first,'exact A-B-A pose');
     // Same root at each side of the gait boundary isolates representation
     // changes from canonical travel. Measure actual foot vertices, not labels.
-    for(const [left,right] of [[activity(at,'idle',16-1e-9),activity(at+1e-9/revolutionS,'walk',1e-9)],[activity(at-1e-9/revolutionS,'walk',16-1e-9),activity(at,'idle',1e-9)]]){const p=measure(left,1000),q=measure(right,1000+2e-9);for(let i=0;i<source.graph.bones.length;i++){const a=world(new THREE.Vector3().fromArray(p.pose.positions,i*3),left,ground),b=world(new THREE.Vector3().fromArray(q.pose.positions,i*3),right,ground);maxBoundaryJointJump=Math.max(maxBoundaryJointJump,Math.hypot(...b.map((x,k)=>x-a[k])));}for(const c of p.pose.contacts){const d=q.pose.contacts.find(x=>x.limb===c.limb);maxBoundaryContactJump=Math.max(maxBoundaryContactJump,Math.hypot(...d.world.map((x,k)=>x-c.world[k])));}for(const foot of feet)for(const v of foot.ids){const a=world(vertex(source.skin,v,p.matrices),left,ground),b=world(vertex(source.skin,v,q.matrices),right,ground);maxBoundaryJump=Math.max(maxBoundaryJump,Math.hypot(...b.map((x,k)=>x-a[k])));}}
+    for(const boundary of boundaries.slice(0,2)){const ca=clock(boundary.ns-1n),cb=clock(boundary.ns+1n),left=ca.activity,right=cb.activity,p=measure(left,ca.rigSeconds),q=measure(right,cb.rigSeconds);for(let i=0;i<source.graph.bones.length;i++){const a=world(new THREE.Vector3().fromArray(p.pose.positions,i*3),left,ground),b=world(new THREE.Vector3().fromArray(q.pose.positions,i*3),right,ground);maxBoundaryJointJump=Math.max(maxBoundaryJointJump,Math.hypot(...b.map((x,k)=>x-a[k])));}for(const c of p.pose.contacts){const d=q.pose.contacts.find(x=>x.limb===c.limb);maxBoundaryContactJump=Math.max(maxBoundaryContactJump,Math.hypot(...d.world.map((x,k)=>x-c.world[k])));}for(const foot of feet)for(const v of foot.ids){const a=world(vertex(source.skin,v,p.matrices),left,ground),b=world(vertex(source.skin,v,q.matrices),right,ground);maxBoundaryJump=Math.max(maxBoundaryJump,Math.hypot(...b.map((x,k)=>x-a[k])));}}
     assert(stance>0&&swing>0);for(const [gate,value,pin] of [['penetration',-minGround,policy.maxPenetrationM],['stanceGap',maxStanceGap,policy.maxStanceGapM],['fullStanceVertexDrift',maxDrift,policy.maxStanceDriftM],['boundaryVertexJump',maxBoundaryJump,policy.maxBoundaryVertexJumpM],['boundaryJointJump',maxBoundaryJointJump,policy.maxBoundaryVertexJumpM],['boundaryContactJump',maxBoundaryContactJump,policy.maxBoundaryVertexJumpM]])if(value>pin)report.violations.push({id:row.id,terrain:name,gate,value,pin});result.terrain.push({name,observations,stance,swing,minGround,maxStanceGap,maxFullStanceVertexDriftM:maxDrift,maxSolverContactDriftM:maxContactDrift,maxBoundaryJump,maxBoundaryJointJump,maxBoundaryContactJump,frames,cyclesPerRevolution:cycles});
    }
    report.rows.push(result);
