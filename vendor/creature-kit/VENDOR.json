@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.3",
-    "commit": "7a3c0f90044487b3b894ce03acf2412ef33c1eb3",
+    "version": "0.8.4",
+    "commit": "b5ee50f6c6a27cfc98e2b800bdf9a3f55a661636",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -14,7 +14,7 @@
     },
     {
       "path": "scripts/export-creature.mjs",
-      "sha256": "a9ce00ed6c120b5c404ec8adbf736adbd905c2692d9332624b44e28af79f9415"
+      "sha256": "731a86ff835515b89ad9cfc1772c2ab3374aa7b4cd2a52ec5bd45946a9751ff7"
     },
     {
       "path": "src/fauna-coat-fields.ts",
@@ -58,7 +58,11 @@
     },
     {
       "path": "src/fauna-composer-lod.ts",
-      "sha256": "a20c3760a95c0050552deb0b8e17d41f59f4cd2ffa12163a0951c650a12cc22a"
+      "sha256": "0fed91c6226c803bb8ce5083602a1f0659649e1e17c91f5d8e36d72090697dca"
+    },
+    {
+      "path": "src/fauna-composer-lod-volume.ts",
+      "sha256": "18a041bcf0c424b7ad762cf121ff35407e77fc525e97ee7f5431cf60184b4a23"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -130,7 +134,7 @@
     },
     {
       "path": "tests/fauna-composer-export.test.mjs",
-      "sha256": "c7b0342b272c94b1e407ca010bcdf1eb051b80488b21231d356ba9e957d2bae1"
+      "sha256": "c67e8f47c5b5068a0e5c081f12c8ab11c388db594e19270e936c764ea83be7ff"
     },
     {
       "path": "tests/fauna-composer-eye-catalogue-geometry.test.mjs",
@@ -170,15 +174,19 @@
     },
     {
       "path": "tests/fauna-composer-lod.test.mjs",
-      "sha256": "63c427b489348f7891586533e04f80e24405fd3862500245e0edd5fffe2a47e8"
+      "sha256": "4d73120f108830ab9ca8e023f570a1f9315e30b51a0f6b2b0c8d819514d7e6a2"
     },
     {
       "path": "tests/fauna-composer-lod-constraints.test.mjs",
-      "sha256": "30c1b42acb3420f002e94b757cef7c7ae8a5a60b29fabbc743c9cb2574ac89b1"
+      "sha256": "60b8ec790e2a3aaf9a7d2386009566e8ff822fdf0bec79b845e78ce89dc7b536"
     },
     {
       "path": "tests/fauna-composer-lod-anatomy.test.mjs",
-      "sha256": "33062c6ce738b73bf29078f3334cb727ef1d8ec49a02f841806878b060f1c9a4"
+      "sha256": "a5004ab2cceb1e2b44e7556044811774ae2f5b7df2940c8a031d3d094788b4d2"
+    },
+    {
+      "path": "tests/fauna-composer-lod-volume.test.mjs",
+      "sha256": "00c99704e60512968c8daae0fe6b0041815ea6f029c5e5e2d8e21aecd2ac3765"
     },
     {
       "path": "tests/planet-composer-terrain-frame.test.mjs",
@@ -267,6 +275,10 @@
     {
       "path": "tests/helpers/composer-lod-anatomy.mjs",
       "sha256": "7dec9d326708c29b700a5191d84c5454bde807ae6b2bcf489f82f66b499d05b2"
+    },
+    {
+      "path": "tests/helpers/composer-lod-volume.mjs",
+      "sha256": "5167968949f62271a685d7159ad5c9a836874d5863406ed629ea0eb0cfd5bcc2"
     },
     {
       "path": "tests/helpers/planet-composer-terrain-regression.mjs",

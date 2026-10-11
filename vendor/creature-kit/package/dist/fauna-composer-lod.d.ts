@@ -27,9 +27,9 @@
  */
 export declare const COMPOSER_LOD_VERSION = "fauna-composer-lod-1";
 /** Additive opt-in constraints; absent options preserve the original reducer. */
-export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-2";
+export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-3";
 export declare const COMPOSER_FOOT_LOD_VERSION = "fauna-composer-foot-lod-1";
-export declare const COMPOSER_ANATOMY_LOD_VERSION = "fauna-composer-anatomy-lod-1";
+export declare const COMPOSER_ANATOMY_LOD_VERSION = "fauna-composer-anatomy-lod-2";
 /** Default attribute weights (dimensionless; multiplied by the body diagonal) and the largest allowed face turn. */
 export declare const COMPOSER_LOD_DEFAULTS: Readonly<{
     colour: 0.02;
@@ -65,16 +65,26 @@ export interface ComposerLodAnatomyGraph {
         start: {
             h: number;
             w: number;
+            yc?: number;
         };
         end: {
             h: number;
             w: number;
+            yc?: number;
         };
     }[];
     chains: {
         head: number;
         trunk: readonly number[];
+        torso?: readonly number[];
+        neck?: readonly number[];
     };
+    limbs?: readonly {
+        kind: string;
+        pair: number;
+        side: number;
+        bones: readonly number[];
+    }[];
 }
 export interface ComposerLodOptions {
     /** Keep the z = 0 mirror symmetry (default true). */
@@ -84,6 +94,10 @@ export interface ComposerLodOptions {
     protectedVertices?: Uint8Array;
     /** Source-vertex importance>=1; welded positions take the maximum. */
     vertexImportance?: Float32Array;
+    /** Optional source-vertex local diameter in metres for the skin-weight
+     * error term. Without it the historical whole-mesh diagonal is used.
+     * This changes collapse priority only, never source weights or positions. */
+    deformationScale?: Float32Array;
     colour?: number;
     gloss?: number;
     skin?: number;
@@ -101,7 +115,7 @@ export declare function composerFootLodConstraints(source: ComposerLodSource): P
  * This does not retain every trunk vertex or synthesize replacement geometry:
  * an unattainable triangle target remains explicitly unreached. Foot-1 anchors
  * are a strict subset. Historical skin-5 callers continue to omit this option. */
-export declare function composerAnatomyLodConstraints(source: ComposerLodSource, graph: ComposerLodAnatomyGraph): Pick<ComposerLodOptions, 'protectedVertices' | 'vertexImportance'>;
+export declare function composerAnatomyLodConstraints(source: ComposerLodSource, graph: ComposerLodAnatomyGraph): Pick<ComposerLodOptions, 'protectedVertices' | 'vertexImportance' | 'deformationScale'>;
 export interface ComposerLodLevel {
     /** Requested triangle target; null for the unreduced source. */
     target: number | null;
