@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.2",
-    "commit": "7b7b9c42fe3e0fe5b2f5cc4e6023a619d3744201",
+    "version": "0.8.3",
+    "commit": "7a3c0f90044487b3b894ce03acf2412ef33c1eb3",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "b5a32f5a8e8466affdbb999dc43230f8af4698e7abaf901e196e618b1d987a57"
+      "sha256": "e378d1331496616e0a001a0170411c06db5f692e094f311ff31aee81977cc243"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -457,7 +457,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "b5a32f5a8e8466affdbb999dc43230f8af4698e7abaf901e196e618b1d987a57"
+      "sha256": "e378d1331496616e0a001a0170411c06db5f692e094f311ff31aee81977cc243"
     },
     {
       "path": "scripts/export-creature.mjs",

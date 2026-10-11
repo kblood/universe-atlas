@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.2",
-    "commit": "7b7b9c42fe3e0fe5b2f5cc4e6023a619d3744201",
+    "version": "0.8.3",
+    "commit": "7a3c0f90044487b3b894ce03acf2412ef33c1eb3",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -23,7 +23,7 @@
     },
     {
       "path": "apps/creature-lab/planet-skin.html",
-      "sha256": "877fd2e8167a19da0a85de85fc02eb4515b5a0edb6255821af0206a450cc27d8"
+      "sha256": "7fc2e9e58e420fcc4dad36998f495e4eac9889d989f206cbb4f8786b1cddeeba"
     },
     {
       "path": "apps/creature-lab/src/animal-lab-entry.css",
@@ -129,7 +129,7 @@
     },
     {
       "path": "planet-skin.html",
-      "sha256": "0bb3d3c26385a513e98763ef6826054a21d3698682f50f768726ed95f09ca397"
+      "sha256": "05267cca5fb30cd659113c1ea87d108f1365242d2b35c7d7db118575bbbe7b07"
     }
   ]
 }
