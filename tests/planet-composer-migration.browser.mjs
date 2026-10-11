@@ -3,6 +3,7 @@
  * frozen built app. Source/ground/budget collection is intentionally separate
  * from this independent acceptance oracle. */
 import assert from 'node:assert/strict';
+import {compactEvidence} from './helpers/planet-qa-pressure.mjs';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -38,7 +39,7 @@ try{
  assert.equal(typeof collector.startupReference,'function');report.independentReference=await collector.startupReference(page);await writeFile(out+'/report.json',JSON.stringify(report,null,2));
  for(const scenario of worlds){
   const arrival=await collector.enterOrdinaryHabitat(page,server.base,scenario,policy);assert(arrival.ordinaryUiUsed===true&&arrival.airborne===true,'no forced query, landing or walking prerequisite');if(arrival.mappingOnly){report.worlds.push({bodyId:scenario.bodyId,arrival});await page.screenshot({path:out+'/mapping-only.png'});report.mappingComplete=true;break;}
-  const world={bodyId:scenario.bodyId,arrival,snapshots:[]};report.worlds.push(world);await writeFile(out+'/report.json',JSON.stringify(report,null,2));const initial=await collector.collect(page,scenario,policy),control=initial.control;assert(control,'legacy canonical control collected independently');
+  const world={bodyId:scenario.bodyId,arrival,snapshots:[]};report.worlds.push(world);await writeFile(out+'/report.json',JSON.stringify(report,null,2));let initial=await collector.collect(page,scenario,policy),control=initial.control;assert(control,'legacy canonical control collected independently');
   world.snapshots.push(initial);await writeFile(out+'/report.json',JSON.stringify(report,null,2));world.initialAudit=await audit(initial,control);await progress('initial all gates passed',world);await page.screenshot({path:out+'/world-'+scenario.index+'-arrival.png'});
   if(process.env.PLANET_COMPOSER_LIFECYCLE_ONLY!=='1'){
   if(report.worlds.length===1){assert.equal(typeof collector.runningAnimationWindow,'function');world.runningAnimation=await collector.runningAnimationWindow(page);assert(world.runningAnimation.dateAfter!==world.runningAnimation.dateBefore&&world.runningAnimation.actualPoseChanged&&world.runningAnimation.walkingIds.length>0&&world.runningAnimation.swingObservations>0,'actual unpaused clock, poses and walking feet');await progress('unpaused animation passed',world);}
@@ -48,7 +49,12 @@ try{
   const xr=await collector.sessionTransition(page,'xr-simulated',scenario,policy);await writeFile(out+'/world-'+scenario.index+'-xr-snapshot.json',JSON.stringify(xr.snapshot));world.xrAudit=await audit(xr.snapshot,xr.control);assert(xr.sessionObserved===true,'production immersive flag observed; retained Composer resources permitted');assert.equal(xr.snapshot.session,'xr-simulated');world.xrScope='renderer/session simulation only; physical Quest acceptance not done';await progress('simulated XR passed',world);
   const resumed=await collector.sessionTransition(page,'desktop',scenario,policy);await writeFile(out+'/world-'+scenario.index+'-desktop-resume-snapshot.json',JSON.stringify(resumed.snapshot));world.desktopResume=await audit(resumed.snapshot,resumed.control);await progress('desktop resume passed',world);
   }
-  const revisit=await collector.disposeAndRevisit(page,server.base,scenario,policy);assert(revisit.oldWorkerTerminated&&revisit.oldBindingsCleared&&revisit.staleAdoptions===0,'no stale/cancelled source may adopt');world.revisitAudits=[];for(const [index,run]of revisit.revisits.entries()){await writeFile(out+'/world-'+scenario.index+'-revisit-'+index+'-snapshot.json',JSON.stringify(run.snapshot));world.revisitAudits.push(await audit(run.snapshot,run.control));}world.revisitAudit=world.revisitAudits.at(-1);assert(revisit.residencyPlateauWithinPins===true,'measured repeated-visit residency plateau');world.lifecycle=revisit;
+  const initialArtifact=out+'/world-'+scenario.index+'-initial-snapshot.json';await writeFile(initialArtifact,JSON.stringify(initial));world.snapshots=[compactEvidence(initial,initialArtifact)];initial=null;control=null;world.revisitAudits=[];world.qaPressure=[];
+  const revisit=await collector.disposeAndRevisit(page,server.base,scenario,policy,{
+   persistCompleted:async()=>{await writeFile(out+'/report.json',JSON.stringify(report,null,2));},
+   recordPressure:async(receipt,index)=>{world.qaPressure.push({index,...receipt});await writeFile(out+'/qa-pressure.json',JSON.stringify(world.qaPressure,null,2));},
+   acceptSnapshot:async(run,index)=>{const artifact=out+'/world-'+scenario.index+'-revisit-'+index+'-snapshot.json';await writeFile(artifact,JSON.stringify(run.snapshot));const result=await audit(run.snapshot,run.control);world.revisitAudits.push(result);await writeFile(out+'/world-'+scenario.index+'-revisit-'+index+'-audit.json',JSON.stringify(result,null,2));await progress('revisit '+index+' all gates passed',world);return {snapshot:compactEvidence(run.snapshot,artifact),audit:result};}
+  });assert(revisit.oldWorkerTerminated&&revisit.oldBindingsCleared&&revisit.staleAdoptions===0,'no stale/cancelled source may adopt');world.revisitAudit=world.revisitAudits.at(-1);assert(revisit.residencyPlateauWithinPins===true,'measured repeated-visit residency plateau');world.lifecycle=revisit;
   await writeFile(out+'/report.json',JSON.stringify(report,null,2));
  }
  assert.deepEqual(report.errors,[]);assert.deepEqual(await(await fetch(new URL('build-info.json',server.base))).json(),report.build);if(report.mappingComplete){report.scope='ordinary route and 20s backlog hook mapping only; NOT migration acceptance';report.ok=false;}else{report.ok=true;if(process.env.PLANET_COMPOSER_LIFECYCLE_ONLY==='1')report.scope='bounded ordinary navigation/disposal/revisit plus actual-source/resource gates; NOT full migration acceptance';}

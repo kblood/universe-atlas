@@ -73,3 +73,19 @@ test('ordinary navigation waits for selected body and finished asynchronous tran
  const prior=globalThis.window;globalThis.window={__atlas:{ready:true,state:{level:'body',body:{id:'other'}},transition:{active:true,retainedViews:0}}};
  try{const page={waitForFunction:async(fn,arg)=>{assert.equal(fn(arg),false);window.__atlas.transition.active=false;assert.equal(fn(arg),true);window.__atlas.state.body.id='late-old';assert.equal(fn(arg),false);}};await waitOrdinaryNavigation(page,'body','other');}finally{globalThis.window=prior;}
 });
+
+import {isolatedQaCycle,compactEvidence} from './helpers/planet-qa-pressure.mjs';
+test('completed audit persists before pressure release/readiness and all source proofs rebuild',async()=>{
+ const events=[],cache=new Map([['old','unchecked old proof']]);let builds=0;
+ const cycle=await isolatedQaCycle({persist:async()=>events.push('persist complete audit'),measure:async phase=>{events.push(phase);return {size:cache.size};},release:async()=>{events.push('release source/reference');cache.clear();},operate:async()=>{events.push('actual readiness');assert.equal(cache.size,0);events.push('reopen pinned reference');const proof=++builds;cache.set('fresh',proof);events.push('rebuild strict source/VBO/pixel/control/feet/resource proofs');return proof;}});
+ assert.equal(cycle.result,1);assert.equal(cycle.pressure.before.size,1);assert.equal(cycle.pressure.after.size,0);assert.deepEqual(events,['persist complete audit','before QA reference release','release source/reference','after QA reference release, before actual readiness','actual readiness','reopen pinned reference','rebuild strict source/VBO/pixel/control/feet/resource proofs']);
+ let released=false;await assert.rejects(()=>isolatedQaCycle({persist:async()=>{throw Error('save failed');},measure:async()=>{},release:async()=>{released=true;},operate:async()=>{throw Error('must not start');}}),/save failed/);assert.equal(released,false);
+});
+test('compact persisted receipt retains identity/budgets without large proof arrays',()=>{
+ const snapshot={canonical:{bodyId:'body',worldNs:'123',members:[{genome:new Float32Array(1000)}]},measured:{residentTypedBytes:10,gpuAllocatedBytes:20},wrapperCounts:{size:1},sources:[{id:'id',versions:{skin:'6'},sourceBufferDigests:{skin:'sha'}}],referenceCache:{fullSources:1},feet:{samples:Array(10000).fill({vertices:[0,1,2]})},ownership:[{id:'id'}]};const receipt=compactEvidence(snapshot,'saved.json');assert.equal(receipt.artifact,'saved.json');assert.equal(receipt.footSamples,10000);assert.equal(receipt.measured.residentTypedBytes,10);assert(!('feet'in receipt)&&!('canonical'in receipt));assert.notEqual(receipt.measured,snapshot.measured);assert.deepEqual(receipt.sourceReceipts[0].sourceBufferDigests,{skin:'sha'});
+});
+
+test('isolation negative control rejects readiness carrying an unchecked previous proof',async()=>{
+ const cache=new Map([['unchecked',true]]);let reopened=false;
+ await assert.rejects(()=>isolatedQaCycle({persist:async()=>{},measure:async()=>({}),release:async()=>{},operate:async()=>{assert.equal(cache.size,0,'old source proofs must be cleared');reopened=true;}}),/old source proofs/);assert.equal(reopened,false);
+});
