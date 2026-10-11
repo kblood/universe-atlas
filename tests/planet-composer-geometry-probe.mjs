@@ -5,6 +5,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
+import {execFileSync} from 'node:child_process';
 assert.equal(process.env.PLANET_COMPOSER_GEOMETRY_START,'1','NOT RUN: frozen merged core/pose and approved geometry pins required');
 assert(process.env.PLANET_COMPOSER_KIT&&process.env.PLANET_COMPOSER_GEOMETRY_POLICY);
 const kit=resolve(process.env.PLANET_COMPOSER_KIT),policy=JSON.parse(await readFile(process.env.PLANET_COMPOSER_GEOMETRY_POLICY,'utf8'));assert.equal(policy.ownerApproved,true);
@@ -22,7 +23,7 @@ function vertex(skin,v,matrices){const p=new THREE.Vector3().fromArray(skin.posi
 // does not reuse the solver's contact/ground implementation.
 function world(p,a,ground){const c=Math.cos(a.pose.yaw),s=Math.sin(a.pose.yaw);return [a.pose.x+c*p.x+s*p.z,ground(a.pose.x,a.pose.z)+p.y,a.pose.z+s*p.x-c*p.z];}
 const idsOf=(skin,part)=>[...new Set(skin.index.slice(part.firstTriangle*3,(part.firstTriangle+part.triangles)*3))];
-const report={scope:'four preserved mapped phenotypes; shared Kit actual source vertices on nonlinear terrain and boundaries; not production renderer/device/performance acceptance',kit,policy,rows:[],violations:[],ok:false};
+const report={scope:'four preserved mapped phenotypes; shared Kit actual source vertices on nonlinear terrain and boundaries; not production renderer/device/performance acceptance',kit,actualKitCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:kit,encoding:'utf8'}).trim(),policy,rows:[],violations:[],ok:false};
 try{
  for(const index of fixtures.initialControlledIndices){
   const row=fixtures.controlledSourceInputs.find(r=>r.index===index),original=structuredClone(row.genome),definition=core.planetComposerDefinition(row.genome,{individualId:row.id}),source=core.buildPlanetComposerSource(definition),actor=core.createPlanetComposerAnimal(definition);
