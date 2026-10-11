@@ -43,6 +43,26 @@ test('bounded near promotions preserve cold coverage and borrow the verified ori
   } finally {r.dispose();}
 });
 
+test('bounded middle refinement preserves all canonical members and settles without impossible upgrades', async () => {
+  const calls = [], provider = {async build(job) {calls.push(job); return result(job);}};
+  const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 8, middleSourceCache: 2});
+  try {
+    const candidates = Array.from({length: 8}, (_, i) => candidate(String(i), 60 + i));
+    await pump(r, candidates, 24);
+    assert.equal(r.diagnostics().active, 8);
+    assert.equal(r.diagnostics().upgradesPending, 0);
+    assert.deepEqual(calls.filter(j => j.tiers[0] === 'middle').map(j => j.key), ['0','1']);
+    assert.equal(r.diagnostics().actors.filter(a => a.tier === 'middle').length, 2);
+    assert.equal(r.diagnostics().actors.filter(a => a.tier === 'far').length, 6);
+    assert.equal(r.diagnostics().farTierBudgetFallbacks, 6);
+    await pump(r, candidates.slice().reverse(), 8);
+    assert.equal(r.diagnostics().active, 8);
+    assert.deepEqual(r.diagnostics().actors.filter(a => a.tier === 'middle').map(a => a.id).sort(), ['6','7']);
+    assert.equal(r.diagnostics().upgradesPending, 0);
+    r.setContext('other'); assert.equal(r.diagnostics().middleSourcesEligible, 0);
+  } finally {r.dispose();}
+});
+
 test('completed offscreen result remains cached and a blocked admission never rebuilds each retry interval', async () => {
   let resolve; const calls = [], provider = {build(job) {calls.push(job); return new Promise(r => {resolve = () => r(result(job));});}};
   const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 2, maxSources: 1});

@@ -28,6 +28,9 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
   capacity?: number; maxSources?: number; maxBones?: number; maxBytes?: number; maxResultBytes?: number;
   workerReserveBytes?: number; maxDistanceM?: number; nearM?: number; middleM?: number;
   fullSourceCache?: number; adoptionBudgetMs?: number; now?: () => number; onReady?: () => void;
+  /** Bounded unique middle sources, prioritized by the caller's stable order.
+   * Other members retain their source-derived far tier, with no unfulfillable upgrade. */
+  middleSourceCache?: number;
   /** Interleave one retained-original near upgrade after this many cold jobs.
    * Omitted preserves strict coarse-first scheduling for component consumers. */
   coldJobsBeforeNearUpgrade?: number;
@@ -65,6 +68,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private readonly ready = new Map<string, Prepared>();
   private readonly blocked = new Map<string, {bytes: number; extra: boolean; revision: number}>();
   private readonly fullSourceKeys = new Set<string>();
+  private readonly middleSourceKeys = new Set<string>();
   private readonly merged = new Map<'middle'|'far', FaunaComposerMergedBatch>();
   private readonly mergedBindings = new Map<string, {tier: 'middle'|'far'; key: string}>();
   private readonly levelOwners = new Map<string, string>();
@@ -91,6 +95,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     this.maxResultBytes = options.maxResultBytes ?? 8 * 1024 * 1024; this.workerReserveBytes = options.workerReserveBytes ?? 16 * 1024 * 1024;
     this.now = options.now ?? (() => performance.now());
     if (options.coldJobsBeforeNearUpgrade !== undefined && !positive(options.coldJobsBeforeNearUpgrade)) throw new Error('Invalid Composer cold job interval');
+    if (options.middleSourceCache !== undefined && (!Number.isSafeInteger(options.middleSourceCache) || options.middleSourceCache < 0 || options.middleSourceCache > this.maxSources)) throw new Error('Invalid Composer middle source limit');
     if (![this.capacity, this.maxBones, this.maxSources, this.maxBytes, this.maxResultBytes, this.workerReserveBytes].every(positive) ||
         this.capacity > 512 || this.maxBones > COMPOSER_BUDGET.maxBones || this.maxSources > 512 ||
         (options.nearM ?? 35) <= 0 || (options.middleM ?? 140) <= (options.nearM ?? 35) ||
@@ -130,6 +135,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   setContext(context: string): void {
     if (context === this.context) return; this.context = context; this.epoch++;
     this.coldJobs = 0;
+    this.fullSourceKeys.clear(); this.middleSourceKeys.clear();
     this.running?.abort.abort(); this.ready.clear(); this.blocked.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.actors.clear(); this.failed.clear(); this.revision++;
     for (const id of this.mergedBindings.keys()) this.releaseMerged(id);
     for (const key of this.entries.keys()) this.evict(key);
@@ -149,6 +155,12 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     if (keys.size !== priorKeys.size || [...keys].some(key => !priorKeys.has(key))) this.revision++;
     this.fullSourceKeys.clear();
     for (const c of this.desired.values()) if (c.distanceM < (this.options.nearM ?? 35) * 1.1 && this.fullSourceKeys.size < (this.options.fullSourceCache ?? 6)) this.fullSourceKeys.add(c.sourceKey);
+    this.middleSourceKeys.clear();
+    for (const c of this.desired.values()) {
+      const tier = this.tier(c.distanceM, this.actors.get(c.id)?.tier);
+      if (tier === 'far' || tier === 'near' && this.fullSourceKeys.has(c.sourceKey)) continue;
+      if (this.middleSourceKeys.size < (this.options.middleSourceCache ?? this.maxSources)) this.middleSourceKeys.add(c.sourceKey);
+    }
     this.trimFullSources(); this.adoptPending(keys);
     for (const entry of this.entries.values()) for (const batch of Object.values(entry.batches)) batch.beginFrame();
     for (const batch of this.merged.values()) batch.beginFrame();
@@ -232,7 +244,9 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     return distance < near ? 'near' : distance < middle ? 'middle' : 'far';
   }
   private candidateTier(c: C, previous?: FaunaComposerTier): FaunaComposerTier {
-    const tier = this.tier(c.distanceM, previous); return tier === 'near' && !this.fullSourceKeys.has(c.sourceKey) ? 'middle' : tier;
+    const tier = this.tier(c.distanceM, previous);
+    if (tier === 'near' && this.fullSourceKeys.has(c.sourceKey)) return 'near';
+    return tier !== 'far' && this.middleSourceKeys.has(c.sourceKey) ? 'middle' : 'far';
   }
   private entryBytes(entry: Entry): number {
     let bytes = entry.cpuBytes + entry.writer.ownedBytes;
@@ -427,6 +441,8 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   }
   poseOf(id: string): ComposerPose | null {return this.actors.get(id)?.pose ?? null;}
   diagnostics() {return {version: FAUNA_COMPOSER_RENDER_VERSION, ...this.stats, capacity: this.capacity, sources: this.entries.size,
+    middleSourceLimit: this.options.middleSourceCache ?? this.maxSources, middleSourcesEligible: this.middleSourceKeys.size,
+    farTierBudgetFallbacks: [...this.desired.values()].filter(c => this.tier(c.distanceM, this.actors.get(c.id)?.tier) !== 'far' && this.candidateTier(c, this.actors.get(c.id)?.tier) === 'far').length,
     actors: [...this.drawn].map(id => {const actor = this.actors.get(id)!, entry = this.entries.get(actor.key)!; return {id, key: actor.key, tier: actor.tier, bones: entry.graph.bones.length, skin: entry.levels[actor.tier!]!.version};}),
     ownedBytes: this.ownedBytes, maxBytes: this.maxBytes, reservedBytes: this.reservedBytes, workerReserveBytes: this.workerReserveBytes,
     paletteBones: this.paletteBones, paletteCpuBytes: this.paletteData.byteLength, paletteGpuBytes: this.paletteData.byteLength,
@@ -444,5 +460,6 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     for (const batch of this.merged.values()) batch.dispose(); this.merged.clear(); this.mergedBindings.clear(); this.levelOwners.clear(); this.arenaBuffers.clear();
     this.paletteData = new Float32Array(0); this.scratch = new Float32Array(0); this.paletteUniform.value.image.data = this.paletteData;
     this.actors.clear(); this.desired.clear(); this.members.clear(); this.drawn.clear(); this.failed.clear(); this.group.removeFromParent();
+    this.fullSourceKeys.clear(); this.middleSourceKeys.clear();
   }
 }
