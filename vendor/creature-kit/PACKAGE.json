@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.7.0",
-    "commit": "17b9975069be1f3fe0930cc486497df1e280b0ee",
+    "version": "0.8.0",
+    "commit": "1ca52515d1f2266e3913bc4a6a691a789f803530",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -23,7 +23,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "4081a456451759a4ffc0e67cd4cb4651feb82b163a4f6d9558db4b5ec375a12d"
+      "sha256": "bd175ab667db4dab29ef561066f6e74226487f01ae993809f56f8477954af324"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "30a0030f00cab4b38738d7f6e187c865677d1e6f0d4b43cbfec4f3376f38d32c"
+      "sha256": "5f5281e01c91d58f2de7f65775bea918f3b0820149b070f54a860a896ceaae74"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/fauna-composer-export.ts",
-      "sha256": "8e11d631f54c7eb56e8f3194411bae163d8e8cdff9e255090cb8b8fd8fde8c27"
+      "sha256": "12eff8ee5da69925d8858057c98c1083dc52fb1693676a8faef819ffbe36931c"
     },
     {
       "path": "src/fauna-composer-eye-catalogue.ts",
@@ -79,7 +79,7 @@
     },
     {
       "path": "src/fauna-composer-lod.ts",
-      "sha256": "cf4d377aba296b012bdc7d81e24a11916a1d989da982cf10815e658b277ff5bf"
+      "sha256": "a20c3760a95c0050552deb0b8e17d41f59f4cd2ffa12163a0951c650a12cc22a"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -111,7 +111,7 @@
     },
     {
       "path": "src/planet-composer-identity.ts",
-      "sha256": "0870ba2fda121ae9a7910bdab7247bc5c497cdf21907eb5c0b1736df7c70c877"
+      "sha256": "7ebebde3acab4b1ddba1f20a66f65363ba5c136e98ac2a08b5cc11ebdee18662"
     },
     {
       "path": "src/planet-composer-measure.ts",
@@ -185,7 +185,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "4081a456451759a4ffc0e67cd4cb4651feb82b163a4f6d9558db4b5ec375a12d"
+      "sha256": "bd175ab667db4dab29ef561066f6e74226487f01ae993809f56f8477954af324"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -229,7 +229,7 @@
     },
     {
       "path": "dist/fauna-composer-export.js",
-      "sha256": "ed354d7152a089e996ad0b1895b921ad4b34dcd6eb61da3f0b99e1accef79011"
+      "sha256": "630699907d472b2db781e3d701116e2178bdd8680ab3171dc852b53a159fb45b"
     },
     {
       "path": "dist/fauna-composer-eye-catalogue.d.ts",
@@ -273,11 +273,11 @@
     },
     {
       "path": "dist/fauna-composer-lod.d.ts",
-      "sha256": "e64566dc2e30eedfd8fa23de1e97a3383f61aaf4adb8281a218851088e89d4f9"
+      "sha256": "73105d7acd17842f7e87d8de9484a94a1dfb5e642a31489bbdc204078f0e6ff5"
     },
     {
       "path": "dist/fauna-composer-lod.js",
-      "sha256": "f5c9a35ca9f6b87a0cf62a95adfc1914ba8281e4c0a4185a4cda1f6379249962"
+      "sha256": "d6e3e1c750d5c866d2e697c1307ce18f8b455f56ec360b8a0b68eb3ba740c8b7"
     },
     {
       "path": "dist/fauna-composer-mesh.d.ts",
@@ -337,11 +337,11 @@
     },
     {
       "path": "dist/planet-composer-identity.d.ts",
-      "sha256": "d4adf173465de640395da8c574a4e5fe8b94b64c359c4d00a94e51298e0ee46d"
+      "sha256": "c01177568a964e7374820b06d0949fee0ba03fc38e5ff48c09b72bb6b008e5b7"
     },
     {
       "path": "dist/planet-composer-identity.js",
-      "sha256": "99f0e3e842a634ba02e1fcf39758f138fc8b7ab3ce8fa906b89cded639b026d3"
+      "sha256": "0901499edc8cd60fe1e77cdc1f5d2e3984f7366afc67b7a887e57bf35e29fb5a"
     },
     {
       "path": "dist/planet-composer-measure.d.ts",
@@ -457,7 +457,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "30a0030f00cab4b38738d7f6e187c865677d1e6f0d4b43cbfec4f3376f38d32c"
+      "sha256": "5f5281e01c91d58f2de7f65775bea918f3b0820149b070f54a860a896ceaae74"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -481,7 +481,7 @@
     },
     {
       "path": "src/fauna-composer-export.ts",
-      "sha256": "8e11d631f54c7eb56e8f3194411bae163d8e8cdff9e255090cb8b8fd8fde8c27"
+      "sha256": "12eff8ee5da69925d8858057c98c1083dc52fb1693676a8faef819ffbe36931c"
     },
     {
       "path": "src/fauna-composer-eye-catalogue.ts",
@@ -505,7 +505,7 @@
     },
     {
       "path": "src/fauna-composer-lod.ts",
-      "sha256": "cf4d377aba296b012bdc7d81e24a11916a1d989da982cf10815e658b277ff5bf"
+      "sha256": "a20c3760a95c0050552deb0b8e17d41f59f4cd2ffa12163a0951c650a12cc22a"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -537,7 +537,7 @@
     },
     {
       "path": "src/planet-composer-identity.ts",
-      "sha256": "0870ba2fda121ae9a7910bdab7247bc5c497cdf21907eb5c0b1736df7c70c877"
+      "sha256": "7ebebde3acab4b1ddba1f20a66f65363ba5c136e98ac2a08b5cc11ebdee18662"
     },
     {
       "path": "src/planet-composer-measure.ts",

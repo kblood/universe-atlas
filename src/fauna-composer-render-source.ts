@@ -1,6 +1,6 @@
 import type {ComposerGraph} from './fauna-composer-rig.ts';
 import type {ComposerSkin, ComposerCoatLayers} from './fauna-composer-mesh.ts';
-import {buildComposerLodChain, composerFootLodConstraints, type ComposerLodLevel} from './fauna-composer-lod.ts';
+import {buildComposerLodChain, composerAnatomyLodConstraints, COMPOSER_ANATOMY_LOD_VERSION, COMPOSER_LOD_CONSTRAINTS_VERSION, type ComposerLodLevel} from './fauna-composer-lod.ts';
 import {canonicalComposerJson, type FaunaComposerBuildReceipt} from './fauna-composer-build-receipt.ts';
 
 export const FAUNA_COMPOSER_RENDER_VERSION = 'fauna-composer-render-1';
@@ -31,7 +31,7 @@ export interface FaunaComposerSourceProvider<D> {
 }
 /** Full definition includes phenotype, IDs and provenance, not merely recipe text. */
 export function faunaComposerSourceKey(definition: unknown, sourceVersion: string, presentation = 'realism-1'): string {
-  return canonicalComposerJson([FAUNA_COMPOSER_RENDER_VERSION, sourceVersion, 'fauna-composer-graph-4', 'fauna-composer-skin-6', 'fauna-composer-lod-1', 'fauna-composer-foot-lod-1', presentation, definition]);
+  return canonicalComposerJson([FAUNA_COMPOSER_RENDER_VERSION, sourceVersion, 'fauna-composer-graph-4', 'fauna-composer-skin-6', 'fauna-composer-lod-1', COMPOSER_LOD_CONSTRAINTS_VERSION, COMPOSER_ANATOMY_LOD_VERSION, presentation, definition]);
 }
 export function composerRenderSkin(skin: ComposerSkin): FaunaComposerRenderSkin {
   return {version: skin.version, positions: skin.positions, normals: skin.normals, colors: skin.colors,
@@ -54,7 +54,7 @@ export function composerRenderLod(skin: ComposerSkin, level: ComposerLodLevel): 
 }
 /** Run off the render thread. Reduction may stop above target to preserve anatomy. */
 export function buildFaunaComposerLevels(source: FaunaComposerSource, targets: readonly [number, number] = [4500, 1500]): Record<FaunaComposerTier, FaunaComposerRenderSkin> {
-  const chain = buildComposerLodChain(source.skin, targets, composerFootLodConstraints(source.skin));
+  const chain = buildComposerLodChain(source.skin, targets, composerAnatomyLodConstraints(source.skin, source.graph));
   return {near: composerRenderSkin(source.skin), middle: composerRenderLod(source.skin, chain.levels[0]!), far: composerRenderLod(source.skin, chain.levels[1]!)};
 }
 /** A first coarse job need not allocate/copy an unused middle snapshot. The
@@ -64,7 +64,7 @@ export function buildFaunaComposerRequestedLevels(source: FaunaComposerSource, t
   if (tiers.includes('near')) levels.near = composerRenderSkin(source.skin);
   const reduced = (['middle', 'far'] as const).filter(tier => tiers.includes(tier));
   if (reduced.length) {
-    const chain = buildComposerLodChain(source.skin, reduced.map(tier => targets[tier === 'middle' ? 0 : 1]), composerFootLodConstraints(source.skin));
+    const chain = buildComposerLodChain(source.skin, reduced.map(tier => targets[tier === 'middle' ? 0 : 1]), composerAnatomyLodConstraints(source.skin, source.graph));
     reduced.forEach((tier, i) => {levels[tier] = composerRenderLod(source.skin, chain.levels[i]!);});
   }
   return levels;

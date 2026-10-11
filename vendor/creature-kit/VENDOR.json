@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.7.0",
-    "commit": "17b9975069be1f3fe0930cc486497df1e280b0ee",
+    "version": "0.8.0",
+    "commit": "1ca52515d1f2266e3913bc4a6a691a789f803530",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -34,7 +34,7 @@
     },
     {
       "path": "src/fauna-composer-export.ts",
-      "sha256": "8e11d631f54c7eb56e8f3194411bae163d8e8cdff9e255090cb8b8fd8fde8c27"
+      "sha256": "12eff8ee5da69925d8858057c98c1083dc52fb1693676a8faef819ffbe36931c"
     },
     {
       "path": "src/fauna-composer-eye-catalogue.ts",
@@ -58,7 +58,7 @@
     },
     {
       "path": "src/fauna-composer-lod.ts",
-      "sha256": "cf4d377aba296b012bdc7d81e24a11916a1d989da982cf10815e658b277ff5bf"
+      "sha256": "a20c3760a95c0050552deb0b8e17d41f59f4cd2ffa12163a0951c650a12cc22a"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -86,7 +86,7 @@
     },
     {
       "path": "src/planet-composer-identity.ts",
-      "sha256": "0870ba2fda121ae9a7910bdab7247bc5c497cdf21907eb5c0b1736df7c70c877"
+      "sha256": "7ebebde3acab4b1ddba1f20a66f65363ba5c136e98ac2a08b5cc11ebdee18662"
     },
     {
       "path": "src/planet-v1/creature-model.ts",
@@ -177,6 +177,10 @@
       "sha256": "30c1b42acb3420f002e94b757cef7c7ae8a5a60b29fabbc743c9cb2574ac89b1"
     },
     {
+      "path": "tests/fauna-composer-lod-anatomy.test.mjs",
+      "sha256": "33062c6ce738b73bf29078f3334cb727ef1d8ec49a02f841806878b060f1c9a4"
+    },
+    {
       "path": "tests/fauna-composer-mesh-stability.test.mjs",
       "sha256": "fcca0213413486ddcb2cf395fed67132fb6a0afb5c8e936d4e4a6883c61d8114"
     },
@@ -251,6 +255,10 @@
     {
       "path": "tests/helpers/composer-head-occlusion.mjs",
       "sha256": "2c87cf41bd90c02059da4c7a9f98da9644b0a33a6d576a0686d3a2c6d90637e8"
+    },
+    {
+      "path": "tests/helpers/composer-lod-anatomy.mjs",
+      "sha256": "7dec9d326708c29b700a5191d84c5454bde807ae6b2bcf489f82f66b499d05b2"
     },
     {
       "path": "tests/helpers/planet-core-corpus.mjs",

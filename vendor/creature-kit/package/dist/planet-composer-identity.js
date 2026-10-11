@@ -1,7 +1,7 @@
 import { PLANET_COMPOSER_SOURCE_VERSION, serializePlanetComposerDefinition } from "./planet-composer.js";
 import { COMPOSER_GRAPH_VERSION } from "./fauna-composer-rig.js";
 import { COMPOSER_SKIN_VERSION, COMPOSER_REALISM_SKIN_VERSION } from "./fauna-composer-mesh.js";
-import { COMPOSER_LOD_VERSION, COMPOSER_LOD_CONSTRAINTS_VERSION, COMPOSER_FOOT_LOD_VERSION } from "./fauna-composer-lod.js";
+import { COMPOSER_LOD_VERSION, COMPOSER_LOD_CONSTRAINTS_VERSION, COMPOSER_FOOT_LOD_VERSION, COMPOSER_ANATOMY_LOD_VERSION } from "./fauna-composer-lod.js";
 export const PLANET_COMPOSER_IDENTITY_VERSION = 'planet-composer-identity-1';
 /** Compact deterministic, non-cryptographic identifier. Equality is always
  * collision-validated with canonical text at cache/worker admission. */
@@ -30,7 +30,7 @@ export function planetComposerSourceIdentity(definition, options = {}) {
     const variant = presentation + '/' + codePin, previous = cache.get(definition)?.get(variant);
     if (previous)
         return previous;
-    const canonical = serializePlanetComposerDefinition(definition), hash = digest(canonical), versions = Object.freeze({ source: PLANET_COMPOSER_SOURCE_VERSION, graph: COMPOSER_GRAPH_VERSION, skin: presentation === 'realism-1' ? COMPOSER_REALISM_SKIN_VERSION : COMPOSER_SKIN_VERSION, lod: COMPOSER_LOD_VERSION, constraints: COMPOSER_LOD_CONSTRAINTS_VERSION, footLod: COMPOSER_FOOT_LOD_VERSION, presentation, codePin });
+    const canonical = serializePlanetComposerDefinition(definition), hash = digest(canonical), versions = Object.freeze({ source: PLANET_COMPOSER_SOURCE_VERSION, graph: COMPOSER_GRAPH_VERSION, skin: presentation === 'realism-1' ? COMPOSER_REALISM_SKIN_VERSION : COMPOSER_SKIN_VERSION, lod: COMPOSER_LOD_VERSION, constraints: COMPOSER_LOD_CONSTRAINTS_VERSION, footLod: COMPOSER_FOOT_LOD_VERSION, anatomyLod: COMPOSER_ANATOMY_LOD_VERSION, presentation, codePin });
     const key = [PLANET_COMPOSER_IDENTITY_VERSION, ...Object.values(versions).map(encodeURIComponent), hash].join('/'), token = Object.freeze({ key, digest: hash, canonical, versions });
     if (deepFrozen(definition)) {
         let variants = cache.get(definition);

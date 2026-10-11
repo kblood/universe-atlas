@@ -16,6 +16,7 @@ export interface PlanetComposerSourceIdentity {
         lod: string;
         constraints: string;
         footLod: string;
+        anatomyLod: string;
         presentation: ComposerSkinPresentation;
         codePin: string;
     }>;

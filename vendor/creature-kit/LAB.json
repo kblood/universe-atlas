@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.7.0",
-    "commit": "17b9975069be1f3fe0930cc486497df1e280b0ee",
+    "version": "0.8.0",
+    "commit": "1ca52515d1f2266e3913bc4a6a691a789f803530",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -84,8 +84,8 @@
   ],
   "files": [
     {
-      "path": "assets/composer-B3kaWSFO.js",
-      "sha256": "624d48cab4fb6a7f46d01577150ff4f33985068eb079ec84bad1b4d57ba1ea28"
+      "path": "assets/composer-C5h6LrlL.js",
+      "sha256": "2c8ea70374227f1712f4f5bbf4acc08f1b68c55fae213b60859271ef84aaa041"
     },
     {
       "path": "assets/composer-D3gF7lKI.css",
@@ -100,8 +100,8 @@
       "sha256": "82a4784c32c9cbbf888b755c698d9eaec07fb1710c0e2bc8e7c3511b56b1de75"
     },
     {
-      "path": "assets/fauna-composer-export-lub1IHPW.js",
-      "sha256": "e6d0831fa94eb13e08d44c8a0b7a5e7cab96a3032c4e8672226e473e29f22ed1"
+      "path": "assets/fauna-composer-export-BuzgrmG2.js",
+      "sha256": "3e577e2d3ca4ee809f90854347651ce04dd8212c43cb0c082667c16598ed778f"
     },
     {
       "path": "assets/index-CYUeVSzr.js",
@@ -121,7 +121,7 @@
     },
     {
       "path": "creature-lab.html",
-      "sha256": "ec51c38728fb3d46000a4cf7db97fc294b1e3be42082f09dd8de4b259c539ecd"
+      "sha256": "146578764b63227ca988c4adb53840bc20539eeb18da3c64b1557f5d9a33a607"
     },
     {
       "path": "index.html",

@@ -27,8 +27,9 @@
  */
 export declare const COMPOSER_LOD_VERSION = "fauna-composer-lod-1";
 /** Additive opt-in constraints; absent options preserve the original reducer. */
-export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-1";
+export declare const COMPOSER_LOD_CONSTRAINTS_VERSION = "fauna-composer-lod-constraints-2";
 export declare const COMPOSER_FOOT_LOD_VERSION = "fauna-composer-foot-lod-1";
+export declare const COMPOSER_ANATOMY_LOD_VERSION = "fauna-composer-anatomy-lod-1";
 /** Default attribute weights (dimensionless; multiplied by the body diagonal) and the largest allowed face turn. */
 export declare const COMPOSER_LOD_DEFAULTS: Readonly<{
     colour: 0.02;
@@ -54,6 +55,27 @@ export interface ComposerLodSource {
     gloss?: Float32Array;
     parts?: readonly ComposerLodPart[];
 }
+/** Structural subset of ComposerGraph; keeps this reducer module independent
+ * of the rig/three module at both its runtime and declaration boundaries. */
+export interface ComposerLodAnatomyGraph {
+    bones: readonly {
+        restPosition: readonly [number, number, number];
+        restQuaternion: readonly [number, number, number, number];
+        length: number;
+        start: {
+            h: number;
+            w: number;
+        };
+        end: {
+            h: number;
+            w: number;
+        };
+    }[];
+    chains: {
+        head: number;
+        trunk: readonly number[];
+    };
+}
 export interface ComposerLodOptions {
     /** Keep the z = 0 mirror symmetry (default true). */
     symmetry?: boolean;
@@ -73,6 +95,13 @@ export interface ComposerLodOptions {
  * regions, and spend more of the remaining error budget on these contours.
  * Explicit opt-in: historical skin-5 reductions remain byte-identical. */
 export declare function composerFootLodConstraints(source: ComposerLodSource): Pick<ComposerLodOptions, 'protectedVertices' | 'vertexImportance'>;
+/** Skin-6's shared runtime/export constraints. A fixed number of original
+ * surface samples keeps a curved proboscis tubular, including its head join,
+ * rolled tip and nostrils. Facial extrema retain the head/eye/mouth silhouette.
+ * This does not retain every trunk vertex or synthesize replacement geometry:
+ * an unattainable triangle target remains explicitly unreached. Foot-1 anchors
+ * are a strict subset. Historical skin-5 callers continue to omit this option. */
+export declare function composerAnatomyLodConstraints(source: ComposerLodSource, graph: ComposerLodAnatomyGraph): Pick<ComposerLodOptions, 'protectedVertices' | 'vertexImportance'>;
 export interface ComposerLodLevel {
     /** Requested triangle target; null for the unreduced source. */
     target: number | null;
