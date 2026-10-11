@@ -2,6 +2,18 @@
  * poses, ground samples and counters; these functions do not build a renderer. */
 import assert from 'node:assert/strict';
 
+/** Late results may be correctly discarded. A disposed owner must neither
+ * regain resources nor admit another source after its disposal receipt. */
+export function auditDisposedComposer(receipt){
+ assert.equal(receipt.after.disposed,true,'actual owner disposed');
+ for(const field of ['entries','actors','mergedBindings','levelOwners','ready','desired','ownedBytes','ownedLiveWorkers'])assert.equal(receipt.after[field],0,`disposed owner retains ${field}`);
+ assert.equal(receipt.after.running,false,'disposed worker transaction settled');
+ assert.equal(receipt.after.groupAttached,false,'disposed draw group detached');
+ assert.equal(receipt.after.acceptedBuilds,receipt.atDispose.acceptedBuilds,'source admitted after disposal');
+ assert(receipt.after.staleDiscarded>=receipt.atDispose.staleDiscarded,'discard counter monotonic');
+ return {postDisposeAdoptions:0,staleDiscarded:receipt.after.staleDiscarded-receipt.atDispose.staleDiscarded,ownedBytes:0,scope:'actual disposed owner after cancelled/late transaction settlement'};
+}
+
 export function requirePlanetComposerPins(policy){
  assert.equal(policy?.schema,'planet-composer-acceptance-policy-1');
  assert.equal(policy.ownerApproved,true,'coordinator-approved numeric pins required');

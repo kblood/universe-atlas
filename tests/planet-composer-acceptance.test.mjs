@@ -1,7 +1,7 @@
 /** Negative controls for the independent acceptance oracle, not migration evidence. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {requirePlanetComposerPins,auditPlanetCanonicalCensus,auditPlanetComposerSource,auditPlanetComposerOwnership,auditPlanetComposerFeet,auditPlanetComposerBudgets} from './helpers/planet-composer-acceptance.mjs';
+import {auditDisposedComposer,requirePlanetComposerPins,auditPlanetCanonicalCensus,auditPlanetComposerSource,auditPlanetComposerOwnership,auditPlanetComposerFeet,auditPlanetComposerBudgets} from './helpers/planet-composer-acceptance.mjs';
 const copy=x=>structuredClone(x);
 // Synthetic test pins only. Actual runtime needs the coordinator's approved manifest.
 const pins={schema:'planet-composer-acceptance-policy-1',ownerApproved:true,approvedBy:'synthetic auditor control',approvedLayouts:['quadruped'],maxActors:8,maxBonesPerActor:80,maxFrameTriangles:20000,maxFrameDrawCalls:10,maxResidentTypedBytes:1000000,maxTransientTypedBytes:200000,maxWorkerTypedBytes:2000000,maxGpuAllocatedBytes:1000000,maxConcurrentWorkers:1,maxFaunaResidentCombinedBytes:1000000,maxCoreReservedBytes:10000000,maxPenetrationM:.005,maxStanceGapM:.005,maxDecodedPositionErrorM:.001,minGroundReliefM:.01};
@@ -27,4 +27,11 @@ test('actual sole oracle rejects marker-only, flat fixture, planted floating and
 test('budget oracle checks measured scopes and peaks rather than claimed reduced targets',()=>{
  const m={geometryScope:'actual-main-camera-submissions',memoryScope:'owned-typed-and-gpu-allocations-with-transients',actors:2,frameTriangles:10000,frameDrawCalls:3,residentTypedBytes:100,transientTypedBytes:0,workerTypedBytes:100,gpuAllocatedBytes:200,concurrentWorkers:1,coreReservedBytes:2000000,coreBudgetBytes:10000000,cloudAllocatedBytes:100000};assert(auditPlanetComposerBudgets(m,pins).withinPins);
  for(const mutate of [x=>x.geometryScope='requested-triangle-targets',x=>x.workerTypedBytes=3000000,x=>x.concurrentWorkers=2,x=>delete x.gpuAllocatedBytes,x=>{x.residentTypedBytes=600000;x.gpuAllocatedBytes=600000;},x=>x.coreReservedBytes=10000001,x=>x.coreBudgetBytes=20000000]){const bad=copy(m);mutate(bad);assert.throws(()=>auditPlanetComposerBudgets(bad,pins));}
+});
+
+test('correctly discarded late results pass but post-dispose admission or resources fail',()=>{
+ const receipt={atDispose:{acceptedBuilds:4,staleDiscarded:1},after:{disposed:true,entries:0,actors:0,mergedBindings:0,levelOwners:0,ready:0,desired:0,ownedBytes:0,ownedLiveWorkers:0,running:false,groupAttached:false,acceptedBuilds:4,staleDiscarded:3}};
+ assert.equal(auditDisposedComposer(receipt).staleDiscarded,2);
+ assert.equal(auditDisposedComposer(receipt).postDisposeAdoptions,0);
+ for(const mutate of [x=>x.after.acceptedBuilds++,x=>x.after.entries=1,x=>x.after.mergedBindings=1,x=>x.after.ownedBytes=16,x=>x.after.ownedLiveWorkers=1,x=>x.after.running=true]){const bad=copy(receipt);mutate(bad);assert.throws(()=>auditDisposedComposer(bad));}
 });
