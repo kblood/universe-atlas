@@ -9,6 +9,7 @@ import {FaunaComposerMergedBatch} from '../src/fauna-composer-merged-batch.ts';
 import {buildFaunaComposerLevels, buildFaunaComposerRequestedLevels, composerTypedBytes, faunaComposerSourceKey} from '../src/fauna-composer-render-source.ts';
 import {createComposerBuildReceipt, verifyComposerBuildReceipt, isVerifiedComposerBuild} from '../src/fauna-composer-build-receipt.ts';
 import {createFaunaComposerWorkerProvider, installFaunaComposerSourceWorker} from '../src/fauna-composer-worker-provider.ts';
+import {composerFakeGl} from './helpers/composer-fake-gl.mjs';
 
 const animal = createComposerCreature(composerPreset('turtle'), {presentation: 'realism-1'});
 const source = {graph: animal.graph, skin: animal.skin}, levels = buildFaunaComposerLevels(source);
@@ -16,7 +17,63 @@ test.after(() => animal.dispose());
 const candidate = (id, distanceM = 300) => ({id, definition: {id}, sourceKey: id, matrix: new THREE.Matrix4(), distanceM, cameraVisible: true, rigSeconds: 0, poseKey: 'idle'});
 const tick = () => new Promise(resolve => setTimeout(resolve, 10));
 const result = job => ({key: job.key, source, levels: Object.fromEntries(job.tiers.map(t => [t, levels[t]])), buildMs: 1});
-async function pump(r, candidates, frames = 12) {for (let i = 0; i < frames; i++) {r.update(candidates); await tick();} return r.update(candidates);}
+async function waitUntil(predicate,label){const deadline=performance.now()+5000;while(!predicate()){assert.ok(performance.now()<deadline,label);await tick();}}
+async function pump(r, candidates, frames = 12) {
+ for (let i = 0; i < frames; i++) {r.update(candidates); await tick();}
+ const deadline=performance.now()+5000;
+ while(r.running||r.ready.size){assert.ok(performance.now()<deadline,'build/adoption did not finish');await tick();r.update(candidates);}
+ return r.update(candidates);
+}
+const gpuTiers=(capacity,middle=2)=>Object.fromEntries([['far',capacity],['middle',middle]].map(([tier,count])=>[tier,{storage:'packed-1',maxVertices:levels[tier].positions.length/3*count,maxIndices:levels[tier].index.length*count,maxBytes:20e6}]));
+async function settle(r,candidates){for(let i=0;i<100;i++){r.update(candidates);await tick();const d=r.diagnostics();if(d.active===candidates.length&&!d.pending&&!d.upgradesPending&&!d.running)return;}assert.fail(JSON.stringify(r.diagnostics()));}
+
+test('rotating near/middle priorities retain each canonical far allocation and demote immediately behind a blocked cold build',async()=>{
+ const gl=composerFakeGl(),calls=[];let aborted=false;
+ const r=new FaunaComposerRenderer({capacity:16,maxSources:16,maxBytes:40e6,fullSourceCache:2,middleSourceCache:2,mergedGpuContext:gl,mergedTiers:gpuTiers(16),
+  provider:{build(job,signal){calls.push([job.key,job.tiers[0]]);if(job.key==='cold')return new Promise((resolve,reject)=>signal.addEventListener('abort',()=>{aborted=true;reject(new Error('cancelled'));},{once:true}));return Promise.resolve(result(job));}},pose:g=>poseComposer(g,'idle',0)});
+ const candidates=Array.from({length:12},(_,i)=>candidate(`animal-${i}`));
+ try{
+  await settle(r,candidates);const baseline=r.ownedBytes,original=new Map(candidates.map(c=>[c.id,{far:r.entries.get(c.id).levels.far,definition:r.entries.get(c.id).definition,pose:r.poseOf(c.id),positions:r.snapshotOf(c.id).skin.positions}]));
+  for(let round=0;round<4;round++){
+   const ordered=candidates.map((_,i)=>candidates[(i+round*3)%12]).map((c,i)=>({...c,distanceM:i<2?5:i<4?70:300}));await settle(r,ordered);
+   const d=r.diagnostics();assert.equal(d.actors.filter(a=>a.tier==='near').length,2);assert.equal(d.mergedTiers.middle.actors,2);assert.equal(d.mergedTiers.far.actors,8);assert.equal(d.mergedTiers.far.records,12);
+   assert.equal(d.actors.length,d.mergedTiers.far.actors+d.mergedTiers.middle.actors+[...r.entries.values()].reduce((n,e)=>n+(e.batches.near?.mesh.count??0),0),'one visible tier per actor');
+   assert.ok(d.ownedBytes<d.maxBytes);
+   const list=round===3?[...candidates,candidate('cold')]:candidates;
+   if(round===3){r.update([...ordered,candidate('cold')]);assert.equal(r.diagnostics().running,'cold');}
+   r.update(list);assert.equal(r.diagnostics().active,12);assert.ok(r.diagnostics().actors.every(a=>a.tier==='far'));assert.equal(r.diagnostics().mergedTiers.middle.records,0);
+   for(const c of candidates){const before=original.get(c.id),e=r.entries.get(c.id);assert.equal(e.levels.far,before.far);assert.equal(e.definition,before.definition);assert.equal(r.poseOf(c.id),before.pose);assert.equal(e.batches.near,undefined);assert.deepEqual(r.snapshotOf(c.id).skin.positions,before.positions);}
+   assert.equal(r.ownedBytes,baseline,'demotion releases all nearer ownership');assert.equal(calls.filter(([key,tier])=>tier==='far'&&key!=='cold').length,12);
+  }
+  r.setContext('other');await tick();assert.ok(aborted);assert.equal(r.entries.size,0);assert.equal(r.mergedBindings.size,0);assert.equal(r.levelOwners.size,0);assert.ok(Object.values(r.diagnostics().mergedTiers).every(t=>!t.records&&!t.copying));
+ }finally{r.dispose();}assert.equal(gl.inspect().buffers,0);
+});
+
+test('a full middle arena cannot evict an unrelated out-of-view far source',async()=>{
+ const gl=composerFakeGl(),calls=[],r=new FaunaComposerRenderer({capacity:4,maxSources:4,maxBytes:40e6,mergedGpuContext:gl,mergedTiers:gpuTiers(4,1),provider:{async build(job){calls.push(job);return result(job);}},pose:g=>poseComposer(g,'idle',0)});
+ const a=candidate('a'),b=candidate('b'),c=candidate('cached-far');
+ try{
+  await settle(r,[c,a,b]);await settle(r,[{...a,distanceM:70},b]);
+  await pump(r,[{...a,distanceM:70},{...b,distanceM:70}],60);
+  assert.ok(r.entries.has(c.id));assert.equal(r.diagnostics().evictions,0);assert.equal(r.diagnostics().active,2);assert.equal(r.diagnostics().actors.find(x=>x.id==='b').tier,'far');assert.equal(r.diagnostics().mergedTiers.middle.records,1);assert.equal(r.diagnostics().mergedTiers.far.records,3);assert.equal(calls.filter(j=>j.key===c.id).length,1);
+ }finally{r.dispose();}assert.equal(gl.inspect().buffers,0);
+});
+
+test('retained far ownership survives shared-source actor eviction and releases every tier on source/context removal',async()=>{
+ const gl=composerFakeGl(),r=new FaunaComposerRenderer({capacity:2,maxSources:3,maxBytes:40e6,fullSourceCache:1,middleSourceCache:1,mergedGpuContext:gl,mergedTiers:gpuTiers(2,2),provider:{async build(job){return result(job);}},pose:g=>poseComposer(g,'idle',0)});
+ const a={...candidate('a'),sourceKey:'shared',definition:{id:'shared'}},b={...candidate('b'),sourceKey:'shared',definition:a.definition},c=candidate('c');
+ try{
+  await settle(r,[a,b]);const original=r.snapshotOf('a').skin.positions;
+  await settle(r,[{...a,distanceM:5},b]);assert.equal(r.diagnostics().mergedTiers.far.records,2);
+  await settle(r,[{...a,distanceM:5},c]);assert.equal(r.actors.has('b'),false);assert.ok(r.entries.get('shared').levels.far);
+  await settle(r,[{...a,distanceM:70},c]);assert.equal(r.diagnostics().mergedTiers.middle.records,1);assert.equal(r.diagnostics().mergedTiers.far.records,2);
+  r.update([a,c]);assert.deepEqual(r.snapshotOf('a').skin.positions,original);
+  await settle(r,[{...a,distanceM:70},c]);r.evict('shared');assert.equal(r.mergedBindings.has('a'),false);assert.equal(r.merged.get('middle').diagnostics().records,0);assert.equal(r.merged.get('far').diagnostics().records,1);assert.ok(r.entries.has('c'));
+  await settle(r,[{...c,distanceM:70}]);assert.equal(r.diagnostics().mergedTiers.far.records,1);assert.equal(r.diagnostics().mergedTiers.middle.records,1);
+  let clock=0;assert.equal(r.merged.get('middle').registerSlice('partial',levels.middle,0,.8,1,()=>clock+=.2),'pending');gl.contextLost();assert.equal(r.entries.size,0);assert.equal(r.mergedBindings.size,0);assert.equal(r.levelOwners.size,0);assert.ok(Object.values(r.diagnostics().mergedTiers).every(t=>!t.records&&!t.copying));
+  gl.contextRestored();await settle(r,[c]);assert.equal(r.diagnostics().active,1);assert.deepEqual(r.snapshotOf('c').skin.positions,original);
+ }finally{r.dispose();}assert.equal(gl.inspect().buffers,0);
+});
 
 test('all cold animals receive coarse jobs before any near upgrade; identities are canonical', async () => {
   const calls = [], provider = {async build(job) {calls.push(job); return result(job);}};
@@ -94,9 +151,9 @@ test('measured middle arena limits settle to source-derived far without repeated
 test('completed offscreen result remains cached and a blocked admission never rebuilds each retry interval', async () => {
   let resolve; const calls = [], provider = {build(job) {calls.push(job); return new Promise(r => {resolve = () => r(result(job));});}};
   const r = new FaunaComposerRenderer({provider, pose: g => poseComposer(g, 'idle', 0), capacity: 2, maxSources: 1});
-  try {const a = candidate('a'), b = candidate('b'); r.update([a]); r.update([]); resolve(); await tick(); r.update([]);
+  try {const a = candidate('a'), b = candidate('b'); r.update([a]); r.update([]); resolve(); await waitUntil(()=>!r.running,'offscreen completion'); r.update([]);
     assert.equal(r.diagnostics().sources, 1); assert.equal(r.diagnostics().completedOutOfView, 1); assert.equal(r.update([a]).size, 1);
-    r.update([a,b]); resolve(); await tick(); r.update([a,b]);
+    r.update([a,b]); resolve(); await waitUntil(()=>!r.running,'blocked completion'); r.update([a,b]);
     for (let i = 0; i < 500; i++) r.update([a,b]);
     assert.equal(calls.length, 2); assert.equal(r.diagnostics().stagedSources, 1); assert.equal(r.diagnostics().failures, 0);
     assert.equal(r.update([b]).has('b'), true); assert.equal(calls.length, 2, 'actual completed result admitted after room appears');

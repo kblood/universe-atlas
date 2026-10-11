@@ -47,6 +47,7 @@ type Entry = {source: FaunaComposerSource | null; graph: ComposerGraph; levels: 
   /** Retain measured size after discarding an unused tier, preventing budget retry loops. */
   middleFootprint?: {vertices: number; indices: number}};
 type Actor = {key: string; row: number; poseKey?: string; tier?: FaunaComposerTier; pose: ComposerPose | null; poseBytes: number};
+type MergedTier = 'middle'|'far';
 type Running = {key: string; definition: string; definitionRef: unknown; tiers: readonly FaunaComposerTier[]; epoch: number; abort: AbortController};
 type Prepared = {run: Running; source: FaunaComposerSource | null; graph: ComposerGraph; graphIdentity: string; skinIdentity: string; graphBytes: number;
   levels: Partial<Record<FaunaComposerTier, FaunaComposerRenderSkin>>; writer: FaunaComposerPaletteWriter; bytes: number; buildMs: number; attempt: number};
@@ -78,7 +79,9 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
   private readonly fullSourceKeys = new Set<string>();
   private readonly middleSourceKeys = new Set<string>();
   private readonly merged = new Map<'middle'|'far', FaunaComposerMergedBatch>();
-  private readonly mergedBindings = new Map<string, {tier: 'middle'|'far'; key: string}>();
+  /** Far remains resident while a nearer tier draws. Each arena independently
+   * hides all rows at beginFrame; only the selected tier is submitted. */
+  private readonly mergedBindings = new Map<string, Partial<Record<MergedTier,string>>>();
   private readonly levelOwners = new Map<string, string>();
   private readonly arenaBuffers = new Set<ArrayBufferLike>();
   private paletteData: Float32Array;
@@ -187,6 +190,12 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       this.middleSourceKeys.add(c.sourceKey); middleVertices += vertices; middleIndices += indices;
     }
     this.trimFullSources(); this.adoptPending(keys);
+    // Free demoted middle slots before admitting the new priority order. The
+    // retained far allocation is already complete, so no worker or copy waits.
+    for(const [id,binding] of this.mergedBindings){
+      const c=this.desired.get(id),actor=this.actors.get(id);
+      if(c&&binding.middle&&binding.far&&this.candidateTier(c,actor?.tier)==='far')this.releaseMerged(id,'middle');
+    }
     for (const entry of this.entries.values()) for (const batch of Object.values(entry.batches)) batch.beginFrame();
     for (const batch of this.merged.values()) batch.beginFrame();
     for (const [id, actor] of this.actors) if (this.desired.has(id) && this.desired.get(id)!.sourceKey !== actor.key) {this.releaseMerged(id); this.actors.delete(id);}
@@ -221,24 +230,26 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       for (const tier of choices) {
         const pool = tier === 'near' ? undefined : this.merged.get(tier);
         if (pool) {
-          const binding = this.mergedBindings.get(c.id);
-          if (binding?.tier === tier && binding.key === c.sourceKey) {mergedBatch = pool; available = tier; break;}
-          if (binding?.tier === tier) this.releaseMerged(c.id);
+          const mergedTier=tier as MergedTier,binding = this.mergedBindings.get(c.id)?.[mergedTier];
+          if (binding === c.sourceKey) {mergedBatch = pool; available = tier; break;}
+          if (binding) this.releaseMerged(c.id,mergedTier);
           let status = copy(pool, c.id, entry.levels[tier]!, actor.row, sourceRoughness(entry.graph));
           if (status === 'full') {
-            const victim = [...this.entries].filter(([key]) => !keys.has(key)).sort((a, b) => a[1].used - b[1].used)[0];
+            const owners=new Set([...this.mergedBindings.values()].flatMap(b=>b[mergedTier]?[b[mergedTier]!]:[]));
+            const victim = [...this.entries].filter(([key]) => !keys.has(key)&&owners.has(key)).sort((a, b) => a[1].used - b[1].used)[0];
             if (victim) {this.evict(victim[0]); status = copy(pool, c.id, entry.levels[tier]!, actor.row, sourceRoughness(entry.graph));}
           }
           if (status !== 'ready') continue;
-          this.releaseMerged(c.id); this.mergedBindings.set(c.id, {tier: tier as 'middle'|'far', key: c.sourceKey});
+          const bindings=this.mergedBindings.get(c.id)??{};bindings[mergedTier]=c.sourceKey;this.mergedBindings.set(c.id,bindings);
           entry.levels[tier] = pool.residentSkin(c.id, entry.levels[tier]!); this.levelOwners.set(`${c.sourceKey}\0${tier}`, c.id); this.recount(entry, c.sourceKey);
           mergedBatch = pool; available = tier; break;
         }
         const instances = this.members.get(c.sourceKey)!.length;
         batch = this.batch(entry, tier, keys, instances);
-        if (batch) {this.releaseMerged(c.id); available = tier; break;}
+        if (batch) {available = tier; break;}
       }
       if (!available) {this.stats.budgetDrops++; continue;}
+      if(available!=='middle')this.releaseMerged(c.id,'middle');
       try {
         if (!actor.pose || c.poseKey === undefined || actor.poseKey !== c.poseKey) {
           const pose = this.options.pose(entry.graph, c); entry.writer.write(pose, this.scratch);
@@ -441,6 +452,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
       if (!entry.levels.far || !entry.levels.middle) continue;
       const members = this.members.get(key) ?? [];
       if (!members.length || members.some(c => this.candidateTier(c, this.actors.get(c.id)?.tier) !== 'far' || this.actors.get(c.id)?.tier !== 'far')) continue;
+      for(const [id,binding]of this.mergedBindings)if(binding.middle===key)this.releaseMerged(id,'middle');
       this.revision++; entry.batches.middle?.dispose(); delete entry.batches.middle; delete entry.levels.middle;
       this.recount(entry, key);
     }
@@ -455,16 +467,20 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     for (const [id, actor] of this.actors) if (actor.key === key) {this.releaseMerged(id); this.actors.delete(id);}
     this.stats.evictions++; this.revision++;
   }
-  private releaseMerged(id: string): void {
-    const binding = this.mergedBindings.get(id); if (!binding) return;
-    const ownerKey = `${binding.key}\0${binding.tier}`, entry = this.entries.get(binding.key), pool = this.merged.get(binding.tier)!;
-    if (this.levelOwners.get(ownerKey) === id) {
-      const replacement = [...this.mergedBindings].find(([other, b]) => other !== id && b.key === binding.key && b.tier === binding.tier);
-      if (replacement && entry?.levels[binding.tier]) {entry.levels[binding.tier] = pool.residentSkin(replacement[0], entry.levels[binding.tier]!); this.levelOwners.set(ownerKey, replacement[0]);}
-      else {if (entry) delete entry.levels[binding.tier]; this.levelOwners.delete(ownerKey);}
-      if (entry) this.recount(entry, binding.key);
+  private releaseMerged(id: string,tier?:MergedTier): void {
+    const bindings = this.mergedBindings.get(id); if (!bindings) return;
+    for(const kind of tier?[tier]:['middle','far'] as const){
+      const key=bindings[kind];if(!key)continue;
+      const ownerKey = `${key}\0${kind}`, entry = this.entries.get(key), pool = this.merged.get(kind)!;
+      if (this.levelOwners.get(ownerKey) === id) {
+        const replacement = [...this.mergedBindings].find(([other, b]) => other !== id && b[kind]===key);
+        if (replacement && entry?.levels[kind]) {entry.levels[kind] = pool.residentSkin(replacement[0], entry.levels[kind]!); this.levelOwners.set(ownerKey, replacement[0]);}
+        else {if (entry) delete entry.levels[kind]; this.levelOwners.delete(ownerKey);}
+        if (entry) this.recount(entry, key);
+      }
+      pool.release(id);delete bindings[kind];this.revision++;
     }
-    pool.release(id); this.mergedBindings.delete(id); this.revision++;
+    if(!bindings.middle&&!bindings.far)this.mergedBindings.delete(id);
   }
   sourceOf(id: string): FaunaComposerSource | null {const actor = this.actors.get(id); return actor ? this.entries.get(actor.key)?.source ?? null : null;}
   /** Explicit QA/inspection only; callers must copy before mutating borrowed arrays. */

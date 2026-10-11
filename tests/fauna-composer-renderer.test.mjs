@@ -89,7 +89,8 @@ test('controller merges unique reduced sources and keeps the far tier when middl
     onMeshAdopted: () => adopted++, mergedTiers: {far: {maxVertices: vertices, maxIndices: indices, maxBytes: 4 * 1024 * 1024}, middle: {maxVertices: 1, maxIndices: 3, maxBytes: 10000}}});
   try {
     const a = candidate('a', 'worm', 300), b = candidate('b', 'turtle', 310);
-    for (let i = 0; i < 4; i++) {r.update([a, b]); await tick();}
+    const deadline=performance.now()+5000;
+    while(r.diagnostics().active!==2||r.diagnostics().running){assert.ok(performance.now()<deadline,'both verified far sources must finish admission');r.update([a,b]);await tick();}
     assert.equal(r.update([a, b]).size, 2); assert.equal(r.diagnostics().draws, 1); assert.equal(r.diagnostics().mergedTiers.far.records, 2);
     a.distanceM = 75; b.distanceM = 80;
     assert.equal(r.update([a, b]).size, 2); assert.ok(r.diagnostics().actors.every(a => a.tier === 'far')); assert.equal(r.diagnostics().draws, 1);
