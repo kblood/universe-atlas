@@ -55,3 +55,6 @@ test('JSON string bridge preserves source bytes, graph numbers and text',async()
  const result=await evaluateJson(fakePage,x=>({graph:x.graph,source:x.source}),input);assert.deepEqual(result,input);
  assert.equal(contentDigest(new Float32Array(result.source)),contentDigest(original.subarray(0,3)));
 });
+
+import {observerMoveIntent} from './helpers/planet-composer-collector.mjs';
+test('observer movement preserves actual near-camera clearance instead of lifting80m',()=>{const camera={position:[100,200,300],heading:[0,0,0,1],clearanceM:8.000007};const intent=observerMoveIntent(camera);assert.deepEqual(intent,{position:[110,200,300],heading:[0,0,0,1],clearanceM:8.000007});assert.deepEqual(camera.position,[100,200,300]);assert.throws(()=>observerMoveIntent({...camera,clearanceM:undefined}));});
