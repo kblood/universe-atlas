@@ -1,22 +1,27 @@
 # How Atlas consumes creature-kit
 
-Current status, 2026-10-11: Atlas consumes the built, self-contained Kit 0.7 public
+Migration branch, 2026-10-11: Atlas consumes the built, self-contained Kit 0.8 public
 planet entry through `#creature-kit/planet`, pinned in `vendor/creature-kit/PACKAGE.json`.
-The actual canonical planet body/appearance/rig core is Kit-owned; genomes and
-legacy body4 arithmetic are preserved. Desktop selects the explicit sculpted-v1
-presentation for its near bodies, worker LODs and Lab, retaining the same rig and
-genomes; XR selects legacy bodies. Kit also owns the shared planet
-inspector and independent Lab. The primary `/animal-lab/` entry opens the advanced
+Existing genomes, population IDs and dated activity remain canonical. Normal
+planet visits use the Kit's shared Composer source and terrain pose; desktop
+and immersive updates retain that backend. Reduced tiers use the same anatomical
+LOD constraints as realism-1 GLB export, with packed storage confined to runtime
+arenas. The old quadruped renderer is selected only by the explicit
+`fauna-generator=archive-quadruped` compatibility option. Kit also owns the
+independent Lab. The primary `/animal-lab/` entry opens the advanced
 Composer with visual controls for limbless animals, insects, turtles, dinosaurs
-and proboscis heads. Its realism-1 presentation improves feet and preserves them
-in reduced models. `/animal-lab/planet-skin.html` is the archived quadruped inspector;
+and proboscis heads. Planet links carry a complete resolved definition in the
+fragment, preserving the actual animal's metre dimensions and coat without
+another seeded variation or growth pass. `/animal-lab/planet-skin.html` is the archived quadruped inspector;
 it retains tools for the planet compatibility pipeline. The old Atlas Lab remains
 available with an archive label for historical inspection links.
 `npm run update:creature-kit -- --kit C:/LLM/IWSDK/creature-kit` atomically preflights
 and updates committed sources, built package and Lab bundle; `npm run check:creature-kit`
 checks drift. No sibling-repository runtime import or npm link is required.
-Experimental composer recipes and authored deer references remain separate;
-this is not a claim that their definitions have already converged with planet genomes.
+Authored deer references and old inspection tools remain historical resources;
+they are not a second normal planet generator. The migration branch still needs
+its final ordinary-world visibility/resource acceptance and deployment. Desktop
+functional evidence is not a physical Quest performance result.
 The following 2026-10-07/08 options and receipts are historical.
 
 Date: 2026-10-07. Branch `infra/creature-kit-consume` (from main `ab6042c`). Written and implemented by Claude Opus 5.5.

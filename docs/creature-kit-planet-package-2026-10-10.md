@@ -1,5 +1,12 @@
 # Atlas consumes the actual planetary animal core
 
+Current migration branch, 2026-10-11: Kit 0.8 adds the shared Composer definition,
+resolved phenotype, source, terrain pose and anatomy LOD contract. Normal planet
+rendering now uses that source; the extraction and quadruped inspection history
+below remains preserved compatibility documentation. See
+`creature-kit-consumption.md` and `planet-composer-migration-acceptance.md` for
+current integration and verification scope.
+
 Extraction baseline: Atlas `f96a8c1`. Kit release `0.2.0` owns the existing
 canonical core in `src/planet-v1/`: creature-model, fauna-appearance,
 fauna-body-plan, fauna-face, fauna-structural-appendages and fauna-locomotion.
