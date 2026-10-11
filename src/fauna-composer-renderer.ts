@@ -30,7 +30,7 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
   mergedGpuContext?:WebGL2RenderingContext;
   /** Explicitly sized arenas: unique reduced animals share one draw per tier.
    * Arena CPU+GPU allocations count against maxBytes before accepting sources. */
-  mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number; storage?: FaunaComposerArenaStorage}>>;
+  mergedTiers?: Partial<Record<'middle'|'far', {maxVertices: number; maxIndices: number; maxBytes: number; storage?: FaunaComposerArenaStorage; maxIndexPerRecord?:number}>>;
   capacity?: number; maxSources?: number; maxBones?: number; maxBytes?: number; maxResultBytes?: number;
   workerReserveBytes?: number; maxDistanceM?: number; nearM?: number; middleM?: number;
   fullSourceCache?: number; adoptionBudgetMs?: number; now?: () => number; onReady?: () => void;
@@ -136,6 +136,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
     texture.minFilter = texture.magFilter = THREE.NearestFilter; texture.generateMipmaps = false;
     texture.internalFormat = 'RGBA32F'; texture.needsUpdate = true; return texture;
   }
+  setViewCameras(cameras:readonly THREE.Camera[]):void {for(const batch of this.merged.values())batch.setViewCameras(cameras);}
   private resizePalette(bones: number): void {
     const old = this.paletteData, width = this.paletteBones;
     this.paletteBones = bones; this.paletteData = new Float32Array(this.capacity * bones * 16);
@@ -261,7 +262,7 @@ export class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D> = Faun
           actor.pose = pose; actor.poseBytes = poseBytes; actor.poseKey = c.poseKey; this.stats.poseBuilds++;
         }
         if (c.matrix.elements.some(x => !Number.isFinite(x))) throw new Error('Invalid Composer instance transform');
-        if (mergedBatch) mergedBatch.submit(c.id, c.matrix); else batch!.submit(c.matrix, actor.row);
+        if (mergedBatch) mergedBatch.submit(c.id, c.matrix,c.cameraVisible); else batch!.submit(c.matrix, actor.row);
         actor.tier = available; this.drawn.add(c.id); this.stats.active++;
         this.stats.triangles += entry.levels[available]!.index.length / 3;
       } catch (error) {this.stats.poseFailures++; this.lastError = String(error);}
