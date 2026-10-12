@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.10.0",
-    "commit": "7230293b0ed5a211b28fe11af45c3a1b1152c0ca",
+    "version": "0.10.1",
+    "commit": "4df6b0013fcc842c900d8465b5bf6647c94447ff",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
