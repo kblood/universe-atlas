@@ -82,7 +82,11 @@ export declare function patchComposerCoatCrispShader(shader: {
 /** The coloured material with the crisp coat (skin-5): the gloss channel plus the per-fragment coat pattern of `crisp`
  * between the geometry's coatL0..coatL2 layers. One program per crisp pattern; the pattern parameters are uniforms. */
 export declare function createComposerCrispCoatMaterial(crisp: ComposerCoatCrisp): THREE.MeshStandardMaterial;
-export declare function createComposerCreature(input: ComposerRecipe, options?: ComposerSourceOptions & ComposerPoseOptions): ComposerCreature;
+/** Optional preview skin transformation keeps the core independent of LOD
+ * reduction. The caller must preserve the source graph's joint indices. */
+export declare function createComposerCreature(input: ComposerRecipe, options?: ComposerSourceOptions & ComposerPoseOptions & {
+    transformSkin?: (skin: ComposerSkin, graph: ComposerGraph) => ComposerSkin;
+}): ComposerCreature;
 export { composerConstraints };
 /** Rest-pose bounds of every vertex referenced by a triangle of the face parts. */
 export declare function composerHeadBounds(skin: ComposerSkin): THREE.Box3;

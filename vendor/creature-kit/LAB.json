@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.8.5",
-    "commit": "12ba0b156dc74355c7abbea3fed49593c9999c42",
+    "version": "0.8.6",
+    "commit": "d98f576d02d832b6e3acf50a42f3190a5c92d450",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -15,7 +15,7 @@
     },
     {
       "path": "apps/creature-lab/creature-lab.html",
-      "sha256": "f46ccb4b75a49819a58da27caf60d8ab7818bec6e1682dcc30f9560cb1cd4648"
+      "sha256": "f4295ce7c915bbbe5edf24b8ca27dfb7eeb09d5b8a2b7160148583b6687ff071"
     },
     {
       "path": "apps/creature-lab/index.html",
@@ -39,11 +39,11 @@
     },
     {
       "path": "apps/creature-lab/src/creature-lab-composer.ts",
-      "sha256": "7bf948f63d969f150c9ccfb2d6ec2f2cba5a0c53bb60fc0d1e474b535b4457d2"
+      "sha256": "4d684356fd560a2e4dda83a999cf3a7f577b30d9561a5c6f350e2f69592ce67c"
     },
     {
       "path": "apps/creature-lab/src/creature-lab-planet.ts",
-      "sha256": "06a7e81f57562cb0355b4fb99d349e0358a19271d5a03acc1fd6bcf45b69e99d"
+      "sha256": "5384c6f3d3bfde3607c9fe168b888b4fb10098d4f48d335986fdf50b14a66d8d"
     },
     {
       "path": "apps/creature-lab/src/creature-lab-state.ts",
@@ -84,12 +84,12 @@
   ],
   "files": [
     {
-      "path": "assets/composer-C77YRCDd.js",
-      "sha256": "ca176f97142eab33c77ca6b7afac81b72319da918dbbabfc291b3cfe00040d90"
-    },
-    {
       "path": "assets/composer-D3gF7lKI.css",
       "sha256": "906bd647a0e5c4d94795891a9d7fe79d44d93f5185d692feea5f001b30c2edff"
+    },
+    {
+      "path": "assets/composer-iolNA6LF.js",
+      "sha256": "54c604c8f1843bc4c97fa260d8815b30ddffb888540ccd41dfd1d76de3a62f10"
     },
     {
       "path": "assets/creature-lab-CN8EtKiP.css",
@@ -100,8 +100,8 @@
       "sha256": "064eb70f5082536bc66f312e76844857d5751a6e5e16a46fd0d34e355e2ce24f"
     },
     {
-      "path": "assets/fauna-composer-export-KC4w_SSH.js",
-      "sha256": "14edb908fb417b456b78f45c6cfc24cf7cec0ca0302d18462bcd36fdbc6d3046"
+      "path": "assets/fauna-composer-export-D6caXbLg.js",
+      "sha256": "249363bc82c66a6aebd9aca0fce8c4a618b6058c6d38762c7421ed20533953e7"
     },
     {
       "path": "assets/index-CYUeVSzr.js",
@@ -121,7 +121,7 @@
     },
     {
       "path": "creature-lab.html",
-      "sha256": "bd6d80618fefd6d8f99a003ff6d4864ef24fd63fbc55172aca85c068a375439d"
+      "sha256": "0dba5e3ac3caf2fabfad31a07d7dc9526cdd231ac0fdf5c6757def3711989890"
     },
     {
       "path": "index.html",

@@ -11,7 +11,7 @@
       .composer-why.composer-info{color:#9fc4bb}.composer-swatch{display:inline-block;width:11px;height:11px;margin-left:4px;vertical-align:-1px;border:1px solid #9dbab6;border-radius:50%}.composer-swatch-wrap{margin-left:2px;font-size:10px;color:#9bbab4;letter-spacing:0;text-transform:none}.composer-swatch-wrap[hidden]{display:none}#composer-controls select:disabled{opacity:.55;cursor:not-allowed}.composer-hint{margin:0;font-size:10px;color:#9bbab4}
       .composer-individual{margin:4px 0 6px;font-size:11px}.composer-individual summary{cursor:pointer;color:#d8ebe4}.composer-deltas{margin:2px 0 4px;padding-left:16px;color:#b6ccc9}
       @media(max-width:850px){.composer-random-row{grid-template-columns:1fr 1fr}.composer-random-row button:nth-child(2){grid-column:1/-1}}</style>
-    <script type="module" crossorigin src="./assets/composer-C77YRCDd.js"></script>
+    <script type="module" crossorigin src="./assets/composer-iolNA6LF.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/creature-lab-DU1wHAFz.js">
     <link rel="stylesheet" crossorigin href="./assets/creature-lab-CN8EtKiP.css">
@@ -39,6 +39,13 @@
           <label>Random seed <input id="composer-seed" maxlength="160" value="composer-1"></label>
           <div class="composer-random-row"><button id="composer-randomize" type="button" title="Every part drawn independently: anything can combine with anything.">Wild hybrid</button><button id="composer-random-species" type="button" title="A plausible animal drawn from real body plans (hoofed animals, carnivores, birds, lizards ...).">Random plausible species</button><button id="composer-next-seed" type="button" title="Next seed with the random kind used last.">New seed</button></div>
           <label class="check"><input id="composer-compare" type="checkbox"> Compare two animals</label>
+          <fieldset class="composer-group"><legend>LOD preview</legend>
+            <label>First animal <select id="composer-lod-first"><option value="source">Near · full model</option><option value="4500">Middle · target 4,500 triangles</option><option value="1000">Far · target 1,000 triangles</option></select></label>
+            <label>Second animal <select id="composer-lod-second"><option value="source">Near · full model</option><option value="4500">Middle · target 4,500 triangles</option><option value="1000" selected>Far · target 1,000 triangles</option></select></label>
+            <button id="composer-lod-compare" type="button">Compare this animal's LODs</button>
+            <p class="composer-hint">Copies the edited animal to both sides with the same pose time. Choose a detail level for each side. Targets match Atlas; anatomy protection can keep extra triangles. Preview choices stay in this session; exports keep their own LOD settings.</p>
+            <p id="composer-lod-status" class="composer-hint" role="status"></p>
+          </fieldset>
           <label>Show <select id="composer-herd"></select><small id="composer-herd-why" class="composer-why" hidden>Comparison shows one animal per recipe; turn it off to show a herd.</small></label>
           <label hidden>Edit which animal <select id="composer-edit-target"><option value="first">First (left)</option><option value="second">Second (right)</option></select></label>
           <p id="composer-edit-hint" role="status"></p>

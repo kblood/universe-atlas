@@ -11,7 +11,8 @@ browser; these tools do not upload them.
 ## Hosted tools
 
 - Animal Lab: `animal-lab/`, the current creature-kit Composer editor. Its visual
-  editor does not yet expose the planet's near/middle/far LOD preview controls.
+  editor previews full, middle (4,500 target) and far (1,000 target) LODs,
+  including same-specimen comparison and actual triangle counts.
 - Biome Lab: `biome-lab.html`, flat reference composition and recipe counts.
   Planned fauna is not rendered.
 - Biosphere Lab: `biosphere-lab.html`, species, habitats, growth and dated

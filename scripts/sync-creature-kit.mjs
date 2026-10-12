@@ -55,6 +55,7 @@ export const VENDORED_PATHS = Object.freeze([
   'src/fauna-composer-rig.ts',
   'src/fauna-composer-species.ts',
   'src/fauna-composer.ts',
+  'src/fauna-composer-preview-lod.ts',
   'tests/fauna-composer-coat.test.mjs',
   'tests/fauna-coat-allocation.bench.mjs',
   'tests/fauna-composer-coat-crisp.test.mjs',
