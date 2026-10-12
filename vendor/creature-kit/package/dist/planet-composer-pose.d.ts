@@ -1,6 +1,6 @@
 import { type ComposerGraph, type ComposerPose, type ComposerPoseOptions, type Vec3 } from './fauna-composer-rig.ts';
 import type { PlanetFaunaActivity, PlanetFaunaPathMember } from './planet-v1/caller-contract.ts';
-export declare const PLANET_COMPOSER_POSE_VERSION = "planet-composer-pose-4";
+export declare const PLANET_COMPOSER_POSE_VERSION = "planet-composer-pose-5";
 export type PlanetComposerGround = (x: number, z: number) => number;
 export interface PlanetComposerPose extends ComposerPose {
     planet: {

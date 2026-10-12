@@ -5,7 +5,7 @@ import {FAUNA_REVIEW_PRESET_IDS, type FaunaReviewPresetId} from './fauna-review-
 /** Portable specimen identity and inspection state. Camera gestures are deliberately
  * excluded: shared links open the same named frame, measured in metres. */
 export type LabMode = 'gallery' | 'anatomy' | 'arena' | 'ancestry' | 'skin' | 'composer';
-export const COMPOSER_LAB_MOTIONS = ['neutral', 'idle', 'walk', 'display'] as const;
+export const COMPOSER_LAB_MOTIONS = ['neutral', 'idle', 'walk', 'display', 'run', 'eat', 'fly', 'glide'] as const;
 export type ComposerLabMotion = typeof COMPOSER_LAB_MOTIONS[number];
 export type SkinPose = 'dated' | 'neutral' | 'idle' | 'walk' | 'feed';
 /** Composer herd sizes: one animal, or a herd of individuals of the same species. */

@@ -26,6 +26,11 @@ import {lifeRendererModule,runLifeScenario,digestPoses,gitSource} from './life-s
 
 // Parent of the life CPU work (desktop-rendering-stage-c + perf harness).
 const REFERENCE='e6a0b39';
+// This CPU-only identity proof compares the historical proxy/near-rig path.
+// Composer is now the default and requires a real WebGL2 renderer; its flight
+// presentation has separate runtime and browser gates. Select the historical
+// backend explicitly without changing either reference activity implementation.
+const LEGACY_RENDERER_OPTIONS=Object.freeze({faunaBodyPlan:false,faunaGenerator:'archive-quadruped'});
 
 // The intended life-gating behaviour change: hidden life also clears the flora
 // counters (the S6 "flora visible from 15 km" finding). It is applied to the
@@ -69,11 +74,11 @@ test('life layer output is identical to the reference for a fixed pose/date sequ
     const a=await runLifeScenario(reference.module,poses);
     // This remains an optimisation identity guard against the legacy proxy;
     // the intentional body-volume presentation has its own anatomy/replay gates.
-    const b=await runLifeScenario(current.module,poses,{rendererOptions:{faunaBodyPlan:false}});
+    const b=await runLifeScenario(current.module,poses,{rendererOptions:LEGACY_RENDERER_OPTIONS});
     const first=a.digests.findIndex((digest,i)=>digest!==b.digests[i]);
     if(first>=0){
       const detail=new Set([first]);
-      const [ra,rb]=[await runLifeScenario(reference.module,poses.slice(0,first+1),{detailFrames:detail}),await runLifeScenario(current.module,poses.slice(0,first+1),{detailFrames:detail,rendererOptions:{faunaBodyPlan:false}})];
+      const [ra,rb]=[await runLifeScenario(reference.module,poses.slice(0,first+1),{detailFrames:detail}),await runLifeScenario(current.module,poses.slice(0,first+1),{detailFrames:detail,rendererOptions:LEGACY_RENDERER_OPTIONS})];
       const sa=ra.details.get(first),sb=rb.details.get(first),diff=[];
       for(const field of Object.keys(sa))if(JSON.stringify(sa[field])!==JSON.stringify(sb[field]))diff.push({field,ref:JSON.stringify(sa[field]).slice(0,400),cur:JSON.stringify(sb[field]).slice(0,400)});
       assert.fail(`frame ${first} (${poses[first].phase}) of ${poses.length} differs: ${JSON.stringify(diff.slice(0,4))}`);
@@ -94,7 +99,7 @@ test('hidden life reports no flora or fauna (S6 15 km finding)',async()=>{
   const current=await lifeRendererModule({prefix:'atlas-life-hide-'});
   const poses=digestPoses();
   try{
-    const r=await runLifeScenario(current.module,poses);
+    const r=await runLifeScenario(current.module,poses,{rendererOptions:LEGACY_RENDERER_OPTIONS});
     const hidden=r.hidden;assert.ok(hidden.length>=5);
     for(const h of hidden){
       assert.deepEqual(h.floraCounts,[0,0,0],`frame ${h.i}: flora present/survivor/submitted`);

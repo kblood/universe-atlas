@@ -2,8 +2,8 @@
   "schema": "creature-kit-lab-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.10.1",
-    "commit": "4df6b0013fcc842c900d8465b5bf6647c94447ff",
+    "version": "0.11.0",
+    "commit": "05dad21132b01befef3eb00d20090f904e9b785b",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -15,7 +15,7 @@
     },
     {
       "path": "apps/creature-lab/benchmark.html",
-      "sha256": "83bac9cb06c69386ffc0322c58f52779f4a21f5be48df18047a9184e83e77384"
+      "sha256": "959ec7a2170ab34409c3480f5e781f2fcd8662d3ce579a8e748621f2dafc57d3"
     },
     {
       "path": "apps/creature-lab/creature-lab.html",
@@ -47,19 +47,23 @@
     },
     {
       "path": "apps/creature-lab/src/benchmark-main.ts",
-      "sha256": "707d01c02ecbc079a261f7c6d4fba4cee894fbaadfb9acb4e310280aa5768210"
+      "sha256": "135cfc93a85ea816e2ab59efdd8f2b2acaf5ba3388a75e0b11e62394e8850f66"
     },
     {
       "path": "apps/creature-lab/src/benchmark-state.ts",
-      "sha256": "f21d508364fdf78fc513946f0524467237537473df079ee01113004c96579a89"
+      "sha256": "5df723f4652ba89f195721c8d5bc6813b65be224f8f2021eb01930f53d86edb7"
     },
     {
       "path": "apps/creature-lab/src/benchmark.css",
       "sha256": "3ffcc2178a6fc838f1ed08d7ae40eacc69ebf5d73326ba6e56da9f81251ab0e3"
     },
     {
+      "path": "apps/creature-lab/src/composer-motion-labels.ts",
+      "sha256": "ee800a649edfe5d71fee8bf18ae3a50e966b1f13722f4f941110dc4329a21a12"
+    },
+    {
       "path": "apps/creature-lab/src/creature-lab-composer.ts",
-      "sha256": "4d684356fd560a2e4dda83a999cf3a7f577b30d9561a5c6f350e2f69592ce67c"
+      "sha256": "d26ec0c60989b01524987530d2625fa4e8a35b3825a096015be66115d0faec1a"
     },
     {
       "path": "apps/creature-lab/src/creature-lab-planet.ts",
@@ -67,7 +71,7 @@
     },
     {
       "path": "apps/creature-lab/src/creature-lab-state.ts",
-      "sha256": "addec630ad17a268b6de097b9828ca487687075bf4b690e3ea58800b9af1e13f"
+      "sha256": "14dcbb19665d79b4df2d192bc2eb7b86e2b6c8b1d604e87f44f9ca3fc8da408b"
     },
     {
       "path": "apps/creature-lab/src/creature-lab.css",
@@ -83,7 +87,7 @@
     },
     {
       "path": "apps/creature-lab/src/main.ts",
-      "sha256": "d8383cc98a1de061e7d7e990aee76b2266916468ca9dd27058ba613c2bb19c6b"
+      "sha256": "e074b39896180b6dae1c4249630df9fcc116cd27802a952dca155ffb63551b02"
     },
     {
       "path": "apps/creature-lab/src/planet-lab-state.ts",
@@ -104,40 +108,40 @@
   ],
   "files": [
     {
-      "path": "assets/benchmark-CWMgNoCt.js",
-      "sha256": "db90d90d317f0d03284ce32a87bb8974131be6b6ebf17826daeb5e599629f80f"
-    },
-    {
       "path": "assets/benchmark-Cd3d12Xn.css",
       "sha256": "3ffcc2178a6fc838f1ed08d7ae40eacc69ebf5d73326ba6e56da9f81251ab0e3"
     },
     {
-      "path": "assets/composer-BA8OZU_d.js",
-      "sha256": "8ad9d529888d49baceb6805b788060436b433a2d85cd7e231c090a1743ea7947"
+      "path": "assets/benchmark-DM_mjbjr.js",
+      "sha256": "c522f7992e2dc28be600db133781d64ba881c6742d9de4de414576fd3827f71f"
     },
     {
       "path": "assets/composer-D3gF7lKI.css",
       "sha256": "906bd647a0e5c4d94795891a9d7fe79d44d93f5185d692feea5f001b30c2edff"
     },
     {
+      "path": "assets/composer-qpd4A_9V.js",
+      "sha256": "c33eed77956a6ee7cf8f8f54332ba738d7400eb70729bd2edad919a3ed3544b2"
+    },
+    {
+      "path": "assets/creature-lab-BwcpZp9H.js",
+      "sha256": "bfd7a8e38a21485e8c69b2e134716d14dfa35258de0ddfb13021be052c9fe23c"
+    },
+    {
       "path": "assets/creature-lab-CN8EtKiP.css",
       "sha256": "10aae7fa7b9e0823dd17ab8349668ba0b405462368591d5cf1abb4d90032fda7"
     },
     {
-      "path": "assets/creature-lab-DYPuAeU4.js",
-      "sha256": "3bff36ce1fb8e5dd3de0f3cb36cd0755a55d6d5f67b2e9d105ec04a06dc86e62"
+      "path": "assets/creature-lab-planet-C8ZH5ZkG.js",
+      "sha256": "f5c8d3f0e08a1a4fc54e45ec30606fd51f139f399b237ab4b354d4e5df142d48"
     },
     {
-      "path": "assets/creature-lab-planet-CCGnx5JO.js",
-      "sha256": "6042f36fe6e1dc1f0c85847db99bfb7b016c48da1bd93c509430270fc61895c8"
+      "path": "assets/creature-model-rmsAQgF8.js",
+      "sha256": "c7239fdede08206f5bb79102c3908a32a20d891df4a9ce084a69216b8dbb6282"
     },
     {
-      "path": "assets/creature-model-Oe3ND3It.js",
-      "sha256": "658a7e7f4cf48c1ecf18d935bc0991b3bf911a30f1ebac922a9bc08876c59e6c"
-    },
-    {
-      "path": "assets/fauna-composer-export-roAuej1-.js",
-      "sha256": "a0242224babde51461be934879cb24e863b0b39e014655416ed519c80e538be5"
+      "path": "assets/fauna-composer-export-Bb3S_Wc-.js",
+      "sha256": "8bc5f7d6d15963beb405ff75b72f0b47d3d931f2163dfa90615a8fd7be09f7d6"
     },
     {
       "path": "assets/index-CYUeVSzr.js",
@@ -152,16 +156,16 @@
       "sha256": "44773cd98b2830ca74b418bd9c383e58ffc62af1f85bc222cb982e620d5d1b9e"
     },
     {
-      "path": "assets/planet-PK_AYfIn.js",
-      "sha256": "51a377160f1cb407ad0d54b1e7a976d0cde0fc10cb912f4cd52bdfd751ade9d8"
+      "path": "assets/planet-xki6uHqw.js",
+      "sha256": "a0a2d4e8b487060281f446bc7eb5a6e1c67e622efc99b59d025664950cafa661"
     },
     {
       "path": "benchmark.html",
-      "sha256": "12577f5e26f5d3d9fbea37a1468d7098377c37107e97ff356494998aee6c31fc"
+      "sha256": "12cf815fa9b5d56f904b75ae97719e8b5d84679ddd839e5d530b0d6c9aa7258a"
     },
     {
       "path": "creature-lab.html",
-      "sha256": "68fce759af3df840b808f72cf26d110e61f4453adfee07935f28bab93216d677"
+      "sha256": "bb64ae6d29131a9bc3ae3765aad08d09e8dd761944de8f46386b5284065106d0"
     },
     {
       "path": "index.html",
@@ -169,7 +173,7 @@
     },
     {
       "path": "planet-skin.html",
-      "sha256": "4a7438701c82a29d94622f5c7c4f6fa4a6c996094e886e830f06e6a33e812392"
+      "sha256": "eebaf687968f767437730e2a888dbe693fd371b93d3607016fa21c1018ef28e1"
     }
   ]
 }

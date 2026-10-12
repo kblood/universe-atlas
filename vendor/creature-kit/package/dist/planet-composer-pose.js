@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { poseComposer } from "./fauna-composer-rig.js";
-export const PLANET_COMPOSER_POSE_VERSION = 'planet-composer-pose-4';
+export const PLANET_COMPOSER_POSE_VERSION = 'planet-composer-pose-5';
 const TAU = Math.PI * 2;
 const fraction = (x) => ((x % 1) + 1) % 1;
 const quintic = (x) => x * x * x * (10 + x * (6 * x - 15));
@@ -30,6 +30,24 @@ export function posePlanetComposer(graph, member, activity, ground, rigSeconds, 
     const cycle = fraction(activity.travel * cycles);
     const yaw = activity.pose.yaw, cos = Math.cos(yaw), sin = Math.sin(yaw);
     const rootHeight = sample(activity.pose.x, activity.pose.z);
+    // Winged animals use the same dated path and original anatomy at every LOD.
+    // Flight has no planted feet or terrain attitude: its own rig clearance keeps
+    // wings and tucked legs above the caller's sampled surface.
+    if (graph.dims.wingSemiSpan > 0) {
+        // Raise the flight envelope over the nearby terrain as well as the root.
+        // A tilted hillside can otherwise intersect a fully spread wingtip.
+        const reachX = graph.dims.bodyLength * 1.5;
+        const reachZ = graph.dims.wingSemiSpan + graph.dims.torsoWidth;
+        let ceiling = rootHeight;
+        for (const x of [-reachX, 0, reachX])
+            for (const z of [-reachZ, 0, reachZ]) {
+                ceiling = Math.max(ceiling, sample(activity.pose.x + cos * x + sin * z, activity.pose.z + sin * x - cos * z));
+            }
+        const pose = poseComposer(graph, 'fly', rigSeconds, { ...options, environment: { clock: rigSeconds, rootHeight: ceiling - rootHeight } });
+        return { ...pose, planet: { version: PLANET_COMPOSER_POSE_VERSION, memberId: member.id,
+                cyclesPerRevolution: cycles, cycle, strideM: stride, speedMps: moving ? speed : 0,
+                root: [activity.pose.x, rootHeight, activity.pose.z], yaw } };
+    }
     const toWorld = (x, z) => [activity.pose.x + cos * x + sin * z, activity.pose.z + sin * x - cos * z];
     const toBody = (x, h, z) => { const dx = x - activity.pose.x, dz = z - activity.pose.z; return [cos * dx + sin * dz, h - rootHeight, sin * dx - cos * dz]; };
     const bodyGround = (x, z) => { const p = toWorld(x, z); return sample(p[0], p[1]) - rootHeight; };

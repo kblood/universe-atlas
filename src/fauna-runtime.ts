@@ -441,6 +441,19 @@ export function faunaMemberActivityExactAtWorldNs(member: FaunaHerdMember, world
   };
 }
 
+/** Continuous airborne orbit. Ground animals keep their idle/walk schedule;
+ * flying animals advance from the exact date even during a former idle window. */
+export function faunaFlightActivityAtWorldNs(member: FaunaHerdMember, worldNs: bigint): FaunaMemberActivity {
+  const {period, speed} = activityClock(member);
+  const remainder = (((worldNs - CATALOGUE_EPOCH_NS) % period) + period) % period;
+  const travel = speed >= 1e-9 ? Number(remainder) / Number(period) : 0;
+  const angle = member.orbitPhase + Math.sign(member.orbitAngularSpeed || 1) * travel * Math.PI * 2;
+  return {pose: {x: member.anchorOffsetX + Math.cos(angle) * member.orbitRadiusM,
+    z: member.anchorOffsetZ + Math.sin(angle) * member.orbitRadiusM,
+    yaw: angle + Math.sign(member.orbitAngularSpeed || 1) * Math.PI * .5, gait: 'walk'},
+    travel, revolutionS: speed >= 1e-9 ? Number(period) / Number(NS) : Infinity, stateS: 1};
+}
+
 /** Short, exact-date cycle for the rig's decorative walk animation. */
 export function faunaRigSecondsAt(worldNs: bigint): number {
   const period = 1_000_000n * NS;

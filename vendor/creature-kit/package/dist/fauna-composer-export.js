@@ -41,7 +41,7 @@
 import * as THREE from 'three';
 import { createComposerCreature } from "./fauna-composer.js";
 import { COMPOSER_RECIPE_VERSION, decodeComposerRecipe, encodeComposerRecipe, normalizeComposerRecipe } from "./fauna-composer-recipe.js";
-import { COMPOSER_BUDGET, COMPOSER_GRAPH_VERSION, COMPOSER_MOTIONS, COMPOSER_TRUNK_MOTION_VERSION, poseComposer } from "./fauna-composer-rig.js";
+import { COMPOSER_BUDGET, COMPOSER_GRAPH_VERSION, COMPOSER_MOTIONS, COMPOSER_TRUNK_MOTION_VERSION, composerMotionPeriod, poseComposer } from "./fauna-composer-rig.js";
 import { COMPOSER_SKIN_VERSION, COMPOSER_REALISM_SKIN_VERSION } from "./fauna-composer-mesh.js";
 import { COMPOSER_INDIVIDUAL_VERSION, composerSpeciesKey } from "./fauna-composer-individual.js";
 import { COMPOSER_FACE_VERSION } from "./fauna-composer-face.js";
@@ -180,9 +180,9 @@ export function composerClipWindow(graph, motion, fps = COMPOSER_EXPORT_DEFAULT_
         return { duration: 1, keys: 2, seamPosition: 0, seamAngle: 0, seamScale: 0, seamless: true, method: 'static' };
     const { minSeconds, maxSeconds, walkMinSeconds } = COMPOSER_EXPORT_CLIP_WINDOW;
     const tried = [];
-    if (motion === 'walk') {
+    if (motion === 'walk' || motion === 'run' || motion === 'fly' || motion === 'glide' || motion === 'eat') {
         // legged gaits recur after one gait period; take the shortest whole number of periods that closes
-        const period = graph.locomotion.period;
+        const period = composerMotionPeriod(graph, motion);
         for (let k = 1; k * period <= Math.max(maxSeconds, period); k++) {
             const w = window(k * period, 'gait-periods');
             tried.push(w);
@@ -726,7 +726,7 @@ export function exportCreatureGlb(input, options = {}) {
         throw new Error(`composer export: unknown gloss mode ${String(gloss)}`);
     if (!Object.hasOwn(FORWARD_ROOT, forward))
         throw new Error(`composer export: unknown forward axis ${String(forward)}`);
-    const requests = (options.clips ?? COMPOSER_MOTIONS).map(c => typeof c === 'string' ? { motion: c } : { ...c });
+    const requests = (options.clips ?? ['neutral', 'idle', 'walk', 'display']).map(c => typeof c === 'string' ? { motion: c } : { ...c });
     assertFps(fps);
     for (const r of requests) {
         if (!COMPOSER_MOTIONS.includes(r.motion))

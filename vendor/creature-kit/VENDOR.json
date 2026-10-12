@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.10.1",
-    "commit": "4df6b0013fcc842c900d8465b5bf6647c94447ff",
+    "version": "0.11.0",
+    "commit": "05dad21132b01befef3eb00d20090f904e9b785b",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -34,7 +34,7 @@
     },
     {
       "path": "src/fauna-composer-export.ts",
-      "sha256": "12eff8ee5da69925d8858057c98c1083dc52fb1693676a8faef819ffbe36931c"
+      "sha256": "ccdacc057b725aa7a7d7c52357201728c29211650ce9128245f886afc1646152"
     },
     {
       "path": "src/fauna-composer-eye-catalogue.ts",
@@ -82,7 +82,7 @@
     },
     {
       "path": "src/planet-composer-pose.ts",
-      "sha256": "ffef328eb5fd57a673ccb53db1366542669237c0888b8eece3c0de09c412fea5"
+      "sha256": "bc053e802a2f9861e0bfa5d96c1622cfd4cb0cf5a5578e35136032a1c2a17049"
     },
     {
       "path": "src/planet-composer-measure.ts",
@@ -106,11 +106,11 @@
     },
     {
       "path": "src/fauna-composer-recipe.ts",
-      "sha256": "fceaae0cc833262e098d29f62ed8836e6d9da458641741e66fb6ceaefc6ae39b"
+      "sha256": "54c8f6bea375a09b0f1bd5c519ab2f74aeb255435b0fcb3815c8d71b55f6d9f0"
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "fbd7dfed37ee10eb1df104828a4cbaf7d8e8800da1cdc6564f670c226ac7eee2"
+      "sha256": "6a4795959c3fb3b46abe851e3f4bdab494ffb69f72cc4c6a5766ebcecb50e0e2"
     },
     {
       "path": "src/fauna-composer-species.ts",
@@ -186,7 +186,7 @@
     },
     {
       "path": "tests/fauna-composer-export.test.mjs",
-      "sha256": "c67e8f47c5b5068a0e5c081f12c8ab11c388db594e19270e936c764ea83be7ff"
+      "sha256": "760a95f69404dc1bc2e70725199d05a6eaaf1f92e627ed2e29bdba2d34cd8bff"
     },
     {
       "path": "tests/fauna-composer-eye-catalogue-geometry.test.mjs",
@@ -238,7 +238,7 @@
     },
     {
       "path": "tests/fauna-composer-lod-volume.test.mjs",
-      "sha256": "00c99704e60512968c8daae0fe6b0041815ea6f029c5e5e2d8e21aecd2ac3765"
+      "sha256": "916524a05cf45d4830a02a6b2a70d76ee50b2e80e16ef165c76799b4f868313e"
     },
     {
       "path": "tests/fauna-composer-lod-attachments.test.mjs",
@@ -246,7 +246,7 @@
     },
     {
       "path": "tests/planet-composer-terrain-frame.test.mjs",
-      "sha256": "7f727301b9c9431e65376bb73fc7d14b002833ccf71d11d33e3a39f443e62a36"
+      "sha256": "1443bfd346fc51894421fba4a68a268b9b5807f6093c36f46acb1cfb5208de23"
     },
     {
       "path": "tests/planet-composer-terrain-reach.test.mjs",
@@ -258,7 +258,7 @@
     },
     {
       "path": "tests/fauna-composer-recipe-independent.test.mjs",
-      "sha256": "c83be4821bfabc9e63ace2c12cc16e0a469dbef50c26ccb10817ce56b9538c55"
+      "sha256": "c0849738a6f8fe17658214aeb28107d617a20be1bd9fe91a915b81afeebbba26"
     },
     {
       "path": "tests/fauna-composer-realism.test.mjs",
@@ -270,7 +270,7 @@
     },
     {
       "path": "tests/fauna-composer-rig-independent.test.mjs",
-      "sha256": "96b0eea919a9d7619000e93fb96d69e3b62d2dad6cc268bd21fe0ffffa8f3555"
+      "sha256": "4dee83a5317ac20f1a4437480fa8723dd30fdfb54988013ca1599353c5cc1300"
     },
     {
       "path": "tests/fauna-composer-skin-anatomy.test.mjs",
@@ -322,7 +322,7 @@
     },
     {
       "path": "tests/fixtures/creature-core-exports.json",
-      "sha256": "383b02b8edde5308b2f3053fcdbcf0cf433210eaed16dfeee1490d828d708259"
+      "sha256": "7caf6b01f2d7ffa2aac7438186baaaf10a6916538b2433d4a500664f7c6c5503"
     },
     {
       "path": "tests/helpers/composer-head-occlusion.mjs",

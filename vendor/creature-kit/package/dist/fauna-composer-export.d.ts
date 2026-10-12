@@ -105,7 +105,7 @@ export interface ComposerExportOptions extends ComposerPoseOptions {
     phenotype?: ComposerBuildPhenotype;
     /** Surface revision, independent of recipe identity. Omitted exports skin-5. */
     presentation?: ComposerSkinPresentation;
-    /** Motions (or explicit clip windows) to bake; default every COMPOSER_MOTIONS entry. */
+    /** Motions (or explicit clip windows) to bake; default the original four clips for compatibility. New motions can be requested explicitly. */
     clips?: readonly (ComposerMotion | ComposerClipRequest)[];
     fps?: number;
     gloss?: ComposerGlossMode;

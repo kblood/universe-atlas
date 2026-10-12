@@ -30,7 +30,7 @@ import {oceanHypsometry} from './ocean-volume.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
 import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
 import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, submitFloraCandidate, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
-import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, faunaGroundedTransformInto, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
+import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaFlightActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, faunaGroundedTransformInto, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
 import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fauna-near-rig.ts';
 import {createFaunaPlanetComposerRenderer,faunaPlanetComposerDefinition,FAUNA_PLANET_COMPOSER_VERSION,FAUNA_PLANET_COMPOSER_POLICY,type FaunaPlanetComposerRenderer,type FaunaPlanetComposerCandidate} from './fauna-planet-composer.ts';
@@ -2214,7 +2214,9 @@ export class PlanetRenderer {
   }
   private faunaBoundsIntersect(position:THREE.Vector3,frustum:THREE.Frustum):boolean {
     const radiusM=this.body.radiusM;
-    this.faunaBounds.center.copy(position).addScaledVector(this.faunaAnchorPos,3/radiusM);this.faunaBounds.radius=6/radiusM;
+    // Composer wings can leave the former grounded sphere during a full
+    // downstroke. The coarse herd bound below uses this same air allowance.
+    this.faunaBounds.center.copy(position).addScaledVector(this.faunaAnchorPos,3/radiusM);this.faunaBounds.radius=(this.faunaUsesComposer ? 12 : 6)/radiusM;
     return frustum.intersectsSphere(this.faunaBounds);
   }
   /** Diagnostics only: follow canonical individuals through every stage of
@@ -2292,7 +2294,8 @@ export class PlanetRenderer {
     if(record.ns!==worldNs){
       const members=record.members,ground=this.faunaSurfaces[a].ground!,relief=record.relief;
       for(let i=0;i<members.length;i++){
-        const activity=faunaMemberActivityAtWorldNs(members[i],worldNs);record.activity[i]=activity;
+        const winged=this.faunaUsesComposer && (this.faunaGenomeOf(members[i]).morphology?.wingSpan ?? 0)>0;
+        const activity=winged ? faunaFlightActivityAtWorldNs(members[i],worldNs) : faunaMemberActivityAtWorldNs(members[i],worldNs);record.activity[i]=activity;
         this.faunaGroundValue=faunaGroundHeight(ground,activity.pose.x,activity.pose.z)*relief;
         faunaGroundedTransformInto(this.faunaAnchorPos,this.faunaTangentRight,this.faunaTangentForward,this.faunaTangentUp,activity.pose,this.faunaGroundHeightAt,record.position[i],record.quaternion[i]);
       }
@@ -2305,7 +2308,8 @@ export class PlanetRenderer {
    * anchor + right·x + forward·z + up·h with |right| = |forward| = 1/r
    * (orthogonal), up = anchor/r, |(x, z)| ≤ reach and h within the stencil's
    * [min, max] (bilinear, clamped). Its draw sphere is centred 3 m above
-   * that with radius 6 m. The herd sphere is centred at anchor·(1+(hMid+3)/r)
+   * that with radius 6 m (12 m for Composer's airborne wing envelope).
+   * The herd sphere is centred at anchor·(1+(hMid+3)/r)
    * and covers every member sphere with a 1 cm margin (float error is ~1e-9 m),
    * so a herd sphere outside a frustum plane proves every member sphere is too.
    * `placeRadiusM` bounds member positions around anchor·(1+hMid/r). */
@@ -2315,7 +2319,7 @@ export class PlanetRenderer {
     record.placeRadiusM=spread+.01;
     record.center.copy(this.faunaAnchorPos).multiplyScalar(1+record.hMid/radiusM);
     record.sphere.center.copy(this.faunaAnchorPos).multiplyScalar(1+(record.hMid+3)/radiusM);
-    record.sphere.radius=(spread+6+.01)/radiusM;
+    record.sphere.radius=(spread+(this.faunaUsesComposer ? 12 : 6)+.01)/radiusM;
   }
   /** True when this fauna frame's inputs equal the last drawn frame's: eye
    * (= life origin), date, camera and shadow frusta, relief and the packed

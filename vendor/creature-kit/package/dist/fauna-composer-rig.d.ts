@@ -48,7 +48,7 @@ export declare const COMPOSER_BUDGET: Readonly<{
     maxTriangles: 80000;
     drawCallsPerCreature: 2;
 }>;
-export declare const COMPOSER_MOTIONS: readonly ["neutral", "idle", "walk", "display"];
+export declare const COMPOSER_MOTIONS: readonly ["neutral", "idle", "walk", "display", "run", "eat", "fly", "glide"];
 export type ComposerMotion = typeof COMPOSER_MOTIONS[number];
 export type ComposerPart = 'torso' | 'tail' | 'neck' | 'head' | 'trunk' | 'leg' | 'foot' | 'arm' | 'hand' | 'finger' | 'wing';
 export type Vec3 = [number, number, number];
@@ -254,6 +254,8 @@ export declare const composerWingThickness: (feathered: boolean, total: number) 
 export declare const AXIAL_ARM_REST: readonly number[];
 /** Display arm raise from the rest target, in arm reaches: [forward, up, outward] (graph-3: [0.35, 0.55, 0]). */
 export declare const DISPLAY_ARM_RAISE: readonly number[];
+/** Main authored cycle; secondary idle/look oscillations retain their legacy periods. */
+export declare function composerMotionPeriod(graph: ComposerGraph, motion: ComposerMotion): number;
 /** Deterministic pose for a motion at `time` seconds (bounded 0..120). */
 export declare function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time: number, options?: ComposerPoseOptions): ComposerPose;
 /** Parent-child joint list (bone origin pairs) for skeleton display and tests. */

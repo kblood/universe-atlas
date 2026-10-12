@@ -155,7 +155,7 @@ function eyeSelectOptions(){return `<option value="auto">${esc(VALUE["eyes:auto"
 const ARCHETYPE_LABEL:Record<ComposerArchetype,string>={"ungulate-grazer":"grazing hoofed animal",giraffid:"giraffid",pachyderm:"pachyderm","cursorial-carnivore":"running carnivore",theropod:"theropod",ratite:"ratite",
  bird:"ground bird","sprawler-lizard":"lizard",tortoise:"tortoise",primate:"primate",myriapod:"myriapod",worm:"worm"};
 const HERD_LABEL:Record<ComposerHerdSize,string>={1:"1 animal",6:"Herd of 6",9:"Herd of 9",12:"Herd of 12"};
-const MOTION_LABEL:Record<ComposerMotion,string>={neutral:"Rest pose (unanimated)",idle:"Standing",walk:"Walking",display:"Display (wings, arms, trunk)"};
+const MOTION_LABEL:Record<ComposerMotion,string>={neutral:"Rest pose (unanimated)",idle:"Standing",walk:"Walking",display:"Display (wings, arms, trunk)",run:"Running",eat:"Eating",fly:"Flying",glide:"Gliding"};
 const isChoice=(key:Key):key is ComposerChoiceKey=>key in COMPOSER_CHOICES;
 /** Controls drawn as a select: the choice keys, plus the eye-rules epoch (a number key with two named values). */
 const isSelect=(key:Key)=>isChoice(key)||key==="eyeRules";
