@@ -2,8 +2,8 @@
   "schema": "creature-kit-vendor-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.11.0",
-    "commit": "05dad21132b01befef3eb00d20090f904e9b785b",
+    "version": "0.11.1",
+    "commit": "e79709e6b29e5dfd6b71c9b8789104ae6a27bd14",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -110,7 +110,7 @@
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "6a4795959c3fb3b46abe851e3f4bdab494ffb69f72cc4c6a5766ebcecb50e0e2"
+      "sha256": "b5179ca10f08803c53a6c67eddfa3a5a918f9a7aac694040a60aa591fdb26a80"
     },
     {
       "path": "src/fauna-composer-species.ts",

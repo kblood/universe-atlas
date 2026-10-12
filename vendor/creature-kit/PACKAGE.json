@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.11.0",
-    "commit": "05dad21132b01befef3eb00d20090f904e9b785b",
+    "version": "0.11.1",
+    "commit": "e79709e6b29e5dfd6b71c9b8789104ae6a27bd14",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -23,7 +23,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "ab1136b6c806d72543d6a54e4d684c3bd0e22ad42fb77f2143695cb2045a43f9"
+      "sha256": "7abb2cc0720e57e242a4c125143fd29387923e5df7be80181356b0f169bfd861"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "ea692d33f81da672cd69dd096705506f3ffc074c5999e5a0d4a571b0fb66b1e6"
+      "sha256": "cff29594b68e5cdb327a5980496fe6ba0d92409cacbc0b53dd133f74478d7f6c"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -139,7 +139,7 @@
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "6a4795959c3fb3b46abe851e3f4bdab494ffb69f72cc4c6a5766ebcecb50e0e2"
+      "sha256": "b5179ca10f08803c53a6c67eddfa3a5a918f9a7aac694040a60aa591fdb26a80"
     },
     {
       "path": "src/fauna-composer-shadows.ts",
@@ -241,7 +241,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "ab1136b6c806d72543d6a54e4d684c3bd0e22ad42fb77f2143695cb2045a43f9"
+      "sha256": "7abb2cc0720e57e242a4c125143fd29387923e5df7be80181356b0f169bfd861"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -453,7 +453,7 @@
     },
     {
       "path": "dist/fauna-composer-rig.js",
-      "sha256": "bceb2661feb44fe5458ef13a952df82d96f0a69b38f1c4799ee0667a9c171a22"
+      "sha256": "b3d400109a5599d078c096ea5d080a649f832fcaec1133131dfdf26f669cd682"
     },
     {
       "path": "dist/fauna-composer-shadows.d.ts",
@@ -625,7 +625,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "ea692d33f81da672cd69dd096705506f3ffc074c5999e5a0d4a571b0fb66b1e6"
+      "sha256": "cff29594b68e5cdb327a5980496fe6ba0d92409cacbc0b53dd133f74478d7f6c"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -733,7 +733,7 @@
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "6a4795959c3fb3b46abe851e3f4bdab494ffb69f72cc4c6a5766ebcecb50e0e2"
+      "sha256": "b5179ca10f08803c53a6c67eddfa3a5a918f9a7aac694040a60aa591fdb26a80"
     },
     {
       "path": "src/fauna-composer-shadows.ts",
