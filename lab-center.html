@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080e17">
+  <meta name="description" content="Find Universe Atlas labs for animals, biomes, biospheres, clouds, tree assets and rendering experiments, with historical tools kept in a separate archive.">
+  <title>Lab Center · Universe Atlas</title>
+  <link rel="stylesheet" href="./guide/theme.css">
+  <style>
+    main{max-width:1280px;margin:auto;border:0}.topbar nav{display:flex;gap:12px;flex-wrap:wrap}.cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}.card{height:100%}.card .eyebrow{margin-bottom:12px}.card h3{font-size:1.35rem}.card small{display:block;margin-top:16px}.archive .card{background:#111a25}.page-footer{margin-top:52px}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="./index.html"><span aria-hidden="true">✧</span> UNIVERSE ATLAS / LAB CENTER</a>
+    <nav aria-label="Related pages"><a class="button" href="./guide/">Field guide</a><a class="button primary" href="./index.html">Open Atlas ↗</a></nav>
+  </header>
+  <main id="main">
+    <p class="eyebrow">Explore · Compare · Inspect</p>
+    <h1>One place for the labs.</h1>
+    <p class="lead">Inspect animals, explore living systems and compare rendering techniques. Each lab below explains what it shows and whether it is a current tool, a development experiment or a historical reference.</p>
+    <nav class="on-this-page" aria-label="Lab categories"><strong>Browse</strong><a href="#worlds">Animals &amp; worlds</a><a href="#rendering">Trees &amp; lighting</a><a href="#archive">Archive</a></nav>
+
+    <section id="worlds">
+      <h2>Animals &amp; worlds</h2>
+      <div class="cards">
+        <a class="card" href="./animal-lab/"><span class="eyebrow">Current animal editor</span><h3>Animal Lab</h3><p>Build and edit Composer animals with anatomy controls, animated poses, herds, comparison and export. Planet animals use the same creature-kit source; open an individual from Atlas to inspect its inherited appearance.</p><small>Animal LOD preview controls are not available yet.</small></a>
+        <a class="card" href="./biome-lab.html"><span class="eyebrow">Reference composition</span><h3>Biome Lab</h3><p>Explore vegetation and rock recipes on a flat test plot. Select a biome and a neighbouring biome to inspect composition, transitions and recipe counts.</p><small>Reference geometry. Planned fauna is listed but not rendered.</small></a>
+        <a class="card" href="./biosphere-lab.html"><span class="eyebrow">Species &amp; history</span><h3>Biosphere Lab</h3><p>Inspect species, habitat ranges, growth stages, communities and branching histories at different dates and planetary profiles.</p><small>Simplified specimen previews; these are not the planet’s Composer animal meshes.</small></a>
+        <a class="card" href="./tests/cloud-comparison.html"><span class="eyebrow">Rendering comparison</span><h3>Cloud Lab</h3><p>Compare cloud representations from different viewpoints. Adjust weather coverage and replay a selected world date to inspect the rendering.</p><small>A controlled test scene, separate from a full planet visit.</small></a>
+      </div>
+    </section>
+
+    <section id="rendering">
+      <h2>Trees &amp; lighting</h2>
+      <p class="lead">Development tools for inspecting tree assets and rendering choices. Tree comparisons need local GLB files or capture folders; selected files stay in your browser.</p>
+      <div class="cards">
+        <a class="card" href="./tree-asset-lab.html"><span class="eyebrow">Development tool · local files</span><h3>Tree Asset Lab</h3><p>Load a tree’s LOD0 and LOD1 GLBs. Compare detail levels, specimen scales, population, leaf coverage, transmission and wind.</p></a>
+        <a class="card" href="./tree-impostor-lab.html"><span class="eyebrow">Development tool · local files</span><h3>Tree Capture Comparison</h3><p>Compare a source tree mesh with its captured impostor from the same camera. Inspect filtering, depth parallax and foliage coverage.</p></a>
+        <a class="card" href="./tree-reference-lab.html"><span class="eyebrow">Development reference · local files</span><h3>Tree Reference Comparison</h3><p>Compare an Atlas tree family with an EZ-Tree reference, including detail levels, leaf-card normals and larger populations.</p></a>
+        <a class="card" href="./tree-impostor-reference-lab.html"><span class="eyebrow">Development reference · local files</span><h3>Existing Impostor Comparison</h3><p>Compare full and middle tree meshes with the pinned Three.ez impostor renderer. Capture a static reference tree and inspect it from different angles.</p><small>One capture per page load; no wind or shadow acceptance.</small></a>
+        <a class="card" href="./leaf-transmission-lab.html"><span class="eyebrow">Lighting calibration</span><h3>Thin-leaf Lighting</h3><p>Compare front lighting, back lighting and a baseline to inspect how light passes through thin leaves.</p><small>Experimental fixture. Its settings do not change Atlas.</small></a>
+      </div>
+    </section>
+
+    <section id="archive" class="archive">
+      <h2>Archive</h2>
+      <p class="lead">Historical tools remain available for comparison and old exports. Use Animal Lab for current Composer animals.</p>
+      <div class="cards">
+        <a class="card" href="./creature-lab.html"><span class="eyebrow">Archived Atlas interface</span><h3>Archived Creature Lab</h3><p>The earlier animal gallery, anatomy, arena and ancestry interface, with legacy rig references and historical inspection modes.</p></a>
+        <a class="card" href="./animal-lab/planet-skin.html"><span class="eyebrow">Archived quadruped inspector</span><h3>Archived Planet Inspector</h3><p>Inspect historical planet quadrupeds and preserve compatibility exports from the previous animal system.</p></a>
+        <a class="card" href="./docs/lab-center.md#local-fauna-lod-reference"><span class="eyebrow">Local archive reference</span><h3>Legacy Fauna LOD Experiment</h3><p>A developer fixture for comparing the previous animal renderer’s LOD methods. It requires historical test data and is not a hosted interactive lab.</p><small>Open the reference notes for its source location.</small></a>
+      </div>
+    </section>
+    <footer class="page-footer">Universe Atlas · <a href="./guide/">Field guide</a> · <a href="./docs/lab-center.md">Lab reference notes</a></footer>
+  </main>
+</body>
+</html>

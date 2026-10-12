@@ -18,6 +18,7 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/lab-center.md',
       'docs/fauna-realism-next-2026-10-02.md',
       'docs/fauna-variation-plan-2026-10-02.md',
       'docs/fauna-anatomy-increment-2026-10-02.md',
@@ -738,7 +739,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       input: {
-        atlas: 'index.html', biomes: 'biome-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html', clouds: 'tests/cloud-comparison.html',
+        atlas: 'index.html', labs: 'lab-center.html', biomes: 'biome-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html', clouds: 'tests/cloud-comparison.html',
+        treeAssets: 'tree-asset-lab.html', treeCaptures: 'tree-impostor-lab.html', treeReferences: 'tree-reference-lab.html', treeImpostorReferences: 'tree-impostor-reference-lab.html', leafLighting: 'leaf-transmission-lab.html',
         ...Object.fromEntries(['index', 'determinism', 'time', 'universe', 'terrain', 'water-atmosphere', 'life', 'travel', 'publishing']
           .map(chapter => [`guide-${chapter}`, `guide/${chapter}.html`])),
       },
