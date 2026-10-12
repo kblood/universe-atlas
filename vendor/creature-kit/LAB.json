@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.10.0",
-    "commit": "802b43d8cdfac16e183e4f7dae5c67136d700f02",
+    "commit": "7230293b0ed5a211b28fe11af45c3a1b1152c0ca",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -15,7 +15,7 @@
     },
     {
       "path": "apps/creature-lab/benchmark.html",
-      "sha256": "0d0062abcbc10365fb75b5959db44557fb25b496ed047d57039213b2fb03c2f4"
+      "sha256": "83bac9cb06c69386ffc0322c58f52779f4a21f5be48df18047a9184e83e77384"
     },
     {
       "path": "apps/creature-lab/creature-lab.html",
@@ -108,8 +108,8 @@
       "sha256": "3ffcc2178a6fc838f1ed08d7ae40eacc69ebf5d73326ba6e56da9f81251ab0e3"
     },
     {
-      "path": "assets/benchmark-DtBzxxJH.js",
-      "sha256": "2fbcc396d4a296bc2282fc7879be5e64be23c88c26b1f70a373b725f1a0297a3"
+      "path": "assets/benchmark-DNCmRrs5.js",
+      "sha256": "5b6fa5016046459f091d3010e38fa08a1b35b0a4df467ffef1723a6c28cc9c4b"
     },
     {
       "path": "assets/composer-BA8OZU_d.js",
@@ -157,7 +157,7 @@
     },
     {
       "path": "benchmark.html",
-      "sha256": "037550b682cfd903622b1b6e981e1613a9d76217ea1333010cc23ac93705ce33"
+      "sha256": "b525c970442ef9ef0d1a7522a67aae94ed56e7d75cdc15bbd09315c3283e9b68"
     },
     {
       "path": "creature-lab.html",

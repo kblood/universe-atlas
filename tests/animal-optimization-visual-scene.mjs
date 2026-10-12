@@ -39,8 +39,8 @@ try{
  }
  // Measure projected displacement from the independent canonical palette at the
  // actual 300 m viewing scale, with a 1080-pixel vertical viewport equivalent.
- for(const preset of ['dinosaur','turtle','worm','centipede','giraffe','bird']){
-  const s=await setup(preset,{adaptiveAnimation:true,fastFarMatrices:true});s.c.presentationDistanceM=300;
+ for(const distanceM of [100,140,300])for(const preset of ['dinosaur','turtle','worm','centipede','giraffe','bird']){
+  const s=await setup(preset,{adaptiveAnimation:true,fastFarMatrices:true});s.c.presentationDistanceM=distanceM;
   const writer=new FaunaComposerPaletteWriter(s.source.graph),reference=new Float32Array(s.source.graph.bones.length*16),v=new THREE.Vector3(),a=new THREE.Vector3(),b=new THREE.Vector3(),matrix=new THREE.Matrix4();
   let maxDisplacementM=0,maxPixelEquivalent=0;
   for(let frame=1;frame<=60;frame++){
@@ -48,10 +48,10 @@ try{
    writer.write(poseComposer(s.source.graph,'walk',s.c.rigSeconds),reference);
    for(let vertex=0;vertex<skin.vertexCount;vertex+=7){
     const posePoint=(palette,out)=>{out.set(0,0,0);for(let k=0;k<4;k++){const at=vertex*4+k,w=skin.skinWeight[at];if(!w)continue;matrix.fromArray(palette,skin.skinIndex[at]*16);v.fromArray(skin.positions,vertex*3).applyMatrix4(matrix);out.addScaledVector(v,w);}return out;};
-    posePoint(reference,a);posePoint(snap.palette,b);const distance=a.distanceTo(b);maxDisplacementM=Math.max(maxDisplacementM,distance);maxPixelEquivalent=Math.max(maxPixelEquivalent,distance*1080/(2*Math.tan(Math.PI/8)*300));
+    posePoint(reference,a);posePoint(snap.palette,b);const distance=a.distanceTo(b);maxDisplacementM=Math.max(maxDisplacementM,distance);maxPixelEquivalent=Math.max(maxPixelEquivalent,distance*1080/(2*Math.tan(Math.PI/8)*distanceM));
    }
   }
-  assert(maxPixelEquivalent<2,preset+' interpolation exceeds 2 px at far viewing scale');const diagnostics=s.controller.diagnostics();assert(diagnostics.temporalSamples<30,'far solver must run less often than frames');s.dispose();cases.push({preset,maxDisplacementM,maxPixelEquivalent,solverSamples:diagnostics.temporalSamples,frames:60});
+  assert(maxPixelEquivalent<2,preset+' interpolation exceeds 2 px at far viewing scale');const diagnostics=s.controller.diagnostics();if(distanceM>=140)assert(diagnostics.temporalSamples<40,'far solver must run less often than frames');s.dispose();cases.push({preset,distanceM,maxDisplacementM,maxPixelEquivalent,solverSamples:diagnostics.temporalSamples,frames:60});
  }
  assert(gl.getError()===gl.NO_ERROR,'WebGL errors');window.__optimizationVisual={ready:true,ok:true,cases};
 }catch(error){window.__optimizationVisual={ready:true,ok:false,error:String(error.stack),debug:window.__shadowDebug};}

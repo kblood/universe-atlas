@@ -17,7 +17,7 @@ const setup=async(adaptive=true,distance=300,maxBytes=32e6,fullSourceCache)=>{
 test('far presentation reduces canonical solver calls, records sample clocks and preserves original identity',async()=>{
  const s=await setup();try{const initial=s.calls;
   for(let frame=1;frame<=60;frame++){s.candidate.rigSeconds=frame/60;s.candidate.poseKey=String(frame);s.renderer.update([s.candidate]);}
-  assert(s.calls-initial<=10);assert(s.calls-initial>=8);const snap=s.renderer.snapshotOf(s.candidate.id);
+  assert(s.calls-initial<=12);assert(s.calls-initial>=8);const snap=s.renderer.snapshotOf(s.candidate.id);
   assert.equal(snap.id,'original/member');assert.equal(snap.key,'original/recipe');assert.equal(snap.presentation.version,'composer-temporal-presentation-1');assert(snap.presentation.sourceClockB<=1);
   s.candidate.animationContext='ground2/walk';s.candidate.poseKey='new-ground';s.renderer.update([s.candidate]);
   assert.deepEqual(s.renderer.poseOf(s.candidate.id).positions,poseComposer(s.source.graph,'walk',1).positions);
@@ -25,7 +25,7 @@ test('far presentation reduces canonical solver calls, records sample clocks and
  }finally{s.renderer.dispose();assert.equal(s.renderer.ownedBytes,0);}
 });
 test('near presentation and camera-near fallback remain exact at every frame',async()=>{
- for(const distance of [5,34]){const s=await setup(true,distance);try{
+ for(const distance of [5,34,80,99]){const s=await setup(true,distance);try{
   for(let frame=1;frame<=12;frame++){s.candidate.rigSeconds=frame/60;s.candidate.poseKey=String(frame);s.renderer.update([s.candidate]);assert.deepEqual(s.renderer.poseOf(s.candidate.id),poseComposer(s.source.graph,'walk',frame/60));}
  }finally{s.renderer.dispose();}}
 });

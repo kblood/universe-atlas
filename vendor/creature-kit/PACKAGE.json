@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.10.0",
-    "commit": "802b43d8cdfac16e183e4f7dae5c67136d700f02",
+    "commit": "7230293b0ed5a211b28fe11af45c3a1b1152c0ca",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -135,7 +135,7 @@
     },
     {
       "path": "src/fauna-composer-renderer.ts",
-      "sha256": "4221d0651120d3e62848c9410c7268bc915674ed440b9e82d4805f71b95ec550"
+      "sha256": "d3325e0c3a71c015c712115910a5794689f5b1994374b00ba32556f15ac99acc"
     },
     {
       "path": "src/fauna-composer-rig.ts",
@@ -445,7 +445,7 @@
     },
     {
       "path": "dist/fauna-composer-renderer.js",
-      "sha256": "a894bcb172909f829e79d3f4747e41feb38ea7cc027ad64d130c1d4246e426c9"
+      "sha256": "0d6149c41cbe8d9f9dd683a6f4c917addebf78558b2c0434b8ee178a28d35c9b"
     },
     {
       "path": "dist/fauna-composer-rig.d.ts",
@@ -729,7 +729,7 @@
     },
     {
       "path": "src/fauna-composer-renderer.ts",
-      "sha256": "4221d0651120d3e62848c9410c7268bc915674ed440b9e82d4805f71b95ec550"
+      "sha256": "d3325e0c3a71c015c712115910a5794689f5b1994374b00ba32556f15ac99acc"
     },
     {
       "path": "src/fauna-composer-rig.ts",
