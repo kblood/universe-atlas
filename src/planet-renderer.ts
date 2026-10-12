@@ -2503,6 +2503,7 @@ export class PlanetRenderer {
       c.distanceM=item.distance;c.cameraVisible=item.cameraVisible;c.shadowVisible=!item.cameraVisible;c.rigSeconds=rigTime;
       c.ground=this.faunaPoseCache.get(this.faunaSurfaces[item.anchor])!.ground;c.groundRevision=this.lifePackBuilds;
       c.poseKey=`${this.faunaTraceNs}:${this.lifePackBuilds}`;
+      c.animationContext=`${c.groundRevision}:${c.activity.pose.gait}:${c.activity.revolutionS}`;
       c.matrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);list.push(c);
     }
     pool.length=list.length;

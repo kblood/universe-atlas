@@ -28,11 +28,12 @@ export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMe
  const provider={build:workerProvider.build,dispose(){workerProvider.dispose?.();workerDiagnostics.dispose();},
   get diagnosticBytes(){return workerDiagnostics.reservedBytes;},diagnostics:()=>workerDiagnostics.snapshot()};
  const renderer=new FaunaComposerRenderer<PlanetComposerDefinition,FaunaPlanetComposerCandidate>({provider,
-  pose:(graph,c)=>posePlanetComposer(graph,c.member,c.activity,c.ground,c.rigSeconds),
+  pose:(graph,c,reuseWorkingBuffers)=>posePlanetComposer(graph,c.member,c.activity,c.ground,c.rigSeconds,{reuseWorkingBuffers}),
   onReady:options.onReady,onMeshAdopted:options.onMeshAdopted,capacity:p.capacity,maxBones:p.maxBones,maxSources:p.capacity,
   maxBytes:p.residentBytes,maxResultBytes:p.resultBytes,workerReserveBytes:p.workerReserveBytes,fullSourceCache:p.nearSources,
   coldJobsBeforeNearUpgrade:8,
   partialPaletteUploads:true,
+  adaptiveAnimation:true,fastFarMatrices:true,distanceShadows:true,
   middleSourceCache:p.middleSources,
   mergedGpuContext:gl as WebGL2RenderingContext,
   nearM:p.nearM,middleM:p.middleM,maxDistanceM:p.visibleM,

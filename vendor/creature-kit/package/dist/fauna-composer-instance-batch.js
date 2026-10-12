@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createComposerColouredMaterial, createComposerCrispCoatMaterial } from "./fauna-composer.js";
+import { patchComposerShadowFade } from "./fauna-composer-shadows.js";
 export const FAUNA_COMPOSER_REQUIRED_ATTRIBUTES = 15;
 const HEADER = `
 attribute vec4 skinIndex;
@@ -27,10 +28,11 @@ export function patchFaunaComposerInstancing(shader) {
         replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nobjectNormal=(composerSkin*vec4(objectNormal,0.0)).xyz;');
     replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed=(composerSkin*vec4(transformed,1.0)).xyz;');
 }
-function install(material, palette) {
+function install(material, palette, shadow = false) {
     const before = material.onBeforeCompile, key = material.customProgramCacheKey();
-    material.onBeforeCompile = (shader, renderer) => { before.call(material, shader, renderer); patchFaunaComposerInstancing(shader); shader.uniforms.composerBones = palette; };
-    material.customProgramCacheKey = () => `${key}/composer-variable-instances-1`;
+    material.onBeforeCompile = (shader, renderer) => { before.call(material, shader, renderer); patchFaunaComposerInstancing(shader); if (shadow)
+        patchComposerShadowFade(shader, '1.0-fract(composerActor)*4.0'); shader.uniforms.composerBones = palette; };
+    material.customProgramCacheKey = () => `${key}/composer-variable-instances-1${shadow ? '/shadow-fade-1' : ''}`;
 }
 export function faunaComposerGeometry(skin) {
     const g = new THREE.BufferGeometry();
@@ -56,6 +58,8 @@ export class FaunaComposerInstanceBatch {
     instanceBytes;
     actors;
     disposed = false;
+    shadowAllowed;
+    shadowActors = 0;
     skin;
     capacity;
     constructor(skin, palette, capacity, roughness = .82) {
@@ -71,9 +75,9 @@ export class FaunaComposerInstanceBatch {
         this.mesh = new THREE.InstancedMesh(geometry, material, capacity);
         this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
-        install(depth, palette);
+        install(depth, palette, true);
         const distance = new THREE.MeshDistanceMaterial();
-        install(distance, palette);
+        install(distance, palette, true);
         this.mesh.customDepthMaterial = depth;
         this.mesh.customDistanceMaterial = distance;
         this.mesh.name = 'Planet Composer source instances';
@@ -83,17 +87,23 @@ export class FaunaComposerInstanceBatch {
         this.mesh.receiveShadow = true;
         this.instanceBytes = this.mesh.instanceMatrix.array.byteLength + this.actors.array.byteLength;
     }
-    beginFrame() { this.mesh.count = 0; this.mesh.visible = false; }
-    submit(matrix, paletteRow) {
+    beginFrame() { this.shadowAllowed ??= this.mesh.castShadow; this.shadowActors = 0; this.mesh.count = 0; this.mesh.visible = false; }
+    submit(matrix, paletteRow, shadowStrength = 1) {
         const i = this.mesh.count;
         if (this.disposed || i >= this.capacity)
             throw new Error('Composer instance capacity exceeded');
+        if (!Number.isFinite(shadowStrength) || shadowStrength < 0 || shadowStrength > 1)
+            throw new Error('Invalid Composer shadow strength');
         this.mesh.setMatrixAt(i, matrix);
-        this.actors.setX(i, paletteRow);
+        this.actors.setX(i, paletteRow + (1 - shadowStrength) * .25);
+        if (shadowStrength > 0)
+            this.shadowActors++;
         this.mesh.count++;
         this.mesh.visible = true;
     }
     endFrame() {
+        this.shadowAllowed ??= this.mesh.castShadow;
+        this.mesh.castShadow = !!this.shadowAllowed && this.shadowActors > 0;
         if (!this.mesh.count)
             return;
         this.mesh.instanceMatrix.clearUpdateRanges();

@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.10.0",
-    "commit": "f3842ee3a39d84eea2cd135b60bb181e025bd016",
+    "commit": "d38121119cee88dd07b847e3758319c20614643c",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -82,7 +82,7 @@
     },
     {
       "path": "src/planet-composer-pose.ts",
-      "sha256": "7457f171619b0126e142e002fc7b7b89a904db7630b363385ae077315f7f3b53"
+      "sha256": "ffef328eb5fd57a673ccb53db1366542669237c0888b8eece3c0de09c412fea5"
     },
     {
       "path": "src/planet-composer-measure.ts",
@@ -110,7 +110,7 @@
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "ad94bb0713cef5a991a30c10692b823a946ce555f521d55c8d6658fff560fb0c"
+      "sha256": "fbd7dfed37ee10eb1df104828a4cbaf7d8e8800da1cdc6564f670c226ac7eee2"
     },
     {
       "path": "src/fauna-composer-species.ts",
@@ -126,23 +126,31 @@
     },
     {
       "path": "src/fauna-composer-instance-batch.ts",
-      "sha256": "4fbaac4531565ea58b01796a12c78fc99a64ad30fa53105daae9e4a0c73e4318"
+      "sha256": "3eb5a5a56c31890493f835742d700c691427e70fb6d4b9b378802b45ee4b7ee3"
     },
     {
       "path": "src/fauna-composer-palette.ts",
-      "sha256": "c42928807bf6c6f14568af41ec5cb9bd112ca842db2cf1c830d80a3434afc334"
+      "sha256": "40892f0de7c403cefb841007e205b31c09500b86087b3f8c7a939f857c64e305"
     },
     {
       "path": "src/fauna-composer-palette-uploads.ts",
       "sha256": "644e41437c4619487a5afc6ae662550af6fdd9e26a358d87bf378bf25fb7c8ea"
     },
     {
+      "path": "src/fauna-composer-animation.ts",
+      "sha256": "ec40c2e7084f54475d65fe2af77218567f44821b1e22d82dae63c082f9c5b83b"
+    },
+    {
+      "path": "src/fauna-composer-shadows.ts",
+      "sha256": "4c0140c88afbbfb123b7993f660c8c5ab53034d25958fcda7973df07ffd5ec47"
+    },
+    {
       "path": "src/fauna-composer-renderer.ts",
-      "sha256": "d2e8a5ab36e4d71b4ab96cbe036faea9636d22b2b8eb57fe1db7cbec6ae23469"
+      "sha256": "4221d0651120d3e62848c9410c7268bc915674ed440b9e82d4805f71b95ec550"
     },
     {
       "path": "src/fauna-composer-merged-batch.ts",
-      "sha256": "2e87963e436b1fbfa50b836b20f0f213231e5e621d09099bc7549ccb91a6913d"
+      "sha256": "8e525905ccaf9f0399b5ca94261bd4f4be5404d555c9a982a93fec8fa17a4b01"
     },
     {
       "path": "src/fauna-composer-storage.ts",

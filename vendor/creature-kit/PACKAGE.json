@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.10.0",
-    "commit": "f3842ee3a39d84eea2cd135b60bb181e025bd016",
+    "commit": "d38121119cee88dd07b847e3758319c20614643c",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -54,6 +54,10 @@
       "sha256": "4ffc73800d048c7f46a2c5452a18d5179cf9a17b5cbbc1bb3497989bf0f4cab7"
     },
     {
+      "path": "src/fauna-composer-animation.ts",
+      "sha256": "ec40c2e7084f54475d65fe2af77218567f44821b1e22d82dae63c082f9c5b83b"
+    },
+    {
       "path": "src/fauna-composer-build-receipt.ts",
       "sha256": "e3278b6f0f0c652091e6efb317835a0873c9ba06b35dac2ff11a47faf46d66ae"
     },
@@ -87,7 +91,7 @@
     },
     {
       "path": "src/fauna-composer-instance-batch.ts",
-      "sha256": "4fbaac4531565ea58b01796a12c78fc99a64ad30fa53105daae9e4a0c73e4318"
+      "sha256": "3eb5a5a56c31890493f835742d700c691427e70fb6d4b9b378802b45ee4b7ee3"
     },
     {
       "path": "src/fauna-composer-lod-volume.ts",
@@ -99,7 +103,7 @@
     },
     {
       "path": "src/fauna-composer-merged-batch.ts",
-      "sha256": "2e87963e436b1fbfa50b836b20f0f213231e5e621d09099bc7549ccb91a6913d"
+      "sha256": "8e525905ccaf9f0399b5ca94261bd4f4be5404d555c9a982a93fec8fa17a4b01"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -111,7 +115,7 @@
     },
     {
       "path": "src/fauna-composer-palette.ts",
-      "sha256": "c42928807bf6c6f14568af41ec5cb9bd112ca842db2cf1c830d80a3434afc334"
+      "sha256": "40892f0de7c403cefb841007e205b31c09500b86087b3f8c7a939f857c64e305"
     },
     {
       "path": "src/fauna-composer-phenotype.ts",
@@ -131,11 +135,15 @@
     },
     {
       "path": "src/fauna-composer-renderer.ts",
-      "sha256": "d2e8a5ab36e4d71b4ab96cbe036faea9636d22b2b8eb57fe1db7cbec6ae23469"
+      "sha256": "4221d0651120d3e62848c9410c7268bc915674ed440b9e82d4805f71b95ec550"
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "ad94bb0713cef5a991a30c10692b823a946ce555f521d55c8d6658fff560fb0c"
+      "sha256": "fbd7dfed37ee10eb1df104828a4cbaf7d8e8800da1cdc6564f670c226ac7eee2"
+    },
+    {
+      "path": "src/fauna-composer-shadows.ts",
+      "sha256": "4c0140c88afbbfb123b7993f660c8c5ab53034d25958fcda7973df07ffd5ec47"
     },
     {
       "path": "src/fauna-composer-source.ts",
@@ -167,7 +175,7 @@
     },
     {
       "path": "src/planet-composer-pose.ts",
-      "sha256": "7457f171619b0126e142e002fc7b7b89a904db7630b363385ae077315f7f3b53"
+      "sha256": "ffef328eb5fd57a673ccb53db1366542669237c0888b8eece3c0de09c412fea5"
     },
     {
       "path": "src/planet-composer.ts",
@@ -272,6 +280,14 @@
       "sha256": "45ba9f83bc385ccb3a55e7292eb7f6737a6b7717efb386c412a12b1701e02d8d"
     },
     {
+      "path": "dist/fauna-composer-animation.d.ts",
+      "sha256": "349174582e9ab2339a35d9f25db981b7051a5c9ad58a6c3d4c250e3b96310d1d"
+    },
+    {
+      "path": "dist/fauna-composer-animation.js",
+      "sha256": "f26ad5f7f090fb052c2248c4e8596a83d62e97d28bb86556efa2e9935fd74333"
+    },
+    {
       "path": "dist/fauna-composer-build-receipt.d.ts",
       "sha256": "f4a9931912ac0b0c2e4746dcbe520a51ef4e08f6f482191cc1ba5f140d1e42cd"
     },
@@ -337,11 +353,11 @@
     },
     {
       "path": "dist/fauna-composer-instance-batch.d.ts",
-      "sha256": "d369963ff497a6edb270f8a5fc4f1e507a2eec748bd7e74db1f769118f7370cb"
+      "sha256": "a5d18784cfca228705b09fb92d6be713a890570efdf966a347219f3397aeda30"
     },
     {
       "path": "dist/fauna-composer-instance-batch.js",
-      "sha256": "5908c2c2de9f373d6f2260961ba74983e6e50831b32fed3297a271abc6002a92"
+      "sha256": "fbf6027cb127b9ce40c5c6e8cda20b318b526b1abc0352c4da89361092c93d84"
     },
     {
       "path": "dist/fauna-composer-lod-volume.d.ts",
@@ -361,11 +377,11 @@
     },
     {
       "path": "dist/fauna-composer-merged-batch.d.ts",
-      "sha256": "07d2366cc83ed9a24af93e6212caa66cafd11a05055d1478b4e8bd0ff17bda70"
+      "sha256": "0e2125d12675f5d887fab42da77a4aa42306faac1b24d317c064dbb7e6dadacc"
     },
     {
       "path": "dist/fauna-composer-merged-batch.js",
-      "sha256": "227495127a97c03e9405394c8951e9d04ffae782bfab48cc1ff5a894cff69fd0"
+      "sha256": "f466950ed6b69631547155295b2b92ecab19c91d22287643c91dca9d4ff4bab3"
     },
     {
       "path": "dist/fauna-composer-mesh.d.ts",
@@ -385,11 +401,11 @@
     },
     {
       "path": "dist/fauna-composer-palette.d.ts",
-      "sha256": "fc68a4a7364b1814b545cbefa71666bd1f7aba0e5719406b8162252e3cc2962d"
+      "sha256": "dbcdaf9bc7a7d27d32f33a495767f9cbdf71d18d2daee75fd8dab5231d13b48d"
     },
     {
       "path": "dist/fauna-composer-palette.js",
-      "sha256": "6dfe9596f533bf4b1856bd9aca519e6f46f8ba8d2aa4272f2904b4138b10e99b"
+      "sha256": "377d882cdbbc0b418d6f37c7529fa2e411bbaed8c0b060bfd56c48d06469f1c6"
     },
     {
       "path": "dist/fauna-composer-phenotype.d.ts",
@@ -425,19 +441,27 @@
     },
     {
       "path": "dist/fauna-composer-renderer.d.ts",
-      "sha256": "074d73777c2cc3204f0d1d53d9312af9e6619cdcfc91f866de589d9b389fc0dc"
+      "sha256": "56f04cf864d5a1c7f46bd19cadc7ca72eab0a6287ffcba602fcbc9f3601a52ba"
     },
     {
       "path": "dist/fauna-composer-renderer.js",
-      "sha256": "cc79c69e1c64f0d661a86107ba4c31ba1daf89370cca2655c56b69cac82d426b"
+      "sha256": "a894bcb172909f829e79d3f4747e41feb38ea7cc027ad64d130c1d4246e426c9"
     },
     {
       "path": "dist/fauna-composer-rig.d.ts",
-      "sha256": "687334cca6faa489133603e1aba2374a271bdf98069248d6f8c41639f5a77bdb"
+      "sha256": "ed7be0eb5b34b841efdc68510c74d8d861b6018c02beba5ac3a86bc79f19716a"
     },
     {
       "path": "dist/fauna-composer-rig.js",
-      "sha256": "3b145a7b16c21ff5355eac73ec2a7ec6e13e8f6d779efaab48c1af1f5eb06236"
+      "sha256": "0ded6033d3926407a709dca3c9e655111e0aeb43bc49844714624e7eec1e9472"
+    },
+    {
+      "path": "dist/fauna-composer-shadows.d.ts",
+      "sha256": "73462f85873bd60928f34916c87ae8145a8f4ba5b3e0e15182e9ac36d3dad61e"
+    },
+    {
+      "path": "dist/fauna-composer-shadows.js",
+      "sha256": "b33fdb3255e2c9a11775cdecf274e9b80bef6b9b0e9efc3939e6ebf667b52e17"
     },
     {
       "path": "dist/fauna-composer-source.d.ts",
@@ -497,7 +521,7 @@
     },
     {
       "path": "dist/planet-composer-pose.d.ts",
-      "sha256": "342f8b95d63213e79a66ed8ba34fe2561338e37e1933bc2175b32cbdeeaab801"
+      "sha256": "e734f39d8bd078f49a769e85c01084b8587156c6ebf14097a2817f90ed2c897b"
     },
     {
       "path": "dist/planet-composer-pose.js",
@@ -624,6 +648,10 @@
       "sha256": "4ffc73800d048c7f46a2c5452a18d5179cf9a17b5cbbc1bb3497989bf0f4cab7"
     },
     {
+      "path": "src/fauna-composer-animation.ts",
+      "sha256": "ec40c2e7084f54475d65fe2af77218567f44821b1e22d82dae63c082f9c5b83b"
+    },
+    {
       "path": "src/fauna-composer-build-receipt.ts",
       "sha256": "e3278b6f0f0c652091e6efb317835a0873c9ba06b35dac2ff11a47faf46d66ae"
     },
@@ -657,7 +685,7 @@
     },
     {
       "path": "src/fauna-composer-instance-batch.ts",
-      "sha256": "4fbaac4531565ea58b01796a12c78fc99a64ad30fa53105daae9e4a0c73e4318"
+      "sha256": "3eb5a5a56c31890493f835742d700c691427e70fb6d4b9b378802b45ee4b7ee3"
     },
     {
       "path": "src/fauna-composer-lod-volume.ts",
@@ -669,7 +697,7 @@
     },
     {
       "path": "src/fauna-composer-merged-batch.ts",
-      "sha256": "2e87963e436b1fbfa50b836b20f0f213231e5e621d09099bc7549ccb91a6913d"
+      "sha256": "8e525905ccaf9f0399b5ca94261bd4f4be5404d555c9a982a93fec8fa17a4b01"
     },
     {
       "path": "src/fauna-composer-mesh.ts",
@@ -681,7 +709,7 @@
     },
     {
       "path": "src/fauna-composer-palette.ts",
-      "sha256": "c42928807bf6c6f14568af41ec5cb9bd112ca842db2cf1c830d80a3434afc334"
+      "sha256": "40892f0de7c403cefb841007e205b31c09500b86087b3f8c7a939f857c64e305"
     },
     {
       "path": "src/fauna-composer-phenotype.ts",
@@ -701,11 +729,15 @@
     },
     {
       "path": "src/fauna-composer-renderer.ts",
-      "sha256": "d2e8a5ab36e4d71b4ab96cbe036faea9636d22b2b8eb57fe1db7cbec6ae23469"
+      "sha256": "4221d0651120d3e62848c9410c7268bc915674ed440b9e82d4805f71b95ec550"
     },
     {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "ad94bb0713cef5a991a30c10692b823a946ce555f521d55c8d6658fff560fb0c"
+      "sha256": "fbd7dfed37ee10eb1df104828a4cbaf7d8e8800da1cdc6564f670c226ac7eee2"
+    },
+    {
+      "path": "src/fauna-composer-shadows.ts",
+      "sha256": "4c0140c88afbbfb123b7993f660c8c5ab53034d25958fcda7973df07ffd5ec47"
     },
     {
       "path": "src/fauna-composer-source.ts",
@@ -737,7 +769,7 @@
     },
     {
       "path": "src/planet-composer-pose.ts",
-      "sha256": "7457f171619b0126e142e002fc7b7b89a904db7630b363385ae077315f7f3b53"
+      "sha256": "ffef328eb5fd57a673ccb53db1366542669237c0888b8eece3c0de09c412fea5"
     },
     {
       "path": "src/planet-composer.ts",

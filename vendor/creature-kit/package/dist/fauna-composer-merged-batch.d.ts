@@ -102,8 +102,10 @@ export declare class FaunaComposerMergedBatch {
     loseContext(): void;
     restoreContext(): void;
     reset(): void;
+    private shadowAllowed;
+    private shadowActors;
     beginFrame(): void;
-    submit(id: string, matrix: THREE.Matrix4, cameraVisible?: boolean): boolean;
+    submit(id: string, matrix: THREE.Matrix4, cameraVisible?: boolean, shadowStrength?: number): boolean;
     endFrame(): void;
     release(id: string): void;
     diagnostics(): {

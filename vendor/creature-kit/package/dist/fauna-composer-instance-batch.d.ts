@@ -16,13 +16,15 @@ export declare class FaunaComposerInstanceBatch {
     readonly instanceBytes: number;
     private readonly actors;
     private disposed;
+    private shadowAllowed;
+    private shadowActors;
     readonly skin: FaunaComposerRenderSkin;
     readonly capacity: number;
     constructor(skin: FaunaComposerRenderSkin, palette: {
         value: THREE.DataTexture;
     }, capacity: number, roughness?: number);
     beginFrame(): void;
-    submit(matrix: THREE.Matrix4, paletteRow: number): void;
+    submit(matrix: THREE.Matrix4, paletteRow: number, shadowStrength?: number): void;
     endFrame(): void;
     dispose(): void;
 }

@@ -59,6 +59,8 @@ export const VENDORED_PATHS = Object.freeze([
   'src/fauna-composer-instance-batch.ts',
   'src/fauna-composer-palette.ts',
   'src/fauna-composer-palette-uploads.ts',
+  'src/fauna-composer-animation.ts',
+  'src/fauna-composer-shadows.ts',
   'src/fauna-composer-renderer.ts',
   'src/fauna-composer-merged-batch.ts',
   'src/fauna-composer-storage.ts',

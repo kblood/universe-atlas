@@ -38,6 +38,7 @@ export interface ComposerPoseEnvironment {
 }
 export interface ComposerPoseOptions {
     trunkMotion?: 'legacy' | 'wave-1';
+    reuseWorkingBuffers?: boolean;
     environment?: ComposerPoseEnvironment;
 }
 /** Desktop preview budget. Not a Quest qualification. */

@@ -17,11 +17,15 @@ export interface FaunaComposerCandidate<D> {
     rigSeconds: number;
     /** Include date, ground revision, activity and every pose option, or omit to evaluate each frame. */
     poseKey?: string;
+    /** Stable across continuous clock advancement; changes on terrain/activity/date discontinuities. */
+    animationContext?: string;
+    /** Real camera distance when a benchmark forces a different geometric tier. */
+    presentationDistanceM?: number;
 }
 export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidate<D>> {
     provider: FaunaComposerSourceProvider<D>;
     /** Shared Kit Composer solver, including its terrain/flight options. Never a quadruped retarget. */
-    pose: (graph: ComposerGraph, candidate: C) => ComposerPose;
+    pose: (graph: ComposerGraph, candidate: C, reuseWorkingBuffers?: boolean) => ComposerPose;
     /** Attach the planet's lighting/aerial/shadow hooks to this owned mesh once. */
     onMeshAdopted?: (mesh: THREE.Mesh) => void;
     /** Optional WebGL2-owned packed arenas. Full CPU attribute mirrors are absent;
@@ -57,6 +61,12 @@ export interface FaunaComposerRendererOptions<D, C extends FaunaComposerCandidat
     coldJobsBeforeNearUpgrade?: number;
     /** Dirty RGBA row uploads; false retains the full-upload reference path. */
     partialPaletteUploads?: boolean;
+    adaptiveAnimation?: boolean;
+    reuseWorkingBuffers?: boolean;
+    fastFarMatrices?: boolean;
+    distanceShadows?: boolean;
+    shadowNearM?: number;
+    shadowFarM?: number;
 }
 /** Normal-runtime Composer draw owner. All tiers come from one immutable source;
  * a pending or failed upgrade continues to draw a resident tier. Cold animals
@@ -120,6 +130,7 @@ export declare class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D
     /** Fail before rendering on unsupported devices; 15 slots include full crisp coat and matrix instancing. */
     assertCapabilities(renderer: THREE.WebGLRenderer): void;
     setContext(context: string, forceReset?: boolean): void;
+    private shadowStrength;
     update(candidates: readonly C[], origin?: THREE.Vector3): ReadonlySet<string>;
     private tier;
     private candidateTier;
@@ -157,6 +168,18 @@ export declare class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D
         skin: FaunaComposerRenderSkin | import("./fauna-composer-storage.ts").FaunaComposerPackedSkin | null;
         source: FaunaComposerSource | null;
         pose: ComposerPose | null;
+        presentation: {
+            version: string;
+            clock: number;
+            sourceClockA: number;
+            sourceClockB: number;
+            interval: number;
+            alpha: number;
+            samples: number;
+            resets: number;
+            contactsAndDiagnostics: string;
+        } | null;
+        activeBones: Uint16Array<ArrayBufferLike> | undefined;
         palette: Float32Array<ArrayBufferLike>;
     } | null;
     poseOf(id: string): ComposerPose | null;
@@ -173,6 +196,18 @@ export declare class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D
             tier: "near" | "middle" | "far" | undefined;
             bones: number;
             skin: "fauna-composer-skin-5" | "fauna-composer-skin-6";
+            activeBones: number;
+            presentation: {
+                version: string;
+                clock: number;
+                sourceClockA: number;
+                sourceClockB: number;
+                interval: number;
+                alpha: number;
+                samples: number;
+                resets: number;
+                contactsAndDiagnostics: string;
+            } | null;
         }[];
         ownedBytes: number;
         maxBytes: number;
@@ -250,6 +285,12 @@ export declare class FaunaComposerRenderer<D, C extends FaunaComposerCandidate<D
         draws: number;
         triangles: number;
         poseBuilds: number;
+        temporalSamples: number;
+        temporalFrames: number;
+        temporalBudgetFallbacks: number;
+        boneMatricesWritten: number;
+        boneMatricesAvailable: number;
+        fastBoneMatrices: number;
         uploadBytes: number;
         version: string;
     };

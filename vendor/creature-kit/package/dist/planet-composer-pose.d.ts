@@ -18,4 +18,4 @@ export interface PlanetComposerPose extends ComposerPose {
  * Membership, population and dates stay with the world. All bones and IK come
  * from Composer, including its variable leg chains and shaped skin6 feet.
  * No previous frame is read and no quadruped body/pose factory is called. */
-export declare function posePlanetComposer(graph: ComposerGraph, member: PlanetFaunaPathMember, activity: PlanetFaunaActivity, ground: PlanetComposerGround, rigSeconds: number, options?: Pick<ComposerPoseOptions, 'trunkMotion'>): PlanetComposerPose;
+export declare function posePlanetComposer(graph: ComposerGraph, member: PlanetFaunaPathMember, activity: PlanetFaunaActivity, ground: PlanetComposerGround, rigSeconds: number, options?: Pick<ComposerPoseOptions, 'trunkMotion' | 'reuseWorkingBuffers'>): PlanetComposerPose;

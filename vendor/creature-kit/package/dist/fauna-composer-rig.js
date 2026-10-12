@@ -1217,6 +1217,11 @@ export function poseComposer(graph, motion, time, options = {}) {
     let maxLen = 0, minBody = Infinity, maxPen = 0, minSwing = Infinity;
     for (let i = 0; i < n; i++) {
         const wq = world[i];
+        if (options.reuseWorkingBuffers === false) {
+            positions.set([wq.p.x, wq.p.y, wq.p.z], i * 3);
+            quaternions.set([wq.q.x, wq.q.y, wq.q.z, wq.q.w], i * 4);
+            continue;
+        }
         const pi = i * 3, qi = i * 4;
         positions[pi] = wq.p.x;
         positions[pi + 1] = wq.p.y;
