@@ -2,8 +2,8 @@
   "schema": "creature-kit-built-package-1",
   "kit": {
     "name": "creature-kit",
-    "version": "0.9.0",
-    "commit": "4d3d7e97711dd63411755bc86852fd4ac700a8ec",
+    "version": "0.10.0",
+    "commit": "f3842ee3a39d84eea2cd135b60bb181e025bd016",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "42243f40c85996d682d8e84e6cc8d15e21f91b11275cbe34bde99ee047019f31"
+      "sha256": "9c488554951c800866fe2b9556e78bb32e0b072758488ac96f5652353b17550f"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -54,6 +54,10 @@
       "sha256": "4ffc73800d048c7f46a2c5452a18d5179cf9a17b5cbbc1bb3497989bf0f4cab7"
     },
     {
+      "path": "src/fauna-composer-build-receipt.ts",
+      "sha256": "e3278b6f0f0c652091e6efb317835a0873c9ba06b35dac2ff11a47faf46d66ae"
+    },
+    {
       "path": "src/fauna-composer-export.ts",
       "sha256": "12eff8ee5da69925d8858057c98c1083dc52fb1693676a8faef819ffbe36931c"
     },
@@ -74,6 +78,10 @@
       "sha256": "64d24814bc97952d162ac5cbe7ca0fab77759e379799b959cff293436a083365"
     },
     {
+      "path": "src/fauna-composer-gpu-buffers.ts",
+      "sha256": "65a54dc2a0f84dbb72577ff5f49ea30f3ea9fc3d910a385f8af84b1ae3b3dd03"
+    },
+    {
       "path": "src/fauna-composer-individual.ts",
       "sha256": "369ba5f405b65ecd7ba3d7dd761fe07425205a7ce977783d20a774da33d62dea"
     },
@@ -90,12 +98,20 @@
       "sha256": "ea02ef349ef403081e3f64de77a72296d882fb1bd4a58e9de3fdedf5e6037cd8"
     },
     {
+      "path": "src/fauna-composer-merged-batch.ts",
+      "sha256": "2e87963e436b1fbfa50b836b20f0f213231e5e621d09099bc7549ccb91a6913d"
+    },
+    {
       "path": "src/fauna-composer-mesh.ts",
       "sha256": "144cf78fcdcd94874fcc7b75c712e5e9e8fe38684ae4286d2553411648a730c0"
     },
     {
+      "path": "src/fauna-composer-palette-uploads.ts",
+      "sha256": "644e41437c4619487a5afc6ae662550af6fdd9e26a358d87bf378bf25fb7c8ea"
+    },
+    {
       "path": "src/fauna-composer-palette.ts",
-      "sha256": "31ddca81c286fddd238e3bd715c3ae18b2d050c6f0ff6a6b22445c3e3996fa5e"
+      "sha256": "c42928807bf6c6f14568af41ec5cb9bd112ca842db2cf1c830d80a3434afc334"
     },
     {
       "path": "src/fauna-composer-phenotype.ts",
@@ -110,8 +126,16 @@
       "sha256": "fceaae0cc833262e098d29f62ed8836e6d9da458641741e66fb6ceaefc6ae39b"
     },
     {
+      "path": "src/fauna-composer-render-source.ts",
+      "sha256": "65d05acd922da6f728ee668b1bbb601b4d6af20270982724caf5fd0fda38431e"
+    },
+    {
+      "path": "src/fauna-composer-renderer.ts",
+      "sha256": "d2e8a5ab36e4d71b4ab96cbe036faea9636d22b2b8eb57fe1db7cbec6ae23469"
+    },
+    {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "87a2bab89b93734ab57a64a42a3be3ff41b8c6c6d15ee2d479c17a2c96a5e137"
+      "sha256": "ad94bb0713cef5a991a30c10692b823a946ce555f521d55c8d6658fff560fb0c"
     },
     {
       "path": "src/fauna-composer-source.ts",
@@ -122,8 +146,16 @@
       "sha256": "d756ddb1409edae98a28fc1072e55002c6504871cd5c9166dad43b3ff2af3ad0"
     },
     {
+      "path": "src/fauna-composer-storage.ts",
+      "sha256": "8b5ca4111bfecf9149cb59f84ca05d13a8b569dc93161fb09cc12b19f551726b"
+    },
+    {
       "path": "src/fauna-composer.ts",
       "sha256": "af066c361a3cb3bab67971e1a075590296762305b4d36ba29d3ded9d5837d78b"
+    },
+    {
+      "path": "src/fauna-planet-composer-policy.ts",
+      "sha256": "d9f5fd35637dc3ca84f815cb5632f4004771a57dfc028b292da7b72318f5548c"
     },
     {
       "path": "src/planet-composer-identity.ts",
@@ -240,6 +272,14 @@
       "sha256": "45ba9f83bc385ccb3a55e7292eb7f6737a6b7717efb386c412a12b1701e02d8d"
     },
     {
+      "path": "dist/fauna-composer-build-receipt.d.ts",
+      "sha256": "f4a9931912ac0b0c2e4746dcbe520a51ef4e08f6f482191cc1ba5f140d1e42cd"
+    },
+    {
+      "path": "dist/fauna-composer-build-receipt.js",
+      "sha256": "4c4a1e3c072c4e279579e856d92e3a4b5e3216b89603ef8b3bfd3e28f7296087"
+    },
+    {
       "path": "dist/fauna-composer-export.d.ts",
       "sha256": "391cc53bdd3c417dd1dd790d00c19a452316b2f50de07d357a8893f22c0c2066"
     },
@@ -280,6 +320,14 @@
       "sha256": "97db8029bbe6f06fe8b7f72a2cd123bfad8f724debf2570a05991102be1d8290"
     },
     {
+      "path": "dist/fauna-composer-gpu-buffers.d.ts",
+      "sha256": "9fddb2b9a9544fd09e0a12b89b3a738bdb4771ed6b21c40e6480a2853dba169b"
+    },
+    {
+      "path": "dist/fauna-composer-gpu-buffers.js",
+      "sha256": "0c930c6a0aad849f64344c6523f6f0d11e4d17ec096a19b3ed8aa985d4fcbc03"
+    },
+    {
       "path": "dist/fauna-composer-individual.d.ts",
       "sha256": "1aa7af23f5501794d16c26e757c9bd55ff79d11a25f1bf1b5335db14198659b8"
     },
@@ -312,6 +360,14 @@
       "sha256": "477037f069f1f2848eb8778978d90b412d6ae304815ce3dd6d3d0b2558c2e077"
     },
     {
+      "path": "dist/fauna-composer-merged-batch.d.ts",
+      "sha256": "07d2366cc83ed9a24af93e6212caa66cafd11a05055d1478b4e8bd0ff17bda70"
+    },
+    {
+      "path": "dist/fauna-composer-merged-batch.js",
+      "sha256": "227495127a97c03e9405394c8951e9d04ffae782bfab48cc1ff5a894cff69fd0"
+    },
+    {
       "path": "dist/fauna-composer-mesh.d.ts",
       "sha256": "2eb448fb9573364ee9b2ed6137c7d8c84616b06efd5d738f2b4748070830db9d"
     },
@@ -320,12 +376,20 @@
       "sha256": "203e6e7b9aa1bd00961663bfd71491cf0705bdc19d41f4491a2cb11a94c797a0"
     },
     {
+      "path": "dist/fauna-composer-palette-uploads.d.ts",
+      "sha256": "db5ae7162252828962d66f475115a5e1658e5df255f294c18d63c5e0c7f0cf8c"
+    },
+    {
+      "path": "dist/fauna-composer-palette-uploads.js",
+      "sha256": "f710130b513d690b8747286053bc65e94fe5dbe439e6851911e75ac34a13b69d"
+    },
+    {
       "path": "dist/fauna-composer-palette.d.ts",
       "sha256": "fc68a4a7364b1814b545cbefa71666bd1f7aba0e5719406b8162252e3cc2962d"
     },
     {
       "path": "dist/fauna-composer-palette.js",
-      "sha256": "ce96d1bfd6ccbf527ae32ce932555ab71943d08635a99fc73a1bcfd27a2edf7e"
+      "sha256": "6dfe9596f533bf4b1856bd9aca519e6f46f8ba8d2aa4272f2904b4138b10e99b"
     },
     {
       "path": "dist/fauna-composer-phenotype.d.ts",
@@ -352,12 +416,28 @@
       "sha256": "cf7230496388661fb0431ca3a798d10249f7985cb7baf264792f4da0f1192e20"
     },
     {
+      "path": "dist/fauna-composer-render-source.d.ts",
+      "sha256": "35a01d49b2c01ef04ef50bec8a49b83c2d1469f9e310d7411019f9c731266539"
+    },
+    {
+      "path": "dist/fauna-composer-render-source.js",
+      "sha256": "f0beb2998b954a7b1954fa9e3e40bb1997704de28eabadf84ec6ecb82f5a6b42"
+    },
+    {
+      "path": "dist/fauna-composer-renderer.d.ts",
+      "sha256": "074d73777c2cc3204f0d1d53d9312af9e6619cdcfc91f866de589d9b389fc0dc"
+    },
+    {
+      "path": "dist/fauna-composer-renderer.js",
+      "sha256": "cc79c69e1c64f0d661a86107ba4c31ba1daf89370cca2655c56b69cac82d426b"
+    },
+    {
       "path": "dist/fauna-composer-rig.d.ts",
       "sha256": "687334cca6faa489133603e1aba2374a271bdf98069248d6f8c41639f5a77bdb"
     },
     {
       "path": "dist/fauna-composer-rig.js",
-      "sha256": "79b99d4074b08413758b01eff1c48d9ad9f531a1840d4897b7ff2ca11e9b531a"
+      "sha256": "3b145a7b16c21ff5355eac73ec2a7ec6e13e8f6d779efaab48c1af1f5eb06236"
     },
     {
       "path": "dist/fauna-composer-source.d.ts",
@@ -376,12 +456,28 @@
       "sha256": "eb392d1c69f01e70b18f7c2c8f7cc32915827f7af54f6667a80864b7b79768b5"
     },
     {
+      "path": "dist/fauna-composer-storage.d.ts",
+      "sha256": "03b9e530c31c6554be839e5275c9f07b192b9ec83f40ea31a365e789881bb8ce"
+    },
+    {
+      "path": "dist/fauna-composer-storage.js",
+      "sha256": "069801e0e19b43af51a8b1f7815c011258f20ef3393715953ad63f4448ca28e7"
+    },
+    {
       "path": "dist/fauna-composer.d.ts",
       "sha256": "760bb4477520c5ed68526ba9c816a319560737d683a85e64ae6cc6178b7c2d74"
     },
     {
       "path": "dist/fauna-composer.js",
       "sha256": "5bf83116a94db4d2cfd15b625003af7095217e7cb938618ae2545e66f9921e27"
+    },
+    {
+      "path": "dist/fauna-planet-composer-policy.d.ts",
+      "sha256": "d87d77ae22bfe9aa6e8a6861bfdb8bc8f9e0e10e866ad1cbdaa549a62043b729"
+    },
+    {
+      "path": "dist/fauna-planet-composer-policy.js",
+      "sha256": "a2090d29a6f0f42802085339899da11e713cfc394d31d4346f3f1e7a80f9da97"
     },
     {
       "path": "dist/planet-composer-identity.d.ts",
@@ -505,7 +601,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "42243f40c85996d682d8e84e6cc8d15e21f91b11275cbe34bde99ee047019f31"
+      "sha256": "9c488554951c800866fe2b9556e78bb32e0b072758488ac96f5652353b17550f"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -528,6 +624,10 @@
       "sha256": "4ffc73800d048c7f46a2c5452a18d5179cf9a17b5cbbc1bb3497989bf0f4cab7"
     },
     {
+      "path": "src/fauna-composer-build-receipt.ts",
+      "sha256": "e3278b6f0f0c652091e6efb317835a0873c9ba06b35dac2ff11a47faf46d66ae"
+    },
+    {
       "path": "src/fauna-composer-export.ts",
       "sha256": "12eff8ee5da69925d8858057c98c1083dc52fb1693676a8faef819ffbe36931c"
     },
@@ -548,6 +648,10 @@
       "sha256": "64d24814bc97952d162ac5cbe7ca0fab77759e379799b959cff293436a083365"
     },
     {
+      "path": "src/fauna-composer-gpu-buffers.ts",
+      "sha256": "65a54dc2a0f84dbb72577ff5f49ea30f3ea9fc3d910a385f8af84b1ae3b3dd03"
+    },
+    {
       "path": "src/fauna-composer-individual.ts",
       "sha256": "369ba5f405b65ecd7ba3d7dd761fe07425205a7ce977783d20a774da33d62dea"
     },
@@ -564,12 +668,20 @@
       "sha256": "ea02ef349ef403081e3f64de77a72296d882fb1bd4a58e9de3fdedf5e6037cd8"
     },
     {
+      "path": "src/fauna-composer-merged-batch.ts",
+      "sha256": "2e87963e436b1fbfa50b836b20f0f213231e5e621d09099bc7549ccb91a6913d"
+    },
+    {
       "path": "src/fauna-composer-mesh.ts",
       "sha256": "144cf78fcdcd94874fcc7b75c712e5e9e8fe38684ae4286d2553411648a730c0"
     },
     {
+      "path": "src/fauna-composer-palette-uploads.ts",
+      "sha256": "644e41437c4619487a5afc6ae662550af6fdd9e26a358d87bf378bf25fb7c8ea"
+    },
+    {
       "path": "src/fauna-composer-palette.ts",
-      "sha256": "31ddca81c286fddd238e3bd715c3ae18b2d050c6f0ff6a6b22445c3e3996fa5e"
+      "sha256": "c42928807bf6c6f14568af41ec5cb9bd112ca842db2cf1c830d80a3434afc334"
     },
     {
       "path": "src/fauna-composer-phenotype.ts",
@@ -584,8 +696,16 @@
       "sha256": "fceaae0cc833262e098d29f62ed8836e6d9da458641741e66fb6ceaefc6ae39b"
     },
     {
+      "path": "src/fauna-composer-render-source.ts",
+      "sha256": "65d05acd922da6f728ee668b1bbb601b4d6af20270982724caf5fd0fda38431e"
+    },
+    {
+      "path": "src/fauna-composer-renderer.ts",
+      "sha256": "d2e8a5ab36e4d71b4ab96cbe036faea9636d22b2b8eb57fe1db7cbec6ae23469"
+    },
+    {
       "path": "src/fauna-composer-rig.ts",
-      "sha256": "87a2bab89b93734ab57a64a42a3be3ff41b8c6c6d15ee2d479c17a2c96a5e137"
+      "sha256": "ad94bb0713cef5a991a30c10692b823a946ce555f521d55c8d6658fff560fb0c"
     },
     {
       "path": "src/fauna-composer-source.ts",
@@ -596,8 +716,16 @@
       "sha256": "d756ddb1409edae98a28fc1072e55002c6504871cd5c9166dad43b3ff2af3ad0"
     },
     {
+      "path": "src/fauna-composer-storage.ts",
+      "sha256": "8b5ca4111bfecf9149cb59f84ca05d13a8b569dc93161fb09cc12b19f551726b"
+    },
+    {
       "path": "src/fauna-composer.ts",
       "sha256": "af066c361a3cb3bab67971e1a075590296762305b4d36ba29d3ded9d5837d78b"
+    },
+    {
+      "path": "src/fauna-planet-composer-policy.ts",
+      "sha256": "d9f5fd35637dc3ca84f815cb5632f4004771a57dfc028b292da7b72318f5548c"
     },
     {
       "path": "src/planet-composer-identity.ts",

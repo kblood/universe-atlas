@@ -32,6 +32,7 @@ export function createFaunaPlanetComposerRenderer(options:{onReady:()=>void;onMe
   onReady:options.onReady,onMeshAdopted:options.onMeshAdopted,capacity:p.capacity,maxBones:p.maxBones,maxSources:p.capacity,
   maxBytes:p.residentBytes,maxResultBytes:p.resultBytes,workerReserveBytes:p.workerReserveBytes,fullSourceCache:p.nearSources,
   coldJobsBeforeNearUpgrade:8,
+  partialPaletteUploads:true,
   middleSourceCache:p.middleSources,
   mergedGpuContext:gl as WebGL2RenderingContext,
   nearM:p.nearM,middleM:p.middleM,maxDistanceM:p.visibleM,
