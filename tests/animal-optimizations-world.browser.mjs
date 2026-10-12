@@ -5,14 +5,14 @@ import {chromium} from 'playwright';
 import {withGpuLock} from './helpers/gpu-lock.mjs';
 import {startDistPreview,stopServer} from './helpers/free-port.mjs';
 const root=process.cwd(),out=process.env.ATLAS_RESULTS??resolve(root,'test-results','animal-optimizations-world',new Date().toISOString().replace(/[:.]/g,'-'));
-const scenarios=JSON.parse(await readFile(new URL('./fixtures/planet-composer-migration-scenarios.json',import.meta.url),'utf8')).worlds;
+const preserved=JSON.parse(await readFile(new URL('./fixtures/planet-composer-migration-scenarios.json',import.meta.url),'utf8')).worlds;const scenarios=(process.env.ANIMAL_WORLD_CYCLES??'0,1').split(',').map(i=>preserved[Number(i)]);if(scenarios.some(s=>!s))throw new Error('Unknown world cycle');
 await mkdir(out,{recursive:true});let server;const report={ok:false,worlds:[],errors:[]};
 try{
  server=await startDistPreview({root,dist:root+'/dist'});
  await withGpuLock({owner:'animal-optimizations-normal-world',timeoutMs:600000,retryMs:10000},async()=>{
   const browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
   try{
-   const page=await browser.newPage({viewport:{width:1440,height:1000}});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
+   const page=await browser.newPage({viewport:{width:1440,height:1000}});await page.addInitScript(()=>{const Original=window.Worker;window.__animalWorkers={created:0,live:0,terminated:0};window.Worker=class extends Original{constructor(...args){super(...args);this.animalWorker=String(args[0]).includes('fauna-planet-composer');if(this.animalWorker){window.__animalWorkers.created++;window.__animalWorkers.live++;}}terminate(){if(this.animalWorker){this.animalWorker=false;window.__animalWorkers.live--;window.__animalWorkers.terminated++;}return super.terminate();}};});page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
    const capture=()=>page.evaluate(()=>{
     const a=window.__atlas,p=a.renderDebug().planet,r=p.faunaComposer,d=r.diagnostics();
     const near=[...r.drawn].map(id=>r.snapshotOf(id)).filter(s=>s&&r.desired.get(s.id)?.cameraVisible&&r.desired.get(s.id)?.distanceM<35);
@@ -33,8 +33,8 @@ try{
     const liveIds=await page.evaluate(()=>{const p=window.__atlas.renderDebug().planet;return p.faunaVisibleList.filter(x=>x.cameraVisible).map(x=>x.member.id);});assert(liveIds.length>0);
     await page.evaluate(()=>{window.__oldAnimalBackend=window.__atlas.renderDebug().planet.faunaComposer;});await page.click('#back');
     await page.waitForFunction(()=>window.__oldAnimalBackend.disposed,{},{timeout:10000});
-    const disposal=await page.evaluate(()=>{const r=window.__oldAnimalBackend;return {ownedBytes:r.ownedBytes,actors:r.actors.size,entries:r.entries.size,ready:r.ready.size,running:!!r.running,attached:!!r.group.parent};});assert.deepEqual(disposal,{ownedBytes:0,actors:0,entries:0,ready:0,running:false,attached:false});
-    report.worlds.push({disposal,scenario:scenario.bodyId,ordinaryFinderVisitHabitat:true,approach,before,animated});await writeFile(resolve(out,'progress.json'),JSON.stringify({worlds:report.worlds.length},null,2));
+    const workers=await page.evaluate(()=>window.__animalWorkers);assert.equal(workers.live,0);assert.equal(workers.created,workers.terminated);const disposal=await page.evaluate(()=>{const r=window.__oldAnimalBackend;return {ownedBytes:r.ownedBytes,actors:r.actors.size,entries:r.entries.size,ready:r.ready.size,running:!!r.running,attached:!!r.group.parent};});assert.deepEqual(disposal,{ownedBytes:0,actors:0,entries:0,ready:0,running:false,attached:false});
+    report.worlds.push({workers,disposal,scenario:scenario.bodyId,ordinaryFinderVisitHabitat:true,approach,before,animated});await writeFile(resolve(out,'progress.json'),JSON.stringify({worlds:report.worlds.length},null,2));
    }
    assert.deepEqual(report.errors,[]);report.ok=true;
   }finally{await browser.close();}
