@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {createComposerColouredMaterial, createComposerCrispCoatMaterial} from './fauna-composer.ts';
-import type {FaunaComposerRenderSkin} from './fauna-composer-render-source.ts';
+import type {ComposerSkin} from './fauna-composer-mesh.ts';
+/** Structural skin contract shared by Atlas's render tiers and Kit previews. */
+export type FaunaComposerRenderSkin=Pick<ComposerSkin,'positions'|'normals'|'colors'|'skinIndex'|'skinWeight'|'index'|'gloss'|'coatCrisp'|'coatLayers'|'version'>;
 
 export const FAUNA_COMPOSER_REQUIRED_ATTRIBUTES = 15;
 const HEADER = `
