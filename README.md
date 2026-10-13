@@ -1,5 +1,16 @@
 # Universe Atlas
 
+## Flora Kit submodule — 2026-10-13
+
+Deterministic flora placement, recipes, preview geometry and bounded culling
+live in [Flora Kit](https://github.com/kblood/flora-kit). Atlas pins
+`external/flora-kit` and forwards its legacy flora imports and focused tests
+through a v1 boundary. Clone with `git clone --recurse-submodules`.
+`npm ci`, dev, build and tests prepare both Kits. Use `npm run update:flora-kit`
+for an intentional upgrade and `npm run check:flora-kit` to verify the pin.
+The actual PlanetForest/GLB tree runtime, terrain and adapters stay in Atlas.
+See [Flora Kit consumption](docs/flora-kit-consumption.md).
+
 ## Creature Kit submodule — 2026-10-13
 
 Creature generation and the Animal Lab live in the public

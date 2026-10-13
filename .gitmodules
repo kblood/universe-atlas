@@ -2,3 +2,7 @@
 	path = external/creature-kit
 	url = https://github.com/kblood/creature-kit.git
 	branch = main
+[submodule "external/flora-kit"]
+	path = external/flora-kit
+	url = https://github.com/kblood/flora-kit.git
+	branch = main
