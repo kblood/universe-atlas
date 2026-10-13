@@ -20,17 +20,25 @@
   <main id="main">
     <p class="eyebrow">Explore · Compare · Inspect</p>
     <h1>One place for the labs.</h1>
-    <p class="lead">Inspect animals, explore living systems and compare rendering techniques. Each lab below explains what it shows and whether it is a current tool, a development experiment or a historical reference.</p>
-    <nav class="on-this-page" aria-label="Lab categories"><strong>Browse</strong><a href="#worlds">Animals &amp; worlds</a><a href="#rendering">Trees &amp; lighting</a><a href="#archive">Archive</a></nav>
+    <p class="lead">Develop Atlas systems in focused labs that use the current production generators. Historical and controlled reference tools remain available for comparison.</p>
+    <nav class="on-this-page" aria-label="Lab categories"><strong>Browse</strong><a href="#worlds">Animals &amp; planets</a><a href="#civilizations">Civilizations</a><a href="#rendering">Trees &amp; lighting</a><a href="#archive">Archive</a></nav>
 
     <section id="worlds">
       <h2>Animals &amp; worlds</h2>
       <div class="cards">
         <a class="card" href="./animal-lab/"><span class="eyebrow">Current animal editor</span><h3>Animal Lab</h3><p>Build and edit Composer animals with anatomy controls, animated poses, herds, comparison and export. Planet animals use the same creature-kit source; open an individual from Atlas to inspect its inherited appearance.</p><small>Compare LODs and benchmark populations with live optimization controls.</small></a>
         <a class="card" href="./animal-lab/benchmark.html"><span class="eyebrow">Animal Lab · performance</span><h3>Animal Population Benchmark</h3><p>Measure groups of repeated or mixed animals at different distances. Compare animated instancing, LODs, geometry sharing, pose sharing, culling and shadows.</p><small>CPU, frame and optional GPU timings; exportable results. Measures an animal reference scene.</small></a>
-        <a class="card" href="./biome-lab.html"><span class="eyebrow">Reference composition</span><h3>Biome Lab</h3><p>Explore vegetation and rock recipes on a flat test plot. Select a biome and a neighbouring biome to inspect composition, transitions and recipe counts.</p><small>Reference geometry. Planned fauna is listed but not rendered.</small></a>
+        <a class="card" href="./surface-flora-lab.html"><span class="eyebrow">Current planet generators · terrain, biome &amp; flora</span><h3>Surface Flora Lab</h3><p>Sample Atlas terrain and the active surface-biome classifier, inspect deterministic flora placement, and compare the production flora meshes across all three LODs.</p><small>Uses the same terrain, biome and flora modules as planet rendering; exposes sample slope and biosphere-stage inputs.</small></a>
+        <a class="card" href="./biome-lab.html"><span class="eyebrow">Controlled reference composition</span><h3>Biome Recipe Lab</h3><p>Explore vegetation and rock recipes on a flat test plot. Select a biome and neighbouring biome to inspect composition, transitions and recipe counts.</p><small>Separate ecology fixture; not Atlas’ active planet biome classifier.</small></a>
         <a class="card" href="./biosphere-lab.html"><span class="eyebrow">Species &amp; history</span><h3>Biosphere Lab</h3><p>Inspect species, habitat ranges, growth stages, communities and branching histories at different dates and planetary profiles.</p><small>Simplified specimen previews; these are not the planet’s Composer animal meshes.</small></a>
         <a class="card" href="./tests/cloud-comparison.html"><span class="eyebrow">Rendering comparison</span><h3>Cloud Lab</h3><p>Compare cloud representations from different viewpoints. Adjust weather coverage and replay a selected world date to inspect the rendering.</p><small>A controlled test scene, separate from a full planet visit.</small></a>
+      </div>
+    </section>
+
+    <section id="civilizations">
+      <h2>Civilizations</h2>
+      <div class="cards">
+        <a class="card" href="./civilization-lab.html"><span class="eyebrow">Standalone deterministic simulation</span><h3>Civilization Lab</h3><p>Review the current civilization model, scenario set, determinism contract and local run commands.</p><small>The simulation remains a separate Node workbench; it is not yet connected to Atlas planet data.</small></a>
       </div>
     </section>
 

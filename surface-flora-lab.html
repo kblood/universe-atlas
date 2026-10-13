@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#091310" />
+    <title>Surface Flora Lab · Universe Atlas</title>
+  </head>
+  <body>
+    <main class="lab-shell">
+      <header class="lab-header">
+        <a href="./lab-center.html">← Lab Center</a>
+        <div><span class="eyebrow">ACTIVE PLANET GENERATION</span><h1>Surface Flora Lab</h1><p>Inspect Atlas’ production terrain, biome classification and flora placement together.</p></div>
+      </header>
+      <section class="controls" aria-label="Planet and generation controls">
+        <label>Planet profile<select id="profile"><option value="temperate">Temperate water world</option><option value="arid">Arid land world</option><option value="ice">Ice world</option><option value="volcanic">Volcanic world</option></select></label>
+        <label>Body seed<input id="seed" value="ATLAS-FLORA-01" maxlength="80" /></label>
+        <label>Sea level (m)<input id="sea" type="number" value="0" step="100" /></label>
+        <label>Sample slope (°)<input id="slope" type="number" value="8" min="0" max="80" step="1" /></label>
+        <label>Biosphere stage<select id="stage"><option value="complex">Complex</option><option value="microbial">Microbial</option><option value="sterile">Sterile</option><option value="forming">Forming</option><option value="unformed">Unformed</option></select></label>
+        <label>Age (Myr)<input id="age" type="number" value="3500" min="-20000" max="20000" step="100" /></label>
+        <button id="generate" class="primary">Generate samples</button>
+      </section>
+      <div class="lab-layout">
+        <section class="map-panel">
+          <div class="panel-title"><div><span class="eyebrow">PRODUCTION TERRAIN SAMPLER</span><h2>Biome and flora field</h2></div><span id="status" role="status">Ready</span></div>
+          <canvas id="map" width="960" height="480" aria-label="Equirectangular surface biome and flora sample map"></canvas>
+          <div class="legend"><span><i class="swatch ocean"></i>Ocean</span><span><i class="swatch sand"></i>Coastal sand</span><span><i class="swatch ground"></i>Ground</span><span><i class="swatch rock"></i>Rock</span><span><i class="swatch snow"></i>Snow / ice</span><span><i class="flora-dot"></i>Flora candidate present</span></div>
+          <p class="note">A sampled preview, not a full renderer. Each cell uses Atlas’ terrain sampler and current biome classifier; slope is an explicit sample control. Flora candidates use the same seed, body address, biome fields and stage gate as the planet renderer.</p>
+        </section>
+        <aside class="results">
+          <section><span class="eyebrow">MODEL VERSIONS</span><div id="versions" class="version-list"></div></section>
+          <section><span class="eyebrow">SURFACE CLASSES</span><div id="classes" class="result-list"></div></section>
+          <section><span class="eyebrow">FLORA PLACEMENT</span><div id="flora" class="result-list"></div><p id="flora-note" class="note"></p></section>
+          <section><span class="eyebrow">PRODUCTION GEOMETRY LOD</span><label>Preview kind<select id="kind"><option value="tree">Tree</option><option value="shrub">Shrub</option><option value="grass">Grass</option><option value="flower">Flower</option></select></label><label>LOD<select id="lod"><option value="0">LOD 0 · near</option><option value="1">LOD 1 · mid</option><option value="2">LOD 2 · far</option></select></label><div id="geometry" class="geometry-summary"></div><canvas id="specimen" width="320" height="220" aria-label="Production flora geometry preview"></canvas></section>
+        </aside>
+      </div>
+      <footer>Universe Atlas · <a href="./biome-lab.html">Controlled biome composition reference →</a></footer>
+    </main>
+    <script type="module" src="/src/surface-flora-lab.ts"></script>
+  </body>
+</html>

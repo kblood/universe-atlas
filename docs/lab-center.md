@@ -3,10 +3,10 @@
 Open [Lab Center](../lab-center.html) for links and short descriptions of the
 hosted labs. Atlas's Lab Center button and every field-guide chapter link here.
 
-The center groups current and reference world tools, development tools for trees
-and lighting, and historical animal interfaces. A development tool is not a
-certification of the full planetary renderer. Local tree files remain in the
-browser; these tools do not upload them.
+The center prioritises current production tools, then controlled references and
+historical animal interfaces. A development tool is not a certification of the
+full planetary renderer. Local tree files remain in the browser; these tools do
+not upload them.
 
 ## Hosted tools
 
@@ -17,10 +17,20 @@ browser; these tools do not upload them.
   animal populations at different distances, live rendering options, CPU/frame
   and optional GPU measurements, paired instancing comparisons and JSON export.
   Uses Atlas's shared instancing code; excludes full planetary rendering.
-- Biome Lab: `biome-lab.html`, flat reference composition and recipe counts.
-  Planned fauna is not rendered.
+- Surface Flora Lab: `surface-flora-lab.html`, samples the active Atlas
+  `terrainSampler`, `biomeClassifier`, `floraAt` and `buildFloraGeometryData`
+  implementations. The equirectangular preview is a finite sample grid, and
+  local slope and biosphere stage are explicit controls. It is a focused
+  development harness, not a full streamed planet renderer.
+- Biome Recipe Lab: `biome-lab.html`, flat `biome-ecology.ts` reference
+  composition and recipe counts. This controlled fixture is not the active
+  `surface-biomes.ts` planet classifier; planned fauna is not rendered.
 - Biosphere Lab: `biosphere-lab.html`, species, habitats, growth and dated
   histories. Its specimen geometry is a simplified reference representation.
+- Civilization Lab: `civilization-lab.html`, current scenario and run guide for
+  the separate `C:\LLM\IWSDK\civilization-lab` deterministic Node workbench.
+  The Atlas page is informational; simulation-to-Atlas data integration and a
+  browser UI remain future work. Its authored fixtures are not Atlas planets.
 - Cloud Lab: `tests/cloud-comparison.html`, controlled cloud comparisons.
 - Tree Asset Lab: `tree-asset-lab.html`, local GLB LOD pairs, populations and wind.
 - Tree Capture Comparison: `tree-impostor-lab.html`, meshes and captured impostors.

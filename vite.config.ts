@@ -739,7 +739,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       input: {
-        atlas: 'index.html', labs: 'lab-center.html', biomes: 'biome-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html', clouds: 'tests/cloud-comparison.html',
+        atlas: 'index.html', labs: 'lab-center.html', biomes: 'biome-lab.html', surfaceFlora: 'surface-flora-lab.html', civilizations: 'civilization-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html', clouds: 'tests/cloud-comparison.html',
         treeAssets: 'tree-asset-lab.html', treeCaptures: 'tree-impostor-lab.html', treeReferences: 'tree-reference-lab.html', treeImpostorReferences: 'tree-impostor-reference-lab.html', leafLighting: 'leaf-transmission-lab.html',
         ...Object.fromEntries(['index', 'determinism', 'time', 'universe', 'terrain', 'water-atmosphere', 'life', 'travel', 'publishing']
           .map(chapter => [`guide-${chapter}`, `guide/${chapter}.html`])),

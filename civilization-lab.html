@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080e17">
+  <title>Civilization Lab · Universe Atlas</title><link rel="stylesheet" href="./guide/theme.css">
+  <style>main{max-width:1040px;margin:auto}.status{border-left:3px solid #d3a54c;padding:12px 16px;background:#171a19;color:#c5cec9}.cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}.card{height:100%}pre{overflow:auto;padding:16px;border:1px solid #26362e;border-radius:8px;background:#0b1510;color:#dce8df}</style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar"><a class="brand" href="./lab-center.html"><span aria-hidden="true">✧</span> UNIVERSE ATLAS / CIVILIZATION LAB</a><nav><a class="button" href="./lab-center.html">Lab Center</a><a class="button primary" href="./index.html">Open Atlas ↗</a></nav></header>
+  <main id="main">
+    <p class="eyebrow">Separate deterministic simulation workbench</p><h1>Civilization Lab</h1>
+    <p class="lead">The current civilization work is a standalone, seeded Node simulation for developing histories from origins through expansion, collapse, extinction and interstellar travel.</p>
+    <p class="status"><strong>Integration status:</strong> The model lives in <code>C:\LLM\IWSDK\civilization-lab</code>. This Atlas page documents the current workbench; it does not run the simulation in the browser or connect it to Atlas planets. The read-only Atlas adapter remains a separate future step.</p>
+    <h2>Current model scenarios</h2>
+    <div class="cards">
+      <article class="card"><span class="eyebrow">ORIGIN &amp; GROWTH</span><h3>Lonely Earthlike</h3><p>Follow one seeded lineage across a long-lived, temperate world.</p></article>
+      <article class="card"><span class="eyebrow">MULTI-WORLD</span><h3>Crowded Domain</h3><p>Inspect several systems, routes, voyages and competing settlement opportunities.</p></article>
+      <article class="card"><span class="eyebrow">ENVIRONMENTAL LIMITS</span><h3>Harsh Anoxic</h3><p>Explore constrained habitability and failure paths under a hostile atmosphere.</p></article>
+      <article class="card"><span class="eyebrow">STELLAR LIFETIME</span><h3>Doomed Star</h3><p>Review the deterministic evacuation and stellar-survival scenario. Its 30-seed audit records 24 lineages lost with their star, five earlier deaths and one tier-7 colony survivor.</p></article>
+      <article class="card"><span class="eyebrow">RISK &amp; RECOVERY</span><h3>High Perils</h3><p>Inspect how seeded hazards, reports and targeting affect civilization histories.</p></article>
+      <article class="card"><span class="eyebrow">EARLY DEVELOPMENT</span><h3>Forager Future</h3><p>Replay a long-horizon path from an early lineage into later technological eras.</p></article>
+    </div>
+    <h2>Run the workbench locally</h2>
+    <p>From the separate <code>civilization-lab</code> project directory:</p>
+    <pre><code>
+ npm test
+ npm run scenario
+ node src/cli.mjs --scenario lonely-earthlike --seed s1
+ node src/cli.mjs --ensemble 8 --scenario doomed-star --jobs 2 --out out/doom
+    </code></pre>
+    <p class="lead">The model is deterministic: it uses seeded RNG streams, stable ordering and a digest for each scenario. Its inputs are authored fixtures today; Atlas climate, biome, resource and travel queries are not yet supplied.</p>
+    <p><a class="button" href="./docs/lab-center.md#civilizations">Lab status and development notes</a></p>
+  </main>
+</body>
+</html>
