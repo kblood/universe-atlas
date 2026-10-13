@@ -6,8 +6,19 @@ export const slash = p => p.replaceAll('\\', '/');
 // Registered test paths live under tests/ or scripts/ (scripts/cost-fair/precheck.test.mjs; review O1 step 5).
 const TEST_PATH = /(?:^|\s|["'])((?:tests|scripts)\/[^\s"']+\.test\.mjs)(?=$|\s|["'])/g;
 export const testPaths = script => [...script.matchAll(TEST_PATH)].map(m => m[1]);
+export const DEFAULT_TEST_MANIFEST = 'tests/default-suite.json';
+export const DEFAULT_TEST_PRELOAD = 'tests/helpers/default-test-suite.cjs';
+export function usesDefaultTestManifest(script) {
+  return /(?:^|\s)--require(?:=|\s)(?:\.\/)?tests\/helpers\/default-test-suite\.cjs(?=\s|$)/.test(script);
+}
 export function registeredTests(root = process.cwd()) {
-  return testPaths(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts.test);
+  const script = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts.test;
+  if (!usesDefaultTestManifest(script)) return testPaths(script);
+  const files = JSON.parse(readFileSync(resolve(root, DEFAULT_TEST_MANIFEST), 'utf8'));
+  if (!Array.isArray(files) || !files.length || files.some(f => typeof f !== 'string'
+    || !/^(?:tests|scripts)\/(?:[\w-]+\/)*[\w.-]+\.test\.mjs$/.test(f))
+    || new Set(files).size !== files.length) throw new Error(`invalid curated test manifest: ${DEFAULT_TEST_MANIFEST}`);
+  return files;
 }
 const canonical = v => Array.isArray(v) ? v.map(canonical) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonical(v[k])])) : v;
 const LIST_PATH = /^(["']?)((?:tests|scripts)\/[^\s"']+\.test\.mjs)\1$/, ANY_PATH = /(?:tests|scripts)\/[^\s"']*\.test\.mjs/;
@@ -103,7 +114,9 @@ export function selectTests(changed, registered, graph, {pkg} = {}) {
   const candidates = [...new Set([...registered, ...changed.filter(f => /\.test\.mjs$/.test(f) && !f.startsWith('tests/perf/'))])];
   const pkgFull = changed.includes('package.json') && (!pkg || pkg.full);
   const tsconfig = changed.find(f => /(^|\/)tsconfig[^/]*\.json$/.test(f));
-  const full = pkgFull ? `package.json changed${pkg ? ` (${pkg.reason})` : ''}` : tsconfig ? `${tsconfig} changed` : null;
+  const suiteControl = changed.find(file => file === DEFAULT_TEST_MANIFEST || file === DEFAULT_TEST_PRELOAD);
+  const full = pkgFull ? `package.json changed${pkg ? ` (${pkg.reason})` : ''}` : tsconfig ? `${tsconfig} changed`
+    : suiteControl ? `${suiteControl} changed` : null;
   const pkgAccepted = changed.includes('package.json') && !pkgFull, added = pkgAccepted ? pkg.added : [];
   const selected = [];
   for (const file of candidates) {

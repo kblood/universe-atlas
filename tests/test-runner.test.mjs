@@ -3,8 +3,120 @@ import assert from 'node:assert/strict';
 import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, existsSync, readdirSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {join, resolve, relative} from 'node:path';
-import {spawn} from 'node:child_process';
+import {spawn, spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {classify} from './helpers/test-runner.mjs';
+import {registeredTests, selectTests, DEFAULT_TEST_MANIFEST, DEFAULT_TEST_PRELOAD} from './helpers/test-selection.mjs';
+
+test('npm test manifest preserves all 276 curated paths in their original order and stays below the Windows shell limit', () => {
+  const files = registeredTests();
+  assert.equal(files.length, 276);
+  // The ordered list extracted from scripts.test before its Windows-safe migration.
+  assert.equal(createHash('sha256').update(files.join('\n')).digest('hex'),
+    'f58c0d4599d5c81424c639a9c3aa4fce7c6f57e712421b5de73339f958def6c3');
+  assert.equal(new Set(files).size, files.length);
+  for (const file of files) assert.ok(existsSync(file), file);
+  const script = JSON.parse(readFileSync('package.json')).scripts.test;
+  assert.match(script, /^node tests\/helpers\/test-slot\.mjs --shared 16 -- node --test --test-concurrency=16 --test-isolation=process --require /);
+  assert.ok(script.length < 512, `${script.length} characters; cmd.exe limit is 8191`);
+  assert.ok(`${script} ${files.join(' ')}`.length > 8191, 'the old inline list exceeds cmd.exe capacity');
+  assert.deepEqual(selectTests([DEFAULT_TEST_MANIFEST], files, new Map()).selected.map(s => s.file), files,
+    'manifest edits select the whole current suite, including newly registered paths');
+  assert.deepEqual(selectTests([DEFAULT_TEST_PRELOAD], files, new Map()).selected.map(s => s.file), files,
+    'preload edits also select the whole current suite');
+});
+
+function defaultSuiteFixture(work) {
+  mkdirSync('test-results', {recursive: true});
+  const root = realpathSync(mkdtempSync(resolve('test-results', 'atlas-default-suite-')));
+  try {
+    mkdirSync(join(root, 'tests', 'helpers'), {recursive: true});
+    for (const file of ['default-test-suite.cjs', 'test-selection.mjs', 'test-slot.mjs']) {
+      writeFileSync(join(root, 'tests', 'helpers', file), readFileSync(join('tests', 'helpers', file)));
+    }
+    const script = JSON.parse(readFileSync('package.json')).scripts.test;
+    writeFileSync(join(root, 'package.json'), JSON.stringify({type: 'module', scripts: {test: script}}));
+    const env = {...process.env, ATLAS_TEST_SLOT_DIR: join(root, 'slot')};
+    for (const key of ['NODE_TEST_CONTEXT', 'ATLAS_TEST_SLOT_TOKEN', 'ATLAS_TEST_SLOT_NESTED', 'ATLAS_SLOT_SHARED']) delete env[key];
+    const run = (args = [], extra = {}, nativeFiles) => spawnSync(process.execPath,
+      nativeFiles ? ['--test', '--test-concurrency=16', ...args, ...nativeFiles] : [...script.split(' ').slice(1), ...args],
+      {cwd: root, env: {...env, ...extra}, encoding: 'utf8', timeout: 30000});
+    return work({root, run});
+  } finally {rmSync(root, {recursive: true, force: true});}
+}
+
+test('npm test manifest uses native reporters, raw fail/TODO/skip status, isolation and shared/exclusive slot lifecycle', () => defaultSuiteFixture(({root, run}) => {
+  const files = ['tests/a.test.mjs', 'tests/b.test.mjs'];
+  writeFileSync(join(root, DEFAULT_TEST_MANIFEST), JSON.stringify(files));
+  writeFileSync(join(root, files[0]), `import test from 'node:test'; import assert from 'node:assert/strict'; import fs from 'node:fs';
+test('pass', () => {
+  assert.equal(process.argv.length, 2, 'suite argv must not leak into a test worker');
+  if (process.env.EXPECT_SLOT) {
+    const dir = process.env.ATLAS_TEST_SLOT_DIR, token = process.env.ATLAS_TEST_SLOT_TOKEN;
+    const shared = fs.existsSync(dir + '.shared/' + token + '.json');
+    const path = shared ? dir + '.shared/' + token + '.json' : dir + '/owner.txt';
+    const holder = JSON.parse(fs.readFileSync(path, 'utf8'));
+    assert.equal(shared, process.env.EXPECT_SLOT === 'shared');
+    if (shared) assert.equal(holder.tokens, 16);
+    fs.writeFileSync(process.env.PROBE_OUT, JSON.stringify({pid: process.pid, token}));
+  }
+});
+test('skipped', {skip: true}, () => assert.fail());
+test('todo', {todo: true}, () => assert.fail('open'));
+`);
+  writeFileSync(join(root, files[1]), "import test from 'node:test'; test('fail', () => {throw Error('raw failure')});\n");
+  // An unregistered test must never be discovered, even though it matches Node's default patterns.
+  writeFileSync(join(root, 'tests', 'unregistered.test.mjs'), "throw Error('UNREGISTERED WAS RUN');\n");
+  for (const args of [['--test-isolation=none'], ['--test-isolation', 'none']]) {
+    const rejected = run(args);
+    assert.notEqual(rejected.status, 0, rejected.stdout + rejected.stderr);
+    assert.match(rejected.stdout + rejected.stderr, /curated npm test requires --test-isolation=process/);
+    assert.doesNotMatch(rejected.stdout + rejected.stderr, /UNREGISTERED WAS RUN|raw failure|open/,
+      'unsupported isolation fails before test files execute');
+  }
+  const fromEnv = run(['--test-name-pattern=^pass$'], {NODE_OPTIONS: '--test-isolation=none'});
+  assert.equal(fromEnv.status, 0, fromEnv.stdout + fromEnv.stderr);
+  assert.doesNotMatch(fromEnv.stdout + fromEnv.stderr, /UNREGISTERED WAS RUN|raw failure/,
+    'explicit process isolation keeps inherited NODE_OPTIONS from broadening discovery');
+  const normalize = text => text.replace(/\(\d+(?:\.\d+)?ms\)/g, '(TIME)')
+    .replace(/duration_ms: \d+(?:\.\d+)?/g, 'duration_ms: TIME').replace(/duration_ms \d+(?:\.\d+)?/g, 'duration_ms TIME');
+  for (const reporter of ['spec', 'tap']) {
+    const args = [`--test-reporter=${reporter}`], native = run(args, {}, files), migrated = run(args);
+    assert.equal(native.status, 1, native.stderr);
+    assert.equal(migrated.status, native.status, migrated.stderr);
+    assert.equal(normalize(migrated.stdout), normalize(native.stdout), 'same Node reporter output apart from durations');
+    assert.doesNotMatch(migrated.stdout + migrated.stderr, /UNREGISTERED WAS RUN|called recursively/);
+  }
+  for (const [flag, mode] of [[undefined, 'shared'], ['0', 'exclusive']]) {
+    const probe = join(root, `probe-${mode}.json`);
+    const result = run(['--test-name-pattern=^(?:pass|todo|skipped)$'],
+      {...(flag ? {ATLAS_SLOT_SHARED: flag} : {}), EXPECT_SLOT: mode, PROBE_OUT: probe});
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.ok(JSON.parse(readFileSync(probe)).token, 'workers inherit the live slot token');
+    assert.equal(existsSync(join(root, 'slot')), false, 'exclusive slot released');
+    for (const suffix of ['shared', 'nested', 'pending']) {
+      const dir = join(root, `slot.${suffix}`);
+      assert.deepEqual(existsSync(dir) ? readdirSync(dir) : [], [], `${suffix} records released`);
+    }
+  }
+}));
+
+test('npm test expands a command larger than the Windows shell limit in memory and rejects invalid manifests', () => defaultSuiteFixture(({root, run}) => {
+  const files = Array.from({length: 276}, (_, i) => `tests/${String(i).padStart(3, '0')}-${'long-curated-name-'.repeat(3)}.test.mjs`);
+  assert.ok(files.join(' ').length > 8191);
+  for (const file of files) writeFileSync(join(root, file), "import test from 'node:test'; test('selected shard', () => {});\n");
+  writeFileSync(join(root, DEFAULT_TEST_MANIFEST), JSON.stringify(files));
+  const result = run(['--test-shard=1/276']);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /tests 1\b/);
+  for (const invalid of [[], [files[0], files[0]], ['tests/*.test.mjs'], ['tests/../escape.test.mjs'], {}]) {
+    writeFileSync(join(root, DEFAULT_TEST_MANIFEST), JSON.stringify(invalid));
+    const failed = run();
+    assert.equal(failed.status, 1, failed.stdout + failed.stderr);
+    assert.match(failed.stderr, /invalid curated test manifest/);
+    assert.doesNotMatch(failed.stdout, /selected shard/);
+  }
+}));
 test('reporter records title + file, excludes TODO, and completes with the raw failed status', async () => {
   mkdirSync('test-results', {recursive: true});
   // realpath: on the main checkout test-results is a junction to another drive, and
