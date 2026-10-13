@@ -14,7 +14,7 @@ test('Atlas legacy flora imports resolve to the same versioned Kit implementatio
   assert.equal(legacyCulling.drawFloraCandidates, culling.drawFloraCandidates);
   for (const name of ['field','culling']) {
     const source = readFileSync(new URL(`../src/flora-${name}.ts`,import.meta.url),'utf8');
-    assert.equal(source.trim(), `// Compatibility import; canonical implementation lives in the pinned Flora Kit.\nexport * from '#flora-kit/v1/${name}';`);
+    assert.equal(source.replace(/\r\n/g,'\n').trim(), `// Compatibility import; canonical implementation lives in the pinned Flora Kit.\nexport * from '#flora-kit/v1/${name}';`);
   }
 });
 
