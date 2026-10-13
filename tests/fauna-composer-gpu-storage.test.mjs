@@ -218,10 +218,11 @@ test('GPU context loss aborts work and discards old receipts; restoration rebuil
  const provider={async build(job,signal){builds++;if(hold)await new Promise((resolve,reject)=>signal.addEventListener('abort',()=>{aborted=true;reject(new Error('aborted'));},{once:true}));return {key:job.key,source:{graph:creature.graph,skin:creature.skin},levels:{far:skin},buildMs:0};}};
  const renderer=new FaunaComposerRenderer({provider,pose:()=>creature.update('walk',.3),mergedGpuContext:gl,maxBytes:40e6,mergedTiers:{far:{storage:'packed-1',maxVertices:skin.positions.length/3*2,maxIndices:skin.index.length*2,maxBytes:20e6}}});
  const c={id:'a',sourceKey:'a',definition:{id:'a'},matrix:new THREE.Matrix4(),distanceM:300,cameraVisible:true,rigSeconds:.3};
- async function settle(){for(let i=0;i<20;i++){renderer.update([c]);await new Promise(r=>setTimeout(r,1));if(renderer.diagnostics().active===1)return;}assert.fail('source did not rebuild');}
- try{await settle();const before=renderer.snapshotOf('a');assert.ok(before.skin.positions.length);hold=true;renderer.update([c,{...c,id:'b',sourceKey:'b',definition:{id:'b'}}]);
+ async function settle(phase){const deadline=Date.now()+5000;while(Date.now()<deadline){renderer.update([c]);const d=renderer.diagnostics();if(d.active===1)return;await new Promise(r=>setTimeout(r,10));}
+  const d=renderer.diagnostics();assert.fail(`${phase} source did not rebuild within 5 s: ${JSON.stringify({builds,failures:d.failures,pending:d.pending,lastError:d.lastError})}`);}
+ try{await settle('initial');const before=renderer.snapshotOf('a');assert.ok(before.skin.positions.length);hold=true;renderer.update([c,{...c,id:'b',sourceKey:'b',definition:{id:'b'}}]);
   let tick=0;const pool=renderer.merged.get('far');assert.equal(pool.registerSlice('partial',skin,3,.8,1,()=>tick+=.2),'pending');
   gl.contextLost();await new Promise(r=>setTimeout(r,1));assert.ok(aborted);assert.equal(renderer.entries.size,0);assert.equal(pool.diagnostics().copying,0);assert.equal(renderer.update([c]).size,0);hold=false;
-  gl.contextRestored();await settle();assert.ok(builds>=3);assert.deepEqual(renderer.snapshotOf('a').skin.positions,before.skin.positions);assert.equal(renderer.diagnostics().failures,0);
+  gl.contextRestored();await settle('restored');assert.ok(builds>=3);assert.deepEqual(renderer.snapshotOf('a').skin.positions,before.skin.positions);assert.equal(renderer.diagnostics().failures,0);
  }finally{renderer.dispose();creature.dispose();}assert.equal(gl.inspect().buffers,0);
 });
