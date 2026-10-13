@@ -178,15 +178,21 @@ test('renderer: stale river attachments add no river water/reflection and dry-gr
     assert.equal(diagnostics.environment,null,'no river bank environment');
     assert.equal(renderer.fineContactLevel,renderer.contactLevel,'no hydrology fine-contact level');
     assert.equal(renderer.minimumWaterLevel,null,'no regional water refinement floor');
-    renderer.setContactFocus(point);
-    const eye=direction.map(v=>v*(1+(ground+2)/radiusM));
-    let patches=null;
-    for(let i=0;i<3000&&!patches;i++){
-      renderer.update(eye,1080,65,1/60,false,[1,0,0],[],undefined,null,0);
+  renderer.setContactFocus(point);
+  const eye=direction.map(v=>v*(1+(ground+2)/radiusM));
+  const camera=new THREE.PerspectiveCamera(65,16/9,.01,5000),radialDirection=new THREE.Vector3(...direction);
+  const reference=Math.abs(radialDirection.y)>.9?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
+  const east=new THREE.Vector3().crossVectors(reference,radialDirection).normalize(),north=new THREE.Vector3().crossVectors(radialDirection,east).normalize();
+  camera.position.set(...eye);camera.up.copy(north);camera.lookAt(radialDirection.clone().multiplyScalar(radiusM+ground));camera.updateMatrixWorld(true);
+  const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
+  let patches=null;
+  for(let i=0;i<3000&&!patches;i++){
+      renderer.update(eye,1080,65,1/60,false,[1,0,0],[frustum],undefined,null,0);
       await new Promise(resolve=>setImmediate(resolve));
       patches=renderer.contactPatches(point,point);
     }
-    assert.ok(patches&&patches.length>0,'ordinary dry-ground contact terrain becomes available');
+    const contactDiagnostics=renderer.diagnostics();
+    assert.ok(patches&&patches.length>0,`ordinary dry-ground contact terrain becomes available: ${JSON.stringify({readiness:contactDiagnostics.contactReadiness,visible:contactDiagnostics.visible,frontier:contactDiagnostics.frontierMaxLevel,contactLevel:renderer.contactLevel,pressure:contactDiagnostics.terrainPressure,pending:contactDiagnostics.pending,resident:contactDiagnostics.terrainResidentBytes,budget:contactDiagnostics.terrainBudgetBytes,reserved:contactDiagnostics.terrainReservedBytes,splitCeiling:contactDiagnostics.terrainSplitCeilingBytes,blocked:contactDiagnostics.splitsBlockedByBytes,leaves:renderer.leafTiles.length})}`);
     assert.equal(renderer.diagnostics().contactLevel,renderer.contactLevel,'contact uses the ordinary level');
     renderer.selectionDirty=false;
     renderer.setContactFocus(point);
@@ -212,7 +218,7 @@ test('renderer: stale river attachments add no river water/reflection and dry-gr
     assert.equal(renderer.selectionDirty,true,'a 160 m grounded retarget invalidates the selected terrain frontier');
     let movedPatches=null,retargetFrames=0;
     for(;retargetFrames<600&&!movedPatches;retargetFrames++){
-      renderer.update(eye,1080,65,1/60,false,[1,0,0],[],undefined,null,0);
+      renderer.update(eye,1080,65,1/60,false,[1,0,0],[frustum],undefined,null,0);
       await new Promise(resolve=>setImmediate(resolve));
       movedPatches=renderer.contactPatches(movedPoint,movedPoint);
     }

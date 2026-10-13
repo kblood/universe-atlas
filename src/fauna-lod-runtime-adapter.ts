@@ -2,7 +2,7 @@
  * copied once into atlas-owned slots, then the transferable payload is dropped. */
 import * as THREE from 'three';
 import {FaunaRuntimeProfile} from './fauna-runtime-profile.ts';
-import receipt from '../vendor/creature-kit/PACKAGE.json' with {type:'json'};
+import receipt from '../vendor/creature-kit/creature-kit-manifest.json' with {type:'json'};
 import {FaunaPlanetCrispBatch} from './fauna-planet-crisp-batch.ts';
 import {FAUNA_PLANET_CRISP_RAW_VERSION} from './fauna-planet-crisp.ts';
 import {FAUNA_PLANET_CRISP_RAW_PACKED_VERSION} from './fauna-planet-crisp-packed.ts';

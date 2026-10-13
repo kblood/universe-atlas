@@ -15,6 +15,7 @@ test.after(() => {for (const c of creatures.values()) c.dispose();});
 const candidate = (id, name = 'worm', distanceM = 10) => ({id, definition: {name}, sourceKey: name, matrix: new THREE.Matrix4().makeTranslation(100, 20, 30), distanceM, cameraVisible: true, rigSeconds: .47, poseKey: 't=.47-ground0'});
 const tick = () => new Promise(resolve => setTimeout(resolve, 15));
 async function settled(r) {for(let i=0;i<100&&r.diagnostics().running;i++)await tick();assert.equal(r.diagnostics().running,null,'async preparation completed');}
+async function waitFor(predicate,label){const deadline=performance.now()+5000;while(!predicate()){assert.ok(performance.now()<deadline,label);await tick();}}
 const levelCache = new Map();
 function provider() {const calls = []; return {calls, build(job, signal) {calls.push({job, signal}); const s = source(job.definition.name); if (!levelCache.has(job.definition.name)) levelCache.set(job.definition.name, buildFaunaComposerLevels(s)); const levels = levelCache.get(job.definition.name); return Promise.resolve({key: job.key, source: s, levels: Object.fromEntries(job.tiers.map(t => [t, levels[t]])), buildMs: 1});}};}
 
@@ -65,7 +66,8 @@ test('tight resident budget rejects admission visibly and preserves an already d
   const p = provider(), r = new FaunaComposerRenderer({provider: p, pose: g => poseComposer(g, 'idle', 0), capacity: 2, maxSources: 1, maxBytes: 8 * 1024 * 1024});
   try {
     const a = candidate('a'), b = candidate('b', 'turtle'); r.update([a]); await tick(); r.update([a]);
-    for (let i = 0; i < 8; i++) {r.update([a, b]); await tick();} const drawn = r.update([a, b]);
+    await waitFor(()=>{r.update([a,b]);return r.diagnostics().blockedAdmissions>0;},'resident budget rejection becomes observable');
+    const drawn = r.update([a, b]);
     assert.ok(drawn.has('a')); assert.ok(!drawn.has('b')); assert.match(r.diagnostics().lastError, /budget full/); assert.equal(r.diagnostics().sources, 1);
     assert.ok(r.ownedBytes <= 8 * 1024 * 1024);
     r.update([b]); for (let i = 0; i < 125; i++) r.update([b]); await tick(); r.update([b]); assert.equal(r.diagnostics().sources, 1);

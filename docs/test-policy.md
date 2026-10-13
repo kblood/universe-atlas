@@ -174,12 +174,21 @@ The machine-wide slot defaults to `C:/LLM/IWSDK/.atlas-test-slot`.
 do **not** coordinate with other worktrees. This task uses the workspace-local
 `test-results/test-infra/slot`, since the default is outside its writable root.
 
-`npm test` has a wrapper **prefix**, followed by the existing `node --test` and
-its explicit ordered file list. New tests are still registered by appending
-paths to that list. Registered paths are `tests/**/*.test.mjs` or (since
+`npm test` has a wrapper **prefix**, followed by `node --test` with a synchronous
+`--require ./tests/helpers/default-test-suite.cjs` preload. The preload expands
+the explicit ordered list from `tests/default-suite.json` into Node's argv in
+memory before test discovery. This keeps the command below Windows cmd.exe's
+8191-character limit while retaining Node's native reporters, default process
+isolation (explicitly set so `NODE_OPTIONS` cannot override it), filtering/sharding
+flags and raw status. `--test-isolation=none` is
+rejected before test files run: Node loads preloads after discovery in that mode,
+which cannot safely expand this curated list. New tests are registered by appending paths to the JSON
+list. Registered paths are `tests/**/*.test.mjs` or (since
 2026-10-07) `scripts/**/*.test.mjs` (`scripts/cost-fair/precheck.test.mjs`);
-the import graph of test:affected also walks `scripts/`. All selectors/runners parse test-path tokens out of that
-script, tolerating wrappers; there is no second full-suite registry. A prefix
+the import graph of test:affected also walks `scripts/`. All selectors/runners
+read the same manifest through `registeredTests()`; legacy inline-list scripts
+remain supported for fixtures and older checkouts. Manifest or preload changes select the
+whole current suite in test:affected. There is no second full-suite registry. A prefix
 holds the slot until the child closes and releases it in `finally` even on
 failure. Unlike `posttest`, cleanup does not depend on success. The wrapper
 preserves the child's numeric exit code; signals map to 130/143.

@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {lifeRendererModule,runLifeScenario,digestPoses,createRenderer,body} from './life-scenario.mjs';
 
+const LEGACY={faunaGenerator:'archive-quadruped'};
+
 test('versioned body switches to legacy in XR and back without changing the planet, terrain or canonical animals',async()=>{
   const fixture=await lifeRendererModule({prefix:'fauna-body-style-'}),pose={...digestPoses()[0],clearanceM:80,pitchDeg:-15};
-  try{await runLifeScenario(fixture.module,[pose],{rendererOptions:{faunaBodyPresentation:'sculpted-v1'},onFrame(_i,r){
+  try{await runLifeScenario(fixture.module,[pose],{rendererOptions:{...LEGACY,faunaBodyPresentation:'sculpted-v1'},onFrame(_i,r){
     assert.equal(r.faunaNear.presentation,'sculpted-v1');const terrain=r.patches,worldBody=r.body,group=r.group;
     const canonical=r.faunaDrawn.map(x=>({id:x.id,genome:x.genome,position:x.position}));
     r.setFaunaLodImmersive(true);assert.equal(r.faunaNear.presentation,'legacy-v4');assert.equal(r.faunaLod,null);
@@ -24,8 +26,8 @@ test('production-route opt-in preserves canonical population/poses, wakes paused
   const canonical=[],optIn=[];
   const capture=out=>(_i,r)=>{out.push({drawn:r.faunaDrawn.map(x=>({id:x.id,cell:x.cell,position:x.position,genome:x.genome})),near:[...r.faunaRigged].sort(),visible:r.faunaVisibleCount,drops:r.faunaBudgetDrops});return false;};
   try{
-    await runLifeScenario(m,poses,{onFrame:capture(canonical)});
-    await runLifeScenario(m,poses,{onFrame:capture(optIn),rendererOptions:{faunaLodPrototype:()=>({adapter,sourceVersion:'genome1/body4/kit0.3',appearanceVersion:'route-proof',controller:{fadeSeconds:0}})}});
+    await runLifeScenario(m,poses,{onFrame:capture(canonical),rendererOptions:LEGACY});
+    await runLifeScenario(m,poses,{onFrame:capture(optIn),rendererOptions:{...LEGACY,faunaLodPrototype:()=>({adapter,sourceVersion:'genome1/body4/kit0.3',appearanceVersion:'route-proof',controller:{fadeSeconds:0}})}});
     assert.deepEqual(optIn,canonical,'representation work cannot remove/reseed/move a member');assert.ok(jobs.length>0,'actual route dispatches existing camera animals without Land');
     assert.ok(traces.some(frame=>frame.some(c=>c.distanceM>95&&c.distanceM<=200)),'80m arrival includes actual camera candidates beyond the old95m rig window');
     assert.ok(traces.every(frame=>frame.length<=128&&frame.filter(c=>c.tier==='close').length<=16&&frame.filter(c=>c.tier==='middle').length<=112));
@@ -35,7 +37,7 @@ test('production-route opt-in preserves canonical population/poses, wakes paused
 
 test('failed prototype initialization keeps legacy presentation and does not retry allocation every frame',async()=>{
   const fixture=await lifeRendererModule({prefix:'fauna-lod-init-fail-'}),pose={...digestPoses()[0],clearanceM:80,pitchDeg:-15};let attempts=0;
-  try{await runLifeScenario(fixture.module,[pose,pose,pose],{rendererOptions:{faunaLodPrototype:()=>{attempts++;throw new Error('unsupported adapter budget');}},onFrame(_i,r){
+  try{await runLifeScenario(fixture.module,[pose,pose,pose],{rendererOptions:{...LEGACY,faunaLodPrototype:()=>{attempts++;throw new Error('unsupported adapter budget');}},onFrame(_i,r){
     assert.equal(r.faunaLod,null);assert.ok(r.faunaRenderer.meshes.every(mesh=>!mesh.geometry.hasAttribute('instanceFaunaCoverage')));assert.ok(r.faunaDrawn.length>0);assert.match(r.faunaLodInitError,/budget/);return false;}});
     assert.equal(attempts,1);
   }finally{await fixture.cleanup();}
@@ -48,7 +50,7 @@ test('initial XR creates no provider; desktop→XR disposes/cancels prototype an
     adopt(){return false;},release(){},discard(){},beginFrame(){},submit(){return false;},endFrame(){},reset(){},dispose(){this.disposed=true;this.group.clear();}};created.push(adapter);return {adapter,sourceVersion:'xr-source',appearanceVersion:'xr-test'};};
   const pose={...digestPoses()[0],clearanceM:80,pitchDeg:-15},snapshots=[];
   try{
-    await runLifeScenario(m,[pose,pose,pose,pose],{rendererOptions:{faunaLodPrototype:factory,presentationContinuity:true},onFrame(i,r){
+    await runLifeScenario(m,[pose,pose,pose,pose],{rendererOptions:{...LEGACY,faunaLodPrototype:factory,presentationContinuity:true},onFrame(i,r){
       const sceneGroup=r.group,body=r.body,life=r.lifeContext,tiles=r.patches,drawn=r.faunaDrawn.map(x=>({id:x.id,position:x.position}));
       if(i===0){assert.equal(created.length,1);assert.ok(r.faunaRenderer.meshes.every(mesh=>mesh.geometry.hasAttribute('instanceFaunaCoverage')));}
       else if(i===1){assert.ok(pending.some(job=>!job.signal.aborted),'exercise an active pending worker, not only a scheduled microtask');
@@ -60,7 +62,7 @@ test('initial XR creates no provider; desktop→XR disposes/cancels prototype an
     assert.deepEqual(snapshots[0],snapshots[1],'same date/camera canonical population remains through presentation transitions');
     const prototype=m.PlanetRenderer.prototype,update=prototype.update,count=created.length;
     prototype.update=function(...args){args[4]=true;return update.apply(this,args);};
-    try{await runLifeScenario(m,[pose],{rendererOptions:{faunaLodPrototype:factory},onFrame(_i,r){assert.equal(r.faunaLod,null);assert.ok(r.faunaRenderer.meshes.every(mesh=>!mesh.geometry.hasAttribute('instanceFaunaCoverage')));return false;}});
+    try{await runLifeScenario(m,[pose],{rendererOptions:{...LEGACY,faunaLodPrototype:factory},onFrame(_i,r){assert.equal(r.faunaLod,null);assert.ok(r.faunaRenderer.meshes.every(mesh=>!mesh.geometry.hasAttribute('instanceFaunaCoverage')));return false;}});
       assert.equal(created.length,count,'actual constructor and initial XR frames cannot initialize provider');
     }finally{prototype.update=update;}
     assert.ok(created.every(adapter=>adapter.disposed),'renderer disposal releases final desktop provider');
@@ -72,7 +74,7 @@ test('lazy camera demand avoids lifeless/shadow/hidden allocations and recreates
   const factory=()=>{const adapter={group:new m.THREE.Group(),ownedBytes:100,transientBytes:0,workerReserveBytes:65536,disposed:false,
     build(job,signal){return new Promise((resolve,reject)=>{pending.push({job,signal});signal.addEventListener('abort',()=>reject(new Error('cancelled')),{once:true});});},
     adopt(){return false;},release(){},discard(){},beginFrame(){},submit(){return false;},endFrame(){},reset(){},dispose(){this.disposed=true;this.group.clear();}};created.push(adapter);return {adapter,sourceVersion:'demand-source',appearanceVersion:'demand-test'};};
-  const options={faunaLodPrototype:factory},cold=createRenderer(m,body,{rendererOptions:options});
+  const options={...LEGACY,faunaLodPrototype:factory},cold=createRenderer(m,body,{rendererOptions:options});
   try{
     assert.equal(created.length,0,'constructor retains factory without allocating pool arrays');
     cold.renderer.setFaunaLodImmersive(false,true);assert.equal(created.length,0,'null life cannot instantiate even with a demand request');

@@ -5,7 +5,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import * as kit from '#creature-kit/planet';
-import receipt from '../vendor/creature-kit/PACKAGE.json' with {type:'json'};
+import receipt from '../vendor/creature-kit/creature-kit-manifest.json' with {type:'json'};
 import {FaunaComposerRenderer} from '../src/fauna-composer-renderer.ts';
 import {FAUNA_PLANET_COMPOSER_POLICY as p} from '../src/fauna-planet-composer-policy.ts';
 import {FaunaComposerMergedBatch} from '../src/fauna-composer-merged-batch.ts';

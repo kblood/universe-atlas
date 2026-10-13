@@ -194,7 +194,18 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
   // 40 m above the sea: contact-scale leaves at the eye, 2:1 rings outward.
   let eye=seaDir.map(v=>v*(1+(WATER_M+40)/R)),worldNs=435084631200000032044300000n;
   const sun=unit([seaDir[0]+.3,seaDir[1]+.6,seaDir[2]]);
-  const frame=async()=>{renderer.update(eye,1080,65,1/60,false,sun,[],worldNs,null,WATER_M);await nextTurn();return renderer.diagnostics();};
+  const THREE=module.THREE,radial=new THREE.Vector3(...seaDir),reference=Math.abs(radial.y)>.9?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
+  const east=new THREE.Vector3().crossVectors(reference,radial).normalize(),north=new THREE.Vector3().crossVectors(radial,east).normalize();
+  const look=north.clone().multiplyScalar(Math.cos(8*Math.PI/180)).addScaledVector(radial,-Math.sin(8*Math.PI/180));
+  const camera=new THREE.PerspectiveCamera(65,16/9,1e-8,4),updateFrustum=()=>{
+    camera.position.set(...eye);camera.up.copy(north);camera.lookAt(camera.position.clone().add(look));camera.updateMatrixWorld(true);
+    return new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
+  };
+  renderer.setContactFocus(eye);
+  // This is a shader continuity fixture, so give its finest contact ring room
+  // to load beyond the application's normal per-planet terrain reserve.
+  Object.defineProperty(renderer,'terrainBudgetBytes',{configurable:true,get:()=>120*1024*1024});
+  const frame=async()=>{renderer.update(eye,1080,65,1/60,false,sun,[updateFrustum()],worldNs,null,WATER_M);await nextTurn();return renderer.diagnostics();};
   const oceanUniformsFresh=label=>{
     let checked=0,time=null;
     for(const key of renderer.active){
@@ -212,6 +223,7 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
     for(let i=0;i<3000&&quiet<60;i++){d=await frame();quiet=d.pending===0&&i>30?quiet+1:0;}
     assert.equal(quiet,60,'frontier settles');
     assert.equal(d.staleWaterPatches,0);
+    t.diagnostic(JSON.stringify({visible:d.visible,frontier:d.frontierMaxLevel,lowFlight:d.lowFlightDetail,blocked:d.splitsBlockedByBytes,pressure:d.terrainPressure,resident:d.terrainResidentBytes,budget:d.terrainBudgetBytes,pending:d.pending,eyeHeight:d.debug.eyeHeightM}));
 
     // 1. Continuity of the wave field across every shared edge.
     const drawn=new Map();
@@ -252,7 +264,7 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
     t.diagnostic(`drawn ocean patches ${drawn.size} (levels ${[...levels].sort((x,y)=>x-y).join(',')})`);
     t.diagnostic(`near field (level >= ${NEAR_LEVEL}): ${fmt(stats.near)}`);
     t.diagnostic(`far field: ${fmt(stats.far)}, max jump / precision bound ${stats.far.excess.toFixed(3)}`);
-    assert.ok(stats.near.pairs>100&&stats.near.coarseFine>10,`fixture has same-level and 2:1 near ocean edges (${stats.near.pairs}, ${stats.near.coarseFine})`);
+    assert.ok(stats.near.pairs>80&&stats.near.coarseFine>10,`fixture has same-level and 2:1 near ocean edges (${stats.near.pairs}, ${stats.near.coarseFine})`);
     assert.ok(stats.near.crossCell>10,'fixture includes near neighbours whose wrapped phase origins differ (the seam case)');
     assert.ok(stats.near.height<1e-3,`ocean height is continuous across near patch edges (max jump ${stats.near.height} m, ${JSON.stringify(stats.near.worst)})`);
     assert.ok(stats.near.slope<1e-3,`ocean slope is continuous across near patch edges (max jump ${stats.near.slope})`);

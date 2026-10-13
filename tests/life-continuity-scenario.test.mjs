@@ -25,7 +25,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {lifeRendererModule,runLifeScenario,digestPoses,moveAlong,SITE_A,DATE} from './life-scenario.mjs';
 
-const ON={presentationContinuity:true};
+const LEGACY={faunaGenerator:'archive-quadruped'};
+const ON={...LEGACY,presentationContinuity:true};
 const CLOCK_STEP_MS=1000/60;
 const EXIT_M=95,LISTED_M=EXIT_M+15;
 // digestPoses() 'walk' (136) .. 'high' (307-314): walking, no-shadow, fast
@@ -72,7 +73,7 @@ test('presentation continuity: stepped-clock scenario is deterministic, cross-fa
     assert.ok(fades.length>0,'a frame with a fading rig at a weight strictly between 0 and 1');
     assert.deepEqual(probe.onScreenDrops,[],'no camera-visible rig within 110 m is hard-dropped');
     const offProbe=fadeProbe();
-    const off=await runLifeScenario(fixture.module,poses,{clockStepMs:CLOCK_STEP_MS,onFrame:offProbe.onFrame});
+    const off=await runLifeScenario(fixture.module,poses,{rendererOptions:LEGACY,clockStepMs:CLOCK_STEP_MS,onFrame:offProbe.onFrame});
     assert.equal(offProbe.frames.filter(f=>f.fading||f.weights.some(w=>w>0&&w<1)).length,0,'no fade with the option off');
     assert.ok(a.stats.maxRigs>=3&&off.stats.maxRigs>=3,`near rigs active (on ${a.stats.maxRigs}, off ${off.stats.maxRigs})`);
     assert.notDeepEqual(a.digests,off.digests,'the option changes the life output by design');
@@ -106,7 +107,7 @@ test('presentation continuity: 340/365 m hover keeps the life gate open (350 in 
       await runLifeScenario(fixture.module,poses,{rendererOptions,clockStepMs:CLOCK_STEP_MS,onFrame:()=>{gate.push(shown);return false;}});
       return gate;
     };
-    const on=await run(ON),off=await run(undefined);
+    const on=await run(ON),off=await run(LEGACY);
     assert.equal(on.length,poses.length);
     assert.equal(on[0],true,'entry at 340 m');
     assert.ok(on.every(Boolean),`on: life shown on every frame after entry (${on.map(Number).join('')})`);
