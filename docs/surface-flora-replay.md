@@ -44,3 +44,8 @@ its historical tree template, even when the selected cell has no living flora.
 manual planet profile, body seed, slope, biosphere stage and Myr controls.
 These controls intentionally override the dated production environment and
 are not an Atlas location replay.
+
+**Verification (2026-10-13):** `npm run build` passed and
+`node --test tests/surface-flora-replay.test.mjs` passed all 7 tests. The
+initial build caught an `unknown`-to-string type error in replay input
+validation; the input guard was corrected before the passing build and tests.
