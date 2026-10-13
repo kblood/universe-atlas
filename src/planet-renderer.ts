@@ -37,6 +37,7 @@ import {createFaunaPlanetComposerRenderer,faunaPlanetComposerDefinition,FAUNA_PL
 import type {PlanetComposerDefinition} from '#creature-kit/planet';
 import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M} from './fauna-ground.ts';
 import {floraFineDemand,floraFineCoverage} from './flora-streaming.ts';
+import {floraGeometrySeed} from './flora-geometry-seed.ts';
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
 import {FaunaLodController,type FaunaLodCandidate,type FaunaLodRuntimeAdapter,type FaunaLodControllerOptions,type FaunaLodContext} from './fauna-lod-controller.ts';
@@ -985,9 +986,8 @@ export class PlanetRenderer {
     this.rocks=new PlanetRocks({body,sample:()=>this.sample,classify:()=>this.classify,textures:this.groundPbrTextures,
       attach:mesh=>attachLocalAerial(mesh,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform)});
     this.group.add(this.rocks.group);
-    const floraSeedFor = (kind: FloraKind) => hashSeedString(body.seed + '/flora/' + kind);
     this.floraRenderer = new FloraFieldRenderer(
-      (kind, lod) => floraGeometryToBufferGeometry(buildFloraGeometryData(kind, lod, floraSeedFor(kind))),
+      (kind, lod) => floraGeometryToBufferGeometry(buildFloraGeometryData(kind, lod, floraGeometrySeed(body.seed, kind))),
       () => new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.FrontSide }),
     );
     for (const mesh of this.floraRenderer.meshes) { mesh.name = 'Flora field'; mesh.frustumCulled = false; mesh.castShadow=true;mesh.receiveShadow=true; this.floraGroup.add(mesh); }

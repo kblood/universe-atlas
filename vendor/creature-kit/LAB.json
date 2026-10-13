@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.11.1",
-    "commit": "e79709e6b29e5dfd6b71c9b8789104ae6a27bd14",
+    "commit": "c2203ae9524be0adf040e4107d7633de5fac8fea",
     "license": "UNLICENSED"
   },
   "vite": "7.3.6",
@@ -108,12 +108,12 @@
   ],
   "files": [
     {
-      "path": "assets/benchmark-3QRBEFAG.js",
-      "sha256": "3dbf8780e11caab0a365b29a864b3e94d5583fc05c597dfe6fe12df299b1d248"
-    },
-    {
       "path": "assets/benchmark-Cd3d12Xn.css",
       "sha256": "3ffcc2178a6fc838f1ed08d7ae40eacc69ebf5d73326ba6e56da9f81251ab0e3"
+    },
+    {
+      "path": "assets/benchmark-wrD6cnCq.js",
+      "sha256": "7373f83ca4414d1b7b922fff0a34f847c8c7a916dbc13d521c10b4ab0680ab13"
     },
     {
       "path": "assets/composer-D3gF7lKI.css",
@@ -161,7 +161,7 @@
     },
     {
       "path": "benchmark.html",
-      "sha256": "255b60fb5cdd94eb6a56a53eabbc44d4008cb9f180c628b7706a2731df6e01ef"
+      "sha256": "aedf8a39849d46fb53828fbe7ae27841737d0c3c2791349f2125a4f936c0662a"
     },
     {
       "path": "creature-lab.html",

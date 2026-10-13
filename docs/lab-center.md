@@ -19,9 +19,14 @@ not upload them.
   Uses Atlas's shared instancing code; excludes full planetary rendering.
 - Surface Flora Lab: `surface-flora-lab.html`, samples the active Atlas
   `terrainSampler`, `biomeClassifier`, `floraAt` and `buildFloraGeometryData`
-  implementations. The equirectangular preview is a finite sample grid, and
-  local slope and biosphere stage are explicit controls. It is a focused
-  development harness, not a full streamed planet renderer.
+  implementations. Atlas replay imports a planet bookmark, exact date and
+  body-fixed direction, then inspects a bounded patch of canonical 2 m or 24 m
+  candidates with production terrain slopes, dated species gating and packed
+  habitat values. Select a candidate to compare its shared geometry seed and
+  individual scale across all three LODs; copy a replay link or open its body
+  in Atlas. Planet inspectors link directly to the lab. The former global map,
+  manual slope and manual stage remain in synthetic experiment mode. See
+  [Surface Flora replay](surface-flora-replay.md) for the renderer boundaries.
 - Biome Recipe Lab: `biome-lab.html`, flat `biome-ecology.ts` reference
   composition and recipe counts. This controlled fixture is not the active
   `surface-biomes.ts` planet classifier; planned fauna is not rendered.

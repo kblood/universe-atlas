@@ -30,10 +30,11 @@ import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_N
 import {ExplorationClockStep} from './exploration-clock-step.ts';
 import {faunaPresentationOptions} from './fauna-presentation-options.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
-import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt,type BiosphereQueryStage} from './world-surface.ts';
+import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt} from './world-surface.ts';
 import type {LifeGateContext} from './planet-renderer.ts';
 import {PLANET_DETAIL} from './planet-detail.ts';
-import type {FloraKind,FloraStage} from './flora-field.ts';
+import type {FloraStage} from './flora-field.ts';
+import {floraKindsFromSpecies, toLifeStage} from './flora-life-gate.ts';
 import type {CreatureArchetype} from './creature-model.ts';
 import {profileFromPhysicalProperties,type Species} from './biosphere-model.ts';
 import {galaxyLifecycle,galaxyStateAt,type GalaxyLifecycle} from './galaxy-history.ts';
@@ -228,12 +229,6 @@ function lifecycleFor(sys: StarSystem, body: Body): BodyLifecycleEntry {
   bodyLifecycles.set(body.id, entry);
   return entry;
 }
-// world-surface.ts's `BiosphereQueryResult.stage` has 8 values (including
-// 'accreting'/'molten'/'extinct', which have no flora/fauna analogue);
-// flora-field.ts's `FloraStage`/fauna-runtime.ts's `FaunaStage` both use the
-// same narrower 5-value set. The 3 extra values all collapse to 'unformed'
-// (zero density in both modules' own STAGE_DENSITY_MULTIPLIER tables), so
-// this is a safe, lossless-for-gating-purposes narrowing, not an approximation.
 const planetSnapshots=new WeakMap<Body,{seed:string;date:Ns;hydrology:Body['hydrology'];canonical:Body['canonicalRivers'];snapshot:ReturnType<typeof planetSnapshotAt>}>();
 function planetSnapshotFor(sys:StarSystem,body:Body,t:Ns){
   const cached=planetSnapshots.get(body);
@@ -244,26 +239,6 @@ function planetSnapshotFor(sys:StarSystem,body:Body,t:Ns){
     body.kind==='moon'?sys.planets.find(p=>p.id===body.parentId):undefined);
   planetSnapshots.set(body,{seed,date:t,hydrology:body.hydrology,canonical:body.canonicalRivers,snapshot});
   return snapshot;
-}
-function toLifeStage(stage: BiosphereQueryStage): FloraStage {
-  switch (stage) {
-    case 'forming': case 'sterile': case 'microbial': case 'complex': return stage;
-    default: return 'unformed';
-  }
-}
-// flora-field.ts's own doc for `FloraBiosphereGate.availableKinds`: map
-// `species.kind` for tree/shrub/grass entries. biosphere-model.ts's
-// `SpeciesKind` has no 'flower' analogue (flowers are ambient ground cover
-// with no dedicated lineage/extinction tracking in this biosphere model), so
-// 'flower' is included whenever ANY plant species is alive; an empty result
-// (no living plant species at all) is passed through as an explicit `[]`
-// ("extinct vegetation"), never `undefined` ("allow all" — wrong once we
-// know for a fact there are zero plant species).
-function floraKindsFromSpecies(species: readonly Species[]): readonly FloraKind[] {
-  const kinds = new Set<FloraKind>();
-  for (const s of species) if (s.kind === 'tree' || s.kind === 'shrub' || s.kind === 'grass') kinds.add(s.kind);
-  if (kinds.size > 0) kinds.add('flower');
-  return [...kinds];
 }
 // fauna-runtime.ts's own doc for `FaunaBiosphereGate.availableArchetypes`:
 // map `creature.archetype` for species entries with `.creature` set (the
@@ -4235,6 +4210,12 @@ function panel() {
         ["Eccentricity", b.orbit ? fmt(b.orbit.e, 3) : "—"],
       ],
     )}<div class="mini-buttons"><button id="export">↓ Export</button><button id="bookmark">☆ Bookmark</button></div>`;
+    if (b.kind !== 'star' && b.type !== 'Gas giant') {
+      const direction = vec(localPose()).sub(vec(bodyPosition(b,sys,epoch))).normalize().toArray() as V3;
+      const q = new URLSearchParams({mode:'atlas',seed,body:b.id,direction:direction.join(','),cellSize:'24'});
+      writeTimeToUrl(q,epoch);
+      html += `<p class="subtle"><a href="./surface-flora-lab.html?${esc(q.toString())}">Inspect this location in Surface Flora Lab →</a></p>`;
+    }
     html += worldHistoryPanel(sys,b);
     const moons = sys.moons.filter((m) => m.parentId === b.id);
     if (moons.length)

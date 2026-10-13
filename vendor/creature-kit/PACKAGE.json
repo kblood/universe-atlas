@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.11.1",
-    "commit": "e79709e6b29e5dfd6b71c9b8789104ae6a27bd14",
+    "commit": "c2203ae9524be0adf040e4107d7633de5fac8fea",
     "license": "UNLICENSED"
   },
   "entrypoints": {
@@ -23,7 +23,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "7abb2cc0720e57e242a4c125143fd29387923e5df7be80181356b0f169bfd861"
+      "sha256": "9da995418df241492e138650e646a6a0c10b88a9bdb5f946a613bb2318dd884e"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -31,7 +31,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "cff29594b68e5cdb327a5980496fe6ba0d92409cacbc0b53dd133f74478d7f6c"
+      "sha256": "0787dca5596a7d977dd8e6ef32fce0425e2b7fda0f76f0cacc2b6c3d697627e3"
     },
     {
       "path": "scripts/export-creature.mjs",
@@ -241,7 +241,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "7abb2cc0720e57e242a4c125143fd29387923e5df7be80181356b0f169bfd861"
+      "sha256": "9da995418df241492e138650e646a6a0c10b88a9bdb5f946a613bb2318dd884e"
     },
     {
       "path": "assets/briefs/creature-export-quest-3.json",
@@ -625,7 +625,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "cff29594b68e5cdb327a5980496fe6ba0d92409cacbc0b53dd133f74478d7f6c"
+      "sha256": "0787dca5596a7d977dd8e6ef32fce0425e2b7fda0f76f0cacc2b6c3d697627e3"
     },
     {
       "path": "scripts/export-creature.mjs",
