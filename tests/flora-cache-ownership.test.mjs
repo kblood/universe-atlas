@@ -13,9 +13,17 @@ test('flora resident cache invalidates on water and habitat gate changes', () =>
     '${life.floraAvailableKinds?.join(\',\')}',
   ]) assert.ok(signature[1].includes(field), `signature includes ${field}`);
 
-  assert.match(renderer,
-    /if\(signature!==this\.lifeSignature\)\{this\.lifeSignature=signature;this\.lifeScatterValid=false;this\.lifeResidents\.clear\(\);this\.faunaGenomes\.clear\(\);(?:this\.faunaNear\.clear\(\);)?this\.faunaGroundQueue=\[\];(?:this\.faunaFrameKeyValid=false;)?\}/,
-    'a changed signature evicts residents and invalidates their recipes');
+  const invalidation = renderer.match(/if\(signature!==this\.lifeSignature\)\{([^}]+)\}/);
+  assert.ok(invalidation, 'life signature changes have an invalidation branch');
+  for (const effect of [
+    'this.lifeSignature=signature;',
+    'this.lifeScatterValid=false;',
+    'this.lifeResidents.clear();',
+    'this.faunaGenomes.clear();',
+    'this.faunaComposerDefinitions.clear();',
+    'this.faunaGroundQueue=[];',
+    'this.faunaFrameKeyValid=false;',
+  ]) assert.ok(invalidation[1].includes(effect), `signature change performs ${effect}`);
   assert.match(renderer,
     /type LifeResident=\{[^}]*floraRecipe\?:FloraRecipe[;}]/,
     'recipe cache is owned by the resident whose habitat inputs produced it');
