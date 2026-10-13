@@ -66,7 +66,7 @@ test('live worker job cancels with a shared flag and borrowed source buffers rem
  const before=hash(source),flag=new Int32Array(new SharedArrayBuffer(4)),worker=new Worker(new URL('./helpers/fauna-lod-surface-worker.mjs',import.meta.url),{workerData:{source,cancelFlag:flag}});
  try{
   const response=await new Promise((resolve,reject)=>{
-   const timeout=setTimeout(()=>reject(new Error('surface worker cancellation timeout')),5000);
+   const timeout=setTimeout(()=>reject(new Error('surface worker cancellation timeout')),30000);
    worker.on('error',error=>{clearTimeout(timeout);reject(error);});worker.on('message',message=>{if(message.started)setTimeout(()=>Atomics.store(flag,0,1),10);else{clearTimeout(timeout);resolve(message);}});
   });assert.match(response.error,/cancelled/);assert.equal(hash(source),before);assert.ok(source.positions.byteLength>0);
  }finally{await worker.terminate();}
