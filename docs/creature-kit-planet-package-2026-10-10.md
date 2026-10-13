@@ -70,7 +70,7 @@ package or change node_modules. A fresh Atlas checkout needs only its normal
 project dependencies: the committed package works without a sibling Kit repo.
 To restore a prior version, restore the Atlas update commit and its receipts.
 
-`VENDOR.json` pins the source-owned paths; `PACKAGE.json` pins package version,
+`VENDOR.json` pins the source-owned paths; `creature-kit-manifest.json` pins package version,
 commit, license, public entry, compiler, exact source hashes and every artifact.
 Checks detect altered/unmanifested artifacts, changed Kit sources/HEAD, wrong
 entry/version and incompatible Three peers. Update preflights every source and

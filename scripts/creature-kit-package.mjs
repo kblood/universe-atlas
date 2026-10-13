@@ -8,6 +8,8 @@ import {tmpdir} from 'node:os';
 import {createRequire} from 'node:module';
 export const KIT_PACKAGE_SCHEMA='creature-kit-built-package-1';
 export const KIT_PACKAGE_ROOT='vendor/creature-kit/package';
+export const KIT_PACKAGE_MANIFEST='vendor/creature-kit/creature-kit-manifest.json';
+const LEGACY_KIT_PACKAGE_MANIFEST='vendor/creature-kit/PACKAGE.json';
 const dependenciesRoot=(repo,kit)=>existsSync(join(kit,'node_modules/typescript/package.json'))&&existsSync(join(kit,'node_modules/three/package.json'))?kit:repo;
 const lf=p=>readFileSync(p,'utf8').replace(/\r\n/g,'\n');
 const sha=p=>createHash('sha256').update(lf(p)).digest('hex');
@@ -70,7 +72,7 @@ export function prepareKitPackage(repo,kit){
   const ts=createRequire(join(repo,'package.json'))(join(deps,'node_modules/typescript/lib/typescript.js'));
   for(const p of paths){if(!existsSync(artifactPath(p)))throw new Error(`missing fresh built package artifact ${p}`);
     if(p.startsWith('dist/')&&p.endsWith('.js')&&ts.createSourceFile(p,lf(artifactPath(p)),ts.ScriptTarget.Latest,true,ts.ScriptKind.JS).parseDiagnostics.length)throw new Error(`malformed built JavaScript ${p}`);}
-  const priorPath=join(repo,'vendor/creature-kit/PACKAGE.json');
+  const priorPath=join(repo,KIT_PACKAGE_MANIFEST);
   const prior=existsSync(priorPath)?JSON.parse(lf(priorPath)):null;
   for(const row of prior?.files??[])inside(root,row.path);
   const writes=paths.map(path=>({path:`${KIT_PACKAGE_ROOT}/${path}`,text:lf(artifactPath(path))}));
@@ -80,8 +82,10 @@ export function prepareKitPackage(repo,kit){
     entrypoints:{planet:planet},compiler:{typescript:compilerVersion},
     note:'Committed offline build; Atlas imports the public planet entry. Sources retained for provenance; edit in creature-kit and run sync-creature-kit --write.',
     sources:sourceRows,files:rows};
-  writes.push({path:'vendor/creature-kit/PACKAGE.json',text:JSON.stringify(manifest,null,2)+'\n'});
-  return {manifest,writes,removes};
+  writes.push({path:KIT_PACKAGE_MANIFEST,text:JSON.stringify(manifest,null,2)+'\n'});
+  // PACKAGE.json is case-insensitively mistaken for package.json by esbuild's
+  // package-scope resolver on Linux. Remove receipts emitted by older Atlas.
+  return {manifest,writes,removes:[...removes,LEGACY_KIT_PACKAGE_MANIFEST]};
   }finally{
     if(dirname(build)!==resolve(tmpdir())||!basename(build).startsWith('creature-kit-package-'))throw new Error('refusing cleanup outside package build staging');
     rmSync(build,{recursive:true,force:true});
@@ -101,7 +105,7 @@ export function applyKitUpdate(repo,writes,removes=[]){
   }
 }
 export function kitPackageDrift(repo,kit=null){
-  const rows=[],manifestPath=join(repo,'vendor/creature-kit/PACKAGE.json');
+  const rows=[],manifestPath=join(repo,KIT_PACKAGE_MANIFEST);
   if(!existsSync(manifestPath))return ['built creature-kit package manifest missing'];
   const manifest=JSON.parse(lf(manifestPath)),root=join(repo,KIT_PACKAGE_ROOT);
   if(manifest.schema!==KIT_PACKAGE_SCHEMA)rows.push('built package schema mismatch');

@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {build as esbuildBuild} from 'esbuild';
 import {writeVendor,VENDORED_PATHS,vendorDrift} from '../scripts/sync-creature-kit.mjs';
 const ROOT=fileURLToPath(new URL('..',import.meta.url));
 const realTs=join(ROOT,'node_modules/typescript/lib/typescript.js');
@@ -131,5 +132,16 @@ test('artifact edits and peer-version mismatch are detected rather than hidden b
     writeVendor(f.repo,f.kit);const before=snapshot(f.repo);
     const pkg=JSON.parse(readFileSync(join(f.kit,'package.json'),'utf8'));pkg.peerDependencies.three='npm:super-three@0.999.0';write(f.kit,'package.json',JSON.stringify(pkg));commit(f.kit);
     assert.throws(()=>writeVendor(f.repo,f.kit),/peer Three/);assert.equal(snapshot(f.repo),before);
+  }finally{f.clean();}
+});
+test('generated Kit receipt cannot shadow package.json during esbuild package-scope resolution',async()=>{
+  const f=fixture();try{
+    write(f.repo,'vendor/creature-kit/PACKAGE.json','{"legacy":"case-collision"}\n');
+    writeVendor(f.repo,f.kit);
+    const vendor=JSON.parse(readFileSync(join(f.repo,'vendor/creature-kit/VENDOR.json'),'utf8'));
+    assert.equal(vendor.builtPackage.manifest,'vendor/creature-kit/creature-kit-manifest.json');
+    assert.equal(existsSync(join(f.repo,'vendor/creature-kit/PACKAGE.json')),false,'legacy colliding receipt is removed');
+    await esbuildBuild({absWorkingDir:f.repo,bundle:true,platform:'node',format:'esm',write:false,
+      entryPoints:['src/creature-model.ts']});
   }finally{f.clean();}
 });
