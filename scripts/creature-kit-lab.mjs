@@ -8,6 +8,7 @@ import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 export const KIT_LAB_ROOT='public/animal-lab';
 export const KIT_LAB_RECEIPT='vendor/creature-kit/LAB.json';
+const dependenciesRoot=(repo,kit)=>existsSync(join(kit,'node_modules/vite/package.json'))&&existsSync(join(kit,'node_modules/typescript/package.json'))?kit:repo;
 // Vite's HTML injection can leave CRCRLF when the source uses CRLF. Normalize
 // runs before hashing/writing so the deployed receipt is idempotent on Windows.
 const normalize=text=>text.replace(/\r+\n/g,'\n');
@@ -36,16 +37,16 @@ export function prepareKitLab(repo,kit,packageManifest){
     if(text!==committed)throw new Error(`Kit Lab source differs from pinned commit: ${path}`);
     return {path,sha256:digest(text)};
   });
-  const pkg=JSON.parse(lf(join(kit,'package.json'))),vitePkg=JSON.parse(lf(join(kit,'node_modules/vite/package.json')));
+  const pkg=JSON.parse(lf(join(kit,'package.json'))),deps=dependenciesRoot(repo,kit),vitePkg=JSON.parse(lf(join(deps,'node_modules/vite/package.json')));
   if(pkg.devDependencies?.vite!==vitePkg.version)throw new Error('Kit Lab Vite version differs from its committed build contract');
   const stage=resolve(mkdtempSync(join(tmpdir(),'creature-kit-lab-')));
   try{
-    execFileSync(process.execPath,[join(kit,'node_modules/vite/bin/vite.js'),'build','--config',join(kit,app,'vite.config.mjs'),'--outDir',stage,'--emptyOutDir'],{cwd:kit,stdio:'inherit'});
+    execFileSync(process.execPath,[join(deps,'node_modules/vite/bin/vite.js'),'build','--config',join(kit,app,'vite.config.mjs'),'--outDir',stage,'--emptyOutDir'],{cwd:kit,stdio:'inherit'});
     if(git(kit,'rev-parse','HEAD')!==packageManifest.kit.commit||[...sources,...packageManifest.sources].some(row=>digest(lf(safePath(kit,row.path)))!==row.sha256))throw new Error('Kit source changed during Lab build; retry from committed source');
     const entries=['planet-skin.html','creature-lab.html'];if(major>0||minor>=7)entries.push('index.html');if(major>0||minor>=9)entries.push('benchmark.html');
     const artifacts=files(stage);for(const entry of entries)if(!artifacts.includes(entry))throw new Error(`missing fresh Kit Lab entry ${entry}`);
     if(!artifacts.some(p=>p.endsWith('.js')))throw new Error('missing fresh Kit Lab JavaScript');
-    const ts=createRequire(join(kit,'package.json'))(join(kit,'node_modules/typescript/lib/typescript.js'));
+    const ts=createRequire(join(repo,'package.json'))(join(deps,'node_modules/typescript/lib/typescript.js'));
     for(const path of artifacts.filter(p=>p.endsWith('.js')))if(ts.createSourceFile(path,lf(join(stage,path)),ts.ScriptTarget.Latest,true,ts.ScriptKind.JS).parseDiagnostics.length)throw new Error(`malformed Kit Lab JavaScript ${path}`);
     const writes=artifacts.map(path=>{safePath(stage,path);if(!/\.(?:html|js|css)$/.test(path))throw new Error(`unsupported Kit Lab artifact ${path}`);return {path:`${KIT_LAB_ROOT}/${path}`,text:lf(join(stage,path))};});
     for(const entry of entries){
@@ -59,7 +60,15 @@ export function prepareKitLab(repo,kit,packageManifest){
     for(const row of previous?.files??[])safePath(join(repo,KIT_LAB_ROOT),row.path);
     const receipt={schema:'creature-kit-lab-1',kit:packageManifest.kit,vite:vitePkg.version,entry:entries.includes('index.html')?'index.html':'planet-skin.html',sources,files:writes.map(row=>({path:row.path.slice(KIT_LAB_ROOT.length+1),sha256:digest(row.text)}))};
     writes.push({path:KIT_LAB_RECEIPT,text:JSON.stringify(receipt,null,2)+'\n'});
-    return {writes,removes:(previous?.files??[]).filter(row=>!artifacts.includes(row.path)).map(row=>`${KIT_LAB_ROOT}/${row.path}`)};
+    // Older committed Lab builds can leave hashed Vite chunks that were never
+    // recorded in their receipt. Remove those owned outputs during regeneration
+    // so a clean checkout converges to this pinned build instead of reporting
+    // an obsolete chunk as unmanifested drift.
+    const priorPaths=new Set((previous?.files??[]).map(row=>row.path));
+    const removes=(existsSync(join(repo,KIT_LAB_ROOT))?files(join(repo,KIT_LAB_ROOT)):[])
+      .filter(path=>!artifacts.includes(path)&&(priorPaths.has(path)||/^assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8}\.(?:js|css)$/.test(path)))
+      .map(path=>`${KIT_LAB_ROOT}/${path}`);
+    return {writes,removes};
   }finally{
     if(dirname(stage)!==resolve(tmpdir())||!basename(stage).startsWith('creature-kit-lab-'))throw new Error('refusing cleanup outside Kit Lab staging');
     rmSync(stage,{recursive:true,force:true});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,mkdirSync,readFileSync,readdirSync,writeFileSync,rmSync} from 'node:fs';
+import {existsSync,mkdtempSync,mkdirSync,readFileSync,readdirSync,writeFileSync,rmSync} from 'node:fs';
 import {join,resolve,dirname,basename} from 'node:path';
 import {tmpdir} from 'node:os';
 import {execFileSync} from 'node:child_process';
@@ -89,6 +89,15 @@ test('Kit 0.3 standalone Lab updates with the runtime release and fails closed o
     write(f.kit,'apps/creature-lab/src/planet-main.ts','export const fixtureVersion=2;\n');commit(f.kit);writeVendor(f.repo,f.kit);
     assert.notEqual(readFileSync(join(f.repo,'public/animal-lab/assets/lab.js'),'utf8'),before);assert.deepEqual(vendorDrift(f.repo,f.kit),[]);
     write(f.repo,'public/animal-lab/assets/lab.js','export const drift=1;');assert.ok(vendorDrift(f.repo).some(row=>row.includes('animal-lab/assets/lab.js: artifact hash drift')));
+  }finally{f.clean();}
+});
+test('Kit Lab regeneration removes orphaned hashed Vite chunks from older receipts',()=>{
+  const f=fixture();try{
+    enableLab(f);
+    write(f.repo,'public/animal-lab/assets/benchmark-BBxzvL12.js','// orphaned generated chunk\n');
+    writeVendor(f.repo,f.kit);
+    assert.equal(existsSync(join(f.repo,'public/animal-lab/assets/benchmark-BBxzvL12.js')),false);
+    assert.deepEqual(vendorDrift(f.repo,f.kit),[]);
   }finally{f.clean();}
 });
 test('one committed kit update changes the actual factory consumed through the built package seam',()=>{

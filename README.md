@@ -1,16 +1,19 @@
 # Universe Atlas
 
-## Creature composer core lives in creature-kit — 2026-10-07
+## Creature Kit submodule — 2026-10-13
 
-The creature composer core (the `src/fauna-composer*.ts` / `fauna-coat-*` core
-modules, the GLB exporter, the LOD reducer, `scripts/export-creature.mjs` and
-their Atlas-free tests and fixtures) is now owned by the separate repo
-`C:/LLM/IWSDK/creature-kit`. Atlas keeps a byte-identical, sha-pinned copy at
-the same paths (`vendor/creature-kit/VENDOR.json` lists them). **Edit those
-files in creature-kit**, commit there, then run
-`node scripts/sync-creature-kit.mjs --write --kit ../creature-kit` here.
-Direct edits in Atlas fail `tests/creature-kit-vendor.test.mjs`. Details:
-`docs/creature-kit-consumption.md`.
+Creature generation and the Animal Lab live in the public
+[Creature Kit repository](https://github.com/kblood/creature-kit). Atlas pins a
+specific Kit commit in the `external/creature-kit` Git submodule. The original
+Atlas import paths and built runtime package are generated locally from that
+pin during `npm ci`; they are ignored build outputs, not duplicate sources to
+commit. Clone Atlas with `git clone --recurse-submodules`.
+
+To advance Atlas to the current Kit `main`, run `npm run update:creature-kit`.
+That fetches the submodule tip and regenerates the compatibility outputs and
+Animal Lab bundle. Review and commit the submodule pointer in Atlas; every
+checkout continues to use that exact pinned Kit revision. See
+[`docs/creature-kit-consumption.md`](docs/creature-kit-consumption.md).
 
 ## Mountains handoff — 2026-10-06 (local, not deployed)
 

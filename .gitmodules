@@ -1,0 +1,4 @@
+[submodule "external/creature-kit"]
+	path = external/creature-kit
+	url = https://github.com/kblood/creature-kit.git
+	branch = main

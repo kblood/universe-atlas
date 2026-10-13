@@ -1,12 +1,11 @@
-// Creature-kit vendoring (docs/creature-kit-consumption.md): the composer files Atlas runs are a sha-pinned copy of
-// creature-kit (C:/LLM/IWSDK/creature-kit). This test needs no kit checkout: it fails when a vendored file in Atlas no
-// longer matches vendor/creature-kit/VENDOR.json (someone edited kit-owned code inside Atlas), or when the vendored set
-// stops covering the composer core. With CREATURE_KIT_DIR set it also checks that kit checkout against the pins.
-// Fix a failure by changing the file in creature-kit, committing there, and running:
-//   node scripts/sync-creature-kit.mjs --write --kit <creature-kit dir>
+// Creature-kit submodule generation (docs/creature-kit-consumption.md): Atlas's ignored compatibility outputs and
+// built package must match their receipts and the exact Git submodule commit.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {resolve} from 'node:path';
 import {VENDOR_SCHEMA, VENDORED_PATHS, readVendor, vendorDrift} from '../scripts/sync-creature-kit.mjs';
+const KIT_DIR=resolve(process.env.CREATURE_KIT_DIR||'external/creature-kit');
 
 // the 12 creature-core modules of tests/creature-core-boundary.test.mjs, plus the exporter, the LOD reducer and the CLI
 const MUST_VENDOR = [
@@ -31,7 +30,14 @@ test('creature-kit vendor: every vendored Atlas file matches its VENDOR.json sha
     + 'Edit kit-owned files in C:/LLM/IWSDK/creature-kit, commit there, then: node scripts/sync-creature-kit.mjs --write --kit <dir>');
 });
 
-test('creature-kit vendor: the kit checkout at CREATURE_KIT_DIR matches the pins', {skip: process.env.CREATURE_KIT_DIR ? false : 'CREATURE_KIT_DIR is not set'}, () => {
-  const rows = vendorDrift(undefined, process.env.CREATURE_KIT_DIR);
+test('creature-kit submodule: the public HTTPS pin matches the generated receipt', () => {
+  const url=execFileSync('git',['config','--file','.gitmodules','--get','submodule.external/creature-kit.url'],{encoding:'utf8'}).trim();
+  assert.equal(url,'https://github.com/kblood/creature-kit.git');
+  const commit=execFileSync('git',['-C',KIT_DIR,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+  assert.equal(commit,readVendor().kit.commit,'generated Atlas inputs must match the checked-out submodule commit');
+});
+
+test('creature-kit submodule: generated outputs match the checkout', () => {
+  const rows = vendorDrift(undefined, KIT_DIR);
   assert.deepEqual(rows, [], rows.join('\n'));
 });

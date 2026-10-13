@@ -1,4 +1,29 @@
-# How Atlas consumes creature-kit
+# How Atlas consumes Creature Kit
+
+## Current GitHub submodule workflow (2026-10-13)
+
+The canonical animal system is in the public GitHub repository
+[`kblood/creature-kit`](https://github.com/kblood/creature-kit). Atlas is also
+public at [`kblood/universe-atlas`](https://github.com/kblood/universe-atlas)
+and pins Creature Kit as the `external/creature-kit` Git submodule. The
+submodule pointer in an Atlas commit is the exact version used by that Atlas
+revision; `.gitmodules` tracks Kit `main` only as the stream used by an
+intentional upgrade.
+
+Clone with `git clone --recurse-submodules`. `npm ci` builds the Kit package
+and Animal Lab from the pinned submodule commit and generates Atlas's legacy
+import paths locally. These generated mirrors and bundles are ignored by Git.
+To advance the pin, run `npm run update:creature-kit`, review Atlas's build and
+tests, then commit the changed submodule pointer. `npm run check:creature-kit`
+checks generated outputs against both the Kit commit and their receipts.
+`npm run prepare:creature-kit` rebuilds the selected pin without fetching.
+
+The repository visibility is public. The Kit remains `UNLICENSED` (all rights
+reserved); public visibility does not grant a reuse license. The npm package
+also remains marked private.
+
+The 2026-10-07 sync implementation described below is historical and has been
+superseded by this public submodule workflow.
 
 Migration branch, 2026-10-11: Atlas consumes the built, self-contained Kit 0.8 public
 planet entry through `#creature-kit/planet`, pinned in `vendor/creature-kit/PACKAGE.json`.

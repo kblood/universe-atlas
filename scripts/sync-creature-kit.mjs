@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-// Creature-kit consumption (docs/creature-kit-consumption.md): Atlas holds a sha-pinned VENDORED copy of the creature
+// Creature-kit consumption (docs/creature-kit-consumption.md): Atlas generates sha-pinned copies of the creature
 // kit's files at their original paths (src/fauna-composer*.ts, src/fauna-coat-*.ts, the export CLI, the composer tests
 // and fixtures). vendor/creature-kit/VENDOR.json records the kit commit and the sha256 of every file;
-// tests/creature-kit-vendor.test.mjs fails when a vendored file no longer matches it.
+// tests/creature-kit-vendor.test.mjs fails when a generated file no longer matches it.
 //
-//   node scripts/sync-creature-kit.mjs [--kit <dir>]            check: Atlas files vs VENDOR.json vs the kit (exit 1 on drift)
-//   node scripts/sync-creature-kit.mjs --write [--kit <dir>]    copy the kit's files in and rewrite VENDOR.json
+//   node scripts/sync-creature-kit.mjs [--kit <dir>]            check generated files vs VENDOR.json vs the submodule
+//   node scripts/sync-creature-kit.mjs --write [--kit <dir>]    regenerate all Kit-derived outputs from the pinned submodule
 //
-// <dir> defaults to $CREATURE_KIT_DIR, else <repo>/../creature-kit. --write refuses a kit whose vendored paths have
-// uncommitted changes, so VENDOR.json always names a commit that holds exactly these bytes. Nothing is downloaded and
-// node_modules is never touched. sha256 is taken over LF-normalised text, so CRLF and LF checkouts hash the same; a
+// <dir> defaults to $CREATURE_KIT_DIR, else <repo>/external/creature-kit. --write refuses a kit whose vendored paths have
+// uncommitted changes, so VENDOR.json always names a commit that holds exactly these bytes. Nothing is installed.
+// sha256 is taken over LF-normalised text, so CRLF and LF checkouts hash the same; a
 // written file keeps the line-ending style of the Atlas file it replaces.
 import {createHash} from 'node:crypto';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
@@ -146,6 +146,7 @@ export function vendorDrift(repo = REPO, kitDir = null) {
 const git = (dir, ...args) => execFileSync('git', ['-C', dir, ...args], {encoding: 'utf8'}).trim();
 
 export function writeVendor(repo, kitDir) {
+  if(!existsSync(join(kitDir,'package.json')))throw new Error(`Creature Kit submodule is missing at ${kitDir}; clone Atlas with --recurse-submodules or run git submodule update --init external/creature-kit`);
   const dirty = git(kitDir, 'status', '--porcelain', '--', ...VENDORED_PATHS);
   if (dirty) throw new Error(`creature-kit has uncommitted changes in vendored paths; commit them first:\n${dirty}`);
   const commit = git(kitDir, 'rev-parse', 'HEAD');
@@ -166,21 +167,28 @@ export function writeVendor(repo, kitDir) {
     writes.push({path:p,text});
     files.push({path: p, sha256: createHash('sha256').update(text.replace(/\r\n/g,'\n')).digest('hex')});
   }
+  const priorVendorPath=join(repo,VENDOR_JSON),priorVendor=existsSync(priorVendorPath)?JSON.parse(lfText(priorVendorPath)):null;
+  const nextPaths=new Set(VENDORED_PATHS),stalePaths=(priorVendor?.files??[]).filter(row=>!nextPaths.has(row.path)).map(row=>row.path);
+  for(const p of stalePaths){
+    if(typeof p!=='string'||p.startsWith('/')||p.includes('\\')||p.split('/').some(part=>!part||part==='.'||part==='..'||part.includes(':')))throw new Error(`invalid prior Kit output path ${p}`);
+    const target=join(repo,p),priorHash=priorVendor.files.find(row=>row.path===p)?.sha256;
+    if(existsSync(target)&&lfSha256(target)!==priorHash)throw new Error(`refusing to remove changed stale Kit output ${p}`);
+  }
   const vendor = {
     schema: VENDOR_SCHEMA,
     kit: {name: pkg.name, version: pkg.version, commit, license: pkg.license},
-    note: 'Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.',
+    note: 'Generated from the pinned public submodule https://github.com/kblood/creature-kit at external/creature-kit. Edit Kit-owned files there, advance the submodule, then run npm run prepare:creature-kit. sha256 is over LF-normalised text.',
     files,
     builtPackage:{schema:builtPackage.schema,manifest:'vendor/creature-kit/PACKAGE.json',planetEntry:builtPackage.entrypoints.planet.default},
   };
   writes.push({path:VENDOR_JSON,text:`${JSON.stringify(vendor, null, 2)}\n`});
-  applyKitUpdate(repo,writes,[...packageUpdate.removes,...labUpdate.removes]);
+  applyKitUpdate(repo,writes,[...packageUpdate.removes,...labUpdate.removes,...stalePaths]);
   return vendor;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2), i = argv.indexOf('--kit');
-  const kitDir = resolve(i >= 0 ? argv[i + 1] : process.env.CREATURE_KIT_DIR || join(REPO, '..', 'creature-kit'));
+  const kitDir = resolve(i >= 0 ? argv[i + 1] : process.env.CREATURE_KIT_DIR || join(REPO, 'external', 'creature-kit'));
   try {
     if (argv.includes('--write')) {
       const v = writeVendor(REPO, kitDir);

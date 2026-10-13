@@ -8,6 +8,7 @@ import {tmpdir} from 'node:os';
 import {createRequire} from 'node:module';
 export const KIT_PACKAGE_SCHEMA='creature-kit-built-package-1';
 export const KIT_PACKAGE_ROOT='vendor/creature-kit/package';
+const dependenciesRoot=(repo,kit)=>existsSync(join(kit,'node_modules/typescript/package.json'))&&existsSync(join(kit,'node_modules/three/package.json'))?kit:repo;
 const lf=p=>readFileSync(p,'utf8').replace(/\r\n/g,'\n');
 const sha=p=>createHash('sha256').update(lf(p)).digest('hex');
 const git=(root,...args)=>execFileSync('git',['-C',root,...args],{encoding:'utf8'}).trim();
@@ -41,13 +42,13 @@ export function prepareKitPackage(repo,kit){
   const pkg=JSON.parse(lf(join(kit,'package.json'))),planet=pkg.exports?.['./planet'];
   const [major,minor]=String(pkg.version).split('.').map(Number);
   if(pkg.name!=='creature-kit'||pkg.license!=='UNLICENSED'||!/^\d+\.\d+\.\d+$/.test(pkg.version)||(major===0&&minor<2)||planet?.default!=='./dist/planet-v1/index.js'||planet?.types!=='./dist/planet-v1/index.d.ts')throw new Error('creature-kit >=0.2.0 with the versioned planet-v1 entry is required');
-  const atlas=JSON.parse(lf(join(repo,'package.json'))),peer=JSON.parse(lf(join(kit,'node_modules/three/package.json')));
+  const atlas=JSON.parse(lf(join(repo,'package.json'))),deps=dependenciesRoot(repo,kit),peer=JSON.parse(lf(join(deps,'node_modules/three/package.json')));
   const binding=atlas.imports?.['#creature-kit/planet'];
   if(binding?.default!==`./${KIT_PACKAGE_ROOT}/dist/planet-v1/index.js`||binding?.types!==`./${KIT_PACKAGE_ROOT}/dist/planet-v1/index.d.ts`)throw new Error('Atlas must bind the public built planet entry before updating');
   if(pkg.peerDependencies?.three!==atlas.dependencies?.three||pkg.peerDependencies.three!==`npm:${peer.name}@${peer.version}`)throw new Error('kit peer Three differs from Atlas; update dependency compatibility explicitly');
-  const compiler=join(kit,'node_modules/typescript/bin/tsc');
-  if(!existsSync(compiler))throw new Error('kit TypeScript compiler unavailable; use existing workspace dependencies (no installation is performed)');
-  const compilerVersion=JSON.parse(lf(join(kit,'node_modules/typescript/package.json'))).version;
+  const compiler=join(deps,'node_modules/typescript/bin/tsc');
+  if(!existsSync(compiler))throw new Error('Atlas TypeScript compiler unavailable; install Atlas dependencies before preparing Creature Kit');
+  const compilerVersion=JSON.parse(lf(join(deps,'node_modules/typescript/package.json'))).version;
   if(pkg.devDependencies?.typescript!==compilerVersion)throw new Error('kit TypeScript compiler version differs from its committed build contract');
   const sourceRows=sources.map(path=>({path,sha256:sha(inside(kit,path))}));
   // Every source must really exist in the pinned commit, including ignored or
@@ -66,7 +67,7 @@ export function prepareKitPackage(repo,kit){
   const artifactPath=p=>p.startsWith('dist/')?inside(build,p.slice(5)):inside(kit,p);
   // Build and verify every input first; a stale dist file whose source was
   // removed is never copied. Only prior manifest-owned stale files are removed.
-  const ts=createRequire(join(kit,'package.json'))(join(kit,'node_modules/typescript/lib/typescript.js'));
+  const ts=createRequire(join(repo,'package.json'))(join(deps,'node_modules/typescript/lib/typescript.js'));
   for(const p of paths){if(!existsSync(artifactPath(p)))throw new Error(`missing fresh built package artifact ${p}`);
     if(p.startsWith('dist/')&&p.endsWith('.js')&&ts.createSourceFile(p,lf(artifactPath(p)),ts.ScriptTarget.Latest,true,ts.ScriptKind.JS).parseDiagnostics.length)throw new Error(`malformed built JavaScript ${p}`);}
   const priorPath=join(repo,'vendor/creature-kit/PACKAGE.json');
