@@ -236,9 +236,51 @@ growable JavaScript arrays before producing typed buffers, but positions and
 parents are reread for morph bounds and skirts. Early Float32 writes would
 change numeric results; retain double-precision intermediates and compare the
 final buffers byte-for-byte. Also profile per-point/vector/skirt allocations,
-terrain-versus-biome climate calls (their sampled heights can differ), and the
-existing bounded mountain cache before changing them. Do not enlarge caches
-without a measured memory ceiling and saved-work result.
+terrain-versus-biome climate calls (their sampled heights can differ), and
+mountain-cache retention before changing them. The carving block and point
+memos are bounded, but `mountain-layout.ts` also has a separate module-global
+`orogenLayout` Map and per-layout `coarseFields` Maps with no eviction. Measure
+layout count, backing-buffer bytes, post-GC heap/external memory, and revisit
+latency on a fixed world itinerary before proposing a bound; eviction must not
+change values or invalidate live samplers.
+
+The active biome classifier computes legacy moisture noise at
+`surface-biomes.ts` and then calls `surfaceClimate`, which computes the same
+noise for precipitation and returns it as `legacyMoisture`. Reuse that sampled
+value only after exact classifier-output and material-byte parity checks across
+dry, frozen, wet, and shared-seed body fixtures, and benchmark both classifier
+throughput and complete tile builds. This is a concrete candidate, not yet a
+measured win. `climate-grid.ts` currently has no production callers, so its
+optimization cannot count as a live runtime improvement.
+
+For tile staging, profile the growable output arrays and temporary lattice,
+skirt, and ocean objects before replacing them. Position and parent values
+must remain double precision until skirt/morph data has been computed. Require
+byte-identical final buffers, unchanged anchors/metadata/material bytes, and
+repeatable allocation or CPU improvement without increased retained memory.
+
+For dense terrain consumers, measure allocation from the sample/color/flow
+objects used by tile textures and orbit baking before considering an explicit
+caller-owned output API. Preserve the existing public API's independent-result
+semantics; the tile lattice retains samples, so it cannot safely reuse one
+shared scratch result. Profile cold carving solves separately from the already
+bounded exact-key block/point cache and count builds, hits, evictions, transient
+typed-array bytes, and end-to-end tile p95 before considering workspace reuse.
+
+The pinned Surface performance workloads use the fixed climate fixtures and
+4,096 directions for parity, with 200,000 precomputed warm queries for
+throughput. Build all six L0 faces and fixed coast/snow/treeline/massif tile
+sets at L8, carving transition, L14, L20, and L22, plus seams, corners,
+parent/child pairs, water datum variants, rock/riser transitions, and the fixed
+1,061-frame stationary/turn/flight/descent/water-seek digest trace. Separate
+construction/first-touch from warm CPU time, allocations, worker queue/build/
+transfer/install latency, and browser frame/memory results. Alternate paired
+baseline/candidate runs and keep all raw rounds. Do not count climate scratch,
+PDD inlining, lattice/texel-direction reuse, direct RGBA writes, smaller near
+textures, coarse/baked mountains, point memo, or leaf-loop caches again; those
+are already implemented. Do not reuse terrain climate samples for biome
+classification without proving sampled-height equivalence around craters and
+rivers.
 
 The active reusable core is in `terrain.ts`, `planet-tiles.ts` (pure geometry
 builder only), `surface-climate.ts`, `surface-biomes.ts`, geophysics, landform,
