@@ -1,5 +1,5 @@
 import type {TreeSpeciesBinding} from './tree-species-recipe.ts';
-import type {ForestTreeKind} from './forest-tree-family-library.ts';
+import type {TreeFamilyKind} from './tree-species-recipe.ts';
 import {TREE_CANOPY_HEIGHT_RANGE_M,type TreeCanopyProfile} from './tree-canopy-profile.ts';
 import {treeStructuralVariant} from './tree-species-recipe.ts';
 import {LEGACY_TREE_LOBES,LEGACY_TREE_TRUNK} from './tree-shape.ts';
@@ -110,7 +110,7 @@ export type TreeAllometryReference=Readonly<{
 
 export type ForestTreeDimensions=Readonly<{
   version:typeof TREE_ALLOMETRY_VERSION;
-  representation:'family'|'legacy';kind:ForestTreeKind|null;speciesId:string|null;
+  representation:'family'|'legacy';kind:TreeFamilyKind|null;speciesId:string|null;
   /** Rendered height (Float32-exact), metres. */
   heightM:number;
   /** Quantized horizontal crown and trunk ratios shared by every representation. */
@@ -223,7 +223,7 @@ function legacyDimensions(speciesId:string|null,heightM:number,crownWidthM:numbe
  * structural variant (from canonical ID) supply height, crown width and trunk
  * diameter; the presented family reference converts them to skeleton ratios. */
 export function forestTreeDimensions(binding:TreeSpeciesBinding|null,canonicalHeightM:number,
-  families:{get(kind:ForestTreeKind):Presented|undefined}):ForestTreeDimensions{
+  families:{get(kind:TreeFamilyKind):Presented|undefined}):ForestTreeDimensions{
   if(!binding){
     if(!finite(canonicalHeightM)||canonicalHeightM<=0)throw new Error('Canonical tree height is required');
     // Proxy fallback: the canonical population height with legacy proportions.

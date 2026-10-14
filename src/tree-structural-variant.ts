@@ -1,5 +1,5 @@
 import {TREE_VARIANT_COUNT} from './tree-species-recipe.ts';
-import type {ForestTreeKind} from './forest-tree-family-library.ts';
+import type {TreeFamilyKind as ForestTreeKind} from './tree-species-recipe.ts';
 import {TREE_CANOPY_HEIGHT_RANGE_M} from './tree-canopy-profile.ts';
 
 /** Appearance version for bounded per-family structural variants. It is not a

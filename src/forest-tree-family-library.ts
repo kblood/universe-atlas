@@ -1,4 +1,5 @@
 import type {Group} from 'three';
+import type {TreeFamilyKind} from './tree-species-recipe.ts';
 import {TreeBarkTexturePool} from './tree-bark-texture-pool.ts';
 import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
 import {CompactInstanceSlots} from './compact-instance-slots.ts';
@@ -8,7 +9,8 @@ import {forestStructuralVariants} from './tree-structural-variant.ts';
  * most 35% so the middle band keeps its measured leaf area on screen. */
 export const FOREST_CARD_COMPENSATION=Object.freeze({targetPixels:3,maxScale:1.35});
 
-export type ForestTreeKind='branching'|'spire';
+/** Atlas-facing compatibility alias; the family identity belongs to Tree Kit. */
+export type ForestTreeKind=TreeFamilyKind;
 export type ForestTreeFamilyInput={kind:ForestTreeKind;lod0:ArrayBuffer;lod1:ArrayBuffer;foliageMipSidecar?:TreeAssetOptions['foliageMipSidecar']};
 export type ForestTreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type Batch=ReturnType<TreeAssetFamily['createBatch']>;
