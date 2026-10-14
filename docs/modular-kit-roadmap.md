@@ -137,9 +137,14 @@ and far populations are present, records tier-isolated draw/triangle deltas,
 marginal scene GPU time, Atlas scheduled upload ranges, family load/far-atlas
 bake time and load/steady/dispose memory. It explicitly labels whole-scene GPU
 interactions, scheduled (not driver-observed) upload bytes, global
-`renderer.info` counts and sampled peak-memory limits. The harness has only
-passed static validation so far; no integrated browser/GPU capture is counted
-as performance evidence yet. Run it only on a quiet host and retain its report
+`renderer.info` counts and sampled peak-memory limits. It now restores and
+checks the fixture position, heading and date, pauses exploration before the
+first frame, selects the active scene GPU pass, and stops sample collection
+while outstanding timer queries drain. `acceptanceEligible` means a valid,
+uncontended capture only; one capture does not establish an optimization or
+replace the paired release protocol. The profiler change passes its focused
+unit tests and the Atlas production build, but the integrated browser/GPU
+capture remains unverified. Run it only on a quiet host and retain its report
 and screenshots before selecting a runtime optimization.
 
 The harness separates `ok` (the capture completed without app errors) from

@@ -40,6 +40,17 @@ test('GPU results are delayed and complete-frame sum includes all passes',()=>{
   assert.equal(p.diagnostics().statistics['gpu/framePassSumMs'].samples,2);
   assert.equal(p.diagnostics().statistics['gpu/framePassSumMs'].max,4);
 });
+test('sampling can stop while pending GPU queries drain without issuing new queries',()=>{
+  const gl=fakeGL(),p=new RenderProfile(gl);p.setEnabled(true);
+  p.beginFrame(16);p.pass('scene',()=>{});p.endFrame(1,1);
+  p.setSampling(false);
+  p.beginFrame(16);p.pass('scene',()=>{});p.endFrame(1,1);
+  assert.equal(gl.queries.length,1);assert.equal(p.diagnostics().pendingQueries,1);
+  gl.ready();p.beginFrame(16);
+  assert.equal(p.diagnostics().pendingQueries,0);
+  assert.equal(p.diagnostics().statistics['gpu/sceneMs'].samples,1);
+  assert.equal(p.diagnostics().statistics['frameIntervalMs'].samples,1);
+});
 test('disjoint results are discarded and cannot contribute to totals',()=>{
   const gl=fakeGL(),p=new RenderProfile(gl);p.setEnabled(true);p.beginFrame(16);p.pass('scene',()=>{});p.endFrame(1,1);
   gl.disjoint(true);gl.ready();p.beginFrame(16);

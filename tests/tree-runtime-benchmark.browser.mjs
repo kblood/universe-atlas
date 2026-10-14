@@ -36,6 +36,7 @@ const run = promisify(execFile);
 let pose;
 const report = {
   ok: false, acceptanceEligible: false, base, poseFile, pose: null, viewport: [W, H], frames, warmupFrames,
+  acceptanceMeaning: 'A valid, uncontended measurement capture only; this single capture does not establish a performance improvement or pass the paired release gate.',
   method: 'fixed pose; Atlas profilingObjects tier isolation; whole-scene GPU marginal deltas; app dirty-range upload accounting; Atlas memory estimates and renderer global object counts',
   limitations: [
     'Per-tier draw calls and triangles are full-view minus same-view tier-hidden counts; they are exact only while other scene submissions remain stable.',
@@ -54,7 +55,9 @@ let lock, browser, page, monitor;
 const waitFor = (fn, arg, timeout = 240000) => page.waitForFunction(fn, arg, { timeout });
 
 function gateFinding(code, passed, detail, observed = null) {
-  if (!report.gateFindings.some(x => x.code === code)) report.gateFindings.push({ code, passed, detail, observed });
+  const existing = report.gateFindings.find(x => x.code === code);
+  if (!existing) report.gateFindings.push({ code, passed, detail, observed });
+  else if (!passed && existing.passed) Object.assign(existing, { passed, detail, observed });
 }
 
 async function runtimeIdentity() {
@@ -160,10 +163,18 @@ async function startHostMonitor() {
           utilizationPercent: Number.isFinite(Number(utilization)) ? Number(utilization) : null };
       });
       state.gpuMonitoring.supported = row.gpu.some(x => x.utilizationPercent !== null);
-      if (!state.gpuMonitoring.supported) state.gpuMonitoring.reason = 'The driver did not report numeric GPU utilization.';
+      if (!state.gpuMonitoring.supported) {
+        state.gpuMonitoring.reason = 'The driver did not report numeric GPU utilization.';
+        gateFinding('gpu-utilization-telemetry', false,
+          'GPU utilization telemetry became unavailable during the capture; acceptance requires valid host GPU telemetry throughout.',
+          state.gpuMonitoring.reason);
+      }
     } else {
       state.gpuMonitoring.supported = false;
       state.gpuMonitoring.reason = probes[1].reason.message;
+      gateFinding('gpu-utilization-telemetry', false,
+        'GPU utilization telemetry failed during the capture; acceptance requires valid host GPU telemetry throughout.',
+        state.gpuMonitoring.reason);
     }
     if (phase === 'pre-browser') {
       if (row.cpuBusyPercent > state.thresholds.baselineCpuBusyPercent) gateFinding('baseline-cpu-contention', false,
@@ -260,7 +271,7 @@ async function profilingWindow(hidden = []) {
   monitor?.phase(`profiling:${hidden.join(',') || 'all-tiers'}`);
   return page.evaluate(async ({ frames, hidden, tiers, warmupFrames }) => {
     const a = window.__atlas, renderer = a.renderDebug().renderer;
-    const prior = { enabled: a.renderProfile.enabled, history: a.renderProfile.historyLimit,
+    const prior = { enabled: a.renderProfile.enabled, sampling: a.renderProfile.sampling, history: a.renderProfile.historyLimit,
       autoReset: renderer.info.autoReset };
     a.setProfiling(false);
     for (const tier of tiers) a.setSystemVisible(tier, true);
@@ -274,10 +285,10 @@ async function profilingWindow(hidden = []) {
       const tick = () => { if (++n >= frames) resolve(); else requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
     });
-    // GPU query availability is asynchronous. Drain without blocking on the GPU.
+    // Stop adding samples, then let the profiler poll already-issued timer queries.
+    a.setProfileSampling(false);
     let drains = 0;
-    while (drains++ < 90 && (a.renderProfile.pendingQueries > 0 ||
-      (a.renderProfile.statistics?.['gpu/sceneMs']?.samples ?? 0) < frames - 2)) {
+    while (drains++ < 90 && a.renderProfile.pendingQueries > 0) {
       await new Promise(resolve => requestAnimationFrame(resolve));
     }
     const result = { profile: a.renderProfile, warmupFrames,
@@ -286,7 +297,7 @@ async function profilingWindow(hidden = []) {
     a.setProfiling(false);
     for (const tier of tiers) a.setSystemVisible(tier, true);
     for (let i = 0; i < warmupFrames; i++) await new Promise(resolve => requestAnimationFrame(resolve));
-    a.setProfiling(prior.enabled); a.setProfileHistory(prior.history);
+    a.setProfiling(prior.enabled); a.setProfileSampling(prior.sampling); a.setProfileHistory(prior.history);
     renderer.info.autoReset = prior.autoReset;
     if (!prior.enabled) renderer.info.reset();
     return result;
@@ -294,10 +305,20 @@ async function profilingWindow(hidden = []) {
 }
 
 function metric(profile, name) { return profile?.statistics?.[name] ?? { samples: 0, p50: null, p95: null, max: null }; }
+function sceneGpuMetric(profile) {
+  const capture = metric(profile, 'gpu/sceneCaptureMs');
+  if (capture.samples > 0) return { name: 'gpu/sceneCaptureMs', value: capture };
+  return { name: 'gpu/sceneMs', value: metric(profile, 'gpu/sceneMs') };
+}
 function conditionSummary(capture) {
+  const scene = sceneGpuMetric(capture.profile);
   return { hidden: capture.hidden, warmupFrames: capture.warmupFrames, drawCalls: metric(capture.profile, 'drawCalls'),
-    triangles: metric(capture.profile, 'triangles'), gpuSceneMs: metric(capture.profile, 'gpu/sceneMs'),
+    triangles: metric(capture.profile, 'triangles'), gpuScenePass: scene.name, gpuSceneMs: scene.value,
     gpuForestAtlasMs: metric(capture.profile, 'gpu/forestAtlasMs'),
+    cpuFrameWorkMs: metric(capture.profile, 'cpu/frameWorkMs'),
+    cpuForestMs: metric(capture.profile, 'cpu/system/forestMs'),
+    cpuCanopyMs: metric(capture.profile, 'cpu/system/canopyMs'),
+    frameIntervalMs: metric(capture.profile, 'frameIntervalMs'), hitches: capture.profile.hitches,
     gpuAvailable: capture.profile.gpuAvailable,
     skippedQueries: capture.profile.skippedQueries, disjointQueries: capture.profile.disjointQueries,
     expiredQueries: capture.profile.expiredQueries, pendingQueries: capture.profile.pendingQueries,
@@ -308,49 +329,56 @@ function assertValidWindow(name, capture) {
   assert.equal(capture.profile.skippedQueries, 0, `${name} has no skipped GPU timer queries`);
   assert.equal(capture.profile.disjointQueries, 0, `${name} has no disjoint GPU timer queries`);
   assert.equal(capture.profile.expiredQueries, 0, `${name} has no expired GPU timer queries`);
-  assert.ok((capture.profile.statistics?.['gpu/sceneMs']?.samples ?? 0) >= frames - 2,
-    `${name} has enough complete scene GPU samples`);
+  assert.equal(capture.profile.pendingQueries, 0, `${name} drains every pending GPU timer query`);
+  const scene = sceneGpuMetric(capture.profile);
+  assert.ok(scene.value.samples >= frames - 2,
+    `${name} has enough complete ${scene.name} GPU samples`);
 }
 
 async function loadPose(trees) {
   const query = new URLSearchParams({ seed: pose.seed, g: 'G001', system: 'G001/C2128,0,1/0',
     body: pose.bodyId, trees: trees ? '1' : '0', date: pose.dateNs });
   if (pose.wv) query.set('wv', pose.wv);
+  query.set('walk', pose.walkPosition.join(','));
+  query.set('heading', pose.heading.join(','));
+  await page.addInitScript(() => {
+    const define = Object.defineProperty;
+    Object.defineProperty = function (target, key, descriptor) {
+      const result = Reflect.apply(define, Object, [target, key, descriptor]);
+      if (target === window && key === '__atlas' && descriptor?.value?.setExplorationPaused) {
+        descriptor.value.setExplorationPaused(true);
+        Object.defineProperty = define;
+      }
+      return result;
+    };
+  });
   await page.goto(`${base}?${query}`, { waitUntil: 'domcontentloaded', timeout: 120000 });
   await waitFor(id => window.__atlas?.ready && window.__atlas.state.level === 'body' &&
     window.__atlas.state.body?.id === id && !window.__atlas.camera.animating, pose.bodyId);
-  // Recreate the fixed forest pose through the same supported user path used
-  // by tree-families-visual. Saved ?walk bookmarks may remain in `landing`
-  // after terrain-model changes, so they are not a reliable benchmark setup.
-  await page.locator('#find-life').click();
-  await waitFor(() => window.__atlas.travel.terrainCruise !== null, undefined, 180000);
-  await page.keyboard.down('q');
-  try {
-    await waitFor(() => window.__atlas.travel.surface?.terrainClearance < 100, undefined, 180000);
-  } finally {
-    await page.keyboard.up('q').catch(() => {});
-  }
-  await waitFor(() => window.__atlas.terrain?.tiles?.forest?.visible > 200 &&
-    window.__atlas.terrain.tiles.surfaceReady, undefined, 180000);
-  await page.evaluate(() => window.__atlas.setExplorationPaused(true));
+  await waitFor(dateNs => window.__atlas.date.offsetNs.toString() === dateNs &&
+    window.__atlas.travel.walking?.active === true && window.__atlas.travel.walking?.grounded === true &&
+    window.__atlas.travel.walking?.waiting === false, pose.dateNs, 240000);
   await waitFor(() => {
     const a = window.__atlas, t = a.terrain?.tiles, f = t?.forest, c = f?.fullCanopy;
     return f?.selectionPending === false && f.pending === 0 && t.pending === 0 &&
       t.faunaTerrainPending === 0 && (!c || (c.ready && !c.selectionPending &&
         !c.selectionApplyPending && !c.reusePending && c.queuedPatches === 0 && c.jobsInFlight === 0));
   }, undefined, 240000);
-  await page.locator('#walk-surface').click();
-  await waitFor(() => window.__atlas.travel.walking?.active === true &&
-    !window.__atlas.travel.landing, undefined, 180000);
-  await waitFor(() => window.__atlas.travel.walking?.grounded === true &&
-    window.__atlas.travel.walking?.waiting === false, undefined, 60000);
-  await page.evaluate(() => window.__atlas.setExplorationPaused(true));
   report.realizedPose = await page.evaluate(() => ({
     dateNs: window.__atlas.date.offsetNs.toString(),
     walkPosition: window.__atlas.travel.walking.position,
     heading: window.__atlas.travel.heading,
     bodyId: window.__atlas.state.body.id,
   }));
+  const positionErrorM = Math.hypot(...pose.walkPosition.map((value, i) => value - report.realizedPose.walkPosition[i]));
+  const expectedHeadingLength = Math.hypot(...pose.heading), actualHeadingLength = Math.hypot(...report.realizedPose.heading);
+  const headingDot = pose.heading.reduce((sum, value, i) => sum + value / expectedHeadingLength *
+    report.realizedPose.heading[i] / actualHeadingLength, 0);
+  const headingErrorRad = 2 * Math.acos(Math.min(1, Math.abs(headingDot)));
+  assert.equal(report.realizedPose.dateNs, pose.dateNs, 'the benchmark remains on its fixture date');
+  assert.ok(positionErrorM <= 0.05, `the restored walk position matches the fixture (${positionErrorM} m)`);
+  assert.ok(headingErrorRad <= 1e-5, `the restored view heading matches the fixture (${headingErrorRad} rad)`);
+  report.poseParity = { positionErrorM, headingErrorRad, dateMatches: true };
   await page.addStyleTag({ content: 'body * { visibility: hidden !important; } #viewport canvas { visibility: visible !important; }' });
 }
 
@@ -445,12 +473,16 @@ try {
   assertValidWindow('all tiers', all);
   for (const tier of tiers) assertValidWindow(`without ${tier}`, without[tier]);
   assertValidWindow('without all tree tiers', withoutTrees);
+  const sceneMetrics = new Set([all, ...Object.values(without), withoutTrees].map(x => sceneGpuMetric(x.profile).name));
+  assert.equal(sceneMetrics.size, 1, 'the active scene GPU pass is consistent across all visibility conditions');
+  report.sceneGpuMetric = [...sceneMetrics][0];
   const full = conditionSummary(all), hiddenTrees = conditionSummary(withoutTrees);
   report.draws = {
     method: 'renderer.info profile deltas with one frozen full scene; the app hides only the objects returned by each tier profilingObjects hook',
     fullScene: full, allTreesMarginal: {
       drawCalls: full.drawCalls.p50 - hiddenTrees.drawCalls.p50,
       triangles: full.triangles.p50 - hiddenTrees.triangles.p50,
+      gpuScenePass: report.sceneGpuMetric,
       gpuSceneMs: full.gpuSceneMs.p50 - hiddenTrees.gpuSceneMs.p50,
     },
     byTier: Object.fromEntries(tiers.map(tier => {

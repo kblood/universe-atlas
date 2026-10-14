@@ -5213,6 +5213,7 @@ Object.defineProperty(window, "__atlas", {
       return planetTiles.loadForestTreeFamilies(inputs,options);
     },
     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
+    setProfileSampling(enabled:boolean){renderProfile.setSampling(enabled);},
     resetProfile(){renderProfile.clear();},
     /** Desktop render-quality profile: 'high' (default), 'floor' or opt-in 'auto'. */
     setRenderQuality(mode:RenderQualityMode){
