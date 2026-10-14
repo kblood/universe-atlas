@@ -30,7 +30,7 @@
     const source = parseGLB(lod1), imageViews = new Set(source.images.map(image => image.bufferView));
     const geometryEnd = Math.max(...source.bufferViews.flatMap((bufferView, index) => imageViews.has(index)
       ? [] : [(bufferView.byteOffset ?? 0) + bufferView.byteLength]));
-    const { prepareTreeLODPair } = await import(moduleUrl);
+    const { prepareTreeLODPair } = await import(/* @vite-ignore */ moduleUrl);
     const start = performance.now();
     const prepared = prepareTreeLODPair(lod0, lod1);
     const elapsedMs = performance.now() - start;
