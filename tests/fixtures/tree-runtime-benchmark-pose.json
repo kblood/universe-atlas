@@ -1,18 +1,18 @@
 {
-  "version": "tree-runtime-benchmark-pose-1",
+  "version": "tree-runtime-benchmark-pose-2",
   "seed": "LETHRA-001",
   "bodyId": "G001/C2128,0,1/0/planet/1",
-  "wv": "atlas-time-2,atlas-address-1,atlas-cosmology-2-radiation,atlas-2.0.0,atlas-history-3-remnant-cooling,atlas-surface-7-no-inland-rivers,terrain-1.6.0,biosphere-lab-3,atlas-galaxy-history-2",
-  "dateNs": "435084631200000035693600000",
+  "wv": "atlas-time-2,atlas-address-1,atlas-cosmology-2-radiation,atlas-2.0.0,atlas-history-3-remnant-cooling,atlas-surface-8-ocean-volume,terrain-1.10.1-forest-colour,biosphere-lab-3,atlas-galaxy-history-2",
+  "dateNs": "435084631200000027723620000",
   "walkPosition": [
-    4067091.7606000504,
-    -1507033.460222449,
-    2861046.922899981
+    -806288.2518739641,
+    55779.34396733069,
+    5131975.85495119
   ],
   "heading": [
-    0.2612843993511726,
-    -0.16561681415185125,
-    -0.7594407574237637,
-    0.572320949720966
+    0.7013388293645338,
+    -0.1624443592851486,
+    -0.052493056000420577,
+    0.6920839223921906
   ]
 }

@@ -25,9 +25,10 @@ const { browserArgs } = await import('./browser-options.mjs');
 // before/after comparison against a baseline bundle set ATLAS_SRC to an export of the
 // baseline commit's src/ (git archive <sha> src) so recipe heights match that build.
 const srcRoot = process.env.ATLAS_SRC ? pathToFileURL(resolve(process.env.ATLAS_SRC) + '/') : new URL('../src/', import.meta.url);
+const kitSrcRoot = process.env.ATLAS_SRC ? srcRoot : new URL('../external/tree-kit/src/', import.meta.url);
 const { populationCellAt } = await import(new URL('planet-population.ts', srcRoot));
 const { forestTreeCatalogue } = await import(new URL('forest-tree-catalogue.ts', srcRoot));
-const { treeStructuralVariant } = await import(new URL('tree-species-recipe.ts', srcRoot));
+const { treeStructuralVariant } = await import(new URL('tree-species-recipe.ts', kitSrcRoot));
 
 const base = process.env.ATLAS_URL || 'http://127.0.0.1:5192/';
 const out = resolve(process.env.ATLAS_RESULTS || 'test-results/opus55-trees/run');

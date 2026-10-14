@@ -9,7 +9,7 @@
 //
 //   ATLAS_URL       running Atlas page (default http://127.0.0.1:5196/)
 //   ATLAS_RESULTS   output directory
-//   ATLAS_POSE      fixed grounded pose JSON (defaults to the retained review pose)
+//   ATLAS_POSE      fixed seed/body/date plus reference forest-pose JSON (defaults to the retained review pose)
 //   ATLAS_FRAMES    frames per profiling condition (default 120)
 //   ATLAS_HARDWARE  set to 1 to request the hardware browser configuration
 import assert from 'node:assert/strict';
@@ -313,24 +313,44 @@ function assertValidWindow(name, capture) {
 }
 
 async function loadPose(trees) {
-  await page.addInitScript(() => {
-    const define = Object.defineProperty;
-    Object.defineProperty = function (target, key, descriptor) {
-      const result = Reflect.apply(define, Object, [target, key, descriptor]);
-      if (target === window && key === '__atlas' && descriptor?.value?.setExplorationPaused) {
-        descriptor.value.setExplorationPaused(true); Object.defineProperty = define;
-      }
-      return result;
-    };
-  });
   const query = new URLSearchParams({ seed: pose.seed, g: 'G001', system: 'G001/C2128,0,1/0',
-    body: pose.bodyId, trees: trees ? '1' : '0', date: pose.dateNs,
-    walk: pose.walkPosition.join(','), heading: pose.heading.join(',') });
+    body: pose.bodyId, trees: trees ? '1' : '0', date: pose.dateNs });
   if (pose.wv) query.set('wv', pose.wv);
   await page.goto(`${base}?${query}`, { waitUntil: 'domcontentloaded', timeout: 120000 });
   await waitFor(id => window.__atlas?.ready && window.__atlas.state.level === 'body' &&
     window.__atlas.state.body?.id === id && !window.__atlas.camera.animating, pose.bodyId);
-  await waitFor(date => window.__atlas.date.offsetNs === date && window.__atlas.travel.walking?.grounded, pose.dateNs);
+  // Recreate the fixed forest pose through the same supported user path used
+  // by tree-families-visual. Saved ?walk bookmarks may remain in `landing`
+  // after terrain-model changes, so they are not a reliable benchmark setup.
+  await page.locator('#find-life').click();
+  await waitFor(() => window.__atlas.travel.terrainCruise !== null, undefined, 180000);
+  await page.keyboard.down('q');
+  try {
+    await waitFor(() => window.__atlas.travel.surface?.terrainClearance < 100, undefined, 180000);
+  } finally {
+    await page.keyboard.up('q').catch(() => {});
+  }
+  await waitFor(() => window.__atlas.terrain?.tiles?.forest?.visible > 200 &&
+    window.__atlas.terrain.tiles.surfaceReady, undefined, 180000);
+  await page.evaluate(() => window.__atlas.setExplorationPaused(true));
+  await waitFor(() => {
+    const a = window.__atlas, t = a.terrain?.tiles, f = t?.forest, c = f?.fullCanopy;
+    return f?.selectionPending === false && f.pending === 0 && t.pending === 0 &&
+      t.faunaTerrainPending === 0 && (!c || (c.ready && !c.selectionPending &&
+        !c.selectionApplyPending && !c.reusePending && c.queuedPatches === 0 && c.jobsInFlight === 0));
+  }, undefined, 240000);
+  await page.locator('#walk-surface').click();
+  await waitFor(() => window.__atlas.travel.walking?.active === true &&
+    !window.__atlas.travel.landing, undefined, 180000);
+  await waitFor(() => window.__atlas.travel.walking?.grounded === true &&
+    window.__atlas.travel.walking?.waiting === false, undefined, 60000);
+  await page.evaluate(() => window.__atlas.setExplorationPaused(true));
+  report.realizedPose = await page.evaluate(() => ({
+    dateNs: window.__atlas.date.offsetNs.toString(),
+    walkPosition: window.__atlas.travel.walking.position,
+    heading: window.__atlas.travel.heading,
+    bodyId: window.__atlas.state.body.id,
+  }));
   await page.addStyleTag({ content: 'body * { visibility: hidden !important; } #viewport canvas { visibility: visible !important; }' });
 }
 
@@ -499,6 +519,39 @@ try {
   report.captureComplete = true;
 } catch (error) {
   report.failure = String(error?.stack ?? error);
+  try {
+    report.failureState = await page?.evaluate(() => {
+      const a = window.__atlas, t = a?.terrain?.tiles, f = t?.forest;
+      return {
+        href: location.href,
+        atlasReady: a?.ready ?? false,
+        level: a?.state?.level ?? null,
+        bodyId: a?.state?.body?.id ?? null,
+        cameraAnimating: a?.camera?.animating ?? null,
+        dateNs: a?.date?.offsetNs?.toString?.() ?? null,
+        travel: a?.travel ? {
+          landing: a.travel.landing,
+          walkingActive: a.travel.walking?.active ?? false,
+          walkingGrounded: a.travel.walking?.grounded ?? false,
+          walkingWaiting: a.travel.walking?.waiting ?? null,
+          terrainClearanceM: a.travel.surface?.terrainClearance ?? null,
+        } : null,
+        terrain: t ? { surfaceReady: t.surfaceReady, pending: t.pending,
+          forestPending: f?.pending ?? null, selectionPending: f?.selectionPending ?? null } : null,
+        forestAssets: a?.forestAssets ? { enabled: a.forestAssets.enabled,
+          loading: a.forestAssets.loading, ready: a.forestAssets.ready,
+          error: a.forestAssets.error ?? null } : null,
+        renderer: a?.stats ?? null,
+      };
+    });
+    if (page) {
+      const failureImage = `${out}/failure.png`;
+      await page.screenshot({ path: failureImage, timeout: 10000 });
+      report.screenshots.push(failureImage);
+    }
+  } catch (diagnosticError) {
+    report.failureDiagnosticsError = String(diagnosticError?.stack ?? diagnosticError);
+  }
   console.error(error);
   process.exitCode = 1;
 } finally {
