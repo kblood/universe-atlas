@@ -1,4 +1,4 @@
-import type {ForestTreeFamilyInput,ForestTreeKind} from './forest-tree-family-library.ts';
+import type {ForestTreeFamilyInput,ForestTreeKind} from '#tree-kit/v1/instances';
 
 export const FOREST_BUNDLE_BYTE_LIMIT=64*1024*1024;
 const MANIFEST_LIMIT=1024*1024;

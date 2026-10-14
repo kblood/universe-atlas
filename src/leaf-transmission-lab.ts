@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
-import {installLeafTransmission} from './tree-leaf-transmission.ts';
+import {installLeafTransmission} from '#tree-kit/v1/assets';
 
 // Synthetic calibration, deliberately separate from the tree art/coverage lab.
 // Read a float linear target before tone mapping or sRGB encoding.

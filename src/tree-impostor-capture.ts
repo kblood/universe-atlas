@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import {loadTreeAssetFamily,treeVertexMeters} from '#tree-kit/v1/assets';
-import {treeCaptureViews,TREE_VIEW_VERSION} from './tree-impostor-views.ts';
-import type {TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
-import {createTreeDiffuseTransfer,reduceTreeDiffuseTransfer} from './tree-diffuse-transfer.ts';
+import {treeCaptureViews,TREE_VIEW_VERSION,createTreeDiffuseTransfer,reduceTreeDiffuseTransfer} from '#tree-kit/v1/impostors';
+import type {TreeFoliageMipSidecar} from '#tree-kit/v1/assets';
 
 export const TREE_CAPTURE_VERSION='tree-material-capture-2';
 export type CaptureLayer={size:number;colour:Float32Array;data:Float32Array;classification:Float32Array;diffuseTransfer?:Float32Array};

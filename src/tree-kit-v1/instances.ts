@@ -2,6 +2,7 @@
 export {TreeInstancePasses, TreeInstanceRows} from '../tree-instance-passes.ts';
 export {InstanceUpdateRanges} from '../instance-update-ranges.ts';
 export {CompactInstanceSlots} from '../compact-instance-slots.ts';
+export {FOREST_PRESENTATION_VERSION,forestPresentationFamily,packForestPresentation,unpackForestPresentation} from '../forest-presentation.ts';
 export {ForestTreeFamilyLibrary} from '../forest-tree-family-library.ts';
 export type {
   ForestTreeFamilyAttachment,

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {forestMaterial,forestDepthMaterial} from './forest-material.ts';
+import {forestMaterial,forestDepthMaterial} from '#tree-kit/v1/presentation';
 import {createLegacyTreeGeometry as treeGeometry,treeQuaternion} from '#tree-kit/v1/presentation';
 import {PlanetCanopy,forestCellPatchKey} from './planet-canopy.ts';
-import {quantizeForestCoverage} from './forest-coverage.ts';
+import {quantizeForestCoverage} from '#tree-kit/v1/presentation';
 import {systemTimer} from './render-profile.ts';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
@@ -12,19 +12,19 @@ import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
 import type {ForestSelectionCache} from './forest-selection-cache.ts';
 import {unpackForestSelection} from './forest-selection-transfer.ts';
 import {PLANET_DETAIL as B} from './planet-detail.ts';
-import {InstanceUpdateRanges as DirtyRange} from './instance-update-ranges.ts';
+import {InstanceUpdateRanges as DirtyRange} from '#tree-kit/v1/instances';
 import type {Species} from './biosphere-model.ts';
 import type {TreeAssetFamily,TreeAssetOptions} from '#tree-kit/v1/assets';
 import {forestTreeCatalogue,type ForestTreeBinding} from './forest-tree-catalogue.ts';
 import {ForestTreeFamilyLibrary,type ForestTreeFamilyInput,type ForestTreeFamilyEntry} from '#tree-kit/v1/instances';
 import {ForestPatchBroadphase} from './forest-patch-broadphase.ts';
 import {ForestOrderedWorkIndex} from './forest-ordered-work.ts';
-import {forestPresentationFamily,packForestPresentation,FOREST_PRESENTATION_VERSION} from './forest-presentation.ts';
+import {forestPresentationFamily,packForestPresentation,FOREST_PRESENTATION_VERSION} from '#tree-kit/v1/instances';
 import {FOREST_VARIANT_VERSION,FOREST_VARIANT_COUNT} from '#tree-kit/v1/presentation';
 import type {ForestFamilyPresentation} from '#tree-kit/v1/impostors';
 import type {ForestTreeKind} from '#tree-kit/v1/instances';
 import {ForestFarAtlas,FOREST_FAR_ATLAS_VERSION,FOREST_FAR_ATLAS_VIEWS} from '#tree-kit/v1/impostors';
-import {forestMemoryFootprint,forestMeshBufferFootprint,forestTextureFootprint} from './forest-resource-accounting.ts';
+import {forestMemoryFootprint,forestMeshBufferFootprint,forestTextureFootprint} from '#tree-kit/v1/metrics';
 import {forestFamilyBoundRadius,forestTreeDimensions,legacyTreeBoundSphere,unpackTreeAllometryRatios,TREE_ALLOMETRY_IDENTITY_CODE,TREE_ALLOMETRY_VERSION,
   TREE_ALLOMETRY_CARD,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE,type ForestTreeDimensions,type TreeAllometryReason} from '#tree-kit/v1/presentation';
 

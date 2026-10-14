@@ -42,7 +42,7 @@ import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier,forestBodyEligible} from './surface-biomes.ts';
 import {FaunaLodController,type FaunaLodCandidate,type FaunaLodRuntimeAdapter,type FaunaLodControllerOptions,type FaunaLodContext} from './fauna-lod-controller.ts';
 import {FaunaLodTierSelection} from './fauna-lod-tier-selection.ts';
-import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
+import {forestMeshBufferFootprint} from '#tree-kit/v1/metrics';
 import {temperateHabitat} from './surface-climate.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';

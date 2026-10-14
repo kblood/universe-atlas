@@ -79,6 +79,7 @@
     "#tree-kit/v1/assets": "./src/tree-kit-v1/assets.ts",
     "#tree-kit/v1/instances": "./src/tree-kit-v1/instances.ts",
     "#tree-kit/v1/impostors": "./src/tree-kit-v1/impostors.ts",
+    "#tree-kit/v1/metrics": "./src/tree-kit-v1/metrics.ts",
     "#tree-kit/v1/recipes": "./src/tree-kit-v1/recipes.ts",
     "#tree-kit/v1/presentation": "./src/tree-kit-v1/presentation.ts"
   }

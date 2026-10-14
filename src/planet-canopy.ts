@@ -6,7 +6,7 @@ import {ForestSlotAllocator,type ForestSlotRange} from './forest-slot-allocator.
 import {type ForestCensusPatch,FOREST_CENSUS_STRIDE} from './forest-census.ts';
 import {type ForestPatchAddress,validateForestPatchAddress} from './forest-patch.ts';
 import {treeQuaternion} from '#tree-kit/v1/presentation';
-import {quantizeForestCoverage} from './forest-coverage.ts';
+import {quantizeForestCoverage} from '#tree-kit/v1/presentation';
 import {PLANET_DETAIL} from './planet-detail.ts';
 import {forestWaterIntervalContains,validForestWaterInterval,type ForestWaterInterval} from './forest-water-validity.ts';
 import {TREE_ALLOMETRY_IDENTITY_CODE} from '#tree-kit/v1/presentation';
