@@ -120,7 +120,7 @@ selection; it does not measure tree-only GPU cost, asset rendering, draw calls,
 uploads or GPU memory. Preserve the raw scenario and environment when comparing
 later runs.
 
-Tree Kit's standalone suite passes 81 tests and both its TypeScript and Lab
+Tree Kit's standalone suite passes 86 tests and both its TypeScript and Lab
 builds pass. After removing the Atlas source copies, 177 focused Atlas tests
 passed (174 pass, 3 skipped), including the Lab/API, tree-family, allometry,
 captured-atlas, resource, foliage and Windows test-runner contracts. The Atlas
