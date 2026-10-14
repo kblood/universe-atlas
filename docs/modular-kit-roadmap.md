@@ -351,6 +351,33 @@ generation, date-boundary semantics, Creature Kit genomes, and Atlas lifecycle
 and environment gates unchanged unless a paired benchmark justifies a safe
 optimization.
 
+The current runtime already memoizes planet snapshots by exact body/seed/date
+and hydrology references (`main.ts`), caches one exact LifeGate timestamp, and
+reuses LifeGate sources for same-Myr frames. Do not count these as new wins.
+The advancing-frame candidate is narrower: before same-Myr source reuse is
+checked, the miss path still derives Flora kinds, Tree species and Fauna views.
+Measure repeated sub-Myr timestamps and memoize derived views by stable species
+array identity only if allocation and frame p95 improve while environment and
+lifecycle gates remain time-sensitive. `biosphereAt` also rescans and filters
+species and rebuilds its digest; date memoization is conditional on proving
+mutation isolation and bounded retained memory. The 64-world history cache is
+FIFO, not LRU; test 1/64/128-world round-robin access before changing eviction.
+
+The reproducible Biosphere workload separates Kit cold generation and dated
+queries from Atlas history/cache queries and the browser LifeGate handoff. Use
+fixed sterile, mature, extinct, suitable and unsuitable bodies; exact-date
+hits; raw timestamps advancing within one integer Myr; adjacent-Myr boundaries;
+life/star/environment threshold crossings; reverse/random seeks; and multiple
+worlds. Pin seed, body IDs, runtime and commits, warm cases, then alternate at
+least five paired baseline/candidate runs. Record CPU p50/p95/max, allocations,
+GC and retained heap separately from end-to-end frame cost, and separate
+desktop from Quest. Require exact DTO field/order, species/lineage/genome,
+digest, dated flags and uncached-result parity; test boundaries at ±1 Myr,
+random visit order, seek direction, and caller mutation safety for shared
+results. Preserve bounded memory over long multi-world seeks. Habitat-membership
+and compiled-niche helpers have no Atlas runtime caller, so their optimization
+cannot count as a live-path improvement until that changes.
+
 ## Per-kit release gate
 
 Each Kit must have an independently buildable public repository, a versioned
