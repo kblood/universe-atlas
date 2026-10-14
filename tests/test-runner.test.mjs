@@ -8,12 +8,12 @@ import {createHash} from 'node:crypto';
 import {classify} from './helpers/test-runner.mjs';
 import {registeredTests, selectTests, DEFAULT_TEST_MANIFEST, DEFAULT_TEST_PRELOAD} from './helpers/test-selection.mjs';
 
-test('npm test manifest preserves all 277 curated paths in their original order and stays below the Windows shell limit', () => {
+test('npm test manifest preserves all 278 curated paths in their original order and stays below the Windows shell limit', () => {
   const files = registeredTests();
-  assert.equal(files.length, 277);
+  assert.equal(files.length, 278);
   // The ordered list extracted from scripts.test before its Windows-safe migration.
   assert.equal(createHash('sha256').update(files.join('\n')).digest('hex'),
-    '7da155e68f8bd74c4410bd0f5efd35f9695e2ad1f633c20c0ec1ff34dcb6b91e');
+    '424d54c7d336e3ac04412ae205bd4d5dc548beecabb11a163514256852f6b1cb');
   assert.equal(new Set(files).size, files.length);
   for (const file of files) assert.ok(existsSync(file), file);
   const script = JSON.parse(readFileSync('package.json')).scripts.test;
