@@ -1,4 +1,4 @@
-import type {ForestTreeBinding} from './forest-tree-catalogue.ts';
+import type {TreeSpeciesBinding} from './tree-species-recipe.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
 import {TREE_CANOPY_HEIGHT_RANGE_M,type TreeCanopyProfile} from './tree-canopy-profile.ts';
 import {treeStructuralVariant} from './tree-species-recipe.ts';
@@ -222,7 +222,7 @@ function legacyDimensions(speciesId:string|null,heightM:number,crownWidthM:numbe
  * far and legacy draws. The individual's dated species recipe and its bounded
  * structural variant (from canonical ID) supply height, crown width and trunk
  * diameter; the presented family reference converts them to skeleton ratios. */
-export function forestTreeDimensions(binding:ForestTreeBinding|null,canonicalHeightM:number,
+export function forestTreeDimensions(binding:TreeSpeciesBinding|null,canonicalHeightM:number,
   families:{get(kind:ForestTreeKind):Presented|undefined}):ForestTreeDimensions{
   if(!binding){
     if(!finite(canonicalHeightM)||canonicalHeightM<=0)throw new Error('Canonical tree height is required');

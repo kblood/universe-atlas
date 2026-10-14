@@ -3,9 +3,10 @@ export const TREE_RECIPE_VERSION='tree-recipe-1';
 export const TREE_VARIANT_COUNT=8;
 export const TREE_ASSET_VERSION='temperate-branching-v1';
 
+export type TreeFamilyKind='branching'|'spire';
 export type TreeSpeciesRecipe=Readonly<{
   version:typeof TREE_RECIPE_VERSION; speciesId:string; lineageId:string;
-  family:'branching'|'spire'; sourceFingerprint:string;
+  family:TreeFamilyKind; sourceFingerprint:string;
   heightM:number; crownWidthM:number; trunkDiameterM:number;
   branchCount:number; branchAngleRad:number; curvature:number;
   leafLengthM:number; leafWidthM:number; leafDensity:number;
@@ -22,6 +23,8 @@ export type TreeSpeciesInput=TreeSpeciesCandidate&Readonly<{
     color:string;woodColor:string;
   }>;
 }>;
+export type TreeInstanceAppearance=Readonly<{variant:number;barkBrightness:number;foliageBrightness:number;windPhase01:number;textureVariant:number}>;
+export type TreeSpeciesBinding=Readonly<{recipe:TreeSpeciesRecipe;appearance:TreeInstanceAppearance}>;
 
 function hash(text:string){
   let h=2166136261;
@@ -82,7 +85,7 @@ export function treeStructuralVariant(recipe:TreeSpeciesRecipe,variant:number){
 
 /** Cheap per-instance shader parameters. Tints multiply separate bark/leaf
  * masks; they never choose a new topology or a new species. */
-export function treeInstanceAppearance(recipe:TreeSpeciesRecipe,cellId:string){
+export function treeInstanceAppearance(recipe:TreeSpeciesRecipe,cellId:string):TreeInstanceAppearance {
   if(!cellId)throw new Error('Canonical cell id is required');
   const u=(channel:string)=>unit(recipe.version,recipe.speciesId,cellId,channel);
   return Object.freeze({variant:Math.floor(u('variant')*TREE_VARIANT_COUNT),
