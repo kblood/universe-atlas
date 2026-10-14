@@ -266,6 +266,16 @@ surface. For each Kit, perform a performance audit against fixed representative
 scenarios, implement and benchmark the justified optimizations, and document
 before/after results. If measurements show no safe optimization, document the
 evidence and remaining bottleneck rather than making a speculative change.
+Use a repeatable comparison protocol: record the Kit and Atlas commits, build,
+device, browser/runtime, graphics settings, seed and scenario inputs; warm up
+before sampling; and run at least five paired baseline/candidate trials under
+the same conditions. Report CPU p50/p95/max and budget exceedances, valid GPU
+timer-query samples where available, draw/triangle/upload attribution, and
+load/steady/dispose memory separately. Discard disjoint or otherwise invalid
+GPU samples, report run-to-run spread, and set regression limits from the
+baseline variability and target budget before judging a candidate. Label
+desktop and Quest evidence separately; do not generalize one device's result
+to the other.
 Integrate Atlas through an exact Git submodule pin with no editable duplicate;
 test a clean recursive clone, Kit build/tests, Atlas build/tests and runtime
 parity. Publish the Kit commit before advancing and publishing Atlas. Finish
