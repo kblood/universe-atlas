@@ -5164,7 +5164,7 @@ Object.defineProperty(window, "__atlas", {
     get faunaPresentation(){return {...faunaPresentation,moduleStatus:faunaPresentation.generator==='composer'?'shared-composer':faunaLodMode==='off'?'disabled':faunaLodModuleError?'failed':faunaLodFactory?'ready':'loading',moduleError:faunaLodModuleError};},
     nearestAnimalLabLink(){return planetTiles?.nearestAnimalLabLink()??null;},
     composerAnimalSnapshot(id:string){return planetTiles?.composerAnimalSnapshot(id)??null;},
-    async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){
+    async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('#tree-kit/v1/assets').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
       return planetTiles.loadForestTreeAssets(lod0,lod1,options);
@@ -5207,7 +5207,7 @@ Object.defineProperty(window, "__atlas", {
     rockProbe(limit=64){return planetTiles?.rockProbe(limit)??null;},
     rockWork(){return planetTiles?.rockWork()??null;},
     resetRockWork(){planetTiles?.resetRockWork();},
-    async loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:import('./tree-asset.ts').TreeAssetOptions={}){
+    async loadForestTreeFamilies(inputs:readonly import('#tree-kit/v1/instances').ForestTreeFamilyInput[],options:import('#tree-kit/v1/assets').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
       return planetTiles.loadForestTreeFamilies(inputs,options);

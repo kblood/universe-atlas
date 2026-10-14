@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type {V3} from './catalog.ts';
+type V3=readonly [number,number,number];
 
 export const LEGACY_TREE_SHAPE_VERSION='legacy-tree-shape-1';
 /** Shared source for the shipped meshes and the analytic far proxy.

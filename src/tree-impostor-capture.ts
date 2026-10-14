@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {loadTreeAssetFamily,treeVertexMeters} from './tree-asset.ts';
+import {loadTreeAssetFamily,treeVertexMeters} from '#tree-kit/v1/assets';
 import {treeCaptureViews,TREE_VIEW_VERSION} from './tree-impostor-views.ts';
 import type {TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
 import {createTreeDiffuseTransfer,reduceTreeDiffuseTransfer} from './tree-diffuse-transfer.ts';

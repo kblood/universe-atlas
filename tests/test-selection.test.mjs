@@ -9,15 +9,19 @@ test('literal forms, transitive chains, directory and repo path references, unre
   const root = mkdtempSync(join(process.cwd(), 'test-results', 'atlas-selection-'));
   const put = (p, s) => { mkdirSync(join(root, p, '..'), {recursive: true}); writeFileSync(join(root, p), s); };
   try {
-    put('package.json', JSON.stringify({scripts: {test: 'any wrapper -- node --test tests/a.test.mjs tests/b.test.mjs'}}));
-    put('tests/a.test.mjs', "import './helpers/h.mjs';");
+    put('package.json', JSON.stringify({scripts: {test: 'any wrapper -- node --test tests/a.test.mjs tests/b.test.mjs'}, imports: {
+      '#kit/entry': './src/kit/entry.ts', '#kit/*': {types: './src/types/*.d.ts', default: './src/kit/*.ts'},
+    }}));
+    put('tests/a.test.mjs', "import './helpers/h.mjs'; import '#kit/entry'; import '#kit/nested';");
     put('tests/helpers/h.mjs', "export {x} from '../../src/foo.js'; import('../../src/bar.ts'); new URL('../../src/data.ts', import.meta.url); const files=['src/ref.ts'];");
+    put('src/kit/entry.ts', "export {x} from './shared.ts';"); put('src/kit/shared.ts', '');
+    put('src/kit/nested.ts', ''); put('src/types/nested.d.ts', '');
     put('src/foo.ts', "import {x} from './nested';"); put('src/nested/index.ts', '');
     for (const p of ['bar','data','ref']) put(`src/${p}.ts`, '');
     put('tests/b.test.mjs', "new URL('../src/', import.meta.url)");
     put('tests/new.test.mjs', '');
     const registered = registeredTests(root), graph = importGraph(root);
-    for (const path of ['src/nested/index.ts','src/bar.ts','src/data.ts','src/ref.ts']) assert.ok(selectTests([path], registered, graph).selected.some(s => s.file === 'tests/a.test.mjs'), path);
+    for (const path of ['src/nested/index.ts','src/bar.ts','src/data.ts','src/ref.ts','src/kit/shared.ts','src/types/nested.d.ts']) assert.ok(selectTests([path], registered, graph).selected.some(s => s.file === 'tests/a.test.mjs'), path);
     assert.match(selectTests(['src/ref.ts'], registered, graph).selected[0].reason, /references path/);
     assert.ok(selectTests(['src/ref.ts'], registered, graph).selected.some(s => s.file === 'tests/b.test.mjs'), 'directory URL dependency');
     assert.equal(selectTests(['tests/new.test.mjs'], registered, graph).selected[0].unregistered, true);

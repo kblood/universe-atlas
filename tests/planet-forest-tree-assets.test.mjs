@@ -543,11 +543,11 @@ test('each family receives its own offline mip sidecar while sharing atmosphere 
  f.treeLoader=(a,b,options)=>{received.push(options);return original(a,b,options);};
  const inputs=bothFamilies(),oak={manifest:{family:'oak'},data:new ArrayBuffer(4)},pine={manifest:{family:'pine'},data:new ArrayBuffer(8)};
  inputs[0].foliageMipSidecar=oak;inputs[1].foliageMipSidecar=pine;
- const localAerial={fixture:true};
+ const attachLocalAerial=()=>{};
  try{
-  await f.loadTreeFamilies(inputs,{localAerial});
+  await f.loadTreeFamilies(inputs,{attachLocalAerial});
   assert.equal(received[0].foliageMipSidecar,oak);assert.equal(received[1].foliageMipSidecar,pine);
-  assert.ok(received.every(x=>x.localAerial===localAerial&&x.forestCoverage===true));
+  assert.ok(received.every(x=>x.attachLocalAerial===attachLocalAerial&&x.forestCoverage===true));
  }finally{f.dispose();}
 });
 

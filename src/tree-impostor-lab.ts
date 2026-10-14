@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
-import {loadTreeCapture,TreeCapturedImpostor,type TreeCapture,type TreeCaptureFiltering} from './tree-captured-impostor.ts';
+import {loadTreeAssetFamily,type TreeAssetFamily} from '#tree-kit/v1/assets';
+import {loadTreeCapture,TreeCapturedImpostor,type TreeCapture,type TreeCaptureFiltering} from '#tree-kit/v1/impostors';
 
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});
 renderer.setPixelRatio(1);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;

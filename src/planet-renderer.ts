@@ -50,7 +50,8 @@ import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,WATER_ENVIRONME
 import type {RockGate} from './rock-field.ts';
 import {PLANET_DETAIL,altitudeGate} from './planet-detail.ts';
 import type {Species} from './biosphere-model.ts';
-import type {TreeAssetOptions} from './tree-asset.ts';
+import type {TreeAssetOptions} from '#tree-kit/v1/assets';
+import type {ForestTreeFamilyInput} from '#tree-kit/v1/instances';
 
 // Canonical surface cells own organisms. Demand extends past visible range;
 // bounded habitat work retains old cells while new neighbours load.
@@ -1011,11 +1012,9 @@ export class PlanetRenderer {
   loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
     return this.loadForestTreeFamilies([{kind:'branching',lod0,lod1}],options);
   }
-  loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:TreeAssetOptions={}){
-    return this.forest.loadTreeFamilies(inputs,{...options,localAerial:{
-      planet:this.group,frame:this.forest.group,radiusM:this.body.radiusM,
-      sun:this.sunUniform,enabled:this.localAirUniform,eyeHeight:this.eyeHeightUniform,
-    }});
+  loadForestTreeFamilies(inputs:readonly ForestTreeFamilyInput[],options:TreeAssetOptions={}){
+    return this.forest.loadTreeFamilies(inputs,{...options,attachLocalAerial:mesh=>attachLocalAerial(mesh,this.group,this.body.radiusM,
+      this.sunUniform,this.localAirUniform,this.eyeHeightUniform,mesh.userData.localAerialSurfaceHit,this.forest.group)});
   }
   clearForestTreeAssets(){this.forest.clearTreeAssets();}
   /** Acceptance probe: forest hand-off override / colour isolation (planet-forest.ts). */

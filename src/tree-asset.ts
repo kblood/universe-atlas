@@ -6,7 +6,6 @@ import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-
 import {InstanceUpdateRanges} from './instance-update-ranges.ts';
 import {installTreeForestCoverage} from './tree-forest-coverage.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
-import {attachLocalAerial} from './local-aerial-perspective.ts';
 import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} from './tree-foliage-mips.ts';
 import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
 import {calibrateTreeFoliageLodCutoffs,installTreeFoliageLodCutoff,type TreeFoliageLodCutoffs} from './tree-foliage-cutoff.ts';
@@ -220,7 +219,8 @@ export type TreeCanopyPresentation={
 };
 export type TreeCardCompensation={targetPixels:number;maxScale:number};
 export type TreeAssetOptions={sharedBarkTextures?:TreeBarkTexturePool;foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
-  localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}};
+  /** Atlas atmosphere adapter; the Kit never resolves planetary scene state. */
+  attachLocalAerial?:(mesh:THREE.Mesh)=>void;
   /** Bounded structural pool for this family. Batches select a member per slot. */
   structuralVariants?:readonly ForestStructuralVariant[];
   /** Enlarge reduced LOD1 cards so its total leaf area matches LOD0. */
@@ -358,12 +358,11 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     for(const material of materials)deform(material,shaderState);
     if(options.forestCoverage)for(const material of materials)installTreeForestCoverage(material);
     if(foliageLodCutoff)installTreeFoliageLodCutoff(lods[0][1].material,foliageLodCutoff);
-    if(options.localAerial){
-      const air=options.localAerial;
+    if(options.attachLocalAerial){
       // Both LOD batches have identity transforms in the forest's retained
       // frame. Their shared materials therefore use identical air uniforms.
       // Install before transmission, which guards the final material hook.
-      for(const mesh of lods[0])attachLocalAerial(mesh,air.planet,air.radiusM,air.sun,air.enabled,air.eyeHeight,undefined,air.frame);
+      for(const mesh of lods[0])options.attachLocalAerial(mesh);
     }
     // Keep LOD profile samples separate so the far representation follows the
     // actual reduced geometry rather than a merged near/far percentile.
@@ -451,7 +450,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
           const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);geometry.setAttribute('instanceTreeShape',shape);
           if(forest)geometry.setAttribute('instanceForest',forest);
           const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
-          const inherited=options.localAerial?lods[0][part].onBeforeRender:mesh.onBeforeRender;
+          const inherited=options.attachLocalAerial?lods[0][part].onBeforeRender:mesh.onBeforeRender;
           mesh.onBeforeRender=(renderer,scene,camera,geometry,material,group)=>{
             inherited.call(mesh,renderer,scene,camera,geometry,material,group);
             // Every batch of a family shares one frame, so any submitted batch

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {loadTreeAssetFamily,type TreeAssetFamily,type TreeAssetOptions} from './tree-asset.ts';
+import {loadTreeAssetFamily,type TreeAssetFamily,type TreeAssetOptions} from '#tree-kit/v1/assets';
 import {RenderProfile} from './render-profile.ts';
 
 const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;

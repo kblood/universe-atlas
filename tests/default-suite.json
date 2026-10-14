@@ -28,6 +28,7 @@
   "tests/forest-asset-package.test.mjs",
   "tests/forest-asset-attachment.test.mjs",
   "tests/forest-asset-source.test.mjs",
+  "tests/tree-kit-v1-api.test.mjs",
   "tests/tree-foliage-sidecar.test.mjs",
   "tests/compact-instance-slots.test.mjs",
   "tests/planet-forest-tree-assets.test.mjs",

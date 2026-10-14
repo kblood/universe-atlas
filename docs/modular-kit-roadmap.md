@@ -56,7 +56,21 @@ Extraction preparation has started: `tree-species-recipe.ts` now consumes a
 Kit-owned `TreeSpeciesInput` DTO instead of importing Atlas `Species`, and
 `tree-asset.ts` resolves its fixed BigInt wind period without importing Atlas
 `world-time.ts`. The Atlas catalogue remains the adapter that supplies dated,
-eligible species.
+eligible species. The family kind is now owned by that recipe contract, and
+allometry and structural variants no longer import their kind type from the
+Atlas family library. Atlas-facing local aerial perspective is injected into
+tree asset loading as a callback instead of imported by the tree module.
+
+An API facade now defines version `1.0.0` at the `recipes`, `presentation`,
+`assets`, `instances` and `impostors` subpaths. Atlas runtime callers use those
+package import paths for recipes, allometry, asset loading, family ownership
+and captured far views. The current facade points to source files still in
+Atlas; the next extraction step moves the implementation into the standalone
+Tree Kit repository and leaves Atlas only the world/catalogue/atmosphere
+adapters. Tests check deterministic DTO behavior, subpath availability and the
+absence of Atlas catalogue, planet, habitat and clock dependencies at the
+current facade boundary. The tree rendering modules are not yet moved into a
+public submodule.
 
 Before extraction, record representative CPU time, allocation/heap growth,
 instance counts, draw calls, GPU memory and visual coverage across near, middle
@@ -82,14 +96,24 @@ selection; it does not measure tree-only GPU cost, asset rendering, draw calls,
 uploads or GPU memory. Preserve the raw scenario and environment when comparing
 later runs.
 
-Next add same-view browser/device captures for near and middle family meshes
-and far impostors, including tree-only draw calls, triangles, GPU pass time,
-upload bytes and cold/steady/dispose memory. `tests/tree-asset.browser.mjs`
-already profiles isolated LOD0/LOD1 for each family, but its fixed population
-does not mix distance bands, its counters include scene/grid/shadow work, and
-its memory figures are Three object counts rather than GPU bytes. Extend a
-fixed-pose fixture to classify tree draws and compare near/middle/far together;
-borrow the draw-classification pattern from
+The opt-in integrated fixture now lives in
+`tests/tree-runtime-benchmark.browser.mjs`, using the fixed grounded pose in
+`tests/fixtures/tree-runtime-benchmark-pose.json`. It checks that near, middle
+and far populations are present, records tier-isolated draw/triangle deltas,
+marginal scene GPU time, Atlas scheduled upload ranges, family load/far-atlas
+bake time and load/steady/dispose memory. It explicitly labels whole-scene GPU
+interactions, scheduled (not driver-observed) upload bytes, global
+`renderer.info` counts and sampled peak-memory limits. The harness has only
+passed static validation so far; no integrated browser/GPU capture is counted
+as performance evidence yet. Run it only on a quiet host and retain its report
+and screenshots before selecting a runtime optimization.
+
+`tests/tree-asset.browser.mjs` already profiles isolated LOD0/LOD1 for each
+family, but its fixed population does not mix distance bands, its counters
+include scene/grid/shadow work, and its memory figures are Three object counts
+rather than GPU bytes. The integrated fixture classifies contributions by
+hiding each Atlas forest tier in the same fixed view, while its marginal GPU
+result remains scene-level. Borrow the draw-classification pattern from
 `tests/forest-bark-sharing.browser.mjs` and GPU timer-query approach from
 `tests/desktop-perf.browser.mjs`. Cross-family bark texture sharing is already
 enabled by default and was measured in the accepted Anitar30 comparison: it
@@ -105,6 +129,13 @@ The 2026-10-14 isolated asset capture on RTX 5090 measured LOD1 reductions of
 192 instances. This validates the existing asset LOD benefit, but is not a
 new optimization or an Atlas mixed-distance result. Full method and values are
 in `tree-kit-performance-baseline-2026-10-14.md`.
+
+An attempted whole-Atlas hide-one-system capture on 2026-10-14 timed out before
+the walker reached its fixed pose. The harness marked the host contended: an
+active Blender process, Opera, 46% host CPU load and other GPU/CPU work were
+present. Its report is explicitly non-acceptance evidence; no mixed-tier GPU
+delta is inferred from it. Repeat the fixed-pose near/middle/far attribution
+when the host is quiet, without interrupting the existing Blender or browser.
 
 The current two-family bundle contains 25,826,696 bytes (about 24.63 MiB) of
 GLB and foliage-mip binary payloads, with all 16 manifest hashes and lengths

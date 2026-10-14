@@ -91,18 +91,60 @@ function walk(dir, root) {
 export function importGraph(root = process.cwd()) {
   const graph = new Map();
   const files = [...walk('src', root), ...walk('tests', root), ...walk('scripts', root)].filter(f => /\.(ts|mjs|js)$/.test(f));
-  function resolveSpec(file, spec) {
-    const base = slash(relative(root, resolve(root, dirname(file), spec)));
-    for (const p of [base, ...['.ts', '.mjs', '.js'].map(e => base + e), ...['ts', 'mjs', 'js'].map(e => `${base}/index.${e}`), base.replace(/\.js$/, '.ts')]) {
+  let packageImports = {};
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+    if (pkg?.imports && typeof pkg.imports === 'object' && !Array.isArray(pkg.imports)) packageImports = pkg.imports;
+  } catch { /* A missing or invalid manifest has no resolvable aliases. */ }
+  function resolveBase(base) {
+    const directory = base.endsWith('/');
+    const fileBase = directory ? base.slice(0, -1) : base;
+    for (const p of [fileBase, ...['.ts', '.mjs', '.js'].map(e => fileBase + e), ...['ts', 'mjs', 'js'].map(e => `${fileBase}/index.${e}`), fileBase.replace(/\.js$/, '.ts')]) {
       if (existsSync(resolve(root, p)) && statSync(resolve(root, p)).isFile()) return p;
     }
-    return spec.endsWith('/') ? `${base}/` : base; // Keep directory reads and deleted edges.
+    return directory ? `${fileBase}/` : fileBase; // Keep directory reads and deleted edges.
+  }
+  function resolveSpec(file, spec) {
+    const base = slash(relative(root, resolve(root, dirname(file), spec)));
+    const resolved = resolveBase(base);
+    return spec.endsWith('/') && !resolved.endsWith('/') ? `${resolved}/` : resolved;
+  }
+  function importTargets(value, capture, out = []) {
+    // Include every conditional branch: test:affected should remain conservative when
+    // Node, TypeScript and the bundler select different conditions.
+    if (typeof value === 'string') {
+      const target = capture === undefined ? value : value.replaceAll('*', capture);
+      if (target.startsWith('./')) out.push(resolveBase(slash(relative(root, resolve(root, target)))));
+    } else if (Array.isArray(value)) {
+      for (const entry of value) importTargets(entry, capture, out);
+    } else if (value && typeof value === 'object') {
+      for (const entry of Object.values(value)) importTargets(entry, capture, out);
+    }
+    return out;
+  }
+  function resolveImportAlias(spec) {
+    if (Object.hasOwn(packageImports, spec)) return importTargets(packageImports[spec]);
+    // Node package-import patterns use one `*`; the most specific matching key wins.
+    const matches = Object.keys(packageImports).flatMap(key => {
+      const star = key.indexOf('*');
+      if (star < 0) return [];
+      const prefix = key.slice(0, star), suffix = key.slice(star + 1);
+      return spec.startsWith(prefix) && spec.endsWith(suffix) && spec.length >= prefix.length + suffix.length
+        ? [{key, prefix, suffix, capture: spec.slice(prefix.length, spec.length - suffix.length)}] : [];
+    }).sort((a, b) => b.prefix.length - a.prefix.length || b.key.length - a.key.length);
+    if (!matches.length) return [];
+    const {key, capture} = matches[0];
+    return importTargets(packageImports[key], capture);
   }
   for (const file of files) {
     const source = readFileSync(resolve(root, file), 'utf8'), edges = [];
     // Conservative static scan also covers literal imports embedded in bundler stdin.
     const patterns = [/(?:import|export)\s+[\s\S]*?\bfrom\s*['"]([^'"]+)['"]/g, /\bimport\s*['"]([^'"]+)['"]/g, /\bimport\s*\(\s*['"]([^'"]+)['"]/g, /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url/g];
-    for (const regex of patterns) for (const m of source.matchAll(regex)) if (m[1].startsWith('.')) edges.push({path: resolveSpec(file, m[1]), kind: 'import'});
+    for (const regex of patterns) for (const m of source.matchAll(regex)) {
+      const spec = m[1];
+      if (spec.startsWith('.')) edges.push({path: resolveSpec(file, spec), kind: 'import'});
+      else if (spec.startsWith('#')) for (const target of resolveImportAlias(spec)) edges.push({path: target, kind: 'import'});
+    }
     for (const m of source.matchAll(/['"`](\/?src\/[^'"`\s]+|tests\/[^'"`\s]+)['"`]/g)) edges.push({path: m[1].replace(/^\//, ''), kind: 'references path'});
     for (const m of source.matchAll(/['"]((?:\.\.\/|\.\/)[^'"\s]+\.(?:ts|mjs|js))['"]/g)) edges.push({path: resolveSpec(file, m[1]), kind: 'references path'});
     graph.set(file, edges);

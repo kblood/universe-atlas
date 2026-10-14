@@ -61,3 +61,4 @@ export {
 export type {TreeCanopyMetadata, TreeCanopyProfile, TreeCullingBounds, TreeTrunkProfile} from '../tree-canopy-profile.ts';
 export {deriveFamilyProxyBounds, deriveVariantFamilyProxyBounds} from '../tree-canopy-bounds.ts';
 export {TREE_KIT_API_VERSION} from './version.ts';
+export {createLegacyTreeGeometry,treeQuaternion,LEGACY_TREE_BOUND,LEGACY_TREE_LOBES,LEGACY_TREE_SHAPE_VERSION,LEGACY_TREE_TRUNK} from '../tree-shape.ts';

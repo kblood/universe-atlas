@@ -1,5 +1,5 @@
 import type {Species} from './biosphere-model.ts';
-import {bindTreeSpecies,treeSpeciesRecipe,treeInstanceAppearance} from './tree-species-recipe.ts';
+import {bindTreeSpecies,treeSpeciesRecipe,treeInstanceAppearance} from '#tree-kit/v1/recipes';
 
 /** This snapshot receives the already dated catalogue from main. It neither
  * invents species nor evaluates a second date or lifecycle model. */
