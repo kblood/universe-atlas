@@ -75,6 +75,8 @@
       "default": "./vendor/creature-kit/package/dist/planet-v1/index.js"
     },
     "#flora-kit/v1/field": "./external/flora-kit/src/flora-field.ts",
-    "#flora-kit/v1/culling": "./external/flora-kit/src/flora-culling.ts"
+    "#flora-kit/v1/culling": "./external/flora-kit/src/flora-culling.ts",
+    "#tree-kit/v1/recipes": "./src/tree-kit-v1/recipes.ts",
+    "#tree-kit/v1/presentation": "./src/tree-kit-v1/presentation.ts"
   }
 }
