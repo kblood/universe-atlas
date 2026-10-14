@@ -52,7 +52,7 @@ test('SITE_A robustness rings (SITE_RULE 500/1000/2000 m) and the 5 and 10 km ri
 // 20 km ring is {6:59, 7:5}. Physics is not retuned to fit; the ring radius is
 // an owner/BIOME2-REPLAN decision (docs/eco-class-v1.md §6).
 test('SITE_A 60 km ring of 64 points is all legacy-behaviour classes',
-  {todo:'OPEN (owner / BIOME2-REPLAN): post-relief 60 km ring crosses the coast and the tropical boundary {6:25,7:18,11:6,ocean:15}; ring radius to be re-baselined'},()=>{
+  {todo:'OPEN (owner / BIOME2-REPLAN): post-relief 60 km ring no longer matches the planned legacy classes; current live histogram {2:5,4:26,6:4,8:29}; ring radius to be re-baselined'},()=>{
   const pts=ring(60000,64);
   assert.ok(pts.every(p=>LEGACY_BEHAVIOUR_CLASSES.has(p.cls)),JSON.stringify(histogram(pts)));
 });
