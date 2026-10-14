@@ -1,8 +1,8 @@
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {installLeafTransmission} from '../src/tree-leaf-transmission.ts';
-import {installTreeForestCoverage} from '../src/tree-forest-coverage.ts';
+import {installLeafTransmission} from '#tree-kit/v1/assets';
+import {installTreeForestCoverage} from '#tree-kit/v1/presentation';
 import {createServer} from 'vite';
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,ws:false},appType:'custom'});
 const {localAerialReference,localAerialGLSL,attachLocalAerial}=await vite.ssrLoadModule('/src/local-aerial-perspective.ts');

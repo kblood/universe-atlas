@@ -33,6 +33,7 @@ export function profileSummary(values:readonly number[]){
 
 export class RenderProfile {
   enabled=false;
+  sampling=true;
   private extension:TimerExtension|null=null;
   private pending:Pending[]=[];
   private series=new Map<string,number[]>();
@@ -53,9 +54,11 @@ export class RenderProfile {
   constructor(private gl:WebGL2RenderingContext){}
   setEnabled(enabled:boolean){
     if(enabled===this.enabled)return;
-    this.clear();this.enabled=enabled;systemTimer.enabled=enabled;systemTimer.take();
+    this.clear();this.enabled=enabled;this.sampling=true;systemTimer.enabled=enabled;systemTimer.take();
     this.extension=enabled&&!this.gl.isContextLost()?this.gl.getExtension('EXT_disjoint_timer_query_webgl2'):null;
   }
+  /** Stop creating samples while allowing already-issued GPU queries to drain. */
+  setSampling(enabled:boolean){this.sampling=enabled;if(!enabled)this.frame=null;}
   clear(){
     for(const entry of this.pending)this.gl.deleteQuery(entry.query);
     this.pending=[];this.series.clear();this.frame=null;this.frameId=0;
@@ -82,6 +85,7 @@ export class RenderProfile {
       if(!this.lost){this.clear();this.lost=true;}this.extension=null;
     }else if(this.lost){this.lost=false;this.extension=this.gl.getExtension('EXT_disjoint_timer_query_webgl2');}
     this.poll();this.frameCpu.clear();
+    if(!this.sampling){this.frame=null;return;}
     this.frame={id:this.frameId,pending:0,sum:0,valid:!!this.extension&&!this.disjointNow,sealed:false};
     this.record('frameIntervalMs',intervalMs);
     if(Number.isFinite(intervalMs)&&intervalMs>=0){
@@ -113,13 +117,13 @@ export class RenderProfile {
     }
   }
   cpu<T>(name:string,work:()=>T):T{
-    if(!this.enabled)return work();
+    if(!this.enabled||!this.sampling)return work();
     const start=performance.now();try{return work();}finally{
       const ms=performance.now()-start;this.record('cpu/'+name+'Ms',ms);this.frameCpu.set(name,(this.frameCpu.get(name)??0)+ms);
     }
   }
   pass<T>(name:string,work:()=>T):T{
-    if(!this.enabled)return work();
+    if(!this.enabled||!this.sampling)return work();
     const ext=this.extension,frame=this.frame;
     // Timer queries cannot nest. An external browser harness may own one.
     if(!ext||!frame||this.disjointNow||this.activeQuery||this.pending.length>=MAX_PENDING||
@@ -140,7 +144,7 @@ export class RenderProfile {
   /** Ends the frame. `systems` (optional) are this frame's non-overlapping
    * per-system CPU times; `other` is derived as the unattributed remainder. */
   endFrame(draws:number,triangles:number,systems?:Partial<Record<CpuSystem,number>>){
-    if(!this.enabled)return;
+    if(!this.enabled||!this.sampling)return;
     const work=performance.now()-this.start;
     this.record('cpu/frameWorkMs',work);
     if(systems){
@@ -155,7 +159,7 @@ export class RenderProfile {
     if(this.frame){this.frame.sealed=true;this.finishGPU(this.frame);this.frame=null;}
   }
   diagnostics(){return {
-    enabled:this.enabled,gpuAvailable:!!this.extension,historyLimit:this.history,
+    enabled:this.enabled,sampling:this.sampling,gpuAvailable:!!this.extension,historyLimit:this.history,
     hitches:{...this.hitches},cpuSystems:CPU_SYSTEMS,
     method:'Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling',
     gpuTotalMeaning:'Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait',

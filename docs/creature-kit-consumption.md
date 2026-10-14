@@ -26,7 +26,7 @@ The 2026-10-07 sync implementation described below is historical and has been
 superseded by this public submodule workflow.
 
 Migration branch, 2026-10-11: Atlas consumes the built, self-contained Kit 0.8 public
-planet entry through `#creature-kit/planet`, pinned in `vendor/creature-kit/PACKAGE.json`.
+planet entry through `#creature-kit/planet`, pinned in `vendor/creature-kit/creature-kit-manifest.json`.
 Existing genomes, population IDs and dated activity remain canonical. Normal
 planet visits use the Kit's shared Composer source and terrain pose; desktop
 and immersive updates retain that backend. Reduced tiers use the same anatomical

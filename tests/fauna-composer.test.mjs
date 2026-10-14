@@ -115,7 +115,7 @@ test('recipe text and lab URLs round-trip every field; legacy URLs are unchanged
   const legacy = new URL(creatureLabUrl('https://example.test/lab', {...DEFAULT_LAB_STATE, mode: 'skin'}));
   for (const key of ['recipe', 'compareRecipe', 'composerSeed', 'motion']) assert.equal(legacy.searchParams.has(key), false);
   assert.equal(creatureLabComposerInputError('?mode=composer&recipe=a&recipe=b'), 'Invalid composer link: repeated recipe');
-  assert.match(creatureLabComposerInputError('?mode=composer&motion=fly'), /unknown motion/);
+  assert.match(creatureLabComposerInputError('?mode=composer&motion=swim'), /unknown motion/);
   assert.equal(creatureLabComposerInputError('?mode=skin&recipe=a&recipe=b'), null);
   assert.match(decodeComposerRecipe(parseCreatureLabState(`?mode=composer&recipe=v1*${'x'.repeat(3000)}`).recipe).error, /longer than/);
   assert.match(decodeComposerRecipe('v5*layout_biped').error, /Unsupported/);

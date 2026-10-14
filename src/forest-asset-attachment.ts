@@ -1,5 +1,5 @@
 import type {ForestAssetSource,LoadedForestAssets} from './forest-asset-source.ts';
-import type {ForestTreeFamilyInput} from './forest-tree-family-library.ts';
+import type {ForestTreeFamilyInput} from '#tree-kit/v1/instances';
 type Target={loadForestTreeFamilies:(inputs:readonly ForestTreeFamilyInput[])=>Promise<boolean>;clearForestTreeAssets:()=>void};
 type Source=Pick<ForestAssetSource,'load'|'clear'>;
 

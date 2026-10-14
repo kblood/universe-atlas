@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import {deformedPositions,viewBasis} from './tree-raster.mjs';
-import {sampleTreeFoliageTrilinearAlpha} from '../../src/tree-foliage-cutoff.ts';
+import {sampleTreeFoliageTrilinearAlpha} from '#tree-kit/v1/assets';
 
 /** CPU emulation of the GPU foliage pass at a given pixel footprint: one sample
  * per pixel centre, per-triangle mip level λ from the UV Jacobian (as the GPU's

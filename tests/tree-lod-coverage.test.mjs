@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calibrateTreeLodCardScale,treeProjectedAreaM2,TREE_LOD_COVERAGE_VERSION,TREE_LOD_COVERAGE_VIEWS} from '../src/tree-lod-coverage.ts';
-import {loadTreeAssetFamily,treeLodCardScale} from '../src/tree-asset.ts';
+import {calibrateTreeLodCardScale,treeProjectedAreaM2,TREE_LOD_COVERAGE_VERSION,TREE_LOD_COVERAGE_VIEWS} from '#tree-kit/v1/presentation';
+import {loadTreeAssetFamily,treeLodCardScale} from '#tree-kit/v1/assets';
 import {loadRasterTree,rasterTree} from './helpers/tree-raster.mjs';
 
 // One opaque 1x1 texel atlas; every card is fully covered.

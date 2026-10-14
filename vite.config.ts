@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { createBuildInfo } from './scripts/build-identity.mjs';
 // Cross-origin isolation for local dev/preview: un-coarsened performance.now()
 // (5 µs instead of 100 µs) for the perf harness. The app loads no
 // cross-origin resources. The deployed site's headers are configured separately.
@@ -9,14 +10,16 @@ export default defineConfig({
   base: "./",
   server: {headers: crossOriginIsolation},
   preview: {headers: crossOriginIsolation},
-  plugins: [{name: 'publish-orbit-docs', generateBundle() {
-    this.emitFile({type:'asset',fileName:'build-info.json',source:JSON.stringify({
-      commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
-      branch:execFileSync('git',['rev-parse','--abbrev-ref','HEAD'],{encoding:'utf8'}).trim(),
-      subject:execFileSync('git',['log','-1','--format=%s'],{encoding:'utf8'}).trim(),
-      dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
-      builtAt:new Date().toISOString(),
-    },null,2)});
+  plugins: [{name: 'publish-orbit-docs', configureServer(server) {
+    server.middlewares.use((request, response, next) => {
+      if (new URL(request.url || '/', 'http://localhost').pathname !== '/build-info.json') return next();
+      response.setHeader('Content-Type', 'application/json');
+      response.setHeader('Cache-Control', 'no-store');
+      response.end(JSON.stringify(createBuildInfo(fileURLToPath(new URL('.', import.meta.url)), {mode:'development'}),null,2));
+    });
+  }, generateBundle() {
+    this.emitFile({type:'asset',fileName:'build-info.json',source:JSON.stringify(
+      createBuildInfo(fileURLToPath(new URL('.', import.meta.url))),null,2)});
     for(const fileName of [
       'docs/lab-center.md',
       'docs/fauna-realism-next-2026-10-02.md',
@@ -36,7 +39,7 @@ export default defineConfig({
       'test-results/inland-rivers-disabled-5130bd5-landing-rerun/old-river-link-ordinary-body.png',
       'test-results/inland-rivers-disabled-5130bd5-landing-rerun/ordinary-grounded.png',
       'docs/family-canopy-2026-09-28.md',
-      'src/tree-canopy-bounds.ts','tests/tree-canopy-bounds.test.mjs',
+      'tests/tree-canopy-bounds.test.mjs',
       'test-results/family-canopy/review-fixes-cpu.log',
       'test-results/family-canopy/README.md','test-results/family-canopy/shader-smoke.mjs',
       'test-results/family-canopy/browser-fixes-cpu.log',
@@ -50,7 +53,7 @@ export default defineConfig({
       'test-results/opus-near-far-family-review/paired-390m-followup/review.md',
       'test-results/opus-near-far-family-review/paired-390m-followup/inputs.json',
       'test-results/opus-near-far-family-review/paired-390m-followup/response.json',
-      'src/forest-presentation.ts','src/tree-canopy-profile.ts','src/forest-impostor.ts',
+
       'tests/forest-presentation.test.mjs','tests/tree-canopy-profile.test.mjs','tests/forest-impostor-family.test.mjs',
       'test-results/forest-asset-loading/family-canopy-cpu.log',
       'docs/forest-asset-loading-2026-09-28.md',
@@ -66,7 +69,7 @@ export default defineConfig({
       'test-results/forest-asset-loading/cpu.log',
       'test-results/forest-asset-loading/README.md',
       'docs/offline-foliage-mips-2026-09-28.md',
-      'src/tree-foliage-sidecar.ts',
+
       'tests/tree-foliage-sidecar.test.mjs',
       'test-results/offline-foliage-mips/cpu.log',
       'test-results/offline-foliage-mips/README.md',
@@ -90,8 +93,8 @@ export default defineConfig({
       'test-results/compact-tree-families/browser-run-2/oak-only-close.png',
       'test-results/compact-tree-families/browser-run-2/oak-plus-pine-close.png',
       'docs/compact-tree-families-2026-09-28.md',
-      'src/compact-instance-slots.ts',
-      'src/forest-tree-family-library.ts',
+
+
       'tests/compact-instance-slots.test.mjs',
       'docs/opus-5.5-surface-progress-review-2026-09-28.md',
       'docs/opus-5.5-surface-progress-review-2026-09-28.metadata.json',
@@ -103,9 +106,9 @@ export default defineConfig({
       'test-results/tree-forest-live/live-publication-receipt.json',
       'src/surface-lighting.ts',
       'src/terrain-shadow.ts',
-      'src/forest-material.ts',
+
       'src/life-shadow-priority.ts',
-      'src/tree-foliage-mips.ts',
+
       'tests/surface-lighting.test.mjs',
       'tests/life-shadow-priority.test.mjs',
       'tests/life-packing.test.mjs',
@@ -148,7 +151,7 @@ export default defineConfig({
       'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-shift.png',
       'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png',
       'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png',
-      'src/forest-tree-catalogue.ts','src/tree-forest-coverage.ts',
+      'src/forest-tree-catalogue.ts',
       'src/planet-forest.ts','src/planet-canopy.ts','src/forest-patch-broadphase.ts','src/forest-ordered-work.ts','src/local-aerial-perspective.ts',
       'tests/planet-forest-tree-assets.test.mjs','tests/tree-forest-coverage.test.mjs',
       'tests/forest-patch-broadphase.test.mjs','tests/forest-ordered-work.test.mjs','tests/planet-forest-worklist.test.mjs','tests/planet-canopy.test.mjs','tests/forest-retention.test.mjs',
@@ -522,8 +525,6 @@ export default defineConfig({
       const fileName=`test-results/tree-foliage-temporal/isolated-final/${mode}/${lod}/smoke-128-date0.png`;
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     }
-    for(const fileName of ['src/tree-leaf-transmission.ts','src/tree-asset.ts','src/instance-update-ranges.ts'])
-      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const run of ['run-1790591510207','run-1790591702202'])for(const image of ['white-before.png','tinted.png','white-restored.png']){
       const fileName=`test-results/tree-instance-updates/${run}/${image}`;
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
@@ -740,7 +741,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         atlas: 'index.html', labs: 'lab-center.html', biomes: 'biome-lab.html', surfaceFlora: 'surface-flora-lab.html', civilizations: 'civilization-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html', clouds: 'tests/cloud-comparison.html',
-        treeAssets: 'tree-asset-lab.html', treeCaptures: 'tree-impostor-lab.html', treeReferences: 'tree-reference-lab.html', treeImpostorReferences: 'tree-impostor-reference-lab.html', leafLighting: 'leaf-transmission-lab.html',
+        treeAssets: 'external/tree-kit/tree-asset-lab.html', treeAssetsRedirect: 'tree-asset-lab.html', treeCaptures: 'tree-impostor-lab.html', treeReferences: 'tree-reference-lab.html', treeImpostorReferences: 'tree-impostor-reference-lab.html', leafLighting: 'leaf-transmission-lab.html',
         ...Object.fromEntries(['index', 'determinism', 'time', 'universe', 'terrain', 'water-atmosphere', 'life', 'travel', 'publishing']
           .map(chapter => [`guide-${chapter}`, `guide/${chapter}.html`])),
       },

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
-import {deriveTreeCanopyMetadata} from '../src/tree-canopy-profile.ts';
-import {deriveFamilyProxyBounds,evaluateFamilyProxyBounds} from '../src/tree-canopy-bounds.ts';
+import {deriveTreeCanopyMetadata} from '#tree-kit/v1/presentation';
+import {deriveFamilyProxyBounds,evaluateFamilyProxyBounds} from '#tree-kit/v1/presentation';
 
 const emptyBand=(centerM=[0,0,0])=>({centerM,minY_M:0,maxY_M:0,halfHeightM:0,populated:false,radiusM:0,count:0});
 function profile(bands,maxLeafOffsetM=0){return {referenceHeightM:16,bands,radiusStatistic:'p90-visual-only',maxLeafOffsetM};}

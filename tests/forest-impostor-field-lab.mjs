@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {ForestImpostors} from '../src/forest-impostor.ts';
-import {treeQuaternion,createLegacyTreeGeometry} from '../src/tree-shape.ts';
+import {ForestImpostors} from '#tree-kit/v1/impostors';
+import {treeQuaternion,createLegacyTreeGeometry} from '#tree-kit/v1/presentation';
 const worker=new Worker(new URL('./forest-impostor-field-worker.mjs',import.meta.url),{type:'module'});
 const data=await new Promise((resolve,reject)=>{worker.onmessage=({data})=>data.error?reject(Error(data.error)):resolve(data);worker.onerror=reject;});worker.terminate();
 // super-three requests an alpha canvas even when its alpha option is false.

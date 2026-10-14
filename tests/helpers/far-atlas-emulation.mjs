@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {rasterTree} from './tree-raster.mjs';
-import {forestFarAtlasSphere,FOREST_FAR_ATLAS_LAYOUT as L} from '../../src/forest-far-atlas.ts';
-import {hemiTreeViewBlend,treeCaptureBasis,treeHemiCaptureViews} from '../../src/tree-impostor-views.ts';
+import {forestFarAtlasSphere,FOREST_FAR_ATLAS_LAYOUT as L} from '#tree-kit/v1/impostors';
+import {hemiTreeViewBlend,treeCaptureBasis,treeHemiCaptureViews} from '#tree-kit/v1/impostors';
 
 /** CPU emulation of the far atlas: capture tiles with the reference raster in
  * each hemi view's basis, then reconstruct a view with the same plane

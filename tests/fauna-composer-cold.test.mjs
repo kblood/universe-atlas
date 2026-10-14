@@ -40,10 +40,10 @@ test('rotating near/middle priorities retain each canonical far allocation and d
    const d=r.diagnostics();assert.equal(d.actors.filter(a=>a.tier==='near').length,2);assert.equal(d.mergedTiers.middle.actors,2);assert.equal(d.mergedTiers.far.actors,8);assert.equal(d.mergedTiers.far.records,12);
    assert.equal(d.actors.length,d.mergedTiers.far.actors+d.mergedTiers.middle.actors+[...r.entries.values()].reduce((n,e)=>n+(e.batches.near?.mesh.count??0),0),'one visible tier per actor');
    assert.ok(d.ownedBytes<d.maxBytes);
-   const list=round===3?[...candidates,candidate('cold')]:candidates;
    if(round===3){r.update([...ordered,candidate('cold')]);assert.equal(r.diagnostics().running,'cold');}
-   r.update(list);assert.equal(r.diagnostics().active,12);assert.ok(r.diagnostics().actors.every(a=>a.tier==='far'));assert.equal(r.diagnostics().mergedTiers.middle.records,0);
-   for(const c of candidates){const before=original.get(c.id),e=r.entries.get(c.id);assert.equal(e.levels.far,before.far);assert.equal(e.definition,before.definition);assert.equal(r.poseOf(c.id),before.pose);assert.equal(e.batches.near,undefined);assert.deepEqual(r.snapshotOf(c.id).skin.positions,before.positions);}
+   r.update(candidates);assert.equal(r.diagnostics().active,12);assert.ok(r.diagnostics().actors.every(a=>a.tier==='far'));assert.equal(r.diagnostics().mergedTiers.middle.records,0);
+   if(round===3){assert.equal(r.diagnostics().running,'cold','the blocked cold build remains pending while existing animals demote');r.update(candidates);}
+   for(const c of candidates){const before=original.get(c.id),e=r.entries.get(c.id);assert.equal(e.levels.far,before.far);assert.deepEqual(Object.keys(e.levels),['far'],'demotion releases near and middle skin ownership');assert.deepEqual(Object.keys(e.activeBones),['far'],'demotion releases near and middle bone masks');assert.equal(e.definition,before.definition);assert.equal(r.poseOf(c.id),before.pose);assert.equal(e.batches.near,undefined);assert.deepEqual(r.snapshotOf(c.id).skin.positions,before.positions);}
    assert.equal(r.ownedBytes,baseline,'demotion releases all nearer ownership');assert.equal(calls.filter(([key,tier])=>tier==='far'&&key!=='cold').length,12);
   }
   r.setContext('other');await tick();assert.ok(aborted);assert.equal(r.entries.size,0);assert.equal(r.mergedBindings.size,0);assert.equal(r.levelOwners.size,0);assert.ok(Object.values(r.diagnostics().mergedTiers).every(t=>!t.records&&!t.copying));

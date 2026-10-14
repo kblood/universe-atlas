@@ -37,7 +37,10 @@ not upload them.
   The Atlas page is informational; simulation-to-Atlas data integration and a
   browser UI remain future work. Its authored fixtures are not Atlas planets.
 - Cloud Lab: `tests/cloud-comparison.html`, controlled cloud comparisons.
-- Tree Asset Lab: `tree-asset-lab.html`, local GLB LOD pairs, populations and wind.
+- Tree Kit Lab: `tree-asset-lab.html` redirects to the pinned Kit's standalone
+  review surface. It loads one or both local family LOD pairs, optional foliage
+  mip sidecars, mixed near/middle populations and incrementally baked far
+  atlases without uploading selected files.
 - Tree Capture Comparison: `tree-impostor-lab.html`, meshes and captured impostors.
 - Tree Reference Comparison: `tree-reference-lab.html`, Atlas and EZ-Tree.
 - Existing Impostor Comparison: `tree-impostor-reference-lab.html`, the pinned

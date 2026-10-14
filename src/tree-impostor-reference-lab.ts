@@ -1,10 +1,10 @@
 /// <reference types="vite/client" />
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
+import {loadTreeAssetFamily,type TreeAssetFamily} from '#tree-kit/v1/assets';
 import {OctahedralImpostor} from './vendor/three-ez-impostor/impostor-reference.js';
 import {RenderProfile} from './render-profile.ts';
-import {adaptImpostorShader} from './tree-impostor-reference-shader.ts';
+import {adaptImpostorShader} from '#tree-kit/v1/impostors';
 import referenceSource from './vendor/three-ez-impostor/impostor-reference.js?raw';
 import referenceManifest from './vendor/three-ez-impostor/reference-manifest.json';
 

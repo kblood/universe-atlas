@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {generateBiosphere,biosphereAt} from '../src/biosphere-model.ts';
-import {bindTreeSpecies,treeSpeciesRecipe,treeStructuralVariant,treeInstanceAppearance,treeGeometryCacheKey,TREE_VARIANT_COUNT} from '../src/tree-species-recipe.ts';
+import {bindTreeSpecies,treeSpeciesRecipe,treeStructuralVariant,treeInstanceAppearance,treeGeometryCacheKey,TREE_VARIANT_COUNT} from '#tree-kit/v1/recipes';
 const world=generateBiosphere('ATLAS-TREE-CONTRACT','temperate','G001/tree-recipe/planet/0');
 const species=world.species.filter(s=>s.kind==='tree');
 

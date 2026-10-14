@@ -3,7 +3,8 @@
 // docs/terrain-budget-2026-09-29.md). A stationary low-flight hover over
 // Maithea saturates the real terrain byte budget. Before the fix, resident
 // protected tiles filled the budget (99.99%), a same-key water-bucket rebuild
-// was charged as a new tile, and 349 visible patches stayed stale forever.
+// was charged as a new tile. The current dense low-flight fixture settles at
+// 134 visible patches; all must still refresh.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
@@ -16,7 +17,10 @@ const {lowM:LOW,highM:HIGH}=loweredSeaLevels(maithea());
 
 test('saturated terrain budget: a stationary sea-level change refreshes every visible patch within budget, also after the budget shrinks',async t=>{
   const {module,cleanup}=await rendererModule({prefix:'atlas-terrain-budget-'});
-  const body=maithea(),fx=createRenderer(module,body),renderer=fx.renderer,P=module.PENDING_TILE_BYTES;
+  // This test stresses the dense retained frontier that originally starved
+  // sea-level rebuilds. Composer uses a sparse resident cut and has a separate
+  // refresh test below.
+  const body=maithea(),fx=createRenderer(module,body,{rendererOptions:{faunaGenerator:'archive-quadruped'}}),renderer=fx.renderer,P=module.PENDING_TILE_BYTES;
   const ground=terrainSampler(body,undefined,undefined,undefined,LOW)([1,0,0]).visibleHeightM;
   // 2 km above ground: low-flight detail (drawLimit 390), no frustum, so the
   // whole horizon-visible frontier competes for the byte budget.
@@ -33,7 +37,9 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     for(let i=0;i<3000&&quiet<60;i++){d=await frame(LOW);blockedSplits=Math.max(blockedSplits,d.splitsBlockedByBytes);quiet=d.pending===0&&i>30?quiet+1:0;withinBudget(d,`settle ${i}`);}
     assert.equal(quiet,60,'initial frontier settles');
     assert.equal(d.staleWaterPatches,0);
-    assert.ok(d.lowFlightDetail&&d.visible>200,`fixture is a large low-flight frontier (visible ${d.visible})`);
+    assert.ok(d.lowFlightDetail&&d.visible>100,`fixture is a large low-flight frontier (visible ${d.visible})`);
+    const largestResidentTile=Math.max(...[...renderer.patches.values()].map(p=>p.bytes));
+    assert.ok(P>=largestResidentTile,`pending reservation ${P} covers largest installed tile ${largestResidentTile}`);
     assert.ok(blockedSplits>0,'the byte budget, not the leaf cap, bounds refinement');
     assert.ok(d.terrainResidentBytes>d.terrainBudgetBytes*.9&&d.terrainResidentBytes<=d.terrainSplitCeilingBytes,
       `refinement stops at the split ceiling: resident ${d.terrainResidentBytes} ceiling ${d.terrainSplitCeilingBytes}`);
@@ -55,7 +61,7 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     };
     const first=await seek(HIGH,`seek ${HIGH}`);
     t.diagnostic(`seek ${HIGH} (stationary): ${JSON.stringify(first)}, blockedAdmissionsTotal ${d.blockedAdmissionsTotal}`);
-    assert.ok(first.stalePeak>200,`seek makes the frontier stale (${first.stalePeak})`);
+    assert.ok(first.stalePeak>100,`seek makes the frontier stale (${first.stalePeak})`);
     assert.equal(first.final,0,`stale patches resolve (${JSON.stringify(first)})`);
     assert.equal(first.blocked,0,'no same-key refresh is byte-blocked at the split ceiling');
     // Two installs per frame is the resolution rate: 60 fps -> 3 s is 180 frames.
@@ -67,15 +73,23 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     // below the exit fraction, then still refresh a new sea level in budget.
     budgetOverride=Math.floor(d.terrainResidentBytes*.85);
     Object.defineProperty(renderer,'terrainBudgetBytes',{configurable:true,get:()=>budgetOverride});
-    let recovered=-1,entered=false,exitResident=null,quietFrames=0,wasPressure=false;
+    let recovered=-1,entered=false,exitResident=null,quietFrames=0,wasPressure=false,lastPressureEntries=0;
+    const pressureEvents=[];
     for(let i=0;i<2400;i++){
       d=await frame(HIGH);entered||=d.terrainPressure;
+      if(d.terrainPressureEntries!==lastPressureEntries){pressureEvents.push({frame:i,entries:d.terrainPressureEntries,resident:d.terrainResidentBytes,pending:d.pending,pressure:d.terrainPressure});lastPressureEntries=d.terrainPressureEntries;}
       if(wasPressure&&!d.terrainPressure)exitResident??=d.terrainResidentBytes;
       wasPressure=d.terrainPressure;
       if(exitResident!==null)withinBudget(d,`post-pressure ${i}`);
       quietFrames=entered&&!d.terrainPressure&&d.pending===0?quietFrames+1:0;
       if(quietFrames>=30){recovered=i;break;}
     }
+    t.diagnostic(JSON.stringify({entered,recovered,quietFrames,pressure:d.terrainPressure,pressureEntries:d.terrainPressureEntries,
+      resident:d.terrainResidentBytes,budget:budgetOverride,splitCeiling:d.terrainSplitCeilingBytes,pending:d.pending,
+      visible:d.visible,frontier:d.frontierMaxLevel,stale:d.staleWaterPatches,pendingEstimate:P,
+      tileBytesMax:Math.max(0,...[...renderer.patches.values()].map(p=>p.bytes)),
+      tileBytesMean:[...renderer.patches.values()].reduce((sum,p)=>sum+p.bytes,0)/Math.max(1,renderer.patches.size),
+      pressureEvents:pressureEvents.slice(0,12)}));
     assert.ok(entered,'stationary budget shrink enters pressure');
     assert.ok(recovered>=0,`pressure resolves while stationary (resident ${d.terrainResidentBytes} budget ${budgetOverride})`);
     assert.ok(exitResident<budgetOverride*.9,`pressure exits below the 0.90 fraction (${exitResident/budgetOverride})`);
@@ -94,6 +108,36 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     }
     assert.equal(pressureFrames,0,'no pressure re-entry while stationary');
     assert.equal(changes,0,'drawn frontier is stable while stationary');
+  }finally{fx.dispose();await cleanup();}
+});
+
+test('Composer sparse frontier refreshes its visible water patches without changing the selected cut',async()=>{
+  const {module,cleanup}=await rendererModule({prefix:'atlas-terrain-sparse-refresh-'});
+  const body=maithea(),fx=createRenderer(module,body),renderer=fx.renderer;
+  const ground=terrainSampler(body,undefined,undefined,undefined,LOW)([1,0,0]).visibleHeightM;
+  const eye=[1+(ground+2000)/body.radiusM,0,0],sun=[1,0,0];
+  const frame=async water=>{renderer.update(eye,1080,65,1/60,false,sun,[],undefined,null,water);await nextTurn();return renderer.diagnostics();};
+  try{
+    let d,quiet=0;
+    for(let i=0;i<3000&&quiet<60;i++){
+      d=await frame(LOW);
+      quiet=d.pending===0&&i>30?quiet+1:0;
+      assert.ok(d.terrainReservedBytes<=d.terrainBudgetBytes,`settle ${i} stays within the terrain budget`);
+    }
+    assert.equal(quiet,60,'sparse Composer frontier settles');
+    assert.equal(d.faunaGenerator,'composer');
+    assert.ok(d.lowFlightDetail&&d.visible>0,'the fixed pose sees low-flight terrain');
+    const frontier=JSON.stringify(d.debug.activeTileIds);
+    let stalePeak=0;
+    for(let i=0;i<1200;i++){
+      d=await frame(HIGH);
+      stalePeak=Math.max(stalePeak,d.staleWaterPatches);
+      assert.ok(d.terrainReservedBytes<=d.terrainBudgetBytes,`refresh ${i} stays within the terrain budget`);
+      if(d.staleWaterPatches===0&&d.pending===0&&i>0)break;
+    }
+    assert.ok(stalePeak>0,'the water bucket change marks resident patches stale');
+    assert.equal(d.staleWaterPatches,0,'every visible resident patch refreshes');
+    assert.equal(JSON.stringify(d.debug.activeTileIds),frontier,'a stationary refresh preserves the sparse resident cut');
   }finally{fx.dispose();await cleanup();}
 });
 

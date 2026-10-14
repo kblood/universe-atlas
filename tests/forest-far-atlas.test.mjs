@@ -5,13 +5,13 @@ import {
   ForestFarAtlas,FOREST_FAR_ATLAS_LAYOUT as L,FOREST_FAR_ATLAS_LEVELS,FOREST_FAR_ATLAS_VIEWS,FOREST_FAR_ATLAS_VERSION,
   forestFarAtlasBytes,forestFarAtlasScratchBytes,forestFarAtlasSphere,forestFarAtlasTileOffset,forestFarAtlasLeafCoverage,
   installForestFarAtlasCapture,forestFarAtlasGLSL,forestFarAtlasCommonGLSL,
-} from '../src/forest-far-atlas.ts';
-import {decodeHemiTreeView,encodeHemiTreeView,hemiTreeViewBlend,hemiTreeViewGLSL,treeCaptureBasis,treeHemiCaptureViews} from '../src/tree-impostor-views.ts';
-import {forestStructuralVariants,FOREST_VARIANT_COUNT} from '../src/tree-structural-variant.ts';
-import {ForestImpostors} from '../src/forest-impostor.ts';
-import {ForestTreeFamilyLibrary} from '../src/forest-tree-family-library.ts';
-import {calibrateTreeLodCardScale} from '../src/tree-lod-coverage.ts';
-import {treeAllometryAtlasStretch,treeAllometryCardScale,treeAllometryLeafDepthScale,TREE_ALLOMETRY_VERSION} from '../src/tree-allometry.ts';
+} from '#tree-kit/v1/impostors';
+import {decodeHemiTreeView,encodeHemiTreeView,hemiTreeViewBlend,hemiTreeViewGLSL,treeCaptureBasis,treeHemiCaptureViews} from '#tree-kit/v1/impostors';
+import {forestStructuralVariants,FOREST_VARIANT_COUNT} from '#tree-kit/v1/presentation';
+import {ForestImpostors} from '#tree-kit/v1/impostors';
+import {ForestTreeFamilyLibrary} from '#tree-kit/v1/instances';
+import {calibrateTreeLodCardScale} from '#tree-kit/v1/presentation';
+import {treeAllometryAtlasStretch,treeAllometryCardScale,treeAllometryLeafDepthScale,TREE_ALLOMETRY_VERSION} from '#tree-kit/v1/presentation';
 import {familyReference} from './helpers/tree-allometry-profiles.mjs';
 import {loadRasterTree,deformedPositions} from './helpers/tree-raster.mjs';
 import {captureSphere,captureTile,reconstruct,direct,compare,neededViews,rasterGeometry} from './helpers/far-atlas-emulation.mjs';

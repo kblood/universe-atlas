@@ -6,6 +6,7 @@ import {join,resolve,relative,dirname,basename} from 'node:path';
 import {tmpdir} from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {KIT_PACKAGE_MANIFEST} from './creature-kit-package.mjs';
 export const KIT_LAB_ROOT='public/animal-lab';
 export const KIT_LAB_RECEIPT='vendor/creature-kit/LAB.json';
 const dependenciesRoot=(repo,kit)=>existsSync(join(kit,'node_modules/vite/package.json'))&&existsSync(join(kit,'node_modules/typescript/package.json'))?kit:repo;
@@ -79,7 +80,7 @@ export function kitLabDrift(repo,kit=null){
     const pkg=JSON.parse(lf(join(repo,'vendor/creature-kit/package/package.json'))),[major,minor]=pkg.version.split('.').map(Number);
     return major>0||minor>=3?['standalone Kit Lab receipt missing']:[];
   }
-  const receipt=JSON.parse(lf(path)),rows=[],root=join(repo,KIT_LAB_ROOT),pkg=JSON.parse(lf(join(repo,'vendor/creature-kit/PACKAGE.json')));
+  const receipt=JSON.parse(lf(path)),rows=[],root=join(repo,KIT_LAB_ROOT),pkg=JSON.parse(lf(join(repo,KIT_PACKAGE_MANIFEST)));
   if(receipt.schema!=='creature-kit-lab-1'||receipt.kit.commit!==pkg.kit.commit||receipt.kit.version!==pkg.kit.version)rows.push('Kit Lab version/commit differs from runtime package');
   for(const row of receipt.files){const target=safePath(root,row.path);if(!existsSync(target)||digest(lf(target))!==row.sha256)rows.push(`animal-lab/${row.path}: artifact hash drift`);}
   for(const path of existsSync(root)?files(root):[])if(!receipt.files.some(row=>row.path===path))rows.push(`animal-lab/${path}: unmanifested artifact`);

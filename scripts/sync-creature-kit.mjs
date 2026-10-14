@@ -16,7 +16,7 @@ import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {prepareKitPackage,applyKitUpdate,kitPackageDrift} from './creature-kit-package.mjs';
+import {prepareKitPackage,applyKitUpdate,kitPackageDrift,KIT_PACKAGE_MANIFEST} from './creature-kit-package.mjs';
 import {prepareKitLab,kitLabDrift} from './creature-kit-lab.mjs';
 
 export const VENDOR_SCHEMA = 'creature-kit-vendor-1';
@@ -179,7 +179,7 @@ export function writeVendor(repo, kitDir) {
     kit: {name: pkg.name, version: pkg.version, commit, license: pkg.license},
     note: 'Generated from the pinned public submodule https://github.com/kblood/creature-kit at external/creature-kit. Edit Kit-owned files there, advance the submodule, then run npm run prepare:creature-kit. sha256 is over LF-normalised text.',
     files,
-    builtPackage:{schema:builtPackage.schema,manifest:'vendor/creature-kit/PACKAGE.json',planetEntry:builtPackage.entrypoints.planet.default},
+    builtPackage:{schema:builtPackage.schema,manifest:KIT_PACKAGE_MANIFEST,planetEntry:builtPackage.entrypoints.planet.default},
   };
   writes.push({path:VENDOR_JSON,text:`${JSON.stringify(vendor, null, 2)}\n`});
   applyKitUpdate(repo,writes,[...packageUpdate.removes,...labUpdate.removes,...stalePaths]);

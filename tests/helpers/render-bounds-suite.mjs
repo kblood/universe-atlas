@@ -316,21 +316,18 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
     report.seabed={groundHeightM:expected,contactLevel:L};
   });
 
-  test('byte-blocked refinement is confined to a seabed dive',()=>{
+  test('byte-blocked refinement reallocates terrain for seabed and near-ground views',()=>{
     const {body}=WORLDS[0],sea=-250,band=RB.OCEAN_SURFACE_DETAIL_M;
     // Over a deep seabed: submerged, at the surface and inside the surface band.
     for(const eye of [-13000,-1,sea,sea+band-1])assert.equal(RB.renderSeabedDive(body,eye,-13500,sea),true,`eye ${eye}`);
-    // Above the band over water, anywhere over land, and on a dry body: never.
+    // The seabed predicate remains precise; the renderer separately enables
+    // reallocation for ordinary dry contact and low-flight views.
     assert.equal(RB.renderSeabedDive(body,sea+band,-13500,sea),false);
     assert.equal(RB.renderSeabedDive(body,sea+5,sea+1,sea),false,'coast/land under the eye');
     assert.equal(RB.renderSeabedDive({...body,water:0},-1,-13500,sea),false);
-    // The standard view poses (orbit, 2.5 km horizon, 20 km flight, 150 m
-    // ground) never meet it, so their streaming frontier is the established
-    // one: test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/attribution/
-    // and test-results/finish-round-2026-10-04/P5-FRONTIER/.
     const own=readFileSync(RENDERER_SOURCE,'utf8');
-    assert.equal(own.split('||(seabedDive&&this.splitsBlockedByBytes>0)').length,2,'merge pressure gated');
-    assert.equal(own.split('(this.pending.size+(seabedDive?4:1))*PENDING_TILE_BYTES').length,2,'split reserve gated');
+    assert.equal(own.split('||(reallocateForNearGround&&this.splitsBlockedByBytes>0)').length,2,'merge pressure includes contact, low-flight and seabed support');
+    assert.equal(own.split('(this.pending.size+(reallocateForNearGround?4:1))*PENDING_TILE_BYTES').length,2,'split reserve follows near-ground support');
   });
 
   if(descent)test('open-ocean descent: seabed-distance selection draws fewer tiles than surface distance, and refines at the bottom',async()=>{

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
+import {loadTreeAssetFamily,type TreeAssetFamily} from '#tree-kit/v1/assets';
 
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(1);
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;document.body.append(renderer.domElement);

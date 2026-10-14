@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {calibrateTreeFoliageLodCutoffs,installTreeFoliageLodCutoff,sampleTreeFoliageTrilinearAlpha,treeFoliageLodCutoff,treeFoliageLodCutoffGLSL,
-  TREE_FOLIAGE_LOD_CUTOFF_VERSION,TREE_FOLIAGE_LOD_CUTOFF_STEP} from '../src/tree-foliage-cutoff.ts';
-import {FOREST_FAR_ATLAS_VERSION} from '../src/forest-far-atlas.ts';
+  TREE_FOLIAGE_LOD_CUTOFF_VERSION,TREE_FOLIAGE_LOD_CUTOFF_STEP} from '#tree-kit/v1/assets';
+import {FOREST_FAR_ATLAS_VERSION} from '#tree-kit/v1/impostors';
 import {loadRasterTree,rasterTree} from './helpers/tree-raster.mjs';
 import {loadFoliageMipChain,mipRasterArea} from './helpers/tree-mip-raster.mjs';
 

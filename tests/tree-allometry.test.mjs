@@ -4,17 +4,17 @@ import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
 import {generateBiosphere,biosphereAt} from '../src/biosphere-model.ts';
 import {forestTreeCatalogue} from '../src/forest-tree-catalogue.ts';
-import {treeStructuralVariant} from '../src/tree-species-recipe.ts';
-import {forestStructuralVariants,forestVariantEnvelope,forestVariantPoint,forestVariantTwist} from '../src/tree-structural-variant.ts';
-import {deriveVariantFamilyProxyBounds,evaluateFamilyProxyBounds} from '../src/tree-canopy-bounds.ts';
-import {ForestImpostors} from '../src/forest-impostor.ts';
-import {forestMaterial,forestDepthMaterial} from '../src/forest-material.ts';
-import {createLegacyTreeGeometry,LEGACY_TREE_TRUNK} from '../src/tree-shape.ts';
-import {treeVertexMeters} from '../src/tree-asset.ts';
+import {treeStructuralVariant} from '#tree-kit/v1/recipes';
+import {forestStructuralVariants,forestVariantEnvelope,forestVariantPoint,forestVariantTwist} from '#tree-kit/v1/presentation';
+import {deriveVariantFamilyProxyBounds,evaluateFamilyProxyBounds} from '#tree-kit/v1/presentation';
+import {ForestImpostors} from '#tree-kit/v1/impostors';
+import {forestMaterial,forestDepthMaterial} from '#tree-kit/v1/presentation';
+import {createLegacyTreeGeometry,LEGACY_TREE_TRUNK} from '#tree-kit/v1/presentation';
+import {treeVertexMeters} from '#tree-kit/v1/assets';
 import {forestTreeDimensions,forestFamilyBoundRadius,forestFamilyEnvelopeRadius,legacyTreeBoundSphere,packTreeAllometryParameter,
   packTreeAllometryRatios,quantizeTreeAllometryRatio,treeAllometryAtlasStretch,treeAllometryCardScale,treeAllometryCrownHalfWidthM,treeAllometryGLSL,treeAllometryLeafDepthScale,treeAllometryPoint,treeAllometryRadial,treeAllometryRatioFromCode,
   unpackTreeAllometryParameter,unpackTreeAllometryRatios,validateTreeAllometryReference,LEGACY_TREE_ALLOMETRY,TREE_ALLOMETRY_IDENTITY_CODE,
-  TREE_ALLOMETRY_CARD,TREE_ALLOMETRY_RATIO,TREE_ALLOMETRY_REASONS,TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE} from '../src/tree-allometry.ts';
+  TREE_ALLOMETRY_CARD,TREE_ALLOMETRY_RATIO,TREE_ALLOMETRY_REASONS,TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE} from '#tree-kit/v1/presentation';
 import {familyGeometries,familyReference} from './helpers/tree-allometry-profiles.mjs';
 
 const KINDS=['branching','spire'];
@@ -252,7 +252,7 @@ test('species allometry reuses one far atlas and one uniform set per family',asy
     assert.equal(f.uniforms.treeAtlasColour0.value,colour);assert.equal(f.familyAtlas('branching'),atlas);
   }finally{f.dispose();texture.dispose();}
   // Atlas members are captured once per family at the 16 m reference with authored proportions.
-  const source=await readFile(new URL('../src/tree-asset.ts',import.meta.url),'utf8');
+  const source=await readFile(new URL('../external/tree-kit/src/tree-asset.ts',import.meta.url),'utf8');
   assert.match(source,/for\(let i=0;i<count;i\+\+\)\{tree\.setXYZW\(i,1,0,1,1\);/);
   // Detailed cards use the same shared card scale from the measured family reference.
   assert.ok(source.includes('float allometryCard=treeAllometryCardScale(instanceTree.x*${TREE_REFERENCE_HEIGHT_M}.0,instanceTree.zw,atlasTreeAllometry);'));

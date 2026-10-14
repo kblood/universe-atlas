@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type {CreatureGenome,CreatureGait} from './fauna-runtime.ts';
 import {createFaunaMaterial} from './fauna-material.ts';
 import {eyeDetailWeight,gaitBlend,rangeWeight} from './fauna-handoff.ts';
-import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
+import {forestMeshBufferFootprint} from '#tree-kit/v1/metrics';
 import {FAUNA_SCREEN_HASH_GLSL,FAUNA_SCREEN_INTERVAL_GLSL,FAUNA_COVERAGE_VERSION,faunaCoverageEnd} from './fauna-coverage.ts';
 
 /** Animals drawn through the instanced anatomy per frame. Sized from the

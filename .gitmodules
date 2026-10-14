@@ -6,3 +6,10 @@
 	path = external/flora-kit
 	url = https://github.com/kblood/flora-kit.git
 	branch = main
+[submodule "external/tree-kit"]
+	path = external/tree-kit
+	url = https://github.com/kblood/tree-kit.git
+	branch = main
+[submodule "external/tree-kit"]
+	path = external/tree-kit
+	url = https://github.com/kblood/tree-kit.git

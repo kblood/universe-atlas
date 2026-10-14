@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
-import {alphaWeightedLinearRgbMean,deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,TREE_CANOPY_HEIGHT_RANGE_M,TREE_CANOPY_REFERENCE_HEIGHT_M,TREE_CANOPY_WIND_MAX_ANGLE_RAD} from '../src/tree-canopy-profile.ts';
+import {alphaWeightedLinearRgbMean,deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,TREE_CANOPY_HEIGHT_RANGE_M,TREE_CANOPY_REFERENCE_HEIGHT_M,TREE_CANOPY_WIND_MAX_ANGLE_RAD} from '#tree-kit/v1/presentation';
 
 function geometry(position,pivot,branch,wind){
   const g=new THREE.BufferGeometry();

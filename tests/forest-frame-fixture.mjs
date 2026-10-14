@@ -6,8 +6,9 @@
 // renderer's exact forest.update call over scripted poses at the perf
 // harness's living inland site (SITE_A, LETHRA-001 planet 1, harness date).
 import {mkdtemp,rm} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {join,resolve,dirname,basename} from 'node:path';
+import {join,resolve,dirname,basename,relative as relativePath} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {build} from 'esbuild';
@@ -29,9 +30,19 @@ export function gitSource(revision,path){
 export async function forestModule({prefix='atlas-forest-fixture-',sources={}}={}){
   const directory=await mkdtemp(join(tmpdir(),prefix)),output=join(directory,'forest.mjs');
   const replaced=new Map(Object.entries(sources).map(([path,contents])=>[resolve(root,path),contents]));
-  const plugins=replaced.size?[{name:'forest-revision',setup(b){
+  const kitSource=resolve(root,'external/tree-kit/src');
+  const plugins=[{name:'forest-source-and-kit-resolver',setup(b){
+    b.onResolve({filter:/^\.\//},args=>{
+      const requested=resolve(dirname(args.importer||root),args.path);
+      if(replaced.has(requested))return {path:requested};
+      if(!existsSync(requested)){
+        const relative=relativePath(resolve(root,'src'),requested);
+        if(relative!==null){const kitPath=resolve(kitSource,relative);if(existsSync(kitPath))return {path:kitPath};}
+      }
+      return undefined;
+    });
     b.onLoad({filter:/\.ts$/},async args=>{const contents=replaced.get(resolve(args.path));return contents===undefined?undefined:{contents,loader:'ts',resolveDir:dirname(resolve(args.path))};});
-  }}]:[];
+  }}];
   await build({bundle:true,platform:'node',format:'esm',outfile:output,logLevel:'silent',plugins,stdin:{resolveDir:root,sourcefile:'forest-fixture-entry.mjs',contents:`
     import * as THREE from 'three';
     export {THREE};
@@ -48,7 +59,7 @@ export async function forestModule({prefix='atlas-forest-fixture-',sources={}}={
     export {starLifecycle,planetLifecycle} from './src/stellar-evolution.ts';
     export {planetSnapshotAt} from './src/world-surface.ts';
     export {CURRENT_VERSIONS} from './src/time-nav.ts';
-    export {TREE_ALLOMETRY_VERSION} from './src/tree-allometry.ts';
+    export {TREE_ALLOMETRY_VERSION} from '#tree-kit/v1/presentation';
     export {SURFACE_SHADOW} from './src/surface-lighting.ts';
   `}});
   const module=await import(pathToFileURL(output).href);

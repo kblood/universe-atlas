@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {planetComposerWorldDefinition,planetComposerSourceIdentity, posePlanetComposer, type PlanetComposerDefinition} from '#creature-kit/planet';
 import {FaunaComposerRenderer, type FaunaComposerCandidate} from './fauna-composer-renderer.ts';
-import receipt from '../vendor/creature-kit/PACKAGE.json' with {type:'json'};
+import receipt from '../vendor/creature-kit/creature-kit-manifest.json' with {type:'json'};
 import {createFaunaComposerWorkerProvider} from './fauna-composer-worker-provider.ts';
 import {ComposerWorkerDiagnostics} from './fauna-composer-worker-diagnostics.ts';
 import type {CreatureGenome, FaunaHerdMember, FaunaMemberActivity} from './fauna-runtime.ts';

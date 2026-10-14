@@ -2,14 +2,14 @@ import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {createServer} from 'vite';
+import {forestTreeDimensions,TREE_ALLOMETRY_VERSION,TREE_ALLOMETRY_IDENTITY_CODE} from '#tree-kit/v1/presentation';
+import {unpackForestPresentation} from '#tree-kit/v1/instances';
+import {forestMeshBufferFootprint} from '#tree-kit/v1/metrics';
 
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
 const {PlanetForest}=await vite.ssrLoadModule('/src/planet-forest.ts');
 const {forestTreeCatalogue}=await vite.ssrLoadModule('/src/forest-tree-catalogue.ts');
 const {PlanetCanopy}=await vite.ssrLoadModule('/src/planet-canopy.ts');
-const {unpackForestPresentation}=await vite.ssrLoadModule('/src/forest-presentation.ts');
-const {forestMeshBufferFootprint}=await vite.ssrLoadModule('/src/forest-resource-accounting.ts');
-const {forestTreeDimensions,TREE_ALLOMETRY_VERSION,TREE_ALLOMETRY_IDENTITY_CODE}=await vite.ssrLoadModule('/src/tree-allometry.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
@@ -543,11 +543,11 @@ test('each family receives its own offline mip sidecar while sharing atmosphere 
  f.treeLoader=(a,b,options)=>{received.push(options);return original(a,b,options);};
  const inputs=bothFamilies(),oak={manifest:{family:'oak'},data:new ArrayBuffer(4)},pine={manifest:{family:'pine'},data:new ArrayBuffer(8)};
  inputs[0].foliageMipSidecar=oak;inputs[1].foliageMipSidecar=pine;
- const localAerial={fixture:true};
+ const attachLocalAerial=()=>{};
  try{
-  await f.loadTreeFamilies(inputs,{localAerial});
+  await f.loadTreeFamilies(inputs,{attachLocalAerial});
   assert.equal(received[0].foliageMipSidecar,oak);assert.equal(received[1].foliageMipSidecar,pine);
-  assert.ok(received.every(x=>x.localAerial===localAerial&&x.forestCoverage===true));
+  assert.ok(received.every(x=>x.attachLocalAerial===attachLocalAerial&&x.forestCoverage===true));
  }finally{f.dispose();}
 });
 

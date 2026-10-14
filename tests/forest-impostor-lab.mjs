@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {ForestImpostors} from '../src/forest-impostor.ts';
-import {createLegacyTreeGeometry} from '../src/tree-shape.ts';
+import {ForestImpostors} from '#tree-kit/v1/impostors';
+import {createLegacyTreeGeometry} from '#tree-kit/v1/presentation';
 
 const renderer=new THREE.WebGLRenderer({alpha:true,antialias:false,logarithmicDepthBuffer:true,preserveDrawingBuffer:true});
 renderer.setSize(512,512);renderer.setClearColor(0,0);renderer.outputColorSpace=THREE.LinearSRGBColorSpace;

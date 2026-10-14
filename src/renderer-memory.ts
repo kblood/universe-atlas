@@ -26,9 +26,12 @@ export function terrainBudgetForReservations(waterEnvironmentReserveBytes=WATER_
   if(!Number.isFinite(waterEnvironmentReserveBytes)||waterEnvironmentReserveBytes<0||waterEnvironmentReserveBytes>WATER_ENVIRONMENT_RESERVE_BYTES||!Number.isFinite(cloudAllocatedBytes)||cloudAllocatedBytes<0)throw new Error('Invalid terrain resource reservation');
   return TOTAL_BUDGET_BYTES-waterEnvironmentReserveBytes-LIFE_RESERVE_BYTES-ROCK_RESERVE_BYTES-GROUND_RESOURCE_BYTES-cloudAllocatedBytes;
 }
-// n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
-// map with the existing conservative 7/3 mip allocation.
-export const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3);
+// n=32: base geometry, doubled for CPU/GPU, plus a 130x130 RGBA map with
+// the conservative 7/3 mip allocation. Water tiles also own ocean vertices
+// and skirt copies; keep explicit headroom so the reservation stays above the
+// renderer's measured installed-patch accounting (390,510 B in the Maithea
+// pressure regression), including small future layout additions.
+export const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3)+32*1024;
 /** Terrain byte-pressure policy (docs/terrain-budget-2026-09-29.md).
  * - New tiles (a key with no resident copy) are admitted only below
  *   `budget - refreshReserveBytes(inFlight)`. The reserve is `inFlight`

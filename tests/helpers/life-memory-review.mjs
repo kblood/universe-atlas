@@ -1,5 +1,5 @@
 /** Test-only ownership receipt. Estimates typed storage, never driver VRAM. */
-import {forestMeshBufferFootprint} from '../../src/forest-resource-accounting.ts';
+import {forestMeshBufferFootprint} from '#tree-kit/v1/metrics';
 export function lifeMemoryReview({floraMeshes=[],faunaMeshes=[],faunaCachedGeometry=[],hostArrays=[],skeletons=[],forestAccounting,
   reportedFaunaBytes=0,lifeReserveBytes=0,coreAccountedBytes=0,coreReservedCombinedBytes,candidateTypedBytes=0}={}){
   const flora=forestMeshBufferFootprint(floraMeshes),fauna=forestMeshBufferFootprint(faunaMeshes,faunaCachedGeometry);

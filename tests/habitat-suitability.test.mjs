@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {generateBiosphere,biosphereAt,habitatMembership,profileFromPhysicalProperties} from '../src/biosphere-model.ts';
-import {bindTreeSpecies} from '../src/tree-species-recipe.ts';
+import {bindTreeSpecies} from '#tree-kit/v1/recipes';
 import {climateForcingFromParams,surfaceClimate,createClimateSample} from '../src/surface-climate.ts';
 import {
   HABITAT_SUITABILITY_VERSION,PROFILE_NOMINAL_TEMP_K,nicheSuitability,slopeDegToNiche01,rebaseTemperatureK,

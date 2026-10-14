@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {ForestAssetSource,validateForestBundle} from '../src/forest-asset-source.ts';
-import {prepareTreeLODPair} from '../src/tree-asset.ts';
-import {decodeTreeFoliageSidecar} from '../src/tree-foliage-sidecar.ts';
+import {prepareTreeLODPair} from '#tree-kit/v1/assets';
+import {decodeTreeFoliageSidecar} from '#tree-kit/v1/assets';
 const root=new URL('../public/assets/forest/desktop-v1/',import.meta.url);
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 test('packaged forest retains every declared byte and the upstream notice',async()=>{

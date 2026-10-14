@@ -1,11 +1,7 @@
-import {test,after} from 'node:test';
+import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {createServer} from 'vite';
-
-const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
-const {InstanceUpdateRanges}=await vite.ssrLoadModule('/src/instance-update-ranges.ts');
-after(()=>vite.close());
+import {InstanceUpdateRanges} from '#tree-kit/v1/instances';
 
 const attribute=(Type=Float32Array,itemSize=1,count=2048)=>new THREE.BufferAttribute(new Type(count*itemSize),itemSize);
 const cloneRanges=attr=>attr.updateRanges.map(range=>({...range}));
