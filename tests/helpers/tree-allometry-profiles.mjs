@@ -1,10 +1,10 @@
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
-import {deriveTreeCanopyMetadata} from '../../src/tree-canopy-profile.ts';
-import {forestStructuralVariants,forestVariantEnvelope} from '../../src/tree-structural-variant.ts';
-import {treeAllometryReference} from '../../src/tree-allometry.ts';
-import {FOREST_CARD_COMPENSATION} from '../../src/forest-tree-family-library.ts';
-import {treeLodCardScale} from '../../src/tree-asset.ts';
+import {deriveTreeCanopyMetadata} from '#tree-kit/v1/presentation';
+import {forestStructuralVariants,forestVariantEnvelope} from '#tree-kit/v1/presentation';
+import {treeAllometryReference} from '#tree-kit/v1/presentation';
+import {FOREST_CARD_COMPENSATION} from '#tree-kit/v1/instances';
+import {treeLodCardScale} from '#tree-kit/v1/assets';
 
 /** Packaged Oak/Pine GLB vertex sets as Three geometries (measurement only). */
 const FILES={branching:['oak-lod0','oak-lod1'],spire:['conifer-lod0','conifer-lod1']};

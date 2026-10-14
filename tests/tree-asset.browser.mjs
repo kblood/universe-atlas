@@ -32,8 +32,8 @@ try{
   if(typeof page.routeWebSocket==='function')await page.routeWebSocket('**/*',socket=>socket.close());
   await page.goto(new URL('tree-asset-lab.html',base).href,{waitUntil:'networkidle'});
   await page.waitForFunction(()=>!!window.__treeAssetLab,{timeout:30000});
-  await page.locator('#lod0-file').setInputFiles(lod0);
-  await page.locator('#lod1-file').setInputFiles(lod1);
+  await page.locator('#branch-lod0').setInputFiles(lod0);
+  await page.locator('#branch-lod1').setInputFiles(lod1);
   await page.locator('#load-assets').click();
   await page.waitForFunction(()=>window.__treeAssetLab?.diagnostics().ready&&!window.__treeAssetLab.diagnostics().loading,{timeout:60000});
   await waitFrames(8);
@@ -106,7 +106,7 @@ try{
 
   const failedLoadRollback=await page.evaluate(async()=>{
     const lab=window.__treeAssetLab,old=lab.family,scene=lab.scene,original=scene.add;
-    const inputs=[document.querySelector('#lod0-file').files[0],document.querySelector('#lod1-file').files[0]],buffers=await Promise.all(inputs.map(file=>file.arrayBuffer()));
+    const inputs=[document.querySelector('#branch-lod0').files[0],document.querySelector('#branch-lod1').files[0]],buffers=await Promise.all(inputs.map(file=>file.arrayBuffer()));
     scene.add=function(){throw new Error('injected scene attachment failure');};let rejected=false;
     try{await lab.load(buffers);}catch{rejected=true;}finally{scene.add=original;}
     return {rejected,oldFamilyPreserved:lab.family===old,ready:lab.diagnostics().ready,loading:lab.diagnostics().loading};
@@ -125,7 +125,7 @@ try{
 
   const successfulReload=await page.evaluate(async()=>{
     const lab=window.__treeAssetLab,old=lab.family,renderer=lab.renderer;
-    const inputs=[document.querySelector('#lod0-file').files[0],document.querySelector('#lod1-file').files[0]],buffers=await Promise.all(inputs.map(file=>file.arrayBuffer()));
+    const inputs=[document.querySelector('#branch-lod0').files[0],document.querySelector('#branch-lod1').files[0]],buffers=await Promise.all(inputs.map(file=>file.arrayBuffer()));
     await lab.load(buffers);await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     return {replaced:lab.family!==old,ready:lab.diagnostics().ready,textureCount:lab.diagnostics().textures,memory:{textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}};
   });

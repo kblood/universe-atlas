@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
-import {deriveTreeCanopyMetadata} from '../src/tree-canopy-profile.ts';
+import {deriveTreeCanopyMetadata} from '#tree-kit/v1/presentation';
 import {FOREST_VARIANT_COUNT,FOREST_VARIANT_CROWN_RAMP,FOREST_VARIANT_TWIST_FLOOR,FOREST_VARIANT_LIMITS,FOREST_VARIANT_VERSION,forestStructuralVariant,forestStructuralVariants,forestVariantClumpHash,
-  forestVariantEnvelope,forestVariantGLSL,forestVariantPoint,forestVariantRadiusBound,forestVariantRemovesLeaf,forestVariantTwist,forestVariantUniformData} from '../src/tree-structural-variant.ts';
-import {treeLodCardScale} from '../src/tree-asset.ts';
-import {FOREST_CARD_COMPENSATION} from '../src/forest-tree-family-library.ts';
-import {treeInstanceAppearance} from '../src/tree-species-recipe.ts';
+  forestVariantEnvelope,forestVariantGLSL,forestVariantPoint,forestVariantRadiusBound,forestVariantRemovesLeaf,forestVariantTwist,forestVariantUniformData} from '#tree-kit/v1/presentation';
+import {treeLodCardScale} from '#tree-kit/v1/assets';
+import {FOREST_CARD_COMPENSATION} from '#tree-kit/v1/instances';
+import {treeInstanceAppearance} from '#tree-kit/v1/recipes';
 
 function readFloatAttribute(doc,binary,index){
   const a=doc.accessors[index],v=doc.bufferViews[a.bufferView],components={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type];

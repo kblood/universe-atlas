@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {SurfaceLighting,SURFACE_SHADOW,SURFACE_GROUND_ALBEDO} from '../src/surface-lighting.ts';
 import {terrainDepthMaterial,patchMorphHeader,patchMorphVertex,boundMorphedTerrain} from '../src/terrain-shadow.ts';
-import {forestMaterial,forestDepthMaterial} from '../src/forest-material.ts';
+import {forestMaterial,forestDepthMaterial} from '#tree-kit/v1/presentation';
 
 const close=(a,b,tolerance=1e-7)=>assert.ok(Math.abs(a-b)<tolerance,`${a} != ${b}`);
 function fixture(unit=1,offset=new THREE.Vector3()){

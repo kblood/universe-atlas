@@ -4,10 +4,10 @@ import {existsSync} from 'node:fs';
 import {readFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import * as THREE from 'three';
-import {prepareTreeLODPair,treeVertexMeters,treeWindPhase,TREE_REFERENCE_HEIGHT_M,TREE_WIND_PERIOD_NS} from '../src/tree-asset.ts';
+import {prepareTreeLODPair,treeVertexMeters,treeWindPhase,TREE_REFERENCE_HEIGHT_M,TREE_WIND_PERIOD_NS} from '#tree-kit/v1/assets';
 import {UNIVERSE_END_NS} from '../src/world-time.ts';
-import {TreeInstancePasses,TreeInstanceRows} from '../src/tree-instance-passes.ts';
-import {CompactInstanceSlots} from '../src/compact-instance-slots.ts';
+import {TreeInstancePasses,TreeInstanceRows} from '#tree-kit/v1/instances';
+import {CompactInstanceSlots} from '#tree-kit/v1/instances';
 
 test('tree camera prefix and full shadow union preserve callbacks, materials and zero-camera casters',()=>{
   const meshes=[0,1].map(()=>new THREE.InstancedMesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial(),8));

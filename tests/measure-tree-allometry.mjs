@@ -5,8 +5,8 @@
 import {writeFile} from 'node:fs/promises';
 import {generateBiosphere,biosphereAt} from '../src/biosphere-model.ts';
 import {forestTreeCatalogue} from '../src/forest-tree-catalogue.ts';
-import {treeStructuralVariant} from '../src/tree-species-recipe.ts';
-import {forestTreeDimensions,TREE_ALLOMETRY_VERSION} from '../src/tree-allometry.ts';
+import {treeStructuralVariant} from '#tree-kit/v1/recipes';
+import {forestTreeDimensions,TREE_ALLOMETRY_VERSION} from '#tree-kit/v1/presentation';
 import {familyReference} from './helpers/tree-allometry-profiles.mjs';
 
 const KINDS=['branching','spire'];

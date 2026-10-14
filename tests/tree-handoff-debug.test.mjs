@@ -2,10 +2,10 @@ import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {createServer} from 'vite';
+import {ForestTreeFamilyLibrary} from '#tree-kit/v1/instances';
 
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
 const {PlanetForest}=await vite.ssrLoadModule('/src/planet-forest.ts');
-const {ForestTreeFamilyLibrary}=await vite.ssrLoadModule('/src/forest-tree-family-library.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());

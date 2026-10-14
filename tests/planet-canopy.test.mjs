@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {PlanetCanopy,forestCellPatchKey} from '../src/planet-canopy.ts';
-import {LEGACY_TREE_BOUND} from '../src/tree-shape.ts';
+import {LEGACY_TREE_BOUND} from '#tree-kit/v1/presentation';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {PLANET_DETAIL} from '../src/planet-detail.ts';
 
@@ -10,7 +10,7 @@ const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).pl
 const ground=[1,0,0],eye=new THREE.Vector3(1,0,0),nearOrigin=new THREE.Vector3();
 const contextA='a'.repeat(64),contextB='b'.repeat(64);
 const familyA='f'.repeat(64),familyB='c'.repeat(64);
-import {packForestPresentation} from '../src/forest-presentation.ts';
+import {packForestPresentation} from '#tree-kit/v1/instances';
 
 class MockWorker{
   static instances=[];

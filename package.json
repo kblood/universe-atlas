@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "npm run prepare:creature-kit && npm run prepare:flora-kit",
+    "prepare": "npm run prepare:creature-kit && npm run prepare:flora-kit && npm run check:tree-kit",
     "prepare:creature-kit": "node scripts/sync-creature-kit.mjs --write --kit external/creature-kit",
     "update:creature-kit": "git submodule update --init --remote external/creature-kit && npm run prepare:creature-kit",
     "check:creature-kit": "node scripts/sync-creature-kit.mjs --kit external/creature-kit",
@@ -55,7 +55,10 @@
     "test:coat-allocation": "node tests/helpers/test-slot.mjs -- node --expose-gc tests/fauna-coat-allocation.bench.mjs",
     "prepare:flora-kit": "node scripts/check-flora-kit.mjs --prepare",
     "update:flora-kit": "git submodule update --init --remote external/flora-kit && npm run prepare:flora-kit",
-    "check:flora-kit": "node scripts/check-flora-kit.mjs"
+    "check:flora-kit": "node scripts/check-flora-kit.mjs",
+    "prepare:tree-kit": "node scripts/check-tree-kit.mjs --prepare",
+    "update:tree-kit": "git submodule update --init --remote external/tree-kit && npm run prepare:tree-kit",
+    "check:tree-kit": "node scripts/check-tree-kit.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.20.0",
@@ -76,11 +79,12 @@
     },
     "#flora-kit/v1/field": "./external/flora-kit/src/flora-field.ts",
     "#flora-kit/v1/culling": "./external/flora-kit/src/flora-culling.ts",
-    "#tree-kit/v1/assets": "./src/tree-kit-v1/assets.ts",
-    "#tree-kit/v1/instances": "./src/tree-kit-v1/instances.ts",
-    "#tree-kit/v1/impostors": "./src/tree-kit-v1/impostors.ts",
-    "#tree-kit/v1/metrics": "./src/tree-kit-v1/metrics.ts",
-    "#tree-kit/v1/recipes": "./src/tree-kit-v1/recipes.ts",
-    "#tree-kit/v1/presentation": "./src/tree-kit-v1/presentation.ts"
+    "#tree-kit/v1/assets": "./external/tree-kit/src/tree-kit-v1/assets.ts",
+    "#tree-kit/v1/instances": "./external/tree-kit/src/tree-kit-v1/instances.ts",
+    "#tree-kit/v1/impostors": "./external/tree-kit/src/tree-kit-v1/impostors.ts",
+    "#tree-kit/v1/metrics": "./external/tree-kit/src/tree-kit-v1/metrics.ts",
+    "#tree-kit/v1/recipes": "./external/tree-kit/src/tree-kit-v1/recipes.ts",
+    "#tree-kit/v1/presentation": "./external/tree-kit/src/tree-kit-v1/presentation.ts",
+    "#tree-kit/lab": "./external/tree-kit/src/tree-asset-lab.ts"
   }
 }

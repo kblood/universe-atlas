@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {TreeBarkTexturePool} from '../src/tree-bark-texture-pool.ts';
-import {ForestTreeFamilyLibrary} from '../src/forest-tree-family-library.ts';
-import {forestTextureFootprint} from '../src/forest-resource-accounting.ts';
-import {prepareTreeLODPair} from '../src/tree-asset.ts';
+import {TreeBarkTexturePool} from '#tree-kit/v1/assets';
+import {ForestTreeFamilyLibrary} from '#tree-kit/v1/instances';
+import {forestTextureFootprint} from '#tree-kit/v1/metrics';
+import {prepareTreeLODPair} from '#tree-kit/v1/assets';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 // Compact encoded-content identity fixture; no image decoding or GPU work.

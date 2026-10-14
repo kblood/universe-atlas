@@ -52,25 +52,27 @@ habitat/terrain/water eligibility, residency, world-time conversion and
 planetary canopy integration in Atlas. Pass resolved traits, instance rows,
 lighting and wind inputs across a versioned API.
 
-Extraction preparation has started: `tree-species-recipe.ts` now consumes a
-Kit-owned `TreeSpeciesInput` DTO instead of importing Atlas `Species`, and
-`tree-asset.ts` resolves its fixed BigInt wind period without importing Atlas
-`world-time.ts`. The Atlas catalogue remains the adapter that supplies dated,
-eligible species. The family kind is now owned by that recipe contract, and
-allometry and structural variants no longer import their kind type from the
-Atlas family library. Atlas-facing local aerial perspective is injected into
-tree asset loading as a callback instead of imported by the tree module.
+Tree Kit is now a public code-only repository at
+[`kblood/tree-kit`](https://github.com/kblood/tree-kit), pinned by Atlas as the
+`external/tree-kit` Git submodule. The current pin is `574bcd98502ad1e2ef3c3eb48f916d023dfcef18`
+(package version `0.1.0`). Its versioned v1 API owns recipes, allometry,
+structural variants, family assets and instances, bark/resource sharing,
+foliage, wind and coverage shaders, LOD/captured far impostors, and the Tree
+Kit Lab. Atlas now imports the submodule API, routes the Lab to the Kit-owned
+page, and retains only its world/catalogue/atmosphere adapters and Atlas-authored
+runtime assets. The 40 duplicate TypeScript implementation files have been
+removed from Atlas. Atlas GLBs and mip payloads remain Atlas-owned because the
+rights for Atlas-authored material and foliage content are unresolved; they
+were not copied into the public Kit. `scripts/check-tree-kit.mjs` verifies the
+exact clean pin, API paths, Lab and provenance.
 
-An API facade now defines version `1.0.0` at the `recipes`, `presentation`,
-`assets`, `instances` and `impostors` subpaths. Atlas runtime callers use those
-package import paths for recipes, allometry, asset loading, family ownership
-and captured far views. The current facade points to source files still in
-Atlas; the next extraction step moves the implementation into the standalone
-Tree Kit repository and leaves Atlas only the world/catalogue/atmosphere
-adapters. Tests check deterministic DTO behavior, subpath availability and the
-absence of Atlas catalogue, planet, habitat and clock dependencies at the
-current facade boundary. The tree rendering modules are not yet moved into a
-public submodule.
+The extraction preserves the boundary prepared earlier: `tree-species-recipe.ts`
+consumes Kit-owned `TreeSpeciesInput`; `tree-asset.ts` resolves its fixed BigInt
+wind period without Atlas `world-time.ts`; local aerial perspective is injected
+as a callback. Atlas supplies the dated eligible species and retains
+`PlanetForest` identity, habitat/terrain/water eligibility, residency, time,
+and planetary canopy integration. Kit tests verify deterministic DTO behavior
+and that its public entrypoints have no transitive dependency on Atlas adapters.
 
 Before extraction, record representative CPU time, allocation/heap growth,
 instance counts, draw calls, GPU memory and visual coverage across near, middle
@@ -96,6 +98,16 @@ selection; it does not measure tree-only GPU cost, asset rendering, draw calls,
 uploads or GPU memory. Preserve the raw scenario and environment when comparing
 later runs.
 
+Tree Kit's standalone suite passes 81 tests and both its TypeScript and Lab
+builds pass. After removing the Atlas source copies, 177 focused Atlas tests
+passed (174 pass, 3 skipped), including the Lab/API, tree-family, allometry,
+captured-atlas, resource, foliage and Windows test-runner contracts. The Atlas
+production build also passes and emits the Kit Lab at
+`external/tree-kit/tree-asset-lab.html`; the legacy root URL redirects there.
+The broad `test:affected` run also reaches unrelated active terrain-colour
+findings recorded elsewhere in this roadmap, so the full Atlas regression gate
+is still open.
+
 The opt-in integrated fixture now lives in
 `tests/tree-runtime-benchmark.browser.mjs`, using the fixed grounded pose in
 `tests/fixtures/tree-runtime-benchmark-pose.json`. It checks that near, middle
@@ -107,6 +119,19 @@ interactions, scheduled (not driver-observed) upload bytes, global
 passed static validation so far; no integrated browser/GPU capture is counted
 as performance evidence yet. Run it only on a quiet host and retain its report
 and screenshots before selecting a runtime optimization.
+
+The Kit Lab now exercises mixed LOD0/LOD1 populations and captures/displays far
+family atlases through the same production library. The 2026-10-14 isolated
+RTX 5090 capture confirms existing LOD1 assets reduce triangles by 64.8%/73.6%
+and GPU p50 by 59.2%/59.8% for branching/spire families at 192 instances. This
+is evidence for the existing LOD optimization, not a new before/after Kit win.
+The earlier bark texture pool recovers 19,573,416 estimated retained bytes,
+but it also predates the Kit and must not be recounted as new work. The next
+Tree Kit performance gate is a quiet-host mixed-distance Atlas capture with
+per-tier draw/triangle attribution and GPU timing, followed by measured load,
+upload, and memory analysis. Implement and document an additional optimization
+only when that evidence identifies a safe bottleneck; keep Tree Kit active until
+the audit and runtime check are complete.
 
 `tests/tree-asset.browser.mjs` already profiles isolated LOD0/LOD1 for each
 family, but its fixed population does not mix distance bands, its counters

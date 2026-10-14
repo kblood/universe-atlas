@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {deflateSync} from 'node:zlib';
-import {prepareTreeLODPair} from '../../src/tree-asset.ts';
-import {forestVariantPoint,forestVariantRemovesLeaf,forestVariantTwist} from '../../src/tree-structural-variant.ts';
+import {prepareTreeLODPair} from '#tree-kit/v1/assets';
+import {forestVariantPoint,forestVariantRemovesLeaf,forestVariantTwist} from '#tree-kit/v1/presentation';
 import {decodePngRgba} from './png-rgba.mjs';
 
 /** CPU reference renderer for the packaged Oak/Pine GLBs. Orthographic, rest

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {ShaderLib} from 'three';
-import {adaptImpostorShader,auditImpostorShader,liveGlsl} from '../src/tree-impostor-reference-shader.ts';
+import {adaptImpostorShader,auditImpostorShader,liveGlsl} from '#tree-kit/v1/impostors';
 
 const appBundlePath=new URL('../src/vendor/three-ez-impostor/impostor-reference.js',import.meta.url);
 const appManifestPath=new URL('../src/vendor/three-ez-impostor/reference-manifest.json',import.meta.url);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {forestFoliageLobeCosine,forestFoliageLobeGLSL,installForestFoliageLobe,FOREST_FOLIAGE_LOBE_EXPONENT} from '../src/forest-foliage-lobe.ts';
+import {forestFoliageLobeCosine,forestFoliageLobeGLSL,installForestFoliageLobe,FOREST_FOLIAGE_LOBE_EXPONENT} from '#tree-kit/v1/presentation';
 import {loadRasterTree} from './helpers/tree-raster.mjs';
 import {normalRaster} from './helpers/tree-mip-raster.mjs';
 
