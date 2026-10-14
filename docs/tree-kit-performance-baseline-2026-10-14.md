@@ -95,3 +95,27 @@ from the pinned Kit commit and removes that module after the run. Kit tests
 cover compaction/remapping and unsafe-layout fallback. The separate quiet-host
 mixed-distance Atlas GPU capture remains required for the Tree Kit runtime
 gate.
+
+## Exact LOD image equality cost
+
+`prepareTreeLODPair` must compare the four embedded LOD PNG views byte-for-byte
+before sharing LOD0 textures with LOD1. The original implementation used
+`Uint8Array.some` with a callback for each compared byte. A CPU-only benchmark
+of the actual image views (`tests/tree-image-compare.bench.mjs`) ran nine
+alternating pairs on Windows 11, Ryzen 9 9950X3D and Node 24.7.0. The indexed
+equality loop retained exact byte semantics and reduced comparison p50 from
+8.62 to 0.92 ms for oak and 14.04 to 1.47 ms for conifer. All paired samples
+favored the indexed loop. The same host was contended, so these are local
+paired CPU results, not cross-device guarantees.
+
+The production preparation benchmark then ran seven alternating pairs per
+family against baseline Tree Kit `f778802`. Oak preparation p50/p95 changed
+from 9.64/10.24 ms to 1.07/1.43 ms; conifer changed from 14.36/14.53 ms to
+1.54/1.82 ms. Every paired candidate sample was faster. Source-image mismatch
+checks at the first, middle and last byte and unequal image lengths remain
+rejected; the Kit suite passes those tests and all compaction/fallback cases.
+This is a CPU preparation improvement only; it does not measure frame time,
+GPU cost, or the integrated Atlas near/middle/far runtime gate. Raw comparison
+and preparation reports are retained locally under
+`test-results/tree-image-compare-2026-10-14/` and
+`test-results/tree-instance-api-image-loop-{branching,spire}-2026-10-14/`.

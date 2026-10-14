@@ -55,6 +55,14 @@ case. Gate 0 is green on Windows and Linux: GitHub Actions run `38487153080` at
 workflow also passed recursive kit checks and the Atlas build before the suite.
 Tree Kit work now proceeds against that validated baseline.
 
+The full recursive-kit, production-build and Atlas test workflow passed again
+after the Tree Kit pin and performance-report updates: run `38502759693` at
+Atlas commit `cfae98d3e91dff125ea7f55634824680e01b0d15` passed all 2,015 tests
+(1,995 pass, 16 skipped, four explicit TODOs, zero failures). This confirms the
+exact Tree Kit `f7788026f0ab4663483d090b2857d1e6f29c62cd` submodule pin and the
+Atlas test runner on Linux; the separate full Windows run remains the evidence
+for the Windows command-length fix.
+
 ## 1. Tree Kit
 
 Extract the actual Atlas runtime tree presentation: tree asset families,
@@ -68,8 +76,8 @@ lighting and wind inputs across a versioned API.
 
 Tree Kit is now a public code-only repository at
 [`kblood/tree-kit`](https://github.com/kblood/tree-kit), pinned by Atlas as the
-`external/tree-kit` Git submodule. The current pin is `f7788026f0ab4663483d090b2857d1e6f29c62cd`
-(package version `0.1.1`). Its versioned v1 API owns recipes, allometry,
+`external/tree-kit` Git submodule. The current pin is `4a05bacd960bbb6dc9e5f77201c8294e486cdd86`
+(package version `0.1.2`). Its versioned v1 API owns recipes, allometry,
 structural variants, family assets and instances, bark/resource sharing,
 foliage, wind and coverage shaders, LOD/captured far impostors, and the Tree
 Kit Lab. Atlas now imports the submodule API, routes the Lab to the Kit-owned

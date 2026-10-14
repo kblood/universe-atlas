@@ -9,7 +9,7 @@ const fail=message=>{throw new Error(message);};
 try{
   if(!existsSync(resolve(kit,'package.json')))fail('Tree Kit is missing; clone Atlas with --recurse-submodules or run git submodule update --init external/tree-kit');
   const pkg=JSON.parse(readFileSync(resolve(kit,'package.json'),'utf8'));
-  if(pkg.name!=='tree-kit'||pkg.version!=='0.1.1'||pkg.license!=='UNLICENSED')fail('Unsupported Tree Kit package; review its v1 API and provenance before changing the version');
+  if(pkg.name!=='tree-kit'||pkg.version!=='0.1.2'||pkg.license!=='UNLICENSED')fail('Unsupported Tree Kit package; review its v1 API and provenance before changing the version');
   const commit=git(['rev-parse','HEAD'],kit),indexed=git(['ls-files','--stage','--','external/tree-kit']);
   const pin=indexed.match(/^160000 ([a-f0-9]{40}) 0\s/);
   if(!pin)fail('external/tree-kit must be a Git submodule in the Atlas index');
