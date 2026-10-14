@@ -64,3 +64,34 @@ node tests/tree-asset.browser.mjs
 For spire, use `public/assets/forest/desktop-v1/spire`,
 `conifer-lod0.glb`, `conifer-lod1.glb`, and a distinct results directory. The
 browser runner acquires the shared GPU lock before launch.
+
+## Texture-free LOD1 parser storage candidate
+
+`prepareTreeLODPair` creates a parser-only GLB for LOD1 because LOD0 owns the
+shared decoded textures. Before the change, that temporary GLB retained the
+entire LOD1 binary chunk, including its unused embedded PNG views. The Kit now
+checks whether every image view is an embedded, zero-padded suffix after all
+geometry views, verifies that no surviving glTF reference targets a removed
+view, remaps remaining view references, and copies only the aligned geometry
+prefix. Unusual or interleaved layouts fall back to the original full binary.
+The source GLBs and LOD0 textures are unchanged.
+
+The same headless Chromium session compared the pinned Kit baseline module and
+the candidate module over seven alternating baseline/candidate pairs per
+family on identical shipped GLBs. The host was Windows 11, Ryzen 9 9950X3D,
+Node 24.7.0; this CPU-only test did not use a renderer or GPU. LOD1 parser
+binary size changed from 2,599,120 to 641,036 bytes for branching oak (saves
+1,958,084 bytes) and from 3,300,776 to 393,416 bytes for spire conifer (saves
+2,907,360 bytes). Preparation CPU p50 was 9.88 ms baseline / 10.00 ms
+candidate for oak and 14.41 / 14.26 ms for conifer. The paired CPU timings
+overlap and do not establish a repeatable speedup. The supported claim is the
+smaller temporary parser binary and copy, not a frame-time or GPU-memory gain.
+
+The raw paired reports are retained locally (ignored by Git) under
+`test-results/tree-instance-api-paired-branching-2026-10-14/` and
+`test-results/tree-instance-api-paired-spire-2026-10-14/`. The runner is
+`tests/tree-instance-api.bench.mjs`; it uses a temporary baseline source module
+from the pinned Kit commit and removes that module after the run. Kit tests
+cover compaction/remapping and unsafe-layout fallback. The separate quiet-host
+mixed-distance Atlas GPU capture remains required for the Tree Kit runtime
+gate.

@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Tree Kit instance API benchmark</title>
+<script type="module">
+  import * as THREE from '/node_modules/three/build/three.module.js';
+  import { loadTreeAssetFamily, prepareTreeLODPair } from '/external/tree-kit/src/tree-asset.ts';
+
+  window.__treeInstanceBenchReady = true;
+  let pairBuffers;
+  async function getPairBuffers({ lod0Url, lod1Url }) {
+    if (!pairBuffers) pairBuffers = await Promise.all([lod0Url, lod1Url].map(async url => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Could not load ${url}: ${response.status}`);
+      return response.arrayBuffer();
+    }));
+    return pairBuffers;
+  }
+  function parseGLB(buffer) {
+    const view = new DataView(buffer);
+    let offset = 12, json;
+    while (offset < buffer.byteLength) {
+      const length = view.getUint32(offset, true), type = view.getUint32(offset + 4, true);
+      if (type === 0x4e4f534a) json = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, offset + 8, length)));
+      offset += 8 + length;
+    }
+    return json;
+  }
+  window.__measureTreePreparationVariant = async ({ lod0Url, lod1Url, moduleUrl }) => {
+    const [lod0, lod1] = await getPairBuffers({ lod0Url, lod1Url });
+    const source = parseGLB(lod1), imageViews = new Set(source.images.map(image => image.bufferView));
+    const geometryEnd = Math.max(...source.bufferViews.flatMap((bufferView, index) => imageViews.has(index)
+      ? [] : [(bufferView.byteOffset ?? 0) + bufferView.byteLength]));
+    const { prepareTreeLODPair } = await import(moduleUrl);
+    const start = performance.now();
+    const prepared = prepareTreeLODPair(lod0, lod1);
+    const elapsedMs = performance.now() - start;
+    const parserJson = parseGLB(prepared.lod1GeometryBuffer);
+    return { elapsedMs, sourceBinaryBytes: source.buffers[0].byteLength,
+      parserBinaryBytes: parserJson.buffers[0].byteLength,
+      parserGlbBytes: prepared.lod1GeometryBuffer.byteLength,
+      imageBytes: prepared.embeddedTextureBytes, geometryEndBytes: geometryEnd,
+      removableTrailingBytes: source.buffers[0].byteLength - geometryEnd };
+  };
+  window.__measureTreePreparation = ({ lod0Url, lod1Url, moduleUrl = '/external/tree-kit/src/tree-asset.ts' }) =>
+    window.__measureTreePreparationVariant({ lod0Url, lod1Url, moduleUrl });
+  window.__loadTreeInstanceBench = async ({ lod0Url, lod1Url, population }) => {
+    const [lod0, lod1] = await getPairBuffers({ lod0Url, lod1Url });
+    const family = await loadTreeAssetFamily(lod0, lod1);
+    const batch = family.createBatch(0, population);
+    const matrices = Array.from({ length: population }, (_, i) =>
+      new THREE.Matrix4().makeRotationY((i % 31) * 0.11).setPosition(i * 0.25, 0, i % 13));
+    const shifted = matrices.map(matrix => matrix.clone().setPosition(
+      matrix.elements[12] + 0.03125, matrix.elements[13], matrix.elements[14]));
+    for (let i = 0; i < population; i++) batch.setInstance(i, matrices[i], 16 + (i % 9), i * 0.013);
+    batch.setCount(population);
+
+    const run = ({ mode, operations }) => {
+      for (let i = 0; i < operations; i++) {
+        const slot = i % population;
+        const changed = mode === 'changing' && ((Math.floor(i / population) + slot) & 1) === 1;
+        batch.setInstance(slot, changed ? shifted[slot] : matrices[slot],
+          16 + (slot % 9), slot * 0.013 + (changed ? 0.25 : 0));
+      }
+      return { mode, operations };
+    };
+    const timed = ({ mode, operations }) => {
+      const start = performance.now();
+      run({ mode, operations });
+      return { mode, operations, elapsedMs: performance.now() - start };
+    };
+    const dispose = () => { batch.dispose(); family.dispose(); };
+    return { population, run, timed, dispose };
+  };
+</script>

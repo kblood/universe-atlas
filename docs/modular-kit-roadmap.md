@@ -4,6 +4,20 @@ This roadmap tracks the next Universe Atlas extractions after Creature Kit and
 Flora Kit. Complete each kit, its performance work, Atlas integration and
 release validation before starting the next one.
 
+## Performance completion gate for every kit
+
+Each kit must receive a source-level performance audit before its phase closes.
+Record repeatable baselines for representative workloads, identify the actual
+cost centers, and implement the safe improvements supported by those
+measurements. For every implemented change, report paired before/after results,
+the hardware/runtime and workload, and correctness or visual parity checks.
+Where a candidate does not show a repeatable benefit or risks behavior,
+quality, or memory regressions, record the result and reason for deferring it;
+do not claim it as an optimization. Performance work must cover the Kit and
+its Atlas integration boundary, while keeping Atlas-only scheduling,
+residency, and scene costs separately attributed. Do not advance to the next
+kit until this review, implementation, and its gates are complete.
+
 ## Gate 0: reliable validation
 
 The full Atlas CI run at commit `580197e` failed during `npm test`: Vite/esbuild
@@ -54,8 +68,8 @@ lighting and wind inputs across a versioned API.
 
 Tree Kit is now a public code-only repository at
 [`kblood/tree-kit`](https://github.com/kblood/tree-kit), pinned by Atlas as the
-`external/tree-kit` Git submodule. The current pin is `574bcd98502ad1e2ef3c3eb48f916d023dfcef18`
-(package version `0.1.0`). Its versioned v1 API owns recipes, allometry,
+`external/tree-kit` Git submodule. The current pin is `f7788026f0ab4663483d090b2857d1e6f29c62cd`
+(package version `0.1.1`). Its versioned v1 API owns recipes, allometry,
 structural variants, family assets and instances, bark/resource sharing,
 foliage, wind and coverage shaders, LOD/captured far impostors, and the Tree
 Kit Lab. Atlas now imports the submodule API, routes the Lab to the Kit-owned
@@ -200,6 +214,15 @@ climate/biome work before trying typed-array construction, invariant hoisting,
 or bounded tile-local reuse. Keep renderer worker scheduling, caches and
 residency in Atlas.
 
+The first source audit narrows the tile candidate: `planet-tiles.ts` uses
+growable JavaScript arrays before producing typed buffers, but positions and
+parents are reread for morph bounds and skirts. Early Float32 writes would
+change numeric results; retain double-precision intermediates and compare the
+final buffers byte-for-byte. Also profile per-point/vector/skirt allocations,
+terrain-versus-biome climate calls (their sampled heights can differ), and the
+existing bounded mountain cache before changing them. Do not enlarge caches
+without a measured memory ceiling and saved-work result.
+
 The active reusable core is in `terrain.ts`, `planet-tiles.ts` (pure geometry
 builder only), `surface-climate.ts`, `surface-biomes.ts`, geophysics, landform,
 mountain and LOD modules. Expose versioned `/terrain`, `/climate`, `/biomes`,
@@ -257,6 +280,17 @@ rates, allocation/heap growth and memory across seek-heavy and multi-planet
 scenarios. Implement improvements only against measured costs; preserve
 species, lineage, genome and dated-output parity, extinction/existence gates,
 and visit-order/date-seek independence.
+
+The first source audit identifies the advancing-frame handoff as the primary
+candidate: the exact-timestamp Atlas cache misses as `Ns` advances, then
+rebuilds same-integer-Myr consumer views that can be discarded by the later
+LifeGate comparison. Measure this case before memoizing. `biosphereAt` results
+are mutable, so a shared dated-result cache needs mutation-safety tests.
+`biosphereHistoryCache` holds 64 worlds but does not refresh hit order; measure
+multi-world retention and eviction before changing its FIFO behavior. Keep
+generation, date-boundary semantics, Creature Kit genomes, and Atlas lifecycle
+and environment gates unchanged unless a paired benchmark justifies a safe
+optimization.
 
 ## Per-kit release gate
 
