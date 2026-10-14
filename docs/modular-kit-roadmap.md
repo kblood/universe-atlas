@@ -76,8 +76,9 @@ lighting and wind inputs across a versioned API.
 
 Tree Kit is now a public code-only repository at
 [`kblood/tree-kit`](https://github.com/kblood/tree-kit), pinned by Atlas as the
-`external/tree-kit` Git submodule. The current pin is `4a05bacd960bbb6dc9e5f77201c8294e486cdd86`
-(package version `0.1.2`). Its versioned v1 API owns recipes, allometry,
+`external/tree-kit` Git submodule. The current pin is
+`669f1e5cf91d2fea253646d8cf4d2d38c1b043d4` (package version `0.1.2`). Its
+versioned v1 API owns recipes, allometry,
 structural variants, family assets and instances, bark/resource sharing,
 foliage, wind and coverage shaders, LOD/captured far impostors, and the Tree
 Kit Lab. Atlas now imports the submodule API, routes the Lab to the Kit-owned
@@ -120,7 +121,7 @@ selection; it does not measure tree-only GPU cost, asset rendering, draw calls,
 uploads or GPU memory. Preserve the raw scenario and environment when comparing
 later runs.
 
-Tree Kit's standalone suite passes 86 tests and both its TypeScript and Lab
+Tree Kit's standalone suite passes 110 tests and both its TypeScript and Lab
 builds pass. After removing the Atlas source copies, 177 focused Atlas tests
 passed (174 pass, 3 skipped), including the Lab/API, tree-family, allometry,
 captured-atlas, resource, foliage and Windows test-runner contracts. The Atlas
@@ -181,6 +182,17 @@ per-tier draw/triangle attribution and GPU timing, followed by measured load,
 upload, and memory analysis. Implement and document an additional optimization
 only when that evidence identifies a safe bottleneck; keep Tree Kit active until
 the audit and runtime check are complete.
+
+The 2026-10-14 CPU audit added a Tree Kit differential suite and a repeatable
+paired benchmark for `InstanceUpdateRanges`. It tested an in-place fast path
+against exact baseline commit `4a05bacd960bbb6dc9e5f77201c8294e486cdd86` and
+preserved the raw path-free trial data in the Kit. Although sequential and
+hidden-frame CPU bookkeeping improved about 19–21%, the sparse workload was
+2.27% slower in all eleven long paired trials; row swaps were effectively flat.
+The candidate was rejected, so the Kit runtime source is unchanged. The suite
+now passes 24 differential cases and 110 total tests. This source audit found no
+additional safe general-purpose range optimization; its results do not replace
+the outstanding integrated browser/GPU acceptance capture.
 
 `tests/tree-asset.browser.mjs` already profiles isolated LOD0/LOD1 for each
 family, but its fixed population does not mix distance bands, its counters
