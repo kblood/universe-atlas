@@ -1,5 +1,5 @@
 import {execFileSync} from 'node:child_process';
-import {readFileSync,existsSync} from 'node:fs';
+import {readFileSync,existsSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -22,6 +22,20 @@ try{
     if(typeof target!=='string'||atlas.imports?.[alias]!==`./external/tree-kit/${target.slice(2)}`)fail(`Tree Kit import boundary drift at ${alias}`);
     if(!existsSync(resolve(kit,target)))fail(`Tree Kit API entry is missing: ${target}`);
   }
+  const checkNoSourceCopies=dir=>{
+    for(const entry of readdirSync(dir,{withFileTypes:true})){
+      const source=resolve(dir,entry.name);
+      if(entry.isDirectory())checkNoSourceCopies(source);
+      else if(entry.isFile()&&entry.name.endsWith('.ts')){
+        const relative=source.slice(resolve(kit,'src').length+1);
+        // RenderProfile is a shared host-side diagnostics helper used by Atlas
+        // and the standalone Lab, not part of the Kit's runtime API.
+        if(relative==='render-profile.ts')continue;
+        if(existsSync(resolve(root,'src',relative)))fail(`Atlas contains an editable Tree Kit source copy: src/${relative}`);
+      }
+    }
+  };
+  checkNoSourceCopies(resolve(kit,'src'));
   for(const required of ['tree-asset-lab.html','src/tree-asset-lab.ts','PROVENANCE.md'])if(!existsSync(resolve(kit,required)))fail(`Tree Kit release file is missing: ${required}`);
   const provenance=readFileSync(resolve(kit,'PROVENANCE.md'),'utf8');
   if(!provenance.includes('Universe Atlas commit')||!provenance.includes('SHA-256'))fail('Tree Kit provenance must identify its source commit and include source checksums');
