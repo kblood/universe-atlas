@@ -1,11 +1,17 @@
 // CPU-only, fixed-input benchmark for the production Tree Kit setInstance API.
 // Start Vite from the Atlas root before running this script. No renderer or
 // GPU timing is used; run the same trials on the baseline and candidate commits.
+// ATLAS_TREE_PREPARATION_WARMUP_TRIALS controls excluded preparation pairs (default 3).
+// ATLAS_EXPECT_SHA / ATLAS_TREE_KIT_EXPECT_SHA default to the reporter checkout.
+// ATLAS_IDENTITY_ALLOW_UNTRACKED is a JSON array of exact root-level .txt note
+// paths; apply the same policy to the Vite server/build and reporter.
 import { chromium } from 'playwright';
 import { browserArgs } from './browser-options.mjs';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
+import { checkoutIdentity, publicBuildIdentity } from '../scripts/build-identity.mjs';
+import { fetchServedIdentity, fetchPageServedIdentity, sameServedIdentity, verifyServedIdentity } from './helpers/tree-benchmark-identity.mjs';
+import { pairedPreparationTrials } from './helpers/tree-preparation-trials.mjs';
 import os from 'node:os';
 import { resolve } from 'node:path';
 
@@ -21,10 +27,15 @@ const population = Math.max(32, Math.min(2048, Number(process.env.ATLAS_TREE_POP
 const operations = Math.max(5000, Math.min(1000000, Number(process.env.ATLAS_TREE_OPERATIONS) || 50000));
 const trials = Math.max(5, Math.min(25, Number(process.env.ATLAS_TREE_TRIALS) || 7));
 const warmupOperations = Math.max(5000, Math.min(100000, Math.floor(operations / 2)));
+const preparationWarmupTrials = Math.max(1, Math.min(20, Math.floor(Number(process.env.ATLAS_TREE_PREPARATION_WARMUP_TRIALS) || 3)));
 const allocationOperations = Math.max(5000, Math.min(50000, operations));
 const baselineModuleUrl = process.env.ATLAS_TREE_BASELINE_MODULE_URL || '/external/tree-kit/src/tree-asset-baseline.ts';
 const treeSourcePath = resolve('external/tree-kit/src/tree-asset.ts');
 const treeSourceBytes = await readFile(treeSourcePath);
+const localIdentity = checkoutIdentity(resolve('.'));
+const expectedIdentity = { atlasCommit: process.env.ATLAS_EXPECT_SHA || localIdentity.atlas.commit,
+  treeKitCommit: process.env.ATLAS_TREE_KIT_EXPECT_SHA || localIdentity.treeKit.commit,
+  atlasStatus: publicBuildIdentity(localIdentity.atlas), treeKitStatus: publicBuildIdentity(localIdentity.treeKit) };
 const percentile = (sorted, p) => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))];
 const summary = (rows, operationCount = operations) => {
   const sorted = rows.map(row => row.elapsedMs).sort((a, b) => a - b);
@@ -34,42 +45,59 @@ const summary = (rows, operationCount = operations) => {
 };
 const report = {
   ok: false,
-  method: 'Production Tree Kit APIs; CPU-only; preparation baseline/candidate paired in alternating order in one browser; fixed population, matrices and operation count; paired unchanged/changing rows in alternating order; warmup excluded; no renderer/GPU measurements.',
-  environment: { atlasCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
-    treeKitCommit: execFileSync('git', ['-C', 'external/tree-kit', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
-    treeKitWorkingTree: execFileSync('git', ['-C', 'external/tree-kit', 'status', '--porcelain'], { encoding: 'utf8' }).trim(),
+  acceptanceEligible: false,
+  method: 'Production Tree Kit APIs; CPU-only; separate excluded preparation warmup pairs; preparation baseline/candidate paired in alternating order in one browser; fixed population, matrices and operation count; paired unchanged/changing rows in alternating order; setInstance warmup excluded; no renderer/GPU measurements.',
+  acceptanceMeaning: 'Identity-eligible capture only; this microbenchmark does not establish a complete paired Atlas performance release gate.',
+  environment: { atlasCommit: localIdentity.atlas.commit, atlasDirty: localIdentity.atlas.dirty,
+    atlasWorkingTree: localIdentity.atlas.workingTree,
+    treeKitCommit: localIdentity.treeKit.commit, treeKitDirty: localIdentity.treeKit.dirty,
+    treeKitWorkingTree: localIdentity.treeKit.workingTree, localIdentity, expectedIdentity,
     treeAssetSourceSha256: createHash('sha256').update(treeSourceBytes).digest('hex'),
     platform: `${os.platform()} ${os.release()}`, cpu: os.cpus()[0]?.model ?? 'unknown',
-    node: process.version, base, family, lod0Url, lod1Url, population, operations, warmupOperations, allocationOperations, trials },
+    node: process.version, base, family, lod0Url, lod1Url, population, operations, warmupOperations,
+    preparationWarmupTrials, allocationOperations, trials, baselineModuleUrl },
   assets: { lod0: { path: lod0Path, sha256: createHash('sha256').update(await readFile(lod0Path)).digest('hex') },
     lod1: { path: lod1Path, sha256: createHash('sha256').update(await readFile(lod1Path)).digest('hex') } },
   limitations: ['CPU microbenchmark isolates batch.setInstance API cost and buffer writes; it does not represent complete Atlas frame cost.',
     'Allocation bytes are sampled by Chromium HeapProfiler, not exact per-call accounting; driver uploads, shader execution and GPU time are not measured.',
-    'Preparation baseline and candidate are loaded as separate modules and measured in alternating order on identical GLBs in one browser. Compare on the same machine/runtime, and retain all paired trial values.'],
+    'Preparation baseline and candidate are loaded as separate modules and measured in alternating order on identical GLBs in one browser. Compare on the same machine/runtime, and retain all paired trial values.',
+    'Served identity comes from same-origin build-info.json; development mode is not an immutable build. Full dirty state and any explicit untracked source-cleanliness exclusions are retained.'],
   errors: [],
   trials: [],
+  identityFindings: [],
 };
 await mkdir(out, { recursive: true });
 const save = () => writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
 let browser, page;
 try {
+  report.servedIdentityPreflight = await fetchServedIdentity(base);
+  report.identityFindings = verifyServedIdentity(report.servedIdentityPreflight, expectedIdentity);
+  // Dirty runs remain useful diagnostics; identity availability and commit parity
+  // are required before measuring modules from an independently served checkout.
+  if (report.identityFindings.some(row => !row.passed && !row.code.endsWith('-clean'))) {
+    throw new Error('Served app identity does not match the requested Atlas/Tree Kit commits.');
+  }
   browser = await chromium.launch({ headless: true, args: browserArgs });
   page = await browser.newPage();
   page.on('pageerror', error => report.errors.push(error.message));
   await page.goto(new URL('tests/tree-instance-api-bench.html', base).href, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__treeInstanceBenchReady === true, undefined, { timeout: 30000 });
-  const preparationTrials = { baseline: [], candidate: [] };
-  for (let trial = 0; trial < trials; trial++) {
-    const order = trial % 2 === 0 ? ['baseline', 'candidate'] : ['candidate', 'baseline'];
-    for (const variant of order) {
-      const moduleUrl = variant === 'baseline' ? baselineModuleUrl : '/external/tree-kit/src/tree-asset.ts';
-      const result = await page.evaluate(({ lod0Url, lod1Url, moduleUrl }) =>
-        window.__measureTreePreparation({ lod0Url, lod1Url, moduleUrl }), { lod0Url, lod1Url, moduleUrl });
-      preparationTrials[variant].push({ trial, pairOrder: order.join(','), ...result });
-    }
+  report.servedIdentity = await fetchPageServedIdentity(page, base);
+  report.identityFindings = verifyServedIdentity(report.servedIdentity, expectedIdentity);
+  if (report.identityFindings.some(row => !row.passed && !row.code.endsWith('-clean')) ||
+      !sameServedIdentity(report.servedIdentityPreflight, report.servedIdentity)) {
+    throw new Error('Browser origin does not serve the requested Atlas/Tree Kit identity.');
   }
+  const preparationRun = await pairedPreparationTrials({ trials, warmupTrials: preparationWarmupTrials,
+    measure: async variant => {
+      const moduleUrl = variant === 'baseline' ? baselineModuleUrl : '/external/tree-kit/src/tree-asset.ts';
+      return page.evaluate(({ lod0Url, lod1Url, moduleUrl }) =>
+        window.__measureTreePreparation({ lod0Url, lod1Url, moduleUrl }), { lod0Url, lod1Url, moduleUrl });
+    } });
+  const preparationTrials = preparationRun.trials;
   const firstBaseline = preparationTrials.baseline[0], firstCandidate = preparationTrials.candidate[0];
-  report.preparation = { trials: preparationTrials,
+  report.preparation = { warmup: { pairs: preparationWarmupTrials, excludedFromSummary: true, trials: preparationRun.warmup },
+    trials: preparationTrials,
     baselineSummary: summary(preparationTrials.baseline, 1), candidateSummary: summary(preparationTrials.candidate, 1),
     sourceBinaryBytes: firstCandidate.sourceBinaryBytes,
     baselineParserBinaryBytes: firstBaseline.parserBinaryBytes,
@@ -88,6 +116,7 @@ try {
   }, {
       lod0: lod0Url, lod1: lod1Url, population, operations: warmupOperations,
     });
+  report.setInstanceWarmup = { operationsPerMode: warmupOperations, modes: ['unchanged', 'changing'], excludedFromSummary: true };
   const rows = { unchanged: [], changing: [] };
   for (let trial = 0; trial < trials; trial++) {
     const order = trial % 2 === 0 ? ['unchanged', 'changing'] : ['changing', 'unchanged'];
@@ -126,8 +155,14 @@ try {
     await allocationSession.detach();
   }
   report.allocations = allocations;
+  report.servedIdentityAtEnd = await fetchPageServedIdentity(page, base);
+  report.identityFindings.push({ code: 'served-identity-stable',
+    passed: sameServedIdentity(report.servedIdentity, report.servedIdentityAtEnd),
+    detail: 'Served Atlas/Tree Kit identity must remain unchanged throughout measurement.' });
+  if (!report.identityFindings.at(-1).passed) throw new Error('Served app identity changed during measurement.');
   if (report.errors.length) throw new Error(`Browser errors: ${report.errors.join('; ')}`);
   report.ok = report.errors.length === 0;
+  report.acceptanceEligible = report.ok && report.identityFindings.every(row => row.passed);
   await save();
   console.log(JSON.stringify({ ok: report.ok, out, environment: report.environment, summary: report.summary }, null, 2));
 } catch (error) {

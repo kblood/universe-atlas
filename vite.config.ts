@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { createBuildInfo } from './scripts/build-identity.mjs';
 // Cross-origin isolation for local dev/preview: un-coarsened performance.now()
 // (5 µs instead of 100 µs) for the perf harness. The app loads no
 // cross-origin resources. The deployed site's headers are configured separately.
@@ -9,14 +10,16 @@ export default defineConfig({
   base: "./",
   server: {headers: crossOriginIsolation},
   preview: {headers: crossOriginIsolation},
-  plugins: [{name: 'publish-orbit-docs', generateBundle() {
-    this.emitFile({type:'asset',fileName:'build-info.json',source:JSON.stringify({
-      commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
-      branch:execFileSync('git',['rev-parse','--abbrev-ref','HEAD'],{encoding:'utf8'}).trim(),
-      subject:execFileSync('git',['log','-1','--format=%s'],{encoding:'utf8'}).trim(),
-      dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
-      builtAt:new Date().toISOString(),
-    },null,2)});
+  plugins: [{name: 'publish-orbit-docs', configureServer(server) {
+    server.middlewares.use((request, response, next) => {
+      if (new URL(request.url || '/', 'http://localhost').pathname !== '/build-info.json') return next();
+      response.setHeader('Content-Type', 'application/json');
+      response.setHeader('Cache-Control', 'no-store');
+      response.end(JSON.stringify(createBuildInfo(fileURLToPath(new URL('.', import.meta.url)), {mode:'development'}),null,2));
+    });
+  }, generateBundle() {
+    this.emitFile({type:'asset',fileName:'build-info.json',source:JSON.stringify(
+      createBuildInfo(fileURLToPath(new URL('.', import.meta.url))),null,2)});
     for(const fileName of [
       'docs/lab-center.md',
       'docs/fauna-realism-next-2026-10-02.md',

@@ -12,6 +12,9 @@
 //   ATLAS_POSE      fixed seed/body/date plus reference forest-pose JSON (defaults to the retained review pose)
 //   ATLAS_FRAMES    frames per profiling condition (default 120)
 //   ATLAS_HARDWARE  set to 1 to request the hardware browser configuration
+//   ATLAS_EXPECT_SHA / ATLAS_TREE_KIT_EXPECT_SHA exact served commits (default: reporter checkout)
+//   ATLAS_IDENTITY_ALLOW_UNTRACKED JSON array of exact root-level .txt note paths;
+//                                apply the same policy to the Vite server/build and reporter
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -20,6 +23,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import { acquireGpuLock } from './helpers/gpu-lock.mjs';
+import { checkoutIdentity, publicBuildIdentity } from '../scripts/build-identity.mjs';
+import { fetchServedIdentity, fetchPageServedIdentity, sameServedIdentity, verifyServedIdentity } from './helpers/tree-benchmark-identity.mjs';
 
 if (process.env.ATLAS_HARDWARE === undefined) process.env.ATLAS_HARDWARE = '1';
 // Evaluate browser-options after applying this benchmark's hardware default.
@@ -43,7 +48,8 @@ const report = {
     'Per-tier GPU milliseconds are marginal full-scene deltas and are affected by depth, occlusion, and overdraw; they are not isolated shader execution times.',
     'steadyUploadBytesPerFrame is Atlas scheduled dirty-range instance upload bytes, not driver-observed initial bufferData or texture transfer bytes.',
     'renderer.info geometries/textures are global object counts; tree-specific retained and peak bytes come from Atlas forest resource estimates.',
-    'loadPeak is sampled every six animation frames and can miss sub-frame transient memory peaks; Atlas far-atlas diagnostics retain its explicit build scratch peak estimate.'
+    'loadPeak is sampled every six animation frames and can miss sub-frame transient memory peaks; Atlas far-atlas diagnostics retain its explicit build scratch peak estimate.',
+    'Served identity comes from same-origin build-info.json; development mode describes the current checkout and is not an immutable build. Full dirty state and any explicit untracked source-cleanliness exclusions are retained.'
   ],
   errors: [], gateFindings: [], screenshots: [],
 };
@@ -61,17 +67,27 @@ function gateFinding(code, passed, detail, observed = null) {
 }
 
 async function runtimeIdentity() {
-  const git = await Promise.allSettled([
-    run('git', ['rev-parse', 'HEAD'], { timeout: 10000 }),
-    run('git', ['status', '--porcelain'], { timeout: 10000 }),
-  ]);
-  const sha = git[0].status === 'fulfilled' ? git[0].value.stdout.trim() : null;
-  const dirty = git[1].status === 'fulfilled' ? Boolean(git[1].value.stdout.trim()) : null;
-  if (!sha || dirty === null) gateFinding('atlas-git-identity', false, 'Atlas SHA/dirty state could not be read.');
+  const localCheckout = checkoutIdentity(resolve('.'));
+  for (const [name, identity] of Object.entries(localCheckout)) {
+    gateFinding(`${name}-git-identity`, Boolean(identity.commit) && identity.dirty !== null,
+      `The reporter's local ${name} commit and working-tree state must be readable.`, identity);
+  }
   return { os: { platform: platform(), release: release(), arch: process.arch, hostname: hostname() },
     device: { cpuModel: cpus()[0]?.model ?? null, logicalCpus: cpus().length, memoryBytes: totalmem() },
-    atlas: { sha, dirty, source: 'local checkout; served build identity is not independently verified' },
+    atlas: { ...localCheckout.atlas, sha: localCheckout.atlas.commit, source: 'local reporter checkout' },
+    treeKit: { ...localCheckout.treeKit, sha: localCheckout.treeKit.commit, source: 'local reporter checkout' },
+    localCheckout,
+    expectedIdentity: { atlasCommit: process.env.ATLAS_EXPECT_SHA || localCheckout.atlas.commit,
+      treeKitCommit: process.env.ATLAS_TREE_KIT_EXPECT_SHA || localCheckout.treeKit.commit,
+      atlasStatus: publicBuildIdentity(localCheckout.atlas), treeKitStatus: publicBuildIdentity(localCheckout.treeKit) },
     node: process.version, browser: null, webgl: null, graphicsSettings: null };
+}
+
+function verifyIdentity(served) {
+  const findings = verifyServedIdentity(served, report.runtime.expectedIdentity);
+  for (const finding of findings) gateFinding(finding.code, finding.passed, finding.detail, finding.observed);
+  assert.ok(findings.every(row => row.passed || row.code.endsWith('-clean')),
+    'The served app must expose the requested exact Atlas and Tree Kit identities.');
 }
 
 async function browserIdentity() {
@@ -387,6 +403,8 @@ try {
   pose = JSON.parse(await readFile(poseFile, 'utf8'));
   report.pose = pose;
   report.runtime = await runtimeIdentity();
+  report.runtime.servedIdentityPreflight = await fetchServedIdentity(base);
+  verifyIdentity(report.runtime.servedIdentityPreflight);
   lock = await acquireGpuLock({ owner: 'integrated Atlas tree near/middle/far benchmark', capture: true, retryMs: 30000 });
   monitor = await startHostMonitor();
   monitor.phase('loading');
@@ -398,6 +416,10 @@ try {
   if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
 
   await loadPose(false);
+  report.runtime.servedIdentity = await fetchPageServedIdentity(page, base);
+  verifyIdentity(report.runtime.servedIdentity);
+  assert.ok(sameServedIdentity(report.runtime.servedIdentityPreflight, report.runtime.servedIdentity),
+    'The browser origin serves the same app identity as the preflight request.');
   Object.assign(report.runtime, await browserIdentity());
   await waitFor(() => window.__atlas.forestAssets.enabled === false && window.__atlas.terrain?.tiles?.forest?.pending === 0);
   await page.waitForTimeout(500);
@@ -548,6 +570,10 @@ try {
     treeEstimatedBytesBefore: report.memory.steady.resident.tree.allocatedBytes,
     treeEstimatedBytesAfter: report.memory.disposed.tree.allocatedBytes,
   };
+  report.runtime.servedIdentityAtEnd = await fetchPageServedIdentity(page, base);
+  verifyIdentity(report.runtime.servedIdentityAtEnd);
+  gateFinding('served-identity-stable', sameServedIdentity(report.runtime.servedIdentity, report.runtime.servedIdentityAtEnd),
+    'The served Atlas/Tree Kit identity must remain unchanged throughout capture.');
   report.captureComplete = true;
 } catch (error) {
   report.failure = String(error?.stack ?? error);

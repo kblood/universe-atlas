@@ -66,6 +66,7 @@
   "tests/local-aerial-perspective.test.mjs",
   "tests/forest-retention.test.mjs",
   "tests/render-profile.test.mjs",
+  "tests/tree-benchmark-evidence.test.mjs",
   "tests/population-continuity.test.mjs",
   "tests/volumetric-clouds.test.mjs",
   "tests/planet-detail.test.mjs",

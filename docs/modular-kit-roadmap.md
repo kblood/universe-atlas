@@ -156,6 +156,19 @@ with baseline CPU above 25%, baseline GPU above 10%, more than 20% foreign CPU
 use, or known foreign Blender/browser processes. GPU-utilization and Windows
 process telemetry must be available; unknown host load is not a clean result.
 
+Both Tree Kit benchmark runners now verify same-origin `build-info.json` before
+opening the app, from the browser page, and after capture. They require the
+served Atlas and Tree Kit commits to match the reporter and retain full local
+working-tree identity in diagnostic reports. Production metadata exposes only
+commit labels, dirty/source-dirty flags, entry counts and status digests; it
+does not publish raw status records or workstation paths. The CPU preparation
+comparison now records three alternating warmup pairs separately from its
+measured pairs. These checks prevent stale builds or a different running
+checkout from being mistaken for the requested candidate, but they do not
+replace the quiet-host mixed-distance GPU capture. The focused identity suite
+passes 13 tests and the production build passes; capture eligibility remains
+open while the Atlas working tree is dirty and the host is contended.
+
 The Kit Lab now exercises mixed LOD0/LOD1 populations and captures/displays far
 family atlases through the same production library. The 2026-10-14 isolated
 RTX 5090 capture confirms existing LOD1 assets reduce triangles by 64.8%/73.6%
