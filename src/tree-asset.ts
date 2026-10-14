@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {TreeInstancePasses,TreeInstanceRows} from './tree-instance-passes.ts';
 import type {TreeBarkTexturePool,TreeBarkTextureLease} from './tree-bark-texture-pool.ts';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {phaseFromPeriod} from './world-time.ts';
 import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
 import {InstanceUpdateRanges} from './instance-update-ranges.ts';
 import {installTreeForestCoverage} from './tree-forest-coverage.ts';
@@ -22,7 +21,13 @@ import {forestFamilyEnvelopeRadius,treeAllometryCardScale,treeAllometryGLSL,tree
  * replace the canonical forest or invent a second species catalogue. */
 export const TREE_REFERENCE_HEIGHT_M=16;
 export const TREE_WIND_PERIOD_NS=7_000_000_000n;
-export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+/** Resolve a BigInt date directly into the deterministic tree animation cycle.
+ * This mirrors the Kit's own period contract and does not depend on the Atlas
+ * world-time adapter. */
+export function treeWindPhase(dateNs:bigint){
+  const remainder=((dateNs%TREE_WIND_PERIOD_NS)+TREE_WIND_PERIOD_NS)%TREE_WIND_PERIOD_NS;
+  return Number(remainder)/Number(TREE_WIND_PERIOD_NS)*(2*Math.PI);
+}
 
 type GLBDocument={json:any;binary:Uint8Array};
 function readGLB(buffer:ArrayBuffer):GLBDocument {

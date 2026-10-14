@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {browserArgs} from './browser-options.mjs';
+import {acquireGpuLock} from './helpers/gpu-lock.mjs';
 import {UNIVERSE_END_NS} from '../src/world-time.ts';
 
 const candidate=process.env.ATLAS_TREE_CANDIDATE;
@@ -13,12 +14,8 @@ const base=process.env.ATLAS_URL??'http://127.0.0.1:5196/';
 const out=resolve(process.env.ATLAS_RESULTS??join(candidate,'browser-tree-asset-review'));
 for(const path of [lod0,lod1])if(!await import('node:fs/promises').then(fs=>fs.stat(path).then(()=>true,()=>false)))throw new Error(`Requested tree candidate file does not exist: ${path}`);
 const width=2560,height=1440;
-const browser=await chromium.launch({headless:true,args:browserArgs});
-const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+let lock,browser,page;
 const errors=[],failedRequests=[];
-page.on('pageerror',error=>errors.push(error.message));
-page.on('console',message=>{if(message.type()==='error'&&!message.text().startsWith('[vite] failed to connect to websocket.'))errors.push(message.text());});
-page.on('requestfailed',request=>failedRequests.push(`${request.url()}: ${request.failure()?.errorText}`));
 await mkdir(out,{recursive:true});
 const waitFrames=frames=>page.evaluate(count=>new Promise(resolve=>{
   let done=0;const tick=()=>{if(++done>=count)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);
@@ -26,6 +23,12 @@ const waitFrames=frames=>page.evaluate(count=>new Promise(resolve=>{
 const shot=async name=>page.screenshot({path:join(out,name),fullPage:false});
 let report={candidate,lod0,lod1,url:base,viewport:{width,height,deviceScaleFactor:1},hardwareEnabled:!!process.env.ATLAS_HARDWARE,errors,failedRequests,profiles:[],screenshots:[],limitations:['This browser lab is a standalone prototype, not game integration or headset acceptance.','GPU measurements cover the lab scene and include ground/shadows; they do not predict the game.']};
 try{
+  lock=await acquireGpuLock({owner:'isolated Tree Asset Lab LOD baseline',capture:true,retryMs:30000});
+  browser=await chromium.launch({headless:true,args:browserArgs});
+  page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('console',message=>{if(message.type()==='error'&&!message.text().startsWith('[vite] failed to connect to websocket.'))errors.push(message.text());});
+  page.on('requestfailed',request=>failedRequests.push(`${request.url()}: ${request.failure()?.errorText}`));
   if(typeof page.routeWebSocket==='function')await page.routeWebSocket('**/*',socket=>socket.close());
   await page.goto(new URL('tree-asset-lab.html',base).href,{waitUntil:'networkidle'});
   await page.waitForFunction(()=>!!window.__treeAssetLab,{timeout:30000});
@@ -54,7 +57,7 @@ try{
   assert.deepEqual(loaded.lodMeshCounts,[2,2]);assert.ok(loaded.light.lights.some(light=>light.type==='DirectionalLight'&&light.castShadow));
   assert.equal(loaded.light.shadowMap,true);
   for(const lodAttributes of loaded.geometryAttributes)for(const attributes of lodAttributes)for(const name of ['_wind','_branch_level','_leaf_center','_leaf_pivot','position','normal','tangent','uv'])assert.ok(attributes.includes(name),`loaded geometry retains ${name}`);
-  assert.ok(loaded.hooks.every(hook=>hook.deformsVertex&&hook.programKey==='atlas-tree-physical-1'));
+  assert.ok(loaded.hooks.every(hook=>hook.deformsVertex&&hook.programKey==='atlas-tree-physical-3/tree-allometry-2'));
   report.loaded=loaded;
   const initial=await page.evaluate(()=>window.__treeAssetLab.diagnostics());
   assert.equal(initial.textures,4);assert.ok(initial.texturePNGContainerBytes>0);
@@ -77,11 +80,11 @@ try{
 
   const details=await page.evaluate(()=>{
     const lab=window.__treeAssetLab;
-    const batches=lab.batches.map(batch=>({capacity:batch.meshes[0].count,meshes:batch.meshes.map(mesh=>({castShadow:mesh.castShadow,receiveShadow:mesh.receiveShadow,depthHook:typeof mesh.customDepthMaterial?.onBeforeCompile==='function',distanceHook:typeof mesh.customDistanceMaterial?.onBeforeCompile==='function',depthKey:mesh.customDepthMaterial?.customProgramCacheKey?.(),distanceKey:mesh.customDistanceMaterial?.customProgramCacheKey?.(),windAttribute:mesh.geometry.getAttribute('_wind')?.count,pivotAttribute:mesh.geometry.getAttribute('_leaf_pivot')?.count,levelAttribute:mesh.geometry.getAttribute('_branch_level')?.count,instance:mesh.geometry.getAttribute('instanceTree')?.array.slice(0,6)}))}));
-    return {batches,profile:lab.profile.diagnostics()};
+    const batches=lab.batches.map(batch=>({capacity:batch.meshes[0].count,meshes:batch.meshes.map(mesh=>({castShadow:mesh.castShadow,receiveShadow:mesh.receiveShadow,depthHook:typeof mesh.customDepthMaterial?.onBeforeCompile==='function',distanceHook:typeof mesh.customDistanceMaterial?.onBeforeCompile==='function',depthKey:mesh.customDepthMaterial?.customProgramCacheKey?.(),distanceKey:mesh.customDistanceMaterial?.customProgramCacheKey?.(),windAttribute:mesh.geometry.getAttribute('_wind')?.count,pivotAttribute:mesh.geometry.getAttribute('_leaf_pivot')?.count,levelAttribute:mesh.geometry.getAttribute('_branch_level')?.count,instance:mesh.geometry.getAttribute('instanceTree')?.array.slice(0,12)}))}));
+      return {batches,profile:lab.profile.diagnostics()};
   });
-  for(const batch of details.batches){assert.equal(batch.meshes.length,2);for(const mesh of batch.meshes){assert.equal(mesh.castShadow,true);assert.equal(mesh.receiveShadow,true);assert.equal(mesh.depthHook,true);assert.equal(mesh.distanceHook,true);assert.equal(mesh.depthKey,'atlas-tree-physical-1');assert.equal(mesh.distanceKey,'atlas-tree-physical-1');assert.ok(mesh.windAttribute>0&&mesh.pivotAttribute>0&&mesh.levelAttribute>0);}}
-  for(const mesh of details.batches[0].meshes){const data=mesh.instance;assert.ok(Math.abs(data[0]-10/16)<1e-7);assert.equal(data[1],0);assert.ok(Math.abs(data[2]-1)<1e-7);assert.ok(Math.abs(data[3]-.7)<1e-7);assert.ok(Math.abs(data[4]-22/16)<1e-7);assert.ok(Math.abs(data[5]-1.4)<1e-7);}
+  for(const batch of details.batches){assert.equal(batch.meshes.length,2);for(const mesh of batch.meshes){assert.equal(mesh.castShadow,true);assert.equal(mesh.receiveShadow,true);assert.equal(mesh.depthHook,true);assert.equal(mesh.distanceHook,true);assert.equal(mesh.depthKey,'atlas-tree-physical-3/tree-allometry-2');assert.equal(mesh.distanceKey,'atlas-tree-physical-3/tree-allometry-2');assert.ok(mesh.windAttribute>0&&mesh.pivotAttribute>0&&mesh.levelAttribute>0);}}
+  for(const mesh of details.batches[0].meshes){const data=mesh.instance;assert.ok(Math.abs(data[0]-10/16)<1e-7);assert.equal(data[1],0);assert.ok(Math.abs(data[2]-1)<1e-7);assert.ok(Math.abs(data[3]-1)<1e-7);assert.equal(data[4],1);assert.ok(Math.abs(data[5]-.7)<1e-7);assert.ok(Math.abs(data[8]-22/16)<1e-7);assert.ok(Math.abs(data[9]-1.4)<1e-7);}
   report.shadowDistanceHooks=details.batches;
   report.gpu={available:details.profile.gpuAvailable,method:details.profile.method,renderer:loaded.renderer,unmaskedRenderer:loaded.unmaskedRenderer};
 
@@ -137,12 +140,12 @@ try{
     await waitFrames(60);
     const profile=await page.evaluate(()=>{
       const lab=window.__treeAssetLab,d=lab.diagnostics();
-      return {diagnostics:d,profile:d.profile,renderer:d.renderer,batchCounts:lab.batches.map(batch=>batch.meshes.map(mesh=>mesh.count)),instanceTree:lab.batches.map(batch=>Array.from(batch.meshes[0].geometry.getAttribute('instanceTree').array.slice(0,d.population*2)))};
+      return {diagnostics:d,profile:d.profile,renderer:d.renderer,batchCounts:lab.batches.map(batch=>batch.meshes.map(mesh=>mesh.count)),instanceTree:lab.batches.map(batch=>Array.from(batch.meshes[0].geometry.getAttribute('instanceTree').array.slice(0,d.population*4)))};
     });
     assert.equal(profile.diagnostics.population,population);assert.ok(profile.batchCounts.flat().every(count=>count===population));
     assert.ok(profile.renderer.triangles>0);assert.equal(profile.diagnostics.sharedMaterials,true);
     assert.equal(profile.profile.enabled,true);
-    report.profiles.push({lod:lodValue,population,renderer:profile.renderer,profile:profile.profile,instanceScaleAndPhaseRange:{count:population,minScale:Math.min(...profile.instanceTree.flatMap(values=>values.filter((_,i)=>i%2===0))),maxScale:Math.max(...profile.instanceTree.flatMap(values=>values.filter((_,i)=>i%2===0))),finite:profile.instanceTree.every(values=>values.every(Number.isFinite))}});
+    report.profiles.push({lod:lodValue,population,renderer:profile.renderer,profile:profile.profile,instanceScaleAndPhaseRange:{count:population,minScale:Math.min(...profile.instanceTree.flatMap(values=>values.filter((_,i)=>i%4===0))),maxScale:Math.max(...profile.instanceTree.flatMap(values=>values.filter((_,i)=>i%4===0))),finite:profile.instanceTree.every(values=>values.every(Number.isFinite))}});
   }
   await page.evaluate(()=>window.__treeAssetLab.setLOD(0));await waitFrames(120);
   assert.deepEqual(errors,[]);assert.deepEqual(failedRequests,[]);
@@ -152,4 +155,4 @@ try{
   report.errors=errors;report.failedRequests=failedRequests;report.failure=String(error);
   await writeFile(join(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   throw error;
-}finally{await browser.close();}
+}finally{await browser?.close();await lock?.release();}
