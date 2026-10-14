@@ -2,14 +2,14 @@ import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {createServer} from 'vite';
+import {forestTreeDimensions,TREE_ALLOMETRY_VERSION,TREE_ALLOMETRY_IDENTITY_CODE} from '#tree-kit/v1/presentation';
+import {unpackForestPresentation} from '#tree-kit/v1/instances';
+import {forestMeshBufferFootprint} from '#tree-kit/v1/metrics';
 
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
 const {PlanetForest}=await vite.ssrLoadModule('/src/planet-forest.ts');
 const {forestTreeCatalogue}=await vite.ssrLoadModule('/src/forest-tree-catalogue.ts');
 const {PlanetCanopy}=await vite.ssrLoadModule('/src/planet-canopy.ts');
-const {unpackForestPresentation}=await vite.ssrLoadModule('/src/forest-presentation.ts');
-const {forestMeshBufferFootprint}=await vite.ssrLoadModule('/src/forest-resource-accounting.ts');
-const {forestTreeDimensions,TREE_ALLOMETRY_VERSION,TREE_ALLOMETRY_IDENTITY_CODE}=await vite.ssrLoadModule('/src/tree-allometry.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
