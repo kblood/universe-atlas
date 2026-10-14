@@ -142,6 +142,15 @@ passed static validation so far; no integrated browser/GPU capture is counted
 as performance evidence yet. Run it only on a quiet host and retain its report
 and screenshots before selecting a runtime optimization.
 
+The harness separates `ok` (the capture completed without app errors) from
+`acceptanceEligible` (the evidence passed every measurement gate). Accept only
+the latter. It records Atlas/runtime/device/WebGL identity and a mixed-tier
+screenshot, warms each visibility condition before sampling, requires hardware
+timer-query samples and zero stationary instance writes, and rejects captures
+with baseline CPU above 25%, baseline GPU above 10%, more than 20% foreign CPU
+use, or known foreign Blender/browser processes. GPU-utilization and Windows
+process telemetry must be available; unknown host load is not a clean result.
+
 The Kit Lab now exercises mixed LOD0/LOD1 populations and captures/displays far
 family atlases through the same production library. The 2026-10-14 isolated
 RTX 5090 capture confirms existing LOD1 assets reduce triangles by 64.8%/73.6%

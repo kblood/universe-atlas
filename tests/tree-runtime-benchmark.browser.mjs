@@ -15,11 +15,15 @@
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { cpus, hostname, platform, release, totalmem } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright';
-import { browserArgs } from './browser-options.mjs';
 import { acquireGpuLock } from './helpers/gpu-lock.mjs';
 
 if (process.env.ATLAS_HARDWARE === undefined) process.env.ATLAS_HARDWARE = '1';
+// Evaluate browser-options after applying this benchmark's hardware default.
+const { browserArgs } = await import('./browser-options.mjs');
 const base = process.env.ATLAS_URL || 'http://127.0.0.1:5196/';
 const out = resolve(process.env.ATLAS_RESULTS || 'test-results/tree-runtime-benchmark');
 const poseFile = resolve(process.env.ATLAS_POSE ||
@@ -27,9 +31,11 @@ const poseFile = resolve(process.env.ATLAS_POSE ||
 const frames = Math.max(60, Math.min(600, Number(process.env.ATLAS_FRAMES) || 120));
 const tiers = ['forestNear', 'forestMiddle', 'forestFar'];
 const W = 1440, H = 1000;
-const pose = JSON.parse(await readFile(poseFile, 'utf8'));
+const warmupFrames = 60;
+const run = promisify(execFile);
+let pose;
 const report = {
-  ok: false, base, poseFile, pose, viewport: [W, H], frames,
+  ok: false, acceptanceEligible: false, base, poseFile, pose: null, viewport: [W, H], frames, warmupFrames,
   method: 'fixed pose; Atlas profilingObjects tier isolation; whole-scene GPU marginal deltas; app dirty-range upload accounting; Atlas memory estimates and renderer global object counts',
   limitations: [
     'Per-tier draw calls and triangles are full-view minus same-view tier-hidden counts; they are exact only while other scene submissions remain stable.',
@@ -38,12 +44,159 @@ const report = {
     'renderer.info geometries/textures are global object counts; tree-specific retained and peak bytes come from Atlas forest resource estimates.',
     'loadPeak is sampled every six animation frames and can miss sub-frame transient memory peaks; Atlas far-atlas diagnostics retain its explicit build scratch peak estimate.'
   ],
-  errors: [],
+  errors: [], gateFindings: [], screenshots: [],
 };
-await mkdir(out, { recursive: true });
-const save = () => writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
-let lock, browser, page;
+const save = async () => {
+  await mkdir(out, { recursive: true });
+  await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
+};
+let lock, browser, page, monitor;
 const waitFor = (fn, arg, timeout = 240000) => page.waitForFunction(fn, arg, { timeout });
+
+function gateFinding(code, passed, detail, observed = null) {
+  if (!report.gateFindings.some(x => x.code === code)) report.gateFindings.push({ code, passed, detail, observed });
+}
+
+async function runtimeIdentity() {
+  const git = await Promise.allSettled([
+    run('git', ['rev-parse', 'HEAD'], { timeout: 10000 }),
+    run('git', ['status', '--porcelain'], { timeout: 10000 }),
+  ]);
+  const sha = git[0].status === 'fulfilled' ? git[0].value.stdout.trim() : null;
+  const dirty = git[1].status === 'fulfilled' ? Boolean(git[1].value.stdout.trim()) : null;
+  if (!sha || dirty === null) gateFinding('atlas-git-identity', false, 'Atlas SHA/dirty state could not be read.');
+  return { os: { platform: platform(), release: release(), arch: process.arch, hostname: hostname() },
+    device: { cpuModel: cpus()[0]?.model ?? null, logicalCpus: cpus().length, memoryBytes: totalmem() },
+    atlas: { sha, dirty, source: 'local checkout; served build identity is not independently verified' },
+    node: process.version, browser: null, webgl: null, graphicsSettings: null };
+}
+
+async function browserIdentity() {
+  return page.evaluate(() => {
+    const a = window.__atlas, gl = a.renderDebug().renderer.getContext();
+    const debug = gl.getExtension('WEBGL_debug_renderer_info');
+    return { browser: { userAgent: navigator.userAgent, platform: navigator.platform },
+      webgl: { vendor: gl.getParameter(gl.VENDOR), renderer: gl.getParameter(gl.RENDERER),
+        unmaskedVendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : null,
+        unmaskedRenderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null,
+        version: gl.getParameter(gl.VERSION), shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+        contextAttributes: gl.getContextAttributes() },
+      graphicsSettings: a.qualitySettings?.() ?? null };
+  });
+}
+
+// Sampling is intentionally coarse: no per-frame subprocesses compete with Atlas.
+// GPU totals during capture include Atlas and cannot identify foreign GPU activity.
+async function startHostMonitor() {
+  const state = report.host = { intervalMs: 5000, phase: 'pre-browser', samples: [],
+    thresholds: { baselineCpuBusyPercent: 25, foreignCpuPercent: 20, baselineGpuBusyPercent: 10 },
+    processMonitoring: { supported: platform() === 'win32', source: platform() === 'win32' ? 'Win32_Process' : null },
+    gpuMonitoring: { supported: null, source: 'nvidia-smi when available', foreignUtilizationPercent: null },
+    limitations: ['CPU/process samples can miss short-lived contention between polls.',
+      'Foreign Blender/browser presence conservatively blocks acceptance, even if idle.',
+      'GPU utilization during capture includes Atlas; only pre-browser GPU activity can be attributed to other work.',
+      'nvidia-smi does not cover non-NVIDIA GPUs; unavailable telemetry is null, not evidence of an idle GPU.'] };
+  let previousCpu, previousProcesses, previousTime, timer, pending, stopped = false;
+  const sample = async phase => {
+    const now = Date.now(), cpu = cpus().reduce((sum, core) => {
+      sum.idle += core.times.idle;
+      sum.total += Object.values(core.times).reduce((a, b) => a + b, 0);
+      return sum;
+    }, { idle: 0, total: 0 });
+    const cpuDelta = previousCpu ? cpu.total - previousCpu.total : 0;
+    const row = { at: new Date(now).toISOString(), phase,
+      cpuBusyPercent: cpuDelta > 0 ? 100 * (1 - (cpu.idle - previousCpu.idle) / cpuDelta) : null,
+      foreignCpuPercent: null, foreignProcesses: null, gpu: null };
+    previousCpu = cpu;
+    const probes = await Promise.allSettled([
+      platform() === 'win32' ? run('powershell', ['-NoProfile', '-Command',
+        'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,KernelModeTime,UserModeTime | ConvertTo-Json -Compress'],
+      { timeout: 10000, windowsHide: true, maxBuffer: 4 * 1024 * 1024 }) : Promise.reject(new Error('Process CPU/ancestry monitoring is unsupported on this platform.')),
+      state.gpuMonitoring.supported === false ? Promise.reject(new Error('GPU telemetry unavailable.')) :
+        run('nvidia-smi', ['--query-gpu=index,name,uuid,utilization.gpu', '--format=csv,noheader,nounits'],
+          { timeout: 5000, windowsHide: true }),
+    ]);
+    if (probes[0].status === 'fulfilled') {
+      const parsed = JSON.parse(probes[0].value.stdout), processes = Array.isArray(parsed) ? parsed : [parsed];
+      const own = new Set([process.pid]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const p of processes) if (own.has(p.ParentProcessId) && !own.has(p.ProcessId)) {
+          own.add(p.ProcessId); changed = true;
+        }
+      }
+      row.foreignProcesses = processes.filter(p => !own.has(p.ProcessId) &&
+        /^(blender|chrome|chrome-headless-shell|headless_shell|chromium|firefox|msedge|brave|opera|safari)(\.exe)?$/i.test(p.Name))
+        .map(p => ({ pid: p.ProcessId, name: p.Name }));
+      const current = new Map(processes.map(p => [p.ProcessId, {
+        name: p.Name, cpuMs: (Number(p.KernelModeTime) + Number(p.UserModeTime)) / 10000,
+      }]));
+      if (previousProcesses && now > previousTime) {
+        let foreignMs = 0;
+        for (const [pid, p] of current) {
+          const prev = previousProcesses.get(pid);
+          // Win32 PID 0 is idle time, not foreign CPU work.
+          if (pid !== 0 && !own.has(pid) && prev?.name === p.name) foreignMs += Math.max(0, p.cpuMs - prev.cpuMs);
+        }
+        row.foreignCpuPercent = 100 * foreignMs / ((now - previousTime) * cpus().length);
+      }
+      previousProcesses = current;
+      state.processMonitoring.supported = true;
+      if (row.foreignProcesses.length) gateFinding('foreign-blender-or-browser', false,
+        'Known foreign Blender/user-browser processes were present during capture.', row.foreignProcesses);
+      if (row.foreignCpuPercent > state.thresholds.foreignCpuPercent) gateFinding('foreign-cpu-contention', false,
+        'CPU use outside the benchmark process tree exceeded the host-capacity threshold.', row.foreignCpuPercent);
+    } else {
+      state.processMonitoring.supported = false;
+      state.processMonitoring.reason = probes[0].reason.message;
+      gateFinding('host-process-monitor-unavailable', false, state.processMonitoring.reason);
+    }
+    previousTime = now;
+    if (probes[1].status === 'fulfilled') {
+      row.gpu = probes[1].value.stdout.trim().split(/\r?\n/).filter(Boolean).map(line => {
+        const [index, name, uuid, utilization] = line.split(',').map(x => x.trim());
+        return { index: Number(index), name, uuid,
+          utilizationPercent: Number.isFinite(Number(utilization)) ? Number(utilization) : null };
+      });
+      state.gpuMonitoring.supported = row.gpu.some(x => x.utilizationPercent !== null);
+      if (!state.gpuMonitoring.supported) state.gpuMonitoring.reason = 'The driver did not report numeric GPU utilization.';
+    } else {
+      state.gpuMonitoring.supported = false;
+      state.gpuMonitoring.reason = probes[1].reason.message;
+    }
+    if (phase === 'pre-browser') {
+      if (row.cpuBusyPercent > state.thresholds.baselineCpuBusyPercent) gateFinding('baseline-cpu-contention', false,
+        'Host CPU was busy before launching the benchmark browser.', row.cpuBusyPercent);
+      if (row.gpu?.some(x => x.utilizationPercent > state.thresholds.baselineGpuBusyPercent))
+        gateFinding('baseline-gpu-contention', false, 'GPU activity preceded the benchmark browser.', row.gpu);
+    }
+    state.samples.push(row);
+  };
+  await sample('pre-browser');
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  await sample('pre-browser');
+  gateFinding('gpu-utilization-telemetry', state.gpuMonitoring.supported === true,
+    'Acceptance requires host GPU-utilization telemetry; unavailable telemetry is unknown, not evidence of a quiet GPU.',
+    state.gpuMonitoring.reason ?? state.gpuMonitoring.source);
+  const poll = () => {
+    pending = sample(state.phase).catch(error => {
+      state.failure = String(error);
+      gateFinding('host-monitor-failure', false, state.failure);
+    }).finally(() => { if (!stopped) timer = setTimeout(poll, state.intervalMs); });
+  };
+  timer = setTimeout(poll, state.intervalMs);
+  return { phase: value => { state.phase = value; }, stop: async () => {
+    stopped = true; clearTimeout(timer); await pending;
+    await sample('capture-end');
+  } };
+}
+
+async function warmup() {
+  await page.evaluate(async frames => {
+    for (let i = 0; i < frames; i++) await new Promise(resolve => requestAnimationFrame(resolve));
+  }, warmupFrames);
+}
 
 async function snapshot() {
   return page.evaluate(() => {
@@ -104,14 +257,19 @@ async function stopLoadSampler() {
 }
 
 async function profilingWindow(hidden = []) {
-  return page.evaluate(async ({ frames, hidden, tiers }) => {
+  monitor?.phase(`profiling:${hidden.join(',') || 'all-tiers'}`);
+  return page.evaluate(async ({ frames, hidden, tiers, warmupFrames }) => {
     const a = window.__atlas, renderer = a.renderDebug().renderer;
     const prior = { enabled: a.renderProfile.enabled, history: a.renderProfile.historyLimit,
       autoReset: renderer.info.autoReset };
+    a.setProfiling(false);
     for (const tier of tiers) a.setSystemVisible(tier, true);
     for (const tier of hidden) a.setSystemVisible(tier, false);
+    // Visibility changes can schedule instance uploads and shadow-cache work.
+    // Keep that transition outside the stationary measurement window.
+    for (let i = 0; i < warmupFrames; i++) await new Promise(resolve => requestAnimationFrame(resolve));
     a.setProfiling(true); a.resetProfile(); a.setProfileHistory(frames + 128);
-    let n = -3;
+    let n = 0;
     await new Promise(resolve => {
       const tick = () => { if (++n >= frames) resolve(); else requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
@@ -122,23 +280,25 @@ async function profilingWindow(hidden = []) {
       (a.renderProfile.statistics?.['gpu/sceneMs']?.samples ?? 0) < frames - 2)) {
       await new Promise(resolve => requestAnimationFrame(resolve));
     }
-    const result = { profile: a.renderProfile,
+    const result = { profile: a.renderProfile, warmupFrames,
       renderer: { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures },
       hidden: [...hidden] };
+    a.setProfiling(false);
     for (const tier of tiers) a.setSystemVisible(tier, true);
+    for (let i = 0; i < warmupFrames; i++) await new Promise(resolve => requestAnimationFrame(resolve));
     a.setProfiling(prior.enabled); a.setProfileHistory(prior.history);
     renderer.info.autoReset = prior.autoReset;
     if (!prior.enabled) renderer.info.reset();
     return result;
-  }, { frames, hidden, tiers });
+  }, { frames, hidden, tiers, warmupFrames });
 }
 
 function metric(profile, name) { return profile?.statistics?.[name] ?? { samples: 0, p50: null, p95: null, max: null }; }
 function conditionSummary(capture) {
-  const s = capture.profile.statistics ?? {};
-  return { hidden: capture.hidden, drawCalls: metric(capture.profile, 'drawCalls'),
+  return { hidden: capture.hidden, warmupFrames: capture.warmupFrames, drawCalls: metric(capture.profile, 'drawCalls'),
     triangles: metric(capture.profile, 'triangles'), gpuSceneMs: metric(capture.profile, 'gpu/sceneMs'),
     gpuForestAtlasMs: metric(capture.profile, 'gpu/forestAtlasMs'),
+    gpuAvailable: capture.profile.gpuAvailable,
     skippedQueries: capture.profile.skippedQueries, disjointQueries: capture.profile.disjointQueries,
     expiredQueries: capture.profile.expiredQueries, pendingQueries: capture.profile.pendingQueries,
     renderer: capture.renderer };
@@ -175,14 +335,22 @@ async function loadPose(trees) {
 }
 
 try {
+  await mkdir(out, { recursive: true });
+  pose = JSON.parse(await readFile(poseFile, 'utf8'));
+  report.pose = pose;
+  report.runtime = await runtimeIdentity();
   lock = await acquireGpuLock({ owner: 'integrated Atlas tree near/middle/far benchmark', capture: true, retryMs: 30000 });
+  monitor = await startHostMonitor();
+  monitor.phase('loading');
   browser = await chromium.launch({ headless: true, args: browserArgs });
+  report.runtime.browserLaunch = { version: browser.version(), headless: true, args: [...browserArgs], hardwareRequested: process.env.ATLAS_HARDWARE };
   page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   page.on('pageerror', error => report.errors.push(`page: ${error.message}`));
   page.on('console', message => { if (message.type() === 'error' && !message.text().startsWith('[vite] failed to connect to websocket.')) report.errors.push(`console: ${message.text()}`); });
   if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
 
   await loadPose(false);
+  Object.assign(report.runtime, await browserIdentity());
   await waitFor(() => window.__atlas.forestAssets.enabled === false && window.__atlas.terrain?.tiles?.forest?.pending === 0);
   await page.waitForTimeout(500);
   report.memory = { disabledBaseline: await snapshot() };
@@ -233,11 +401,27 @@ try {
   assert.ok(populations.near > 0, `fixed pose has near trees (${populations.near})`);
   assert.ok(populations.middle > 0, `fixed pose has middle trees (${populations.middle})`);
   assert.ok(populations.far > 0, `fixed pose has far trees (${populations.far})`);
+  await page.evaluate(() => window.__atlas.setProfiling(false));
+  await warmup();
+  Object.assign(report.runtime, await browserIdentity());
+  gateFinding('graphics-settings-available', report.runtime.graphicsSettings !== null,
+    'Atlas must expose the active graphics settings.');
+  const gpuRenderer = report.runtime.webgl.unmaskedRenderer;
+  gateFinding('hardware-renderer', Boolean(gpuRenderer) && !/swiftshader|llvmpipe|softpipe|software|warp/i.test(gpuRenderer),
+    'Runtime GPU acceptance requires an identifiable hardware WebGL renderer.', gpuRenderer);
+  const screenshot = 'loaded-mixed-tiers.png';
+  await page.screenshot({ path: resolve(out, screenshot), fullPage: false, animations: 'disabled' });
+  report.screenshots.push({ file: screenshot, condition: 'loaded mixed near/middle/far tiers', populations });
 
   const all = await profilingWindow();
+  report.profilingConditions = { allTiers: conditionSummary(all) };
   const without = {};
-  for (const tier of tiers) without[tier] = await profilingWindow([tier]);
+  for (const tier of tiers) {
+    without[tier] = await profilingWindow([tier]);
+    report.profilingConditions[`without:${tier}`] = conditionSummary(without[tier]);
+  }
   const withoutTrees = await profilingWindow(tiers);
+  report.profilingConditions.withoutAllTrees = conditionSummary(withoutTrees);
   assertValidWindow('all tiers', all);
   for (const tier of tiers) assertValidWindow(`without ${tier}`, without[tier]);
   assertValidWindow('without all tree tiers', withoutTrees);
@@ -262,35 +446,45 @@ try {
     assert.ok(report.draws.byTier[tier].treeTriangles > 0, `${tier} contributes visible triangles`);
   }
 
+  monitor.phase('stationary-writes');
+  await page.evaluate(() => window.__atlas.setProfiling(false));
+  await warmup();
   const steadyFrames = await page.evaluate(({ frames }) => new Promise(resolve => {
     const rows = []; let n = 0;
     const tick = () => {
       const p = window.__atlas.renderDebug().planet;
-      rows.push({ scheduledUploadBytes: p.forest.scheduledUploadBytes ?? 0,
-        matrixWrites: p.forest.matrixWrites ?? 0, colorWrites: p.forest.colorWrites ?? 0,
-        coverageWrites: p.forest.coverageWrites ?? 0 });
+      rows.push({ scheduledUploadBytes: p.forest.scheduledUploadBytes ?? null,
+        matrixWrites: p.forest.matrixWrites ?? null, colorWrites: p.forest.colorWrites ?? null,
+        coverageWrites: p.forest.coverageWrites ?? null });
       if (++n >= frames) resolve(rows); else requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }), { frames });
-  const sortedUploads = steadyFrames.map(x => x.scheduledUploadBytes).sort((a, b) => a - b);
+  const sortedUploads = steadyFrames.map(x => x.scheduledUploadBytes).filter(x => x !== null).sort((a, b) => a - b);
+  const allUploadsKnown = sortedUploads.length === steadyFrames.length;
+  const maxWrites = key => steadyFrames.every(x => x[key] !== null) ? Math.max(...steadyFrames.map(x => x[key])) : null;
   report.memory.steady = {
     resident: await snapshot(),
-    steadyUploadBytesPerFrame: { samples: sortedUploads.length,
-      p50: sortedUploads[Math.floor(sortedUploads.length * 0.5)] ?? 0,
-      p95: sortedUploads[Math.floor(sortedUploads.length * 0.95)] ?? 0,
-      max: sortedUploads.at(-1) ?? 0 },
-    writeCounts: { matrix: Math.max(...steadyFrames.map(x => x.matrixWrites)),
-      color: Math.max(...steadyFrames.map(x => x.colorWrites)), coverage: Math.max(...steadyFrames.map(x => x.coverageWrites)) },
+    steadyUploadBytesPerFrame: { samples: sortedUploads.length, missingSamples: steadyFrames.length - sortedUploads.length,
+      p50: allUploadsKnown ? sortedUploads[Math.floor(sortedUploads.length * 0.5)] : null,
+      p95: allUploadsKnown ? sortedUploads[Math.floor(sortedUploads.length * 0.95)] : null,
+      max: allUploadsKnown ? sortedUploads.at(-1) : null },
+    writeCounts: { matrix: maxWrites('matrixWrites'), color: maxWrites('colorWrites'), coverage: maxWrites('coverageWrites') },
   };
   report.uploads = {
     initialTreeAssets: report.memory.load.treeAssetUploadEstimates,
     steadyScheduledDirtyRangeBytesPerFrame: report.memory.steady.steadyUploadBytesPerFrame,
     interpretation: 'Initial geometry/texture values are Atlas resource-accounting byte estimates; the steady value is Atlas scheduled instance dirty-range bytes, not a driver-level transfer counter.',
   };
+  const stationaryZero = steadyFrames.every(x => Object.values(x).every(value => value === 0));
+  gateFinding('stationary-steady-writes-zero', stationaryZero,
+    'Every sampled stationary frame must have zero scheduled upload bytes and matrix/color/coverage writes; missing counters fail the gate.',
+    { samples: steadyFrames.length, nonzeroOrMissingFrames: steadyFrames.filter(x => Object.values(x).some(value => value !== 0)).length,
+      maxima: report.memory.steady.writeCounts, uploadBytes: report.memory.steady.steadyUploadBytesPerFrame });
 
   // Exercise the attachment's real disable/dispose path and record memory
   // after renderer disposal callbacks have had several frames to run.
+  monitor.phase('dispose');
   await page.evaluate(() => document.querySelector('#forest-detail')?.click());
   await waitFor(() => window.__atlas.forestAssets.enabled === false && !window.__atlas.forestAssets.loading &&
     (window.__atlas.terrain?.tiles?.forest?.detailedTrees?.families?.length ?? 0) === 0);
@@ -302,18 +496,13 @@ try {
     treeEstimatedBytesBefore: report.memory.steady.resident.tree.allocatedBytes,
     treeEstimatedBytesAfter: report.memory.disposed.tree.allocatedBytes,
   };
-  report.errors = [...new Set(report.errors)];
-  report.ok = report.errors.length === 0;
-  await save();
-  console.log(JSON.stringify({ ok: report.ok, out, populations, draws: report.draws,
-    loadMs: report.memory.load.durationMs, uploadBytes: report.memory.steady.steadyUploadBytesPerFrame,
-    disposeDelta: report.disposeDelta }, null, 2));
+  report.captureComplete = true;
 } catch (error) {
   report.failure = String(error?.stack ?? error);
-  await save();
   console.error(error);
   process.exitCode = 1;
 } finally {
+  await monitor?.stop().catch(error => gateFinding('host-monitor-finalization', false, String(error)));
   await page?.evaluate(() => {
     const a = window.__atlas;
     if (!a) return;
@@ -322,4 +511,15 @@ try {
   }).catch(() => {});
   await browser?.close().catch(() => {});
   await lock?.release().catch(() => {});
+  report.errors = [...new Set(report.errors)];
+  report.ok = report.captureComplete === true && !report.failure && report.errors.length === 0;
+  report.acceptanceEligible = report.ok && report.gateFindings.every(x => x.passed);
+  report.finishedAt = new Date().toISOString();
+  await save();
+  if (!report.acceptanceEligible) process.exitCode = 1;
+  console.log(JSON.stringify({ ok: report.ok, acceptanceEligible: report.acceptanceEligible, out,
+    gateFindings: report.gateFindings, failure: report.failure ?? null,
+    populations: report.posePopulation, screenshots: report.screenshots, draws: report.draws,
+    loadMs: report.memory?.load?.durationMs, uploadBytes: report.memory?.steady?.steadyUploadBytesPerFrame,
+    disposeDelta: report.disposeDelta }, null, 2));
 }
