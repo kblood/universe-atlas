@@ -596,6 +596,7 @@ try {
         } : null,
         terrain: t ? { surfaceReady: t.surfaceReady, pending: t.pending,
           forestPending: f?.pending ?? null, selectionPending: f?.selectionPending ?? null } : null,
+        contactReadiness: a?.renderDebug?.().planet?.contactReadiness ?? null,
         forestAssets: a?.forestAssets ? { enabled: a.forestAssets.enabled,
           loading: a.forestAssets.loading, ready: a.forestAssets.ready,
           error: a.forestAssets.error ?? null } : null,

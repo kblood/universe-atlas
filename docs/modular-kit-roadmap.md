@@ -223,6 +223,18 @@ present. Its report is explicitly non-acceptance evidence; no mixed-tier GPU
 delta is inferred from it. Repeat the fixed-pose near/middle/far attribution
 when the host is quiet, without interrupting the existing Blender or browser.
 
+The repeat on commit `084dd9e` used the production preview with exact Atlas and
+Tree Kit identities. Blender and user-browser processes were absent, and the
+two pre-browser samples were below the baseline CPU/GPU limits. During scene
+loading, however, foreign CPU use later exceeded the 20% gate (peaking at
+24.7%). The page also remained in `LANDING` at 12.92 m clearance for the full
+four-minute pose timeout: the bookmark had not produced an active grounded
+walker, so tree assets never loaded and no LOD attribution was taken. This is
+another invalid capture, not a performance result. The ignored diagnostic
+report is `test-results/tree-runtime-benchmark-2026-10-14-084dd9e/report.json`;
+inspect contact-patch readiness and the bookmark landing handoff before the
+next capture, then repeat only on a quiet host.
+
 The current two-family bundle contains 25,826,696 bytes (about 24.63 MiB) of
 GLB and foliage-mip binary payloads, with all 16 manifest hashes and lengths
 verified. However, the family and bundle manifests still mark Atlas-authored
